@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "dc88482b3ad2f0dede8c920d245b0b2bca1afabb",
+  "generatedForCommit": "df1793a78c667b83cc114d51b1492b6e903d4ece",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -174,7 +174,7 @@
       "path": "docs/backend.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 39240
+      "size": 39277
     },
     {
       "path": "docs/deployment.md",
@@ -387,6 +387,12 @@
       "size": 7215
     },
     {
+      "path": "e2e/lupa-sandi.spec.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1330
+    },
+    {
       "path": "e2e/notes.spec.ts",
       "reason": "needs_summary",
       "language": "typescript",
@@ -394,7 +400,7 @@
     },
     {
       "path": "e2e/pemantauan.spec.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 6455
     },
@@ -646,7 +652,7 @@
     },
     {
       "path": "src/app/(protected)/app/perkembangan/layout.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 485
     },
@@ -805,6 +811,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 837
+    },
+    {
+      "path": "src/app/api/lupa-sandi/route.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1523
     },
     {
       "path": "src/app/api/masuk/route.ts",
@@ -1573,6 +1585,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 2314
+    },
+    {
+      "path": "src/validators/sandi.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 262
     },
     {
       "path": "src/validators/sesi.ts",

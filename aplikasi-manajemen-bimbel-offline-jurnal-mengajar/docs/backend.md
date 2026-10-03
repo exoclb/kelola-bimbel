@@ -67,6 +67,12 @@ Operasi jurnal milik guru ada di `src/services/jurnal.service.ts` (simpan, riway
 | PATCH  | `/api/notifikasi`              | 200, tandai notifikasi tertentu atau semua sebagai sudah dibaca         |
 | POST   | `/api/jurnal`                  | 200, simpan & kirim jurnal mengajar (idempoten per jadwal + tanggal)    |
 | PATCH  | `/api/jurnal/:id`              | 200, koreksi isi jurnal (materi, catatan, dan/atau kehadiran)           |
+| POST   | `/api/akun`                    | 201, mendaftarkan akun guru baru (langsung masuk)                       |
+| POST   | `/api/masuk`                   | 200, masuk dengan email & sandi (membuat sesi)                          |
+| GET    | `/api/sesi`                    | 200, akun yang sedang masuk beserta perannya                            |
+| DELETE | `/api/sesi`                    | 204, keluar dan mencabut sesi di server                                 |
+| POST   | `/api/lupa-sandi`              | 200, meminta tautan atur ulang sandi (jawaban selalu sama)              |
+| POST   | `/api/atur-ulang-sandi`        | 200, mengganti sandi memakai token dari tautan                          |
 
 `hari` boleh dikosongkan; tanpa parameter itu server memakai hari ini menurut `src/lib/tanggal.ts`. Nilai di luar daftar hari ditolak dengan 422. Hasilnya `{ "data": [{ id, classId, namaKelas, cabang, jamMulai, jamSelesai }] }` dengan jam dalam bentuk `HH:MM`, diurutkan dari jam paling awal. Saringan `guru_id` selalu memakai id dari sesi, bukan dari permintaan, jadi satu guru tidak pernah melihat jadwal guru lain.
 
@@ -130,7 +136,7 @@ Endpoint ini terbuka (belum punya sesi) tetapi tidak melewati jalur auth begitu 
 
 ## Lupa sandi
 
-`POST /api/lupa-sandi` menerima `{ email }` dan selalu menjawab 200 `{ terkirim: true }` — baik emailnya terdaftar maupun tidak — supaya halaman lupa sandi tidak bisa dipakai menebak email mana yang punya akun. Yang membuat dan mengirim tautannya tetap Better Auth (lewat `sendResetPassword` di `src/lib/auth.ts`); kalau fitur itu dimatikan di servernya, jawabannya 503 `FITUR_BELUM_AKTIF` alih-alih mengaku sudah mengirim. Tautannya berlaku satu jam dan hanya bisa dipakai sekali. Halaman `/lupa-password` memakai endpoint ini untuk minta tautan, dan `/atur-ulang-password?token=…` menukar token itu dengan sandi baru lewat `POST /api/auth/reset-password` milik Better Auth.
+`POST /api/lupa-sandi` menerima `{ email }` dan selalu menjawab 200 `{ terkirim: true }` — baik emailnya terdaftar maupun tidak — supaya halaman lupa sandi tidak bisa dipakai menebak email mana yang punya akun. Yang membuat dan mengirim tautannya tetap Better Auth (lewat `sendResetPassword` di `src/lib/auth.ts`); kalau fitur itu dimatikan di servernya, jawabannya 503 `FITUR_BELUM_AKTIF` alih-alih mengaku sudah mengirim. Tautannya berlaku satu jam dan hanya bisa dipakai sekali. `POST /api/atur-ulang-sandi` menerima `{ token, sandi }` (sandi 8–128 huruf) dan menukar token dari tautan dengan sandi baru. Token yang salah, sudah dipakai, atau kedaluwarsa dijawab 422 dengan `token` sebagai kolomnya; percobaan yang gagal tidak menghabiskan token aslinya. Sandi baru berarti **semua sesi akun itu dicabut** (`revokeSessionsOnPasswordReset`), jadi cookie yang masih tersimpan langsung tidak berlaku — penting kalau sandinya diganti justru karena akunnya sempat dipakai orang lain. Halaman `/lupa-password` memakai `/api/lupa-sandi` untuk minta tautan, dan `/atur-ulang-password?token=…` memakai endpoint ini untuk menukarnya.
 
 ## Data model
 
