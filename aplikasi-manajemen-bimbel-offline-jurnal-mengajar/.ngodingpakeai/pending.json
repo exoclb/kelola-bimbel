@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "d57ea1590e1c9c138e023188dc4ae8968e6f4d0c",
+  "generatedForCommit": "21374dff8c65a588e5fd5a563e93d9a4338d27fc",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -448,7 +448,7 @@
     },
     {
       "path": "src/app/(protected)/app/gaji/slip/[guruId]/page.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1760
     },
@@ -484,7 +484,7 @@
     },
     {
       "path": "src/app/(protected)/layout.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1215
     },
@@ -603,6 +603,12 @@
       "size": 1059
     },
     {
+      "path": "src/components/daftar-gaji-guru.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 5477
+    },
+    {
       "path": "src/components/daftar-kehadiran.tsx",
       "reason": "needs_summary",
       "language": "typescript",
@@ -684,7 +690,7 @@
       "path": "src/components/rekap-gaji-bulanan.tsx",
       "reason": "changed",
       "language": "typescript",
-      "size": 6176
+      "size": 3463
     },
     {
       "path": "src/components/saring-pemantauan.tsx",
@@ -700,7 +706,7 @@
     },
     {
       "path": "src/components/slip-gaji.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 3930
     },
@@ -718,7 +724,7 @@
     },
     {
       "path": "src/components/tombol-slip-gaji.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2138
     },

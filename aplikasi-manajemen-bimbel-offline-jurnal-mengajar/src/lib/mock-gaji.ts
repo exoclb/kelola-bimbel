@@ -111,3 +111,45 @@ export function getRekapGajiBulanan(periode: string): RekapGaji {
     }),
   };
 }
+
+export type RingkasanGajiBulanan = {
+  periode: string;
+  jumlahGuru: number;
+  totalJam: number;
+  totalGaji: number;
+  jumlahDibayar: number;
+};
+
+/** Enam bulan terakhir, terbaru lebih dulu, untuk halaman riwayat gaji. */
+export function getRiwayatGaji(): RingkasanGajiBulanan[] {
+  const sekarang = new Date();
+  const bulanIni = sekarang.getMonth() + 1;
+  const tahunIni = sekarang.getFullYear();
+  const daftar: RingkasanGajiBulanan[] = [];
+
+  for (let mundur = 0; mundur < 6; mundur += 1) {
+    const waktu = new Date(tahunIni, bulanIni - 1 - mundur, 1);
+    const bulan = waktu.getMonth() + 1;
+    const periode = `${waktu.getFullYear()}-${String(bulan).padStart(2, "0")}`;
+
+    // Bulan berjalan memakai angka yang sama dengan halaman rekap gaji.
+    const rekap = getRekapGajiBulanan(periode).daftar;
+    const faktor = 0.8 + ((bulan % 4) * 10) / 100;
+    const jumlahGuru = rekap.length;
+    const totalJam =
+      mundur === 0
+        ? rekap.reduce((jumlah, baris) => jumlah + baris.totalJam, 0)
+        : Math.round(
+            rekap.reduce((jumlah, baris) => jumlah + baris.totalJam, 0) *
+              faktor *
+              10,
+          ) / 10;
+    const totalGaji = hitungGaji(totalJam, TARIF_PER_JAM);
+    const jumlahDibayar =
+      mundur === 0 ? 1 : mundur === 1 ? jumlahGuru - 1 : jumlahGuru;
+
+    daftar.push({ periode, jumlahGuru, totalJam, totalGaji, jumlahDibayar });
+  }
+
+  return daftar;
+}

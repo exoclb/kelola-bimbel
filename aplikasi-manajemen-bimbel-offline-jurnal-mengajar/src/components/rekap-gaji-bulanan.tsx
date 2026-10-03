@@ -1,4 +1,5 @@
-import { CalendarRange, Receipt, Users, Wallet } from "lucide-react";
+import Link from "next/link";
+import { CalendarRange, History, Receipt, Users, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -53,9 +54,17 @@ export function RekapGajiBulanan({
       <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
         Rekap Gaji Bulanan
       </h1>
-      <p className="mt-3 text-base leading-7 text-muted-foreground">
-        {periodeTampil} · disiapkan untuk {namaOwner}
-      </p>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-base leading-7 text-muted-foreground">
+          {periodeTampil} · disiapkan untuk {namaOwner}
+        </p>
+        <Button asChild variant="outline" size="sm">
+          <Link href="/app/gaji/riwayat">
+            <History aria-hidden="true" />
+            Riwayat gaji
+          </Link>
+        </Button>
+      </div>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-3">
         {statistik.map(({ label, nilai, ikon: Ikon }) => (
