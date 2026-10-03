@@ -1,6 +1,10 @@
-import { ApiError, assertSameOrigin, readJson, withApiError } from "@/lib/api";
-import { auth } from "@/lib/auth";
-import { env } from "@/lib/env";
+import {
+  ApiError,
+  assertSameOrigin,
+  callAuthHandler,
+  readJson,
+  withApiError,
+} from "@/lib/api";
 import { peranDariRole } from "@/lib/peran";
 import { daftarAkunSchema, MIN_SANDI } from "@/validators/akun";
 
@@ -67,19 +71,15 @@ export function POST(request: Request) {
       await readJson(request),
     );
 
-    // Alamatnya diambil dari BETTER_AUTH_URL, bukan dari alamat permintaan:
-    // Better Auth memeriksa host terhadap baseURL-nya sendiri, sedangkan
-    // aplikasi ini bisa saja diakses lewat proksi atau port yang berbeda.
-    const jawaban = await auth.handler(
-      new Request(new URL("/api/auth/sign-up/email", env.BETTER_AUTH_URL), {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          origin: request.headers.get("origin") ?? "",
-        },
-        body: JSON.stringify({ name: nama, email, password: sandi }),
-      }),
-    );
+    // Alamat internalnya diambil dari BETTER_AUTH_URL di dalam helper ini,
+    // bukan dari alamat permintaan: Better Auth memeriksa host terhadap
+    // baseURL-nya sendiri, sedangkan aplikasi ini bisa saja diakses lewat
+    // proksi atau port yang berbeda.
+    const jawaban = await callAuthHandler("/api/auth/sign-up/email", request, {
+      name: nama,
+      email,
+      password: sandi,
+    });
     const isi = await jawaban.json();
 
     if (!jawaban.ok) throw galatPendaftaran(isi, jawaban.status);

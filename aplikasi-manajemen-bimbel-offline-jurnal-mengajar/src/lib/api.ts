@@ -127,6 +127,25 @@ export function withApiPermission(
   });
 }
 
+/**
+ * Meneruskan satu permintaan ke penangan Better Auth, supaya endpoint aplikasi
+ * ikut memakai jalur yang sama: pemeriksaan origin, batas laju, peran bawaan,
+ * dan pembuatan sesi. Alamatnya diambil dari BETTER_AUTH_URL, bukan dari alamat
+ * permintaan, karena aplikasi bisa diakses lewat proksi atau port lain.
+ */
+export function callAuthHandler(path: string, request: Request, body: unknown) {
+  return auth.handler(
+    new Request(new URL(path, env.BETTER_AUTH_URL), {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        origin: request.headers.get("origin") ?? "",
+      },
+      body: JSON.stringify(body),
+    }),
+  );
+}
+
 export async function readJson(request: Request): Promise<unknown> {
   const contentType = request.headers
     .get("content-type")
