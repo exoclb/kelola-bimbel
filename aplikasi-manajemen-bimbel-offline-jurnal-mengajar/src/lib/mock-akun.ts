@@ -15,6 +15,8 @@ export type AkunMasuk = {
   sandi: string;
   peran: PeranPengguna;
   cabang: string;
+  /** Dipakai halaman Pengaturan untuk menunjukkan akun yang dinonaktifkan. */
+  statusAktif: boolean;
 };
 
 const AKUN: AkunMasuk[] = [
@@ -25,6 +27,7 @@ const AKUN: AkunMasuk[] = [
     sandi: "guru12345",
     peran: "guru",
     cabang: "Cabang Pusat",
+    statusAktif: true,
   },
   {
     id: "akn-2",
@@ -33,6 +36,7 @@ const AKUN: AkunMasuk[] = [
     sandi: "guru12345",
     peran: "guru",
     cabang: "Cabang Selatan",
+    statusAktif: true,
   },
   {
     id: "akn-3",
@@ -41,6 +45,7 @@ const AKUN: AkunMasuk[] = [
     sandi: "owner12345",
     peran: "owner",
     cabang: "Semua cabang",
+    statusAktif: true,
   },
 ];
 

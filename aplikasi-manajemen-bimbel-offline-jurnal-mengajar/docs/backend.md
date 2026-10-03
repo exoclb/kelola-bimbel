@@ -169,6 +169,7 @@ Aturan akses halaman app disimpan di dua tempat saja, mengikuti aturan starter (
 | `/app/pemantauan`                                                                          | izin `jurnal: read-any`                                                      |
 | `/app/gaji`, `/app/gaji/riwayat`, `/app/gaji/slip/[guruId]`                                | izin `gaji: read-any`                                                        |
 | `/admin`                                                                                   | izin `notes: read-any`                                                       |
+| `/app/pengaturan` dan sub-halamannya                                                       | izin `pengaturan: read` (owner & admin)                                      |
 
 Pengunjung tanpa sesi dialihkan ke halaman masuk. Akun yang sudah masuk tetapi tidak punya izinnya **dilihat sebagai halaman tidak ada** (404), bukan "terlarang", supaya rute yang tidak boleh dibuka tidak bisa dipetakan satu per satu. Penjagaan seksi yang dipakai bersama (`perkembangan`) diletakkan di layout, jadi halaman baru di dalam seksi itu tidak mungkin lupa menjaganya, sedangkan seksi dengan akses campuran (`gaji` vs `gaji/saya`) menjaga tiap halaman. Middleware Next.js sengaja tidak dipakai: di sana tidak ada akses basis data, jadi yang bisa diperiksa hanya keberadaan cookie — bukan sesi yang sah. Batas keamanan sebenarnya tetap di API, karena halaman hanyalah tampilan.
 

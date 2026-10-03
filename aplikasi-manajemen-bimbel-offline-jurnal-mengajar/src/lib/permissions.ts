@@ -19,6 +19,9 @@ export const statement = {
   // yang boleh membuka fitur ini sama sekali: guru (role `user`), owner, dan
   // admin. Peran lain tidak diberi izin ini.
   perkembangan: ["read", "write"],
+  // Pengaturan bimbel (profil, aturan gaji, kelola guru) hanya untuk owner:
+  // guru tidak mengubah data yang memengaruhi seluruh bimbel.
+  pengaturan: ["read", "write"],
 } as const;
 
 export const ac = createAccessControl(statement);
@@ -33,6 +36,7 @@ export const roles = {
     jurnal: ["read-any"],
     gaji: ["read-any"],
     perkembangan: ["read", "write"],
+    pengaturan: ["read", "write"],
   }),
   admin: ac.newRole({
     ...adminAc.statements,
@@ -40,6 +44,7 @@ export const roles = {
     jurnal: ["read-any"],
     gaji: ["read-any"],
     perkembangan: ["read", "write"],
+    pengaturan: ["read", "write"],
   }),
 } as const;
 

@@ -207,3 +207,22 @@ test("kontrol akses peran berlaku di halaman, bukan cuma di API", async ({
 
   await setRole("user");
 });
+
+test("pengaturan bimbel hanya untuk owner, termasuk menunya", async ({
+  page,
+}) => {
+  await setRole("user");
+  await masuk(page.request);
+
+  await expect(page.getByRole("link", { name: "Pengaturan" })).toHaveCount(0);
+  await page.goto("/app/pengaturan");
+  await expect(page.getByText(/This page isn.t here/)).toBeVisible();
+
+  await setRole("owner");
+  await page.goto("/app");
+  await page.getByRole("link", { name: "Pengaturan" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Pengaturan Bimbel" }),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: /Atur tarif/ })).toBeVisible();
+});
