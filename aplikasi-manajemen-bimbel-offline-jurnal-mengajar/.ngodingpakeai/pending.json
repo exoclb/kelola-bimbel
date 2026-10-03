@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "c19a63605927790f67f2fac4bca77e4227aea7c9",
+  "generatedForCommit": "b4b1c35048d09fb8bc062865222141e353bcdcbb",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -174,7 +174,7 @@
       "path": "docs/backend.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 15489
+      "size": 15968
     },
     {
       "path": "docs/deployment.md",
@@ -519,6 +519,12 @@
       "size": 833
     },
     {
+      "path": "src/app/api/admin/jurnal/[id]/route.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 763
+    },
+    {
       "path": "src/app/api/admin/notes/route.ts",
       "reason": "needs_summary",
       "language": "typescript",
@@ -532,7 +538,7 @@
     },
     {
       "path": "src/app/api/admin/ringkasan-guru/route.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1238
     },
@@ -982,9 +988,9 @@
     },
     {
       "path": "src/services/jurnal.service.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 20935
+      "size": 21618
     },
     {
       "path": "src/services/notes.service.ts",
@@ -1000,7 +1006,7 @@
     },
     {
       "path": "src/validators/jurnal.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 3972
     },
