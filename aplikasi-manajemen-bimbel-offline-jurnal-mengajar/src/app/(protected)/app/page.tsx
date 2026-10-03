@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import {
   ArrowUpRight,
+  CalendarDays,
   Check,
   Eye,
   History,
@@ -59,10 +60,26 @@ export default async function AppPage() {
               Riwayat Jurnal
             </Link>
           </Button>
+        </div>
+      </Card>
+      <Card className="mt-6 flex-row flex-wrap items-center justify-between gap-4 px-6 py-5">
+        <div className="space-y-1">
+          <CardTitle>Data Murid &amp; Kelas</CardTitle>
+          <CardDescription>
+            Simpan data murid, lalu atur kelas dan jadwal mengajarnya.
+          </CardDescription>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
           <Button asChild variant="outline">
             <Link href="/app/murid">
               <Users aria-hidden="true" />
               Daftar Murid
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/app/kelas">
+              <CalendarDays aria-hidden="true" />
+              Kelola Kelas
             </Link>
           </Button>
         </div>
