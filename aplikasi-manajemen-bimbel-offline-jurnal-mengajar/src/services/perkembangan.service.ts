@@ -13,7 +13,12 @@ import {
 } from "drizzle-orm";
 import { db } from "@/db";
 import { studentProgress, students, user } from "@/db/schema";
-import { ringkasanKehadiranPerMurid } from "@/services/kehadiran.service";
+import {
+  listKehadiran,
+  ringkasanKehadiranPerMurid,
+  type DaftarKehadiran,
+} from "@/services/kehadiran.service";
+import { getMurid } from "@/services/murid.service";
 import type {
   CreatePerkembanganInput,
   ListPerkembanganInput,
@@ -354,5 +359,72 @@ export async function listRingkasanPerkembangan({
         0,
       ),
     },
+  };
+}
+
+/** Riwayat lengkap satu anak untuk halaman riwayat dan laporan orang tua. */
+export type RiwayatPerkembangan = {
+  murid: {
+    id: string;
+    nama: string;
+    tanggalLahir: string | null;
+    namaOrangTua: string | null;
+    kontakOrangTua: string | null;
+    statusAktif: boolean;
+  };
+  ringkasan: RingkasanPerkembanganTersimpan;
+  catatan: DaftarCatatanPerkembangan;
+  kehadiran: DaftarKehadiran;
+};
+
+/**
+ * Riwayat perkembangan satu anak dalam satu permintaan: data anaknya, ringkasan
+ * angkanya, seluruh catatan guru, dan rekap kehadirannya. Dipakai halaman
+ * riwayat dan laporan ke orang tua supaya keduanya melihat angka yang sama
+ * persis.
+ */
+export async function getRiwayatPerkembangan(
+  muridId: string,
+  limit: number,
+  offset: number,
+): Promise<RiwayatPerkembangan | null> {
+  const murid = await getMurid(muridId);
+  if (!murid) return null;
+
+  const [ringkasan, catatan, kehadiran] = await Promise.all([
+    listRingkasanPerkembangan({
+      limit: 1,
+      offset: 0,
+      muridId,
+      dari: undefined,
+      sampai: undefined,
+      cari: undefined,
+    }),
+    listCatatanPerkembangan({
+      limit,
+      offset,
+      muridId,
+      dari: undefined,
+      sampai: undefined,
+      cari: undefined,
+    }),
+    listKehadiran({ limit, offset, muridId }),
+  ]);
+
+  return {
+    murid,
+    ringkasan: ringkasan.data[0] ?? {
+      muridId: murid.id,
+      muridNama: murid.nama,
+      jumlahCatatan: 0,
+      rataNilai: 0,
+      nilaiTerakhir: null,
+      sikapTerakhir: null,
+      tanggalCatatanTerakhir: null,
+      jumlahPertemuan: 0,
+      jumlahHadir: 0,
+    },
+    catatan,
+    kehadiran,
   };
 }

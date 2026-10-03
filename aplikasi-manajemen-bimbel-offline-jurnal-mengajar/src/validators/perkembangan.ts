@@ -56,3 +56,17 @@ export const updatePerkembanganSchema = z
 export type UpdatePerkembanganInput = z.infer<typeof updatePerkembanganSchema>;
 
 export const catatanIdSchema = z.string().uuid();
+
+// Riwayat satu anak: anaknya wajib disebut, halaman dibagi rata untuk catatan
+// dan kehadirannya.
+export const riwayatPerkembanganSchema = z
+  .object({
+    muridId: z.string().uuid(),
+    limit: z.coerce.number().int().min(1).max(100).default(50),
+    offset: z.coerce.number().int().min(0).max(1_000_000).default(0),
+  })
+  .strict();
+
+export type RiwayatPerkembanganInput = z.infer<
+  typeof riwayatPerkembanganSchema
+>;

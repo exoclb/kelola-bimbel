@@ -1,5 +1,5 @@
 import "server-only";
-import { asc, ilike, or, sql } from "drizzle-orm";
+import { asc, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { students } from "@/db/schema";
 import type { CreateMuridInput, ListMuridInput } from "@/validators/murid";
@@ -68,4 +68,14 @@ export async function createMurid(input: CreateMuridInput) {
     })
     .returning(fields);
   return murid;
+}
+
+/** Satu murid beserta kolom yang dipakai tampilan, atau null. */
+export async function getMurid(id: string) {
+  const [murid] = await db
+    .select(fields)
+    .from(students)
+    .where(eq(students.id, id))
+    .limit(1);
+  return murid ?? null;
 }

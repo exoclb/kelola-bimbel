@@ -1,4 +1,4 @@
-import { withApiSession } from "@/lib/api";
+import { withApiPermission } from "@/lib/api";
 import { listKehadiran } from "@/services/kehadiran.service";
 import { listKehadiranSchema } from "@/validators/kehadiran";
 
@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 // (`muridId`), per kelas (`kelasId`), atau per rentang tanggal
 // (`dari`/`sampai`). Kehadiran ditulis lewat `POST /api/jurnal`.
 export function GET(request: Request) {
-  return withApiSession(request, async () => {
+  return withApiPermission(request, { perkembangan: ["read"] }, async () => {
     const filter = listKehadiranSchema.parse(
       Object.fromEntries(new URL(request.url).searchParams),
     );

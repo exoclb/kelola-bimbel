@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "9927850168bd61598d89ba49f1d6fa9537c0fa35",
+  "generatedForCommit": "9676cc95de43562ffa2712035341323880a0aa91",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -174,7 +174,7 @@
       "path": "docs/backend.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 31269
+      "size": 32317
     },
     {
       "path": "docs/deployment.md",
@@ -706,7 +706,7 @@
     },
     {
       "path": "src/app/api/kehadiran/route.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 669
     },
@@ -763,6 +763,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 1046
+    },
+    {
+      "path": "src/app/api/perkembangan/ringkasan/route.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 725
     },
     {
       "path": "src/app/api/perkembangan/route.ts",
@@ -1336,9 +1342,9 @@
     },
     {
       "path": "src/services/kehadiran.service.ts",
-      "reason": "new",
+      "reason": "changed",
       "language": "typescript",
-      "size": 3367
+      "size": 4416
     },
     {
       "path": "src/services/kelas.service.ts",
@@ -1372,9 +1378,9 @@
     },
     {
       "path": "src/services/perkembangan.service.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 5863
+      "size": 10438
     },
     {
       "path": "src/validators/gaji.ts",
@@ -1396,7 +1402,7 @@
     },
     {
       "path": "src/validators/kehadiran.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 786
     },

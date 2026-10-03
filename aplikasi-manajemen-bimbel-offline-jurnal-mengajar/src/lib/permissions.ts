@@ -14,21 +14,32 @@ export const statement = {
   jurnal: ["read-any"],
   // Rekap gaji seluruh guru hanya untuk owner.
   gaji: ["read-any"],
+  // Catatan perkembangan dan kehadiran anak. Berbeda dari jurnal, datanya
+  // memang dipakai bersama guru pengampu, jadi aksinya menggambarkan siapa
+  // yang boleh membuka fitur ini sama sekali: guru (role `user`), owner, dan
+  // admin. Peran lain tidak diberi izin ini.
+  perkembangan: ["read", "write"],
 } as const;
 
 export const ac = createAccessControl(statement);
 
-// A role is a subset of the statement. Keep `user` deliberately empty: the
-// signed-in default should be able to do nothing beyond its own records.
+// A role is a subset of the statement. `user` is deliberately minimal: apart
+// from the shared development records (every guru needs to read and write
+// them), the signed-in default can do nothing beyond its own rows.
 export const roles = {
-  user: ac.newRole({ notes: [] }),
+  user: ac.newRole({ notes: [], perkembangan: ["read", "write"] }),
   // Pemilik bimbel: memantau jurnal dan gaji semua guru, tanpa hak admin sistem.
-  owner: ac.newRole({ jurnal: ["read-any"], gaji: ["read-any"] }),
+  owner: ac.newRole({
+    jurnal: ["read-any"],
+    gaji: ["read-any"],
+    perkembangan: ["read", "write"],
+  }),
   admin: ac.newRole({
     ...adminAc.statements,
     notes: ["read-any", "delete-any"],
     jurnal: ["read-any"],
     gaji: ["read-any"],
+    perkembangan: ["read", "write"],
   }),
 } as const;
 
