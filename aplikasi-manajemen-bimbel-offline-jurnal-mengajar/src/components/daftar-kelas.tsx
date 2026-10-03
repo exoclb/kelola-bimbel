@@ -1,8 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarDays, Clock, MapPin, Users, X } from "lucide-react";
+import {
+  CalendarDays,
+  Clock,
+  MapPin,
+  PencilLine,
+  Users,
+  X,
+} from "lucide-react";
 import { FormJadwalKelas } from "@/components/form-jadwal-kelas";
+import { FormUbahKelas } from "@/components/form-ubah-kelas";
 import { FormTambahKelas } from "@/components/form-tambah-kelas";
 import { KolomPencarian } from "@/components/kolom-pencarian";
 import { PesanKosong } from "@/components/status-antarmuka";
@@ -37,6 +45,8 @@ export function DaftarKelas({
   const [penempatan, setPenempatan] = useState(penempatanAwal);
   const [pesan, setPesan] = useState("");
   const [cari, setCari] = useState("");
+  // Id kelas yang sedang diubah datanya; sisanya tampil seperti biasa.
+  const [ubahUntuk, setUbahUntuk] = useState<string | null>(null);
 
   const jumlahJadwal = daftar.reduce(
     (jumlah, kelas) => jumlah + kelas.jadwal.length,
@@ -85,6 +95,26 @@ export function DaftarKelas({
       sebelumnya.map((kelas) =>
         kelas.id === kelasId ? { ...kelas, jadwal: ubah(kelas.jadwal) } : kelas,
       ),
+    );
+  }
+
+  function simpanUbahKelas(
+    kelasId: string,
+    perubahan: { namaKelas: string; cabang: string; guruNama: string },
+  ) {
+    const kelas = daftar.find((baris) => baris.id === kelasId);
+    setDaftar((sebelumnya) =>
+      sebelumnya
+        .map((baris) =>
+          baris.id === kelasId ? { ...baris, ...perubahan } : baris,
+        )
+        .sort((a, b) => a.namaKelas.localeCompare(b.namaKelas, "id")),
+    );
+    setUbahUntuk(null);
+    setPesan(
+      kelas && kelas.namaKelas !== perubahan.namaKelas
+        ? `Kelas ${kelas.namaKelas} diubah menjadi ${perubahan.namaKelas}.`
+        : `Perubahan ${perubahan.namaKelas} disimpan.`,
     );
   }
 
@@ -253,7 +283,28 @@ export function DaftarKelas({
                         keluarkanMurid(kelas.id, muridId)
                       }
                     />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setUbahUntuk(ubahUntuk === kelas.id ? null : kelas.id)
+                      }
+                    >
+                      <PencilLine aria-hidden="true" />
+                      {ubahUntuk === kelas.id ? "Tutup form" : "Ubah kelas"}
+                    </Button>
                   </div>
+
+                  {ubahUntuk === kelas.id && (
+                    <FormUbahKelas
+                      kelas={kelas}
+                      onSimpan={(perubahan) =>
+                        simpanUbahKelas(kelas.id, perubahan)
+                      }
+                      onBatal={() => setUbahUntuk(null)}
+                    />
+                  )}
                 </Card>
               </li>
             );
