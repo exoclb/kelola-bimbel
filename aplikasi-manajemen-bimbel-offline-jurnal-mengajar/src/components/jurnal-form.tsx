@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { CalendarDays, CheckCircle2, LoaderCircle, Send } from "lucide-react";
+import { CalendarDays, LoaderCircle, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,6 +13,10 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DaftarKehadiran } from "@/components/daftar-kehadiran";
+import {
+  KonfirmasiJurnal,
+  type RingkasanJurnal,
+} from "@/components/konfirmasi-jurnal";
 import { PemilihJadwal } from "@/components/pemilih-jadwal";
 import { PemilihMateri } from "@/components/pemilih-materi";
 import {
@@ -48,7 +52,7 @@ export function JurnalForm({
   const [error, setError] = useState("");
   const [errorJadwal, setErrorJadwal] = useState("");
   const [errorMateri, setErrorMateri] = useState("");
-  const [terkirim, setTerkirim] = useState<JurnalInput | null>(null);
+  const [terkirim, setTerkirim] = useState<RingkasanJurnal | null>(null);
 
   const jadwalTerpilih = jadwal.find((item) => item.id === jadwalId);
 
@@ -105,7 +109,28 @@ export function JurnalForm({
     setPending(true);
     try {
       await kirimJurnalStub(jurnal);
-      setTerkirim(jurnal);
+      setTerkirim({
+        namaKelas: jadwalTerpilih.namaKelas,
+        cabang: jadwalTerpilih.cabang,
+        jamMulai: jadwalTerpilih.jamMulai,
+        jamSelesai: jadwalTerpilih.jamSelesai,
+        jamMengajar: hitungJamMengajar(
+          jadwalTerpilih.jamMulai,
+          jadwalTerpilih.jamSelesai,
+        ),
+        tanggalTampil,
+        materi: materiLengkap,
+        catatan: jurnal.catatan,
+        waktuKirim: new Intl.DateTimeFormat("id-ID", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }).format(new Date()),
+        murid: jadwalTerpilih.murid.map((murid) => ({
+          nama: murid.nama,
+          hadir: kehadiran[murid.id] ?? false,
+          keterangan: (keterangan[murid.id] ?? "").trim(),
+        })),
+      });
     } catch {
       setError("Jurnal gagal dikirim. Coba lagi sebentar lagi.");
     } finally {
@@ -127,58 +152,7 @@ export function JurnalForm({
   }
 
   if (terkirim) {
-    const jumlahHadir = terkirim.kehadiran.filter((baris) => baris.hadir).length;
-    return (
-      <div className="mx-auto max-w-3xl">
-        <Card className="border-primary/30">
-          <CardHeader>
-            <span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <CheckCircle2 className="size-5" aria-hidden="true" />
-            </span>
-            <CardTitle className="text-xl">Jurnal terkirim ke owner</CardTitle>
-            <CardDescription>
-              Laporan {jadwalTerpilih?.namaKelas ?? "kelas"} untuk {tanggalTampil}{" "}
-              sudah tercatat. Owner bisa langsung membacanya.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <dl className="grid gap-3 rounded-xl bg-muted px-4 py-4 text-sm sm:grid-cols-2">
-              <div>
-                <dt className="text-muted-foreground">Kelas</dt>
-                <dd className="font-medium">{jadwalTerpilih?.namaKelas}</dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">Jam mengajar</dt>
-                <dd className="font-medium">
-                  {jadwalTerpilih
-                    ? formatJam(
-                        hitungJamMengajar(
-                          jadwalTerpilih.jamMulai,
-                          jadwalTerpilih.jamSelesai,
-                        ),
-                      )
-                    : "-"}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">Materi</dt>
-                <dd className="font-medium">{terkirim.materi}</dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">Murid hadir</dt>
-                <dd className="font-medium">
-                  {jumlahHadir} dari {terkirim.kehadiran.length} murid
-                </dd>
-              </div>
-            </dl>
-            <Button type="button" onClick={isiJurnalLain}>
-              <Send aria-hidden="true" />
-              Isi jurnal kelas lain
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <KonfirmasiJurnal ringkasan={terkirim} onIsiLain={isiJurnalLain} />;
   }
 
   return (

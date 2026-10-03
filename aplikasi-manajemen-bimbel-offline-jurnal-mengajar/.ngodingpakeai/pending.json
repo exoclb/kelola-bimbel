@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "743a6d9c7106da6152696386bbf928e59ff8e2ca",
+  "generatedForCommit": "7e983cc791c99be2e3e86cad3a82e84fb07b8dc9",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -520,7 +520,7 @@
     },
     {
       "path": "src/components/daftar-kehadiran.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 3636
     },
@@ -528,17 +528,17 @@
       "path": "src/components/jurnal-form.tsx",
       "reason": "changed",
       "language": "typescript",
-      "size": 10198
+      "size": 10801
     },
     {
       "path": "src/components/pemilih-jadwal.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 4312
+      "size": 4366
     },
     {
       "path": "src/components/pemilih-materi.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2325
     },
