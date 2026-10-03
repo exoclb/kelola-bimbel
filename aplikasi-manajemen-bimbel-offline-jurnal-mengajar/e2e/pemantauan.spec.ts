@@ -33,6 +33,24 @@ const endpointPantauan = [
 
 let email = "";
 
+// Id akun dibaca dari basis data uji, sama seperti peran di atas.
+async function idAkun(email: string) {
+  const pool = new Pool({
+    connectionString: process.env.STARTER_TEST_DATABASE_URL,
+    max: 1,
+  });
+  try {
+    const { rows } = await pool.query<{ id: string }>(
+      'SELECT id FROM "user" WHERE email = $1',
+      [email],
+    );
+    expect(rows[0]?.id).toBeTruthy();
+    return rows[0].id;
+  } finally {
+    await pool.end();
+  }
+}
+
 test.beforeAll(async ({ request }) => {
   email = `pantau-${randomUUID()}@example.com`;
   const response = await denganRetry(() =>
@@ -500,6 +518,92 @@ test("preferensi notifikasi tersimpan per akun", async ({ request }) => {
     data: { jenis: "entah_apa", aktif: true },
   });
   expect(asing.status()).toBe(422);
+
+  await setRole("user");
+});
+
+test("jurnal yang masuk membuat pemberitahuan owner yang bisa ditandai dibaca", async ({
+  request,
+}) => {
+  const hari = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"][
+    new Date().getDay()
+  ];
+
+  await setRole("owner");
+  await masuk(request);
+  const akunId = await idAkun(email);
+
+  const murid = await request.post("/api/murid", {
+    headers,
+    data: { nama: "Murid Notifikasi", tanggalLahir: "2016-08-08" },
+  });
+  expect(murid.status()).toBe(201);
+  const muridId = (await murid.json()).data.id as string;
+
+  // Kelas diampu akun ini sendiri, jadi jurnalnya boleh dikirim olehnya.
+  const kelas = await request.post("/api/kelas", {
+    headers,
+    data: {
+      namaKelas: "Kelas Notifikasi Uji",
+      cabang: "Cabang Notifikasi",
+      guruId: akunId,
+    },
+  });
+  expect(kelas.status()).toBe(201);
+  const kelasId = (await kelas.json()).data.id as string;
+
+  const jadwal = await request.post(`/api/kelas/${kelasId}/jadwal`, {
+    headers,
+    data: { hari, jamMulai: "06:00", jamSelesai: "07:00" },
+  });
+  expect(jadwal.status()).toBe(200);
+  const jadwalId = (await jadwal.json()).data.jadwal.find(
+    (baris: { jamMulai: string }) => baris.jamMulai === "06:00",
+  ).id as string;
+
+  const kirim = await request.post("/api/jurnal", {
+    headers,
+    data: {
+      jadwalId,
+      materi: "Materi notifikasi",
+      catatan: "",
+      kehadiran: [{ muridId, hadir: true, catatan: "" }],
+    },
+  });
+  expect(kirim.status()).toBe(200);
+
+  // Satu pemberitahuan untuk akun ini, dan belum dibaca.
+  const daftar = await request.get("/api/notifikasi", { headers });
+  expect(daftar.status()).toBe(200);
+  const isi = await daftar.json();
+  expect(isi.meta.belumDibaca).toBe(1);
+  expect(isi.data[0].pesan).toContain("Kelas Notifikasi Uji");
+  expect(isi.data[0].sudahDibaca).toBe(false);
+
+  // Kirim ulang jurnal yang sama tidak menambah pemberitahuan baru.
+  await request.post("/api/jurnal", {
+    headers,
+    data: {
+      jadwalId,
+      materi: "Materi notifikasi (koreksi)",
+      catatan: "",
+      kehadiran: [{ muridId, hadir: true, catatan: "" }],
+    },
+  });
+  const lagi = await request.get("/api/notifikasi", { headers });
+  expect((await lagi.json()).meta.belumDibaca).toBe(1);
+
+  // Menandai sudah dibaca mengosongkan jumlahnya.
+  const tandai = await request.patch("/api/notifikasi", {
+    headers,
+    data: { semua: true },
+  });
+  expect(tandai.status()).toBe(200);
+  expect((await tandai.json()).jumlah).toBe(1);
+  expect(
+    (await (await request.get("/api/notifikasi", { headers })).json()).meta
+      .belumDibaca,
+  ).toBe(0);
 
   await setRole("user");
 });

@@ -1,4 +1,4 @@
-import { AlertTriangle, BellRing, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -6,51 +6,36 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { JurnalHarian, KelasKosong } from "@/services/pemantauan.service";
+import type { KelasKosong } from "@/services/pemantauan.service";
 
 type PanelNotifikasiProps = {
-  jurnalMasuk: JurnalHarian[];
   kelasKosong: KelasKosong[];
 };
 
-const jamKirim = new Intl.DateTimeFormat("id-ID", {
-  hour: "2-digit",
-  minute: "2-digit",
-});
-
 /**
- * Pemberitahuan aktivitas untuk owner: kelas yang belum diisi jurnalnya, lalu
- * jurnal yang masuk hari ini. Isinya dihitung dari data jurnal & jadwal, jadi
- * selalu sesuai kenyataan. Saat tabel `notifications` sudah ada, daftar ini
- * bisa diganti sumbernya tanpa mengubah tampilan.
+ * Yang perlu ditindak owner hari ini: kelas yang belum diisi jurnalnya. Kabar
+ * jurnal yang sudah masuk ada di kartu "Pemberitahuan" (antrean notifikasi),
+ * jadi daftar ini fokus pada hal yang belum selesai.
  */
-export function PanelNotifikasi({
-  jurnalMasuk,
-  kelasKosong,
-}: PanelNotifikasiProps) {
-  const jumlah = jurnalMasuk.length + kelasKosong.length;
-  const terbaru = [...jurnalMasuk].sort(
-    (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
-  );
-
+export function PanelNotifikasi({ kelasKosong }: PanelNotifikasiProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="inline-flex items-center gap-2">
-          <BellRing className="size-4 text-primary" aria-hidden="true" />
-          Pemberitahuan aktivitas
-        </CardTitle>
+        <CardTitle>Perlu ditindak</CardTitle>
         <CardDescription>
-          {jumlah === 0
-            ? "Belum ada aktivitas yang perlu diberitahukan."
-            : `${jumlah} pemberitahuan hari ini.`}
+          {kelasKosong.length === 0
+            ? "Tidak ada kelas yang tertinggal hari ini."
+            : `${kelasKosong.length} kelas belum diisi jurnalnya.`}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {jumlah === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Begitu ada guru mengirim jurnal atau kelas yang belum diisi,
-            kabarnya muncul di sini.
+        {kelasKosong.length === 0 ? (
+          <p className="inline-flex items-start gap-2 text-sm text-muted-foreground">
+            <CheckCircle2
+              className="mt-0.5 size-4 shrink-0 text-primary"
+              aria-hidden="true"
+            />
+            Semua kelas yang terjadwal hari ini sudah ada jurnalnya.
           </p>
         ) : (
           <ul className="space-y-3">
@@ -70,27 +55,6 @@ export function PanelNotifikasi({
                   <p className="text-muted-foreground">
                     {kelas.guruNama} · {kelas.jamMulai}–{kelas.jamSelesai} ·{" "}
                     {kelas.cabang}
-                  </p>
-                </div>
-              </li>
-            ))}
-            {terbaru.map((jurnal) => (
-              <li
-                key={jurnal.id}
-                className="flex items-start gap-3 rounded-xl border px-4 py-3"
-              >
-                <CheckCircle2
-                  className="mt-0.5 size-4 shrink-0 text-primary"
-                  aria-hidden="true"
-                />
-                <div className="text-sm">
-                  <p className="font-medium">
-                    Jurnal {jurnal.namaKelas} sudah dikirim
-                  </p>
-                  <p className="text-muted-foreground">
-                    {jurnal.guruNama} · pukul{" "}
-                    {jamKirim.format(jurnal.createdAt)} · {jurnal.jumlahHadir}{" "}
-                    dari {jurnal.jumlahMurid} murid hadir
                   </p>
                 </div>
               </li>

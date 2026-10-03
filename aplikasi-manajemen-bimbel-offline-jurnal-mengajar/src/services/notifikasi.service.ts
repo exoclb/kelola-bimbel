@@ -7,6 +7,15 @@ import type {
   TandaiBacaInput,
 } from "@/validators/notifikasi";
 
+/** Satu notifikasi seperti yang dikirim ke klien. */
+export type NotifikasiTersimpan = {
+  id: string;
+  tipe: string;
+  pesan: string;
+  sudahDibaca: boolean;
+  createdAt: Date;
+};
+
 // Kolom yang dikirim ke klien; pemilik baris tidak pernah ikut keluar.
 const fields = {
   id: notifications.id,
@@ -20,7 +29,15 @@ const fields = {
 export async function listNotifikasi(
   userId: string,
   { limit, offset, belumDibaca }: ListNotifikasiInput,
-) {
+): Promise<{
+  data: NotifikasiTersimpan[];
+  meta: {
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+    belumDibaca: number;
+  };
+}> {
   const syarat = [eq(notifications.userId, userId)];
   if (belumDibaca) syarat.push(eq(notifications.sudahDibaca, false));
 

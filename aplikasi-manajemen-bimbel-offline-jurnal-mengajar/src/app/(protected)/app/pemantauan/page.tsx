@@ -10,6 +10,7 @@ import {
   ringkasanAnyGuruHariIni,
   type KehadiranJurnal,
 } from "@/services/pemantauan.service";
+import { listNotifikasi } from "@/services/notifikasi.service";
 
 export const metadata: Metadata = { title: "Pemantauan Harian" };
 
@@ -50,10 +51,12 @@ export default async function PemantauanPage({
   const filter = { tanggal, ...nilai };
 
   const hari = namaHari(sekarang);
-  const [hasil, statusGuru, kelasKosong] = await Promise.all([
+  const [hasil, statusGuru, kelasKosong, notifikasi] = await Promise.all([
     listAnyJurnal({ ...filter, limit: 50, offset: 0 }),
     ringkasanAnyGuruHariIni(hari, filter),
     kelasKosongHariIni(hari, filter),
+    // Antrean pemberitahuan milik owner yang sedang masuk.
+    listNotifikasi(user.id, { limit: 5, offset: 0, belumDibaca: undefined }),
   ]);
 
   const kehadiran: Record<string, KehadiranJurnal[]> = {};
@@ -71,6 +74,8 @@ export default async function PemantauanPage({
       data={hasil.data}
       statusGuru={statusGuru}
       kelasKosong={kelasKosong}
+      notifikasi={notifikasi.data}
+      belumDibaca={notifikasi.meta.belumDibaca}
       kehadiran={kehadiran}
       saring={{
         kelas: opsi.daftarKelas,

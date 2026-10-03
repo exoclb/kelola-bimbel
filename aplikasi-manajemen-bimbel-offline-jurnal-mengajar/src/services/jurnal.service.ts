@@ -1,14 +1,27 @@
 import "server-only";
-import { and, asc, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gte,
+  ilike,
+  inArray,
+  lte,
+  or,
+  sql,
+} from "drizzle-orm";
 import { db } from "@/db";
 import {
   classes,
   journalAttendances,
+  notifications,
   schedules,
   students,
   teachingJournals,
   user,
 } from "@/db/schema";
+import { formatJam } from "@/lib/jurnal";
 import { tanggalISO } from "@/lib/tanggal";
 import type {
   KoreksiJurnalInput,
@@ -61,9 +74,11 @@ export async function simpanJurnal(
     .select({
       id: schedules.id,
       classId: schedules.classId,
+      namaKelas: classes.namaKelas,
       jamMengajar: sql<number>`round(extract(epoch from (${schedules.jamSelesai} - ${schedules.jamMulai})) / 3600, 2)::float8`,
     })
     .from(schedules)
+    .innerJoin(classes, eq(schedules.classId, classes.id))
     .where(and(eq(schedules.id, input.jadwalId), eq(schedules.guruId, guruId)))
     .limit(1);
   if (!jadwal) return { status: "jadwal_tidak_ada" };
@@ -82,6 +97,26 @@ export async function simpanJurnal(
   }
 
   const tanggal = tanggalISO(new Date());
+
+  // Pemberitahuan hanya dibuat saat jurnal pertama kali masuk; kirim ulang
+  // (memperbarui jurnal) tidak menambah antrean owner lagi.
+  const [sudahAda] = await db
+    .select({ id: teachingJournals.id })
+    .from(teachingJournals)
+    .where(
+      and(
+        eq(teachingJournals.guruId, guruId),
+        eq(teachingJournals.scheduleId, jadwal.id),
+        eq(teachingJournals.tanggal, tanggal),
+      ),
+    )
+    .limit(1);
+
+  const [guru] = await db
+    .select({ nama: user.name })
+    .from(user)
+    .where(eq(user.id, guruId))
+    .limit(1);
 
   return db.transaction(async (tx) => {
     const [jurnal] = await tx
@@ -126,6 +161,23 @@ export async function simpanJurnal(
           catatan: baris.catatan,
         })),
       );
+    }
+
+    if (!sudahAda) {
+      const penerima = await tx
+        .select({ id: user.id })
+        .from(user)
+        .where(or(ilike(user.role, "%owner%"), ilike(user.role, "%admin%")));
+
+      if (penerima.length > 0) {
+        await tx.insert(notifications).values(
+          penerima.map((pemilik) => ({
+            userId: pemilik.id,
+            tipe: "jurnal_baru",
+            pesan: `Jurnal ${jadwal.namaKelas} sudah dikirim ${guru?.nama ?? "guru"} · ${formatJam(jadwal.jamMengajar)}`,
+          })),
+        );
+      }
     }
 
     const kehadiran = await tx
