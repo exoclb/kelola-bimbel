@@ -354,3 +354,109 @@ export async function rekapGajiAnyGuru(
   if (!guru) return null;
   return rekapGajiGuru(periode, guru);
 }
+
+export type RingkasanGajiBulanan = {
+  periode: string;
+  jumlahGuru: number;
+  totalJam: number;
+  totalGaji: number;
+  jumlahDibayar: number;
+};
+
+export type RiwayatGaji = {
+  daftar: RingkasanGajiBulanan[];
+  tahunTersedia: number[];
+};
+
+/**
+ * Riwayat gaji per bulan: berapa guru, berapa jam, dan berapa totalnya, dihitung
+ * dari jurnal bulan itu dengan tarif yang berlaku saat itu juga — sehingga
+ * kenaikan tarif tidak mengubah angka bulan-bulan sebelumnya. `bulan` boleh
+ * diisi (`01`–`12`) untuk menyaring satu bulan saja. Dipakai owner.
+ */
+export async function riwayatGajiAny(
+  tahun: number,
+  bulan?: string,
+): Promise<RiwayatGaji> {
+  const rentang = bulan
+    ? rentangBulan(`${tahun}-${bulan}`)
+    : { awal: `${tahun}-01-01`, akhir: `${tahun}-12-31` };
+
+  const [agregat, tarif, dibayar, tahunBaris] = await Promise.all([
+    db
+      .select({
+        periode:
+          sql<string>`to_char(${teachingJournals.tanggal}, 'YYYY-MM')`.as(
+            "periode",
+          ),
+        jumlahGuru:
+          sql<number>`count(distinct ${teachingJournals.guruId})::int`.as(
+            "jumlah_guru",
+          ),
+        totalJam:
+          sql<number>`coalesce(sum(${teachingJournals.jamMengajar}), 0)::float8`.as(
+            "total_jam",
+          ),
+      })
+      .from(teachingJournals)
+      .where(
+        and(
+          gte(teachingJournals.tanggal, rentang.awal),
+          lte(teachingJournals.tanggal, rentang.akhir),
+        ),
+      )
+      .groupBy(sql`to_char(${teachingJournals.tanggal}, 'YYYY-MM')`)
+      .orderBy(desc(sql`to_char(${teachingJournals.tanggal}, 'YYYY-MM')`)),
+    db
+      .select({
+        berlakuSejak: salarySettings.berlakuSejak,
+        tarifPerJam: salarySettings.tarifPerJam,
+      })
+      .from(salarySettings)
+      .orderBy(desc(salarySettings.berlakuSejak)),
+    db
+      .select({
+        periode: salaryRecaps.periodeBulan,
+        jumlahDibayar:
+          sql<number>`count(*) filter (where ${salaryRecaps.statusPembayaran} = 'dibayar')::int`.as(
+            "jumlah_dibayar",
+          ),
+      })
+      .from(salaryRecaps)
+      .where(eq(salaryRecaps.statusPembayaran, "dibayar"))
+      .groupBy(salaryRecaps.periodeBulan),
+    db
+      .select({
+        tahun:
+          sql<number>`distinct extract(year from ${teachingJournals.tanggal})::int`.as(
+            "tahun",
+          ),
+      })
+      .from(teachingJournals)
+      // SELECT DISTINCT menuntut ORDER BY memakai ekspresi yang sama persis.
+      .orderBy(desc(sql`extract(year from ${teachingJournals.tanggal})::int`)),
+  ]);
+
+  const dibayarPerPeriode = new Map(
+    dibayar.map((baris) => [baris.periode, baris.jumlahDibayar]),
+  );
+
+  return {
+    daftar: agregat.map((baris) => {
+      // Tarif yang berlaku: pengaturan terbaru yang tidak melewati akhir bulan
+      // itu (daftar `tarif` sudah urut dari yang paling baru).
+      const akhirBulan = rentangBulan(baris.periode).akhir;
+      const nilaiTarif =
+        tarif.find((pengaturan) => pengaturan.berlakuSejak <= akhirBulan)
+          ?.tarifPerJam ?? 0;
+      return {
+        periode: baris.periode,
+        jumlahGuru: baris.jumlahGuru,
+        totalJam: baris.totalJam,
+        totalGaji: hitungGaji(baris.totalJam, nilaiTarif),
+        jumlahDibayar: dibayarPerPeriode.get(baris.periode) ?? 0,
+      };
+    }),
+    tahunTersedia: tahunBaris.map((baris) => baris.tahun),
+  };
+}

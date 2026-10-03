@@ -38,3 +38,16 @@ export const slipGajiSchema = z
   .strict();
 
 export type SlipGajiInput = z.infer<typeof slipGajiSchema>;
+
+// Riwayat gaji: satu tahun wajib, satu bulan opsional, keduanya untuk saringan.
+export const riwayatGajiSchema = z
+  .object({
+    tahun: z.coerce.number().int().min(2000).max(2100),
+    bulan: z
+      .string()
+      .regex(/^(0[1-9]|1[0-2])$/, "Pakai format bulan 01-12.")
+      .optional(),
+  })
+  .strict();
+
+export type RiwayatGajiInput = z.infer<typeof riwayatGajiSchema>;
