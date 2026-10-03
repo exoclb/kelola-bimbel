@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "82c0718cce3310dcb0765cc8a6450fef5f7176d6",
+  "generatedForCommit": "c25c7c0816d3ec0c9d0a5c2a8ff0c881652cf041",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -172,7 +172,7 @@
     },
     {
       "path": "docs/backend.md",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "markdown",
       "size": 23729
     },
@@ -255,6 +255,12 @@
       "size": 1062
     },
     {
+      "path": "drizzle/0008_jadwal_unik.sql",
+      "reason": "new",
+      "language": "sql",
+      "size": 110
+    },
+    {
       "path": "drizzle/meta/0000_snapshot.json",
       "reason": "needs_summary",
       "language": "json",
@@ -303,10 +309,16 @@
       "size": 37717
     },
     {
-      "path": "drizzle/meta/_journal.json",
-      "reason": "needs_summary",
+      "path": "drizzle/meta/0008_snapshot.json",
+      "reason": "new",
       "language": "json",
-      "size": 1157
+      "size": 38452
+    },
+    {
+      "path": "drizzle/meta/_journal.json",
+      "reason": "changed",
+      "language": "json",
+      "size": 1296
     },
     {
       "path": "drizzle.config.ts",
@@ -358,7 +370,7 @@
     },
     {
       "path": "next-env.d.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 296
     },
@@ -670,7 +682,7 @@
     },
     {
       "path": "src/app/api/murid/route.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1021
     },
@@ -1078,9 +1090,9 @@
     },
     {
       "path": "src/db/schema/schedules.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 1030
+      "size": 1393
     },
     {
       "path": "src/db/schema/session.ts",
@@ -1240,7 +1252,7 @@
     },
     {
       "path": "src/services/murid.service.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1996
     },
@@ -1264,7 +1276,7 @@
     },
     {
       "path": "src/validators/gaji.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1380
     },
@@ -1276,13 +1288,13 @@
     },
     {
       "path": "src/validators/jurnal.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 3471
     },
     {
       "path": "src/validators/murid.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 918
     },
@@ -1300,7 +1312,7 @@
     },
     {
       "path": "src/validators/tanggal.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 878
     },
