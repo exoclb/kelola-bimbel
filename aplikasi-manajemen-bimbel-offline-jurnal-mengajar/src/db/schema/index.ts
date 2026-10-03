@@ -6,6 +6,7 @@ export * from "./verification";
 export * from "./notes";
 export * from "./classes";
 export * from "./students";
+export * from "./student-enrollments";
 export * from "./schedules";
 export * from "./teaching-journals";
 export * from "./journal-attendances";

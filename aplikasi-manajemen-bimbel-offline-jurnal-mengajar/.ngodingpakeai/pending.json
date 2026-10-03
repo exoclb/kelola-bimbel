@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "c25c7c0816d3ec0c9d0a5c2a8ff0c881652cf041",
+  "generatedForCommit": "77bd1978958fe25e12da3f1db6e1eeb1b5c77000",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -172,9 +172,9 @@
     },
     {
       "path": "docs/backend.md",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "markdown",
-      "size": 23729
+      "size": 25213
     },
     {
       "path": "docs/deployment.md",
@@ -256,7 +256,7 @@
     },
     {
       "path": "drizzle/0008_jadwal_unik.sql",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "sql",
       "size": 110
     },
@@ -310,13 +310,13 @@
     },
     {
       "path": "drizzle/meta/0008_snapshot.json",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "json",
       "size": 38452
     },
     {
       "path": "drizzle/meta/_journal.json",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "json",
       "size": 1296
     },
@@ -679,6 +679,24 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 1586
+    },
+    {
+      "path": "src/app/api/kelas/route.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1085
+    },
+    {
+      "path": "src/app/api/kelas/[id]/jadwal/route.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1222
+    },
+    {
+      "path": "src/app/api/kelas/[id]/jadwal/[jadwalId]/route.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 748
     },
     {
       "path": "src/app/api/murid/route.ts",
@@ -1090,7 +1108,7 @@
     },
     {
       "path": "src/db/schema/schedules.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1393
     },
@@ -1251,6 +1269,12 @@
       "size": 11761
     },
     {
+      "path": "src/services/kelas.service.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 6151
+    },
+    {
       "path": "src/services/murid.service.ts",
       "reason": "needs_summary",
       "language": "typescript",
@@ -1291,6 +1315,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 3471
+    },
+    {
+      "path": "src/validators/kelas.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1928
     },
     {
       "path": "src/validators/murid.ts",
