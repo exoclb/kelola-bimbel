@@ -93,6 +93,7 @@ export function FormJadwalKelas({ jadwalAda, onTambah }: FormJadwalKelasProps) {
           id={`${idForm}-mulai`}
           label="Jam mulai"
           type="time"
+          required
           value={jamMulai}
           onChange={(event) => {
             setJamMulai(event.target.value);
@@ -104,6 +105,7 @@ export function FormJadwalKelas({ jadwalAda, onTambah }: FormJadwalKelasProps) {
           id={`${idForm}-selesai`}
           label="Jam selesai"
           type="time"
+          required
           value={jamSelesai}
           error={galatJam}
           onChange={(event) => {

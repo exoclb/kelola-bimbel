@@ -91,6 +91,7 @@ export function FormTambahMurid({ onTambah }: FormTambahMuridProps) {
             <IsianTeks
               id="nama"
               label="Nama murid"
+              required
               value={nama}
               maxLength={120}
               error={galat.nama}
@@ -104,6 +105,7 @@ export function FormTambahMurid({ onTambah }: FormTambahMuridProps) {
               id="tanggalLahir"
               label="Tanggal lahir"
               type="date"
+              required
               value={tanggalLahir}
               max={tanggalISO(new Date())}
               error={galat.tanggalLahir}

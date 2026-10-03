@@ -89,8 +89,9 @@ export function FormTambahKelas({ onTambah }: FormTambahKelasProps) {
         <form onSubmit={simpan} className="space-y-4" noValidate>
           <div className="grid gap-4 sm:grid-cols-2">
             <IsianTeks
-              id={"namaKelas"}
+              id="namaKelas"
               label="Nama kelas"
+              required
               value={namaKelas}
               maxLength={120}
               placeholder="Misalnya: Matematika SD Kelas 5"
@@ -104,8 +105,9 @@ export function FormTambahKelas({ onTambah }: FormTambahKelasProps) {
               }}
             />
             <IsianTeks
-              id={"cabang"}
+              id="cabang"
               label="Cabang"
+              required
               value={cabang}
               maxLength={120}
               placeholder="Misalnya: Cabang Pusat"
@@ -119,7 +121,7 @@ export function FormTambahKelas({ onTambah }: FormTambahKelasProps) {
               }}
             />
             <IsianPilih
-              id={"guruNama"}
+              id="guruNama"
               label="Guru pengampu"
               value={guruNama}
               onChange={(event) => setGuruNama(event.target.value)}
@@ -131,7 +133,7 @@ export function FormTambahKelas({ onTambah }: FormTambahKelasProps) {
               ))}
             </IsianPilih>
             <IsianPilih
-              id={"hari"}
+              id="hari"
               label="Hari"
               value={hari}
               onChange={(event) => setHari(event.target.value)}
@@ -143,8 +145,9 @@ export function FormTambahKelas({ onTambah }: FormTambahKelasProps) {
               ))}
             </IsianPilih>
             <IsianTeks
-              id={"jamMulai"}
+              id="jamMulai"
               label="Jam mulai"
+              required
               type="time"
               value={jamMulai}
               onChange={(event) => {
@@ -156,8 +159,9 @@ export function FormTambahKelas({ onTambah }: FormTambahKelasProps) {
               }}
             />
             <IsianTeks
-              id={"jamSelesai"}
+              id="jamSelesai"
               label="Jam selesai"
+              required
               type="time"
               value={jamSelesai}
               error={galat.jamSelesai}

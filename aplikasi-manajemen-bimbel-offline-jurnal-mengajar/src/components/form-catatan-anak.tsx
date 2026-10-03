@@ -96,6 +96,7 @@ export function FormCatatanAnak({
           id={`${idForm}-tanggal`}
           label="Tanggal"
           type="date"
+          required
           value={tanggal}
           max={tanggalISO(new Date())}
           error={galatTanggal}
@@ -108,6 +109,7 @@ export function FormCatatanAnak({
           id={`${idForm}-nilai`}
           label="Nilai"
           type="number"
+          required
           inputMode="numeric"
           min={0}
           max={100}
