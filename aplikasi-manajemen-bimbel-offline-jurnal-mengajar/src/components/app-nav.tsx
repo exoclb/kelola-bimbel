@@ -8,6 +8,7 @@ const TAUTAN = [
   { href: "/app", label: "Beranda" },
   { href: "/app/jurnal", label: "Isi Jurnal" },
   { href: "/app/jurnal/riwayat", label: "Riwayat" },
+  { href: "/app/murid", label: "Murid" },
 ];
 
 /**

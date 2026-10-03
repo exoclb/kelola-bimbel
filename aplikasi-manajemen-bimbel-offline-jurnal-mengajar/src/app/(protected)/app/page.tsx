@@ -7,6 +7,7 @@ import {
   NotebookPen,
   Plus,
   ShieldCheck,
+  Users,
   Wallet,
 } from "lucide-react";
 import Link from "next/link";
@@ -56,6 +57,12 @@ export default async function AppPage() {
             <Link href="/app/jurnal/riwayat">
               <History aria-hidden="true" />
               Riwayat Jurnal
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/app/murid">
+              <Users aria-hidden="true" />
+              Daftar Murid
             </Link>
           </Button>
         </div>

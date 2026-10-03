@@ -41,3 +41,15 @@ export function formatTanggalLengkap(tanggal: Date | string) {
     year: "numeric",
   }).format(nilai);
 }
+
+/** Usia dalam tahun penuh pada hari ini, dihitung dari tanggal lahir. */
+export function hitungUsia(tanggalLahir: string, sekarang = new Date()) {
+  const lahir = new Date(`${tanggalLahir}T00:00:00`);
+  let usia = sekarang.getFullYear() - lahir.getFullYear();
+  const belumUlangTahun =
+    sekarang.getMonth() < lahir.getMonth() ||
+    (sekarang.getMonth() === lahir.getMonth() &&
+      sekarang.getDate() < lahir.getDate());
+  if (belumUlangTahun) usia -= 1;
+  return usia;
+}
