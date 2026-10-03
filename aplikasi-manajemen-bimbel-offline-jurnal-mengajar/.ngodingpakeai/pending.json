@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "9676cc95de43562ffa2712035341323880a0aa91",
+  "generatedForCommit": "6a4daed5894334c9fe63930d8e70700872ab9fd5",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -174,7 +174,7 @@
       "path": "docs/backend.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 32317
+      "size": 33335
     },
     {
       "path": "docs/deployment.md",
@@ -706,9 +706,9 @@
     },
     {
       "path": "src/app/api/kehadiran/route.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 669
+      "size": 703
     },
     {
       "path": "src/app/api/kelas/route.ts",
@@ -766,21 +766,27 @@
     },
     {
       "path": "src/app/api/perkembangan/ringkasan/route.ts",
+      "reason": "changed",
+      "language": "typescript",
+      "size": 759
+    },
+    {
+      "path": "src/app/api/perkembangan/riwayat/route.ts",
       "reason": "new",
       "language": "typescript",
-      "size": 725
+      "size": 861
     },
     {
       "path": "src/app/api/perkembangan/route.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 1401
+      "size": 1508
     },
     {
       "path": "src/app/api/perkembangan/[id]/route.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 1857
+      "size": 2048
     },
     {
       "path": "src/app/error.tsx",
@@ -1294,9 +1300,9 @@
     },
     {
       "path": "src/lib/permissions.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 1922
+      "size": 2421
     },
     {
       "path": "src/lib/session.ts",
@@ -1342,7 +1348,7 @@
     },
     {
       "path": "src/services/kehadiran.service.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 4416
     },
@@ -1354,9 +1360,9 @@
     },
     {
       "path": "src/services/murid.service.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 2135
+      "size": 2391
     },
     {
       "path": "src/services/notes.service.ts",
@@ -1380,7 +1386,7 @@
       "path": "src/services/perkembangan.service.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 10438
+      "size": 12169
     },
     {
       "path": "src/validators/gaji.ts",
@@ -1432,9 +1438,9 @@
     },
     {
       "path": "src/validators/perkembangan.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 1887
+      "size": 2314
     },
     {
       "path": "src/validators/tanggal.ts",
