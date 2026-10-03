@@ -153,3 +153,21 @@ export function getRiwayatGaji(): RingkasanGajiBulanan[] {
 
   return daftar;
 }
+
+/**
+ * Rekap gaji untuk guru yang sedang masuk. Angka jamnya masih contoh, tetapi
+ * nama dan akun diambil dari sesi yang asli. Di backend nanti fungsi ini
+ * menjadi query jurnal milik guru tersebut pada periode itu.
+ */
+export function getRekapGajiSaya(
+  periode: string,
+  guru: { id: string; nama: string; email: string },
+): BarisRekapGaji {
+  const contoh = getRekapGajiBulanan(periode).daftar[0];
+  return {
+    ...contoh,
+    guruId: guru.id,
+    guruNama: guru.nama,
+    guruEmail: guru.email,
+  };
+}

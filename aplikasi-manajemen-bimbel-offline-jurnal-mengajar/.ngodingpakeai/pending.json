@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "21374dff8c65a588e5fd5a563e93d9a4338d27fc",
+  "generatedForCommit": "b583cd494967537a6d27a64dfde34c93f5d0fabc",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -447,6 +447,12 @@
       "size": 941
     },
     {
+      "path": "src/app/(protected)/app/gaji/riwayat/page.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1338
+    },
+    {
       "path": "src/app/(protected)/app/gaji/slip/[guruId]/page.tsx",
       "reason": "needs_summary",
       "language": "typescript",
@@ -604,7 +610,7 @@
     },
     {
       "path": "src/components/daftar-gaji-guru.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 5477
     },
@@ -690,7 +696,13 @@
       "path": "src/components/rekap-gaji-bulanan.tsx",
       "reason": "changed",
       "language": "typescript",
-      "size": 3463
+      "size": 3794
+    },
+    {
+      "path": "src/components/riwayat-gaji.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 6577
     },
     {
       "path": "src/components/saring-pemantauan.tsx",
@@ -886,9 +898,9 @@
     },
     {
       "path": "src/lib/mock-gaji.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 3261
+      "size": 4682
     },
     {
       "path": "src/lib/mock-jurnal.ts",
