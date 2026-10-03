@@ -54,6 +54,7 @@ Operasi jurnal milik guru ada di `src/services/jurnal.service.ts` (simpan, riway
 | GET    | `/api/admin/jurnal`         | 200, owner melihat jurnal semua guru pada satu tanggal                  |
 | GET    | `/api/admin/jurnal/:id`     | 200, owner membuka detail satu jurnal guru siapa pun                    |
 | GET    | `/api/admin/ringkasan-guru` | 200, ringkasan harian: jadwal & status jurnal tiap guru                 |
+| GET    | `/api/admin/opsi-saring`    | 200, pilihan saringan pantauan: kelas, guru, dan cabang                 |
 | GET    | `/api/notifikasi`           | 200, notifikasi milik akun yang sedang masuk (bisa saring belum dibaca) |
 | PATCH  | `/api/notifikasi`           | 200, tandai notifikasi tertentu atau semua sebagai sudah dibaca         |
 | POST   | `/api/jurnal`               | 200, simpan & kirim jurnal mengajar (idempoten per jadwal + tanggal)    |
@@ -74,6 +75,8 @@ Operasi jurnal milik guru ada di `src/services/jurnal.service.ts` (simpan, riway
 `GET /api/admin/jurnal/:id` membuka detail satu jurnal guru siapa pun untuk owner, lengkap dengan nama/email gurunya dan `kehadiran: [{ muridId, nama, hadir, catatan }]`. Bentuk isinya sama dengan `GET /api/jurnal/:id`, hanya saja tidak dibatasi pemilik, jadi endpoint ini juga dijaga `jurnal: read-any` (guru biasa menerima 403) dan id yang tidak ada dijawab 404.
 
 `GET /api/notifikasi` mengembalikan notifikasi milik akun yang sedang masuk, terbaru lebih dulu, dengan `limit` (1–100, bawaan 20), `offset`, dan `belumDibaca=true` untuk menyaring yang belum dibaca. Hasilnya `{ "data": [{ id, tipe, pesan, sudahDibaca, createdAt }], "meta": { limit, offset, hasMore, belumDibaca } }`; `meta.belumDibaca` selalu dihitung dari seluruh notifikasi akun itu, bukan dari halaman yang sedang tampil. `PATCH /api/notifikasi` menerima `{ "ids": [...] }` (maksimal 100 id) atau `{ "semua": true }` dan mengembalikan `{ "jumlah": n }` — jumlah baris yang benar-benar berubah, jadi menandai ulang yang sudah dibaca menghasilkan 0. Penyaring pemilik ada di perintah UPDATE-nya, jadi id milik akun lain tidak pernah tersentuh.
+
+`GET /api/admin/opsi-saring` mengembalikan pilihan yang dipakai tampilan pantauan: `{ "data": { "kelas": [{ classId, namaKelas, cabang }], "guru": [{ guruId, guruNama }], "cabang": ["..."] } }`. Kelas dan cabang berasal dari tabel `classes`, sedangkan `guru` adalah akun yang perannya memuat `user` (akun owner/admin tidak ikut). Dijaga `jurnal: read-any`, jadi hanya owner yang bisa membacanya.
 
 ## Role-based access
 

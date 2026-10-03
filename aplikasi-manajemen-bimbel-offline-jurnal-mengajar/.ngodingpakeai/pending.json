@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "52697b72bed00177ca7051ea315d7a9ce7bff1db",
+  "generatedForCommit": "eb63f7706583d3cefa203373514e1f77a6e47f88",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -174,7 +174,7 @@
       "path": "docs/backend.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 16972
+      "size": 17370
     },
     {
       "path": "docs/deployment.md",
@@ -502,9 +502,9 @@
     },
     {
       "path": "src/app/(protected)/app/pemantauan/page.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 2704
+      "size": 2708
     },
     {
       "path": "src/app/(protected)/layout.tsx",
@@ -514,9 +514,9 @@
     },
     {
       "path": "src/app/api/admin/jurnal/route.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 833
+      "size": 837
     },
     {
       "path": "src/app/api/admin/jurnal/[id]/route.ts",
@@ -538,9 +538,9 @@
     },
     {
       "path": "src/app/api/admin/ringkasan-guru/route.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 1238
+      "size": 1242
     },
     {
       "path": "src/app/api/auth/[...all]/route.ts",
@@ -580,7 +580,7 @@
     },
     {
       "path": "src/app/api/notifikasi/route.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1046
     },
@@ -688,15 +688,15 @@
     },
     {
       "path": "src/components/panel-jurnal.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 4187
+      "size": 4196
     },
     {
       "path": "src/components/panel-notifikasi.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 3447
+      "size": 3451
     },
     {
       "path": "src/components/panel-rincian-jam.tsx",
@@ -706,9 +706,9 @@
     },
     {
       "path": "src/components/pemantauan-harian.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 5937
+      "size": 5941
     },
     {
       "path": "src/components/pemilih-jadwal.tsx",
@@ -772,9 +772,9 @@
     },
     {
       "path": "src/components/status-guru-hari-ini.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 5209
+      "size": 5213
     },
     {
       "path": "src/components/tombol-slip-gaji.tsx",
@@ -994,9 +994,9 @@
     },
     {
       "path": "src/services/jurnal.service.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 21618
+      "size": 11761
     },
     {
       "path": "src/services/notes.service.ts",
@@ -1006,9 +1006,15 @@
     },
     {
       "path": "src/services/notifikasi.service.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2167
+    },
+    {
+      "path": "src/services/pemantauan.service.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 10379
     },
     {
       "path": "src/validators/jadwal.ts",
@@ -1030,7 +1036,7 @@
     },
     {
       "path": "src/validators/notifikasi.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 873
     },
