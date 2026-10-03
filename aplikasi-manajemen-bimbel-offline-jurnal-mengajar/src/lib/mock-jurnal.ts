@@ -82,7 +82,9 @@ const JADWAL_MINGGUAN: JadwalMingguan[] = [
     kelasId: "kls-2",
     namaKelas: "Bahasa Inggris SMP Kelas 7",
     cabang: "Cabang Pusat",
-    hari: ["Selasa", "Kamis", "Sabtu"],
+    // Akhir pekan ikut ada kelasnya supaya halaman jurnal tetap bisa dicoba
+    // kapan pun, tidak hanya Senin–Sabtu.
+    hari: ["Selasa", "Kamis", "Sabtu", "Minggu"],
     jamMulai: "09:00",
     jamSelesai: "10:00",
     murid: MURID_SMP7,
@@ -102,7 +104,7 @@ const JADWAL_MINGGUAN: JadwalMingguan[] = [
     kelasId: "kls-4",
     namaKelas: "Matematika SMP Kelas 8",
     cabang: "Cabang Utara",
-    hari: ["Selasa", "Kamis", "Sabtu"],
+    hari: ["Selasa", "Kamis", "Sabtu", "Minggu"],
     jamMulai: "13:00",
     jamSelesai: "14:30",
     murid: MURID_SMP8,
