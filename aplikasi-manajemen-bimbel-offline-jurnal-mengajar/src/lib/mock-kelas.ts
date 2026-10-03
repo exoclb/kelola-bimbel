@@ -16,7 +16,6 @@ export type Kelas = {
   namaKelas: string;
   cabang: string;
   guruNama: string;
-  jumlahMurid: number;
   jadwal: JadwalKelas[];
 };
 
@@ -29,7 +28,6 @@ const KELAS: Kelas[] = [
     namaKelas: "Matematika SD Kelas 4",
     cabang: "Cabang Pusat",
     guruNama: "Ahmad Fauzi",
-    jumlahMurid: 4,
     jadwal: [
       { hari: "Senin", jamMulai: "07:00", jamSelesai: "08:30" },
       { hari: "Rabu", jamMulai: "07:00", jamSelesai: "08:30" },
@@ -40,7 +38,6 @@ const KELAS: Kelas[] = [
     namaKelas: "Bahasa Inggris SMP Kelas 7",
     cabang: "Cabang Pusat",
     guruNama: "Bella Kartika",
-    jumlahMurid: 3,
     jadwal: [
       { hari: "Selasa", jamMulai: "09:00", jamSelesai: "10:00" },
       { hari: "Kamis", jamMulai: "09:00", jamSelesai: "10:00" },
@@ -51,7 +48,6 @@ const KELAS: Kelas[] = [
     namaKelas: "IPA SD Kelas 6",
     cabang: "Cabang Utara",
     guruNama: "Ahmad Fauzi",
-    jumlahMurid: 5,
     jadwal: [{ hari: "Jumat", jamMulai: "10:30", jamSelesai: "12:00" }],
   },
   {
@@ -59,7 +55,6 @@ const KELAS: Kelas[] = [
     namaKelas: "Calistung TK",
     cabang: "Cabang Pusat",
     guruNama: "Citra Lestari",
-    jumlahMurid: 6,
     jadwal: [{ hari: "Sabtu", jamMulai: "13:00", jamSelesai: "14:00" }],
   },
 ];

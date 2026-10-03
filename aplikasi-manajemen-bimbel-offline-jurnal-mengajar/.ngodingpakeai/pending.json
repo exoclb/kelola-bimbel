@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "59ce5a3e03356988795cb4e20faa69db269b74b9",
+  "generatedForCommit": "e5e97b8b27d69db979c3ae23511373f1197feabd",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -532,7 +532,7 @@
     },
     {
       "path": "src/app/(protected)/app/kelas/page.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 459
     },
@@ -544,7 +544,7 @@
     },
     {
       "path": "src/app/(protected)/app/page.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 6194
     },
@@ -706,7 +706,7 @@
     },
     {
       "path": "src/components/app-nav.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1915
     },
@@ -742,9 +742,9 @@
     },
     {
       "path": "src/components/daftar-kelas.tsx",
-      "reason": "new",
+      "reason": "changed",
       "language": "typescript",
-      "size": 4241
+      "size": 6227
     },
     {
       "path": "src/components/daftar-murid.tsx",
@@ -765,8 +765,14 @@
       "size": 11834
     },
     {
-      "path": "src/components/form-tambah-kelas.tsx",
+      "path": "src/components/form-jadwal-kelas.tsx",
       "reason": "new",
+      "language": "typescript",
+      "size": 3907
+    },
+    {
+      "path": "src/components/form-tambah-kelas.tsx",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 6164
     },
@@ -1084,7 +1090,7 @@
     },
     {
       "path": "src/lib/mock-kelas.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1914
     },

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { DaftarKelas } from "@/components/daftar-kelas";
 import { getDaftarKelas } from "@/lib/mock-kelas";
+import { getDaftarMurid } from "@/lib/mock-murid";
+import { getPenempatanAwal } from "@/lib/mock-penempatan";
 import { requireSession } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Kelas & Jadwal" };
@@ -8,5 +10,11 @@ export const metadata: Metadata = { title: "Kelas & Jadwal" };
 export default async function KelasPage() {
   // Guru dan owner sama-sama boleh melihat kelas; cukup sesi yang sah.
   await requireSession();
-  return <DaftarKelas daftarAwal={getDaftarKelas()} />;
+  return (
+    <DaftarKelas
+      daftarAwal={getDaftarKelas()}
+      daftarMurid={getDaftarMurid()}
+      penempatanAwal={getPenempatanAwal()}
+    />
+  );
 }

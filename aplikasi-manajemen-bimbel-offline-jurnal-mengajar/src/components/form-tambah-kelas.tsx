@@ -56,7 +56,6 @@ export function FormTambahKelas({ onTambah }: FormTambahKelasProps) {
       namaKelas: namaRapi,
       cabang: cabang.trim(),
       guruNama,
-      jumlahMurid: 0,
       jadwal: [{ hari, jamMulai, jamSelesai }],
     });
 
