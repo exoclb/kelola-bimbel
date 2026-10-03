@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "eb63f7706583d3cefa203373514e1f77a6e47f88",
+  "generatedForCommit": "6f0a7c9aba29e6899dbd657c13f5e7ebe395dd62",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -174,7 +174,7 @@
       "path": "docs/backend.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 17370
+      "size": 17882
     },
     {
       "path": "docs/deployment.md",
@@ -502,7 +502,7 @@
     },
     {
       "path": "src/app/(protected)/app/pemantauan/page.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2708
     },
@@ -514,7 +514,7 @@
     },
     {
       "path": "src/app/api/admin/jurnal/route.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 837
     },
@@ -537,8 +537,14 @@
       "size": 758
     },
     {
+      "path": "src/app/api/admin/opsi-saring/route.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 650
+    },
+    {
       "path": "src/app/api/admin/ringkasan-guru/route.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1242
     },
@@ -688,13 +694,13 @@
     },
     {
       "path": "src/components/panel-jurnal.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 4196
     },
     {
       "path": "src/components/panel-notifikasi.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 3451
     },
@@ -706,7 +712,7 @@
     },
     {
       "path": "src/components/pemantauan-harian.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 5941
     },
@@ -772,7 +778,7 @@
     },
     {
       "path": "src/components/status-guru-hari-ini.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 5213
     },
@@ -994,7 +1000,7 @@
     },
     {
       "path": "src/services/jurnal.service.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 11761
     },
@@ -1012,7 +1018,7 @@
     },
     {
       "path": "src/services/pemantauan.service.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 10379
     },

@@ -15,6 +15,10 @@ export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   database: drizzleAdapter(db, { provider: "pg", schema }),
   advanced: { cookiePrefix: `ngodingpakeai-${siteConfig.id}` },
+  // Uji e2e menjalankan server produksi lokal di atas basis data sekali pakai.
+  // Batas laju auth dimatikan di sana supaya berkas uji tidak saling
+  // menghabiskan kuota; produksi tetap memakai batas bawaan Better Auth.
+  rateLimit: process.env.STARTER_TEST_RUN ? { enabled: false } : undefined,
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
