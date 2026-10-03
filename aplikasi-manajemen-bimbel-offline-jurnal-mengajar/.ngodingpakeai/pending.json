@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "5197bdd7f88fd2bc7779c9d3bb6cd2db3e55e534",
+  "generatedForCommit": "74cfd439b2b7edabf3fd96c5efb9912b2ce2ec43",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -466,15 +466,15 @@
     },
     {
       "path": "src/app/(protected)/app/pemantauan/page.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2704
     },
     {
       "path": "src/app/(protected)/layout.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 729
+      "size": 1087
     },
     {
       "path": "src/app/api/admin/jurnal/route.ts",
@@ -567,6 +567,12 @@
       "size": 823
     },
     {
+      "path": "src/components/app-nav.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1586
+    },
+    {
       "path": "src/components/auth-form.tsx",
       "reason": "needs_summary",
       "language": "typescript",
@@ -628,13 +634,13 @@
     },
     {
       "path": "src/components/panel-notifikasi.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 3447
     },
     {
       "path": "src/components/pemantauan-harian.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 5937
     },
@@ -868,7 +874,7 @@
     },
     {
       "path": "src/services/jurnal.service.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 20935
     },

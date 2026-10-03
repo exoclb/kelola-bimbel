@@ -11,15 +11,23 @@ const TAUTAN = [
 ];
 
 /**
- * Menu utama aplikasi. Menu Pemantauan hanya ditampilkan kalau akunnya memang
- * boleh membukanya; ini murni tampilan — halaman dan API-nya tetap memeriksa
+ * Menu utama aplikasi. Menu Pemantauan dan Gaji hanya ditampilkan kalau
+ * akunnya memang boleh membukanya; ini murni tampilan — halaman dan API-nya tetap memeriksa
  * izin sendiri, jadi menyembunyikan menu bukan pengaman.
  */
-export function AppNav({ pemantauan }: { pemantauan: boolean }) {
+export function AppNav({
+  pemantauan,
+  gaji,
+}: {
+  pemantauan: boolean;
+  gaji: boolean;
+}) {
   const pathname = usePathname();
-  const daftar = pemantauan
-    ? [...TAUTAN, { href: "/app/pemantauan", label: "Pemantauan" }]
-    : TAUTAN;
+  const daftar = [
+    ...TAUTAN,
+    ...(pemantauan ? [{ href: "/app/pemantauan", label: "Pemantauan" }] : []),
+    ...(gaji ? [{ href: "/app/gaji", label: "Gaji" }] : []),
+  ];
   const hrefAktif = daftar
     .map((tautan) => tautan.href)
     .filter((href) => pathname === href || pathname.startsWith(`${href}/`))

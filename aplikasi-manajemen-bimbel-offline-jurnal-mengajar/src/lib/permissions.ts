@@ -12,6 +12,8 @@ export const statement = {
   // Guru hanya melihat jurnalnya sendiri lewat sesi; aksi ini memberi owner
   // (dan admin) kemampuan membaca jurnal guru lain.
   jurnal: ["read-any"],
+  // Rekap gaji seluruh guru hanya untuk owner.
+  gaji: ["read-any"],
 } as const;
 
 export const ac = createAccessControl(statement);
@@ -20,12 +22,13 @@ export const ac = createAccessControl(statement);
 // signed-in default should be able to do nothing beyond its own records.
 export const roles = {
   user: ac.newRole({ notes: [] }),
-  // Pemilik bimbel: memantau jurnal semua guru, tanpa hak admin sistem.
-  owner: ac.newRole({ jurnal: ["read-any"] }),
+  // Pemilik bimbel: memantau jurnal dan gaji semua guru, tanpa hak admin sistem.
+  owner: ac.newRole({ jurnal: ["read-any"], gaji: ["read-any"] }),
   admin: ac.newRole({
     ...adminAc.statements,
     notes: ["read-any", "delete-any"],
     jurnal: ["read-any"],
+    gaji: ["read-any"],
   }),
 } as const;
 

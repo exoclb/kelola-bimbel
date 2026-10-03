@@ -7,6 +7,7 @@ import {
   NotebookPen,
   Plus,
   ShieldCheck,
+  Wallet,
 } from "lucide-react";
 import Link from "next/link";
 import { hasPermission, requireSession } from "@/lib/session";
@@ -22,6 +23,7 @@ export default async function AppPage() {
   const isAdmin = await hasPermission(user.id, { notes: ["read-any"] });
   // Hanya menampilkan pintasan; halaman & API pemantauan menjaga dirinya sendiri.
   const isOwner = await hasPermission(user.id, { jurnal: ["read-any"] });
+  const bisaLihatGaji = await hasPermission(user.id, { gaji: ["read-any"] });
   const prompt =
     "Read AGENTS.md and use the build-feature skill. Replace the blank app page with [describe your first feature]. Keep authentication working, store any user data with Drizzle and PostgreSQL, and use Context7 to check library APIs.";
 
@@ -86,6 +88,19 @@ export default async function AppPage() {
             <Link href="/app/pemantauan">
               <Eye aria-hidden="true" />
               Buka pemantauan
+            </Link>
+          </Button>
+        </div>
+      )}
+      {bisaLihatGaji && (
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-card px-5 py-4">
+          <p className="text-sm leading-6 text-muted-foreground">
+            Hitung gaji guru bulan ini dari jam mengajar yang tercatat.
+          </p>
+          <Button variant="outline" asChild size="sm">
+            <Link href="/app/gaji">
+              <Wallet aria-hidden="true" />
+              Buka rekap gaji
             </Link>
           </Button>
         </div>

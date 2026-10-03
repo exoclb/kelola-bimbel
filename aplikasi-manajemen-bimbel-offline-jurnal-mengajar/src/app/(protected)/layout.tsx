@@ -11,8 +11,11 @@ export default async function ProtectedLayout({
   children: React.ReactNode;
 }) {
   const { user } = await requireSession();
-  // Menu Pemantauan hanya untuk yang punya izin membacanya.
-  const bolehPantau = await hasPermission(user.id, { jurnal: ["read-any"] });
+  // Menu Pemantauan dan Gaji hanya untuk yang punya izin membacanya.
+  const [bolehPantau, bolehGaji] = await Promise.all([
+    hasPermission(user.id, { jurnal: ["read-any"] }),
+    hasPermission(user.id, { gaji: ["read-any"] }),
+  ]);
 
   return (
     <>
@@ -20,7 +23,7 @@ export default async function ProtectedLayout({
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-6 py-4 sm:px-10">
           <Brand />
           <div className="flex flex-wrap items-center gap-4">
-            <AppNav pemantauan={bolehPantau} />
+            <AppNav pemantauan={bolehPantau} gaji={bolehGaji} />
             <SignOutButton />
           </div>
         </div>
