@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "320e4104c37fba48b3a00caea17ed16d797233c0",
+  "generatedForCommit": "c46636d107589103072fbc5d112c016dea509777",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -174,7 +174,7 @@
       "path": "docs/backend.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 29048
+      "size": 30387
     },
     {
       "path": "docs/deployment.md",
@@ -268,7 +268,7 @@
     },
     {
       "path": "drizzle/0010_catatan_perkembangan.sql",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "sql",
       "size": 1068
     },
@@ -334,13 +334,13 @@
     },
     {
       "path": "drizzle/meta/0010_snapshot.json",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "json",
       "size": 45441
     },
     {
       "path": "drizzle/meta/_journal.json",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "json",
       "size": 1589
     },
@@ -759,6 +759,18 @@
       "size": 1046
     },
     {
+      "path": "src/app/api/perkembangan/route.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1401
+    },
+    {
+      "path": "src/app/api/perkembangan/[id]/route.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1857
+    },
+    {
       "path": "src/app/error.tsx",
       "reason": "needs_summary",
       "language": "typescript",
@@ -1102,7 +1114,7 @@
     },
     {
       "path": "src/db/schema/index.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 610
     },
@@ -1162,7 +1174,7 @@
     },
     {
       "path": "src/db/schema/student-progress.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1619
     },
@@ -1347,6 +1359,12 @@
       "size": 11588
     },
     {
+      "path": "src/services/perkembangan.service.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 5863
+    },
+    {
       "path": "src/validators/gaji.ts",
       "reason": "needs_summary",
       "language": "typescript",
@@ -1387,6 +1405,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 873
+    },
+    {
+      "path": "src/validators/perkembangan.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1887
     },
     {
       "path": "src/validators/tanggal.ts",
