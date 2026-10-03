@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AlertTriangle, Plus, RefreshCw } from "lucide-react";
+import { ContohPenjagaIzin } from "@/components/contoh-penjaga-izin";
 import { IsianTeks } from "@/components/isian-form";
 import { Button } from "@/components/ui/button";
 import {
@@ -144,6 +145,13 @@ export default async function ContohStatusPage() {
             keterangan="Boleh dikosongkan; dipakai saat perlu menghubungi wali murid."
           />
         </div>
+      </PanelStatus>
+
+      <PanelStatus
+        judul="Penjaga akses peran di sisi klien"
+        keterangan="Tampilan menyesuaikan peran akun yang sedang masuk. Ini hanya tampilan: halaman dan API tetap memeriksa izinnya sendiri."
+      >
+        <ContohPenjagaIzin />
       </PanelStatus>
 
       <p className="text-sm text-muted-foreground">
