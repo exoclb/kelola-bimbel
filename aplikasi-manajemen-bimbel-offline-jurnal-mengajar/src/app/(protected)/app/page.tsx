@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { ArrowUpRight, Check, Plus, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, Check, NotebookPen, Plus, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { hasPermission, requireSession } from "@/lib/session";
 import { CopyPrompt } from "@/components/copy-prompt";
 import { Button } from "@/components/ui/button";
+import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 
 export const metadata: Metadata = { title: "Your app" };
 
@@ -25,8 +26,22 @@ export default async function AppPage() {
       <p className="mt-3 text-lg leading-7 text-muted-foreground">
         This is your app. Let’s give it something to do.
       </p>
+      <Card className="mt-9 flex-row flex-wrap items-center justify-between gap-4 px-6 py-5">
+        <div className="space-y-1">
+          <CardTitle>Jurnal Ngajar</CardTitle>
+          <CardDescription>
+            Catat kelas yang kamu ajar hari ini lewat pilihan cepat.
+          </CardDescription>
+        </div>
+        <Button asChild>
+          <Link href="/app/jurnal">
+            <NotebookPen aria-hidden="true" />
+            Isi Jurnal Hari Ini
+          </Link>
+        </Button>
+      </Card>
       <section
-        className="mt-9 rounded-2xl border border-dashed bg-card px-6 py-10 sm:px-10"
+        className="mt-6 rounded-2xl border border-dashed bg-card px-6 py-10 sm:px-10"
         aria-labelledby="blank-canvas"
       >
         <div className="mb-6 flex size-12 items-center justify-center rounded-xl border bg-muted">
