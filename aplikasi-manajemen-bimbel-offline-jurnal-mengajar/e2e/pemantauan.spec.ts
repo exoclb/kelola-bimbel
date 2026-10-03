@@ -157,3 +157,27 @@ test("menu dan halaman pemantauan serta rekap gaji hanya untuk owner", async ({
     page.getByRole("link", { name: "Gaji", exact: true }),
   ).toBeVisible();
 });
+
+test("proteksi rute dan pengalihan setelah masuk mengikuti peran", async ({
+  page,
+}) => {
+  // Tanpa sesi, halaman yang dibatasi peran mengalihkan ke halaman masuk.
+  await page.goto("/app/pemantauan");
+  await expect(page).toHaveURL(/\/sign-in$/);
+
+  // Guru mendarat di jurnal (tugas utamanya), bukan di pemantauan.
+  await setRole("user");
+  await masuk(page.request);
+  await page.goto("/sign-in");
+  await expect(page).toHaveURL(/\/app\/jurnal$/);
+  await page.goto("/app/pemantauan");
+  await expect(page.getByText(/This page isn.t here/)).toBeVisible();
+
+  // Owner mendarat di pemantauan harian.
+  await setRole("owner");
+  await page.goto("/sign-in");
+  await expect(page).toHaveURL(/\/app\/pemantauan$/);
+  await expect(
+    page.getByRole("heading", { name: "Pemantauan Harian" }),
+  ).toBeVisible();
+});

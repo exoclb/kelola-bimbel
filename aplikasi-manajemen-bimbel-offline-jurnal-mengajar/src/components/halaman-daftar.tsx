@@ -14,12 +14,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
-import {
-  emailSudahDipakai,
-  labelPeran,
-  type AkunMasuk,
-  type PeranPengguna,
-} from "@/lib/mock-akun";
+import { emailSudahDipakai, type AkunMasuk } from "@/lib/mock-akun";
+import { labelPeran, type PeranPengguna } from "@/lib/peran";
 
 const MIN_SANDI = 8;
 

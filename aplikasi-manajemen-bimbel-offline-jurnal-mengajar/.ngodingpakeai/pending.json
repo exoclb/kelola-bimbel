@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "11bd58c1b9f4dd0f6bba91e81782f9f0df629f27",
+  "generatedForCommit": "45f070430d2553738d6bf38ddadbc1ae01cd96a5",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -172,9 +172,9 @@
     },
     {
       "path": "docs/backend.md",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "markdown",
-      "size": 33335
+      "size": 33995
     },
     {
       "path": "docs/deployment.md",
@@ -352,7 +352,7 @@
     },
     {
       "path": "e2e/auth.spec.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 4451
     },
@@ -396,7 +396,7 @@
       "path": "next-env.d.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 288
+      "size": 296
     },
     {
       "path": "next.config.ts",
@@ -501,6 +501,12 @@
       "size": 3439
     },
     {
+      "path": "src/app/(auth)/atur-ulang-password/page.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 405
+    },
+    {
       "path": "src/app/(auth)/daftar/page.tsx",
       "reason": "needs_summary",
       "language": "typescript",
@@ -511,6 +517,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 662
+    },
+    {
+      "path": "src/app/(auth)/lupa-password/page.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 233
     },
     {
       "path": "src/app/(auth)/masuk/page.tsx",
@@ -622,7 +634,7 @@
     },
     {
       "path": "src/app/(protected)/layout.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1741
     },
@@ -844,9 +856,9 @@
     },
     {
       "path": "src/components/auth-form.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 5349
+      "size": 5612
     },
     {
       "path": "src/components/brand.tsx",
@@ -909,6 +921,12 @@
       "size": 11834
     },
     {
+      "path": "src/components/form-atur-ulang-sandi.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 6061
+    },
+    {
       "path": "src/components/form-catatan-anak.tsx",
       "reason": "needs_summary",
       "language": "typescript",
@@ -919,6 +937,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 3907
+    },
+    {
+      "path": "src/components/form-lupa-sandi.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 4532
     },
     {
       "path": "src/components/form-tambah-kelas.tsx",
@@ -940,9 +964,9 @@
     },
     {
       "path": "src/components/halaman-masuk.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 7246
+      "size": 7519
     },
     {
       "path": "src/components/jurnal-form.tsx",
@@ -1024,7 +1048,7 @@
     },
     {
       "path": "src/components/penanda-pengguna.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1172
     },
@@ -1066,7 +1090,7 @@
     },
     {
       "path": "src/components/sign-out-button.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1264
     },
@@ -1264,9 +1288,9 @@
     },
     {
       "path": "src/lib/auth.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 1665
+      "size": 2187
     },
     {
       "path": "src/lib/env.ts",

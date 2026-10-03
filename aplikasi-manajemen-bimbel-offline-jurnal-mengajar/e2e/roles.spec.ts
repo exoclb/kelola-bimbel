@@ -148,6 +148,8 @@ test("the admin page and its link appear only for a permitted role", async ({
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill("Roles-test-password-123!");
   await page.getByRole("button", { name: "Create account" }).click();
+  await expect(page).toHaveURL(/\/app\/jurnal$/);
+  await page.goto("/app");
   await expect(page.getByRole("heading", { name: /Welcome, / })).toBeVisible();
 
   await expect(page.getByRole("link", { name: "Open admin" })).toHaveCount(0);

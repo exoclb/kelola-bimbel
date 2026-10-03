@@ -28,7 +28,9 @@ test("signup, persisted session, signout, rejected password, and signin work", a
   await page
     .getByRole("button", { name: "Create account", exact: true })
     .click();
-  await expect(page).toHaveURL(/\/app$/);
+  // Akun baru berperan guru, jadi langsung mendarat di halaman jurnal.
+  await expect(page).toHaveURL(/\/app\/jurnal$/);
+  await page.goto("/app");
   await expect(
     page.getByRole("heading", { name: "Welcome, Ada Builder." }),
   ).toBeVisible();
@@ -41,7 +43,8 @@ test("signup, persisted session, signout, rejected password, and signin work", a
     ),
   ).toBe(true);
   await page.goto("/sign-in");
-  await expect(page).toHaveURL(/\/app$/);
+  // Halaman masuk mengalihkan yang sudah masuk ke halaman perannya.
+  await expect(page).toHaveURL(/\/app\/jurnal$/);
   // Penanda pengguna aktif di kepala halaman menampilkan akun yang sedang masuk.
   const kepala = page.getByRole("banner");
   await expect(kepala.getByText("Ada Builder")).toBeVisible();
@@ -59,7 +62,8 @@ test("signup, persisted session, signout, rejected password, and signin work", a
   ).toContainText("Check your email and password");
   await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page).toHaveURL(/\/app$/);
+  // Guru masuk langsung ke halaman jurnal, bukan beranda.
+  await expect(page).toHaveURL(/\/app\/jurnal$/);
   expect(errors).toEqual([]);
 });
 

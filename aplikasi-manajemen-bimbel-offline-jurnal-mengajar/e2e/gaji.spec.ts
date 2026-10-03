@@ -209,7 +209,8 @@ test("halaman rekap gaji semua guru hanya untuk owner", async ({ page }) => {
   await page.getByLabel("Email").fill(emailGuru);
   await page.getByLabel("Password").fill(sandi);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page.getByRole("heading", { name: /Welcome, / })).toBeVisible();
+  // Guru masuk langsung ke halaman jurnal, bukan beranda.
+  await expect(page).toHaveURL(/\/app\/jurnal$/);
 
   // Guru hanya melihat menu & halaman gajinya sendiri.
   await expect(page.getByRole("link", { name: "Gaji saya" })).toBeVisible();

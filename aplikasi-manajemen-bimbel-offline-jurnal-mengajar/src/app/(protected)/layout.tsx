@@ -3,7 +3,8 @@ import { Brand } from "@/components/brand";
 import { PenandaPengguna } from "@/components/penanda-pengguna";
 import { SignOutButton } from "@/components/sign-out-button";
 import { hasPermission, requireSession } from "@/lib/session";
-import { menuUntukPeran, peranDariRole, type MenuApp } from "@/lib/mock-menu";
+import { menuUntukPeran, type MenuApp } from "@/lib/mock-menu";
+import { peranDariRole } from "@/lib/peran";
 
 export const runtime = "nodejs";
 

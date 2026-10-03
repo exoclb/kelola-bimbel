@@ -8,7 +8,7 @@ import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { siteConfig } from "@/config/site";
+import { homePathUntukPeran, peranDariRole } from "@/lib/peran";
 
 export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   const signingUp = mode === "sign-up";
@@ -42,7 +42,11 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
         );
         return;
       }
-      router.replace(siteConfig.homePath);
+      // Setiap peran langsung mendarat di halaman utamanya: guru ke jurnal
+      // hari ini, owner ke pemantauan harian.
+      router.replace(
+        homePathUntukPeran(peranDariRole(result.data?.user?.role)),
+      );
       router.refresh();
     } catch {
       setError(

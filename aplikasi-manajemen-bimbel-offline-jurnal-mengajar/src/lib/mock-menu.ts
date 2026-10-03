@@ -5,7 +5,7 @@
 // menu guru dan owner bisa ditinjau dari satu tempat. Menu hanyalah tampilan —
 // halaman dan API-nya tetap memeriksa izin sendiri, jadi menyembunyikan menu
 // bukan pengaman.
-import type { PeranPengguna } from "@/lib/mock-akun";
+import type { PeranPengguna } from "@/lib/peran";
 import type { Permissions } from "@/lib/permissions";
 
 export type MenuApp = {
@@ -43,18 +43,4 @@ export const MENU_PER_PERAN: Record<PeranPengguna, MenuApp[]> = {
 /** Salinan menu satu peran supaya pemanggil tidak mengubah daftar aslinya. */
 export function menuUntukPeran(peran: PeranPengguna): MenuApp[] {
   return MENU_PER_PERAN[peran].map((menu) => ({ ...menu }));
-}
-
-/**
- * Membaca peran dari kolom `user.role`. Kolom itu boleh berisi beberapa peran
- * dipisah koma ("admin,support"), dan untuk tampilan owner maupun admin
- * sama-sama dilihat sebagai owner karena keduanya boleh memantau bimbel.
- */
-export function peranDariRole(role: string | null | undefined): PeranPengguna {
-  const daftar = (role ?? "")
-    .split(",")
-    .map((nilai) => nilai.trim().toLowerCase());
-  return daftar.includes("owner") || daftar.includes("admin")
-    ? "owner"
-    : "guru";
 }

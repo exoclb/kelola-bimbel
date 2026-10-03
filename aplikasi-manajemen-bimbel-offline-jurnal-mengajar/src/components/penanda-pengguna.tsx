@@ -1,4 +1,4 @@
-import { labelPeran, type PeranPengguna } from "@/lib/mock-akun";
+import { labelPeran, type PeranPengguna } from "@/lib/peran";
 
 type PenandaPenggunaProps = {
   nama: string;

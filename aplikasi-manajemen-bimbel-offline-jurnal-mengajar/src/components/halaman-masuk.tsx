@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cariAkun, labelPeran, type AkunMasuk } from "@/lib/mock-akun";
+import { cariAkun, type AkunMasuk } from "@/lib/mock-akun";
+import { labelPeran } from "@/lib/peran";
 
 type HalamanMasukProps = {
   daftarAkun: AkunMasuk[];

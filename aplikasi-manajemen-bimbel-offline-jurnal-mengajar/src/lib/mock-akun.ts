@@ -5,9 +5,7 @@
 // daftar di bawah dipakai dulu supaya tampilan, alur, dan pesan kesalahannya
 // bisa ditinjau. Bentuk `AkunMasuk` mengikuti kolom tabel `user` (nama, email,
 // role) ditambah sandi contoh supaya alurnya bisa dicoba dari awal.
-
-/** Peran yang dikenal aplikasi: guru mengajar, owner memantau bimbel. */
-export type PeranPengguna = "guru" | "owner";
+import type { PeranPengguna } from "@/lib/peran";
 
 export type AkunMasuk = {
   id: string;
@@ -61,11 +59,6 @@ export function cariAkun(email: string, sandi: string): AkunMasuk | null {
     (baris) => baris.email === dicari && baris.sandi === sandi,
   );
   return akun ? { ...akun } : null;
-}
-
-/** Nama peran untuk ditampilkan, mis. di lencana setelah berhasil masuk. */
-export function labelPeran(peran: PeranPengguna): string {
-  return peran === "owner" ? "Owner" : "Guru";
 }
 
 /**
