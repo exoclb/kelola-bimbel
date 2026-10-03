@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "3fb0aadbaaae7b40ac61747cf718356fbdc55c7c",
+  "generatedForCommit": "1d4ee4ceef713641f9e38e44d42e6c4ddcaa1a1a",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -172,9 +172,9 @@
     },
     {
       "path": "docs/backend.md",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "markdown",
-      "size": 52508
+      "size": 52923
     },
     {
       "path": "docs/deployment.md",
@@ -418,9 +418,9 @@
     },
     {
       "path": "e2e/pemantauan.spec.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 16095
+      "size": 19169
     },
     {
       "path": "e2e/roles.spec.ts",
@@ -628,13 +628,13 @@
     },
     {
       "path": "src/app/(protected)/app/jurnal/error.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1544
     },
     {
       "path": "src/app/(protected)/app/jurnal/loading.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1342
     },
@@ -676,9 +676,9 @@
     },
     {
       "path": "src/app/(protected)/app/pemantauan/page.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 2708
+      "size": 3005
     },
     {
       "path": "src/app/(protected)/app/pengaturan/gaji/page.tsx",
@@ -1071,6 +1071,12 @@
       "size": 5496
     },
     {
+      "path": "src/components/daftar-notifikasi.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 3314
+    },
+    {
       "path": "src/components/daftar-perkembangan.tsx",
       "reason": "needs_summary",
       "language": "typescript",
@@ -1198,9 +1204,9 @@
     },
     {
       "path": "src/components/panel-notifikasi.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 3451
+      "size": 2216
     },
     {
       "path": "src/components/panel-penempatan.tsx",
@@ -1216,9 +1222,9 @@
     },
     {
       "path": "src/components/pemantauan-harian.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 5941
+      "size": 6231
     },
     {
       "path": "src/components/pemilih-jadwal.tsx",
@@ -1315,6 +1321,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 2270
+    },
+    {
+      "path": "src/components/tombol-tandai-baca.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1935
     },
     {
       "path": "src/components/ui/button.tsx",
@@ -1636,9 +1648,9 @@
     },
     {
       "path": "src/services/jurnal.service.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 11761
+      "size": 13037
     },
     {
       "path": "src/services/kehadiran.service.ts",
@@ -1666,9 +1678,9 @@
     },
     {
       "path": "src/services/notifikasi.service.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 2167
+      "size": 2497
     },
     {
       "path": "src/services/pemantauan.service.ts",
