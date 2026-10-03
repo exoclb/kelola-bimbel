@@ -1,15 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarDays, Clock, MapPin, Users } from "lucide-react";
+import { CalendarDays, Clock, MapPin, Users, X } from "lucide-react";
+import { FormJadwalKelas } from "@/components/form-jadwal-kelas";
 import { FormTambahKelas } from "@/components/form-tambah-kelas";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { Kelas } from "@/lib/mock-kelas";
+import type { JadwalKelas, Kelas } from "@/lib/mock-kelas";
 
 type DaftarKelasProps = {
   daftarAwal: Kelas[];
@@ -28,6 +30,17 @@ export function DaftarKelas({ daftarAwal }: DaftarKelasProps) {
     (jumlah, kelas) => jumlah + kelas.jadwal.length,
     0,
   );
+
+  function ubahJadwal(
+    kelasId: string,
+    ubah: (jadwal: JadwalKelas[]) => JadwalKelas[],
+  ) {
+    setDaftar((sebelumnya) =>
+      sebelumnya.map((kelas) =>
+        kelas.id === kelasId ? { ...kelas, jadwal: ubah(kelas.jadwal) } : kelas,
+      ),
+    );
+  }
 
   function tambahKelas(kelas: Kelas) {
     setDaftar((sebelumnya) =>
@@ -96,16 +109,53 @@ export function DaftarKelas({ daftarAwal }: DaftarKelasProps) {
                     {kelas.jadwal.map((jadwal) => (
                       <li
                         key={`${jadwal.hari}-${jadwal.jamMulai}`}
-                        className="inline-flex items-center gap-1.5 rounded-lg border bg-muted/50 px-2.5 py-1 text-sm text-muted-foreground"
+                        className="inline-flex items-center gap-1.5 rounded-lg border bg-muted/50 py-1 pr-1 pl-2.5 text-sm text-muted-foreground"
                       >
                         <CalendarDays className="size-3.5" aria-hidden="true" />
                         {jadwal.hari}
                         <Clock className="ml-1 size-3.5" aria-hidden="true" />
                         {jadwal.jamMulai}–{jadwal.jamSelesai}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-xs"
+                          aria-label={`Hapus jadwal ${jadwal.hari} ${jadwal.jamMulai}`}
+                          onClick={() =>
+                            ubahJadwal(kelas.id, (jadwalLama) =>
+                              jadwalLama.filter(
+                                (baris) =>
+                                  !(
+                                    baris.hari === jadwal.hari &&
+                                    baris.jamMulai === jadwal.jamMulai
+                                  ),
+                              ),
+                            )
+                          }
+                        >
+                          <X aria-hidden="true" />
+                        </Button>
                       </li>
                     ))}
                   </ul>
                 )}
+                <div>
+                  <FormJadwalKelas
+                    jadwalAda={kelas.jadwal}
+                    onTambah={(jadwal) => {
+                      ubahJadwal(kelas.id, (jadwalLama) =>
+                        [...jadwalLama, jadwal].sort((a, b) =>
+                          `${a.hari}${a.jamMulai}`.localeCompare(
+                            `${b.hari}${b.jamMulai}`,
+                            "id",
+                          ),
+                        ),
+                      );
+                      setPesan(
+                        `Jadwal ${jadwal.hari} ${jadwal.jamMulai} ditambahkan ke ${kelas.namaKelas}.`,
+                      );
+                    }}
+                  />
+                </div>
               </Card>
             </li>
           ))}
