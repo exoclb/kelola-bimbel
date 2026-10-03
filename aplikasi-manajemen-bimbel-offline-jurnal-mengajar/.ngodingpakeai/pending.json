@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "9b9a6b22413d00b3292948e1913abd7fd1e5b08c",
+  "generatedForCommit": "deb5f817b208af32800f88cb9341c55e7a79b5ae",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -442,7 +442,7 @@
     },
     {
       "path": "src/app/(protected)/app/gaji/page.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 941
     },
@@ -466,7 +466,7 @@
     },
     {
       "path": "src/app/(protected)/app/page.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 5360
     },
@@ -478,7 +478,7 @@
     },
     {
       "path": "src/app/(protected)/layout.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1202
     },
@@ -574,7 +574,7 @@
     },
     {
       "path": "src/components/app-nav.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1695
     },
@@ -645,6 +645,12 @@
       "size": 3447
     },
     {
+      "path": "src/components/panel-rincian-jam.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 2787
+    },
+    {
       "path": "src/components/pemantauan-harian.tsx",
       "reason": "needs_summary",
       "language": "typescript",
@@ -670,9 +676,9 @@
     },
     {
       "path": "src/components/rekap-gaji-bulanan.tsx",
-      "reason": "new",
+      "reason": "changed",
       "language": "typescript",
-      "size": 5362
+      "size": 5675
     },
     {
       "path": "src/components/saring-pemantauan.tsx",
@@ -844,7 +850,7 @@
     },
     {
       "path": "src/lib/gaji.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 942
     },
@@ -856,9 +862,9 @@
     },
     {
       "path": "src/lib/mock-gaji.ts",
-      "reason": "new",
+      "reason": "changed",
       "language": "typescript",
-      "size": 1863
+      "size": 3261
     },
     {
       "path": "src/lib/mock-jurnal.ts",
@@ -868,7 +874,7 @@
     },
     {
       "path": "src/lib/permissions.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1922
     },

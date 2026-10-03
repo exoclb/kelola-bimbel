@@ -19,7 +19,7 @@ export default async function ProtectedLayout({
 
   return (
     <>
-      <header className="border-b bg-card">
+      <header className="border-b bg-card print:hidden">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-6 py-4 sm:px-10">
           <Brand />
           <div className="flex flex-wrap items-center gap-4">

@@ -1,4 +1,4 @@
-import { CalendarRange, Receipt, Users, Wallet } from "lucide-react";
+import { CalendarRange, FileText, Receipt, Users, Wallet } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import Link from "next/link";
 import { PanelRincianJam } from "@/components/panel-rincian-jam";
 import { formatJam } from "@/lib/jurnal";
 import { formatRupiah } from "@/lib/gaji";
@@ -151,11 +152,21 @@ export function RekapGajiBulanan({
                       {formatRupiah(baris.totalGaji)}
                     </span>
                   </div>
-                  <PanelRincianJam
-                    rincian={baris.rincian}
-                    totalJam={baris.totalJam}
-                    tarifPerJam={baris.tarifPerJam}
-                  />
+                  <div className="flex flex-wrap items-center gap-2">
+                    <PanelRincianJam
+                      rincian={baris.rincian}
+                      totalJam={baris.totalJam}
+                      tarifPerJam={baris.tarifPerJam}
+                    />
+                    <Button asChild variant="outline" size="sm">
+                      <Link
+                        href={`/app/gaji/slip/${baris.guruId}?periode=${rekap.periode}`}
+                      >
+                        <FileText aria-hidden="true" />
+                        Slip gaji
+                      </Link>
+                    </Button>
+                  </div>
                 </li>
               ))}
             </ul>
