@@ -112,12 +112,13 @@ export const listJurnalHarianSchema = z
 
 export type ListJurnalHarianInput = z.infer<typeof listJurnalHarianSchema>;
 
-// Ringkasan status guru memakai saringan yang sama, tanpa penomoran halaman.
-export const ringkasanGuruHarianSchema = listJurnalHarianSchema.omit({
+// Ringkasan status guru dan status berkala memakai saringan yang sama, tanpa
+// penomoran halaman.
+export const filterPemantauanHarianSchema = listJurnalHarianSchema.omit({
   limit: true,
   offset: true,
 });
 
-export type RingkasanGuruHarianInput = z.infer<
-  typeof ringkasanGuruHarianSchema
+export type FilterPemantauanHarianInput = z.infer<
+  typeof filterPemantauanHarianSchema
 >;

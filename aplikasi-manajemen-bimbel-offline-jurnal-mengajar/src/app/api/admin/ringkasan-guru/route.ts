@@ -1,7 +1,7 @@
 import { withApiPermission } from "@/lib/api";
 import { namaHari, tanggalISO } from "@/lib/tanggal";
 import { ringkasanAnyGuruHariIni } from "@/services/pemantauan.service";
-import { ringkasanGuruHarianSchema } from "@/validators/jurnal";
+import { filterPemantauanHarianSchema } from "@/validators/jurnal";
 
 export const runtime = "nodejs";
 
@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 // `jurnal: read-any`.
 export function GET(request: Request) {
   return withApiPermission(request, { jurnal: ["read-any"] }, async () => {
-    const filter = ringkasanGuruHarianSchema.parse(
+    const filter = filterPemantauanHarianSchema.parse(
       Object.fromEntries(new URL(request.url).searchParams),
     );
     const hari = filter.tanggal

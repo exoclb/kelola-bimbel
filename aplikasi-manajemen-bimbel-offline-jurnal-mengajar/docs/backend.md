@@ -45,20 +45,21 @@ App features follow the same structure as Notes: route → `withApiSession` → 
 
 Operasi jurnal milik guru ada di `src/services/jurnal.service.ts` (simpan, riwayat, detail, koreksi), sedangkan pembacaan lintas akun untuk pantauan owner — ringkasan harian, deteksi kelas kosong, daftar jurnal harian, saringan — ada di `src/services/pemantauan.service.ts`. Fungsi yang menjangkau akun lain memakai akhiran `Any` dan hanya boleh dipanggil dari endpoint yang dijaga izin role.
 
-| Method | Path                        | Result                                                                  |
-| ------ | --------------------------- | ----------------------------------------------------------------------- |
-| GET    | `/api/jadwal`               | 200, jadwal mengajar guru yang sedang masuk pada satu hari              |
-| GET    | `/api/jadwal?hari=…`        | 200, jadwal pada hari lain (`Senin`–`Minggu`, huruf awal besar)         |
-| GET    | `/api/jurnal`               | 200, riwayat jurnal guru (saring kelas & rentang tanggal, berhalaman)   |
-| GET    | `/api/jurnal/:id`           | 200, detail satu jurnal beserta daftar muridnya                         |
-| GET    | `/api/admin/jurnal`         | 200, owner melihat jurnal semua guru pada satu tanggal                  |
-| GET    | `/api/admin/jurnal/:id`     | 200, owner membuka detail satu jurnal guru siapa pun                    |
-| GET    | `/api/admin/ringkasan-guru` | 200, ringkasan harian: jadwal & status jurnal tiap guru                 |
-| GET    | `/api/admin/opsi-saring`    | 200, pilihan saringan pantauan: kelas, guru, dan cabang                 |
-| GET    | `/api/notifikasi`           | 200, notifikasi milik akun yang sedang masuk (bisa saring belum dibaca) |
-| PATCH  | `/api/notifikasi`           | 200, tandai notifikasi tertentu atau semua sebagai sudah dibaca         |
-| POST   | `/api/jurnal`               | 200, simpan & kirim jurnal mengajar (idempoten per jadwal + tanggal)    |
-| PATCH  | `/api/jurnal/:id`           | 200, koreksi isi jurnal (materi, catatan, dan/atau kehadiran)           |
+| Method | Path                           | Result                                                                  |
+| ------ | ------------------------------ | ----------------------------------------------------------------------- |
+| GET    | `/api/jadwal`                  | 200, jadwal mengajar guru yang sedang masuk pada satu hari              |
+| GET    | `/api/jadwal?hari=…`           | 200, jadwal pada hari lain (`Senin`–`Minggu`, huruf awal besar)         |
+| GET    | `/api/jurnal`                  | 200, riwayat jurnal guru (saring kelas & rentang tanggal, berhalaman)   |
+| GET    | `/api/jurnal/:id`              | 200, detail satu jurnal beserta daftar muridnya                         |
+| GET    | `/api/admin/jurnal`            | 200, owner melihat jurnal semua guru pada satu tanggal                  |
+| GET    | `/api/admin/jurnal/:id`        | 200, owner membuka detail satu jurnal guru siapa pun                    |
+| GET    | `/api/admin/ringkasan-guru`    | 200, ringkasan harian: jadwal & status jurnal tiap guru                 |
+| GET    | `/api/admin/opsi-saring`       | 200, pilihan saringan pantauan: kelas, guru, dan cabang                 |
+| GET    | `/api/admin/status-pemantauan` | 200, angka ringkas pantauan untuk pembaruan berkala                     |
+| GET    | `/api/notifikasi`              | 200, notifikasi milik akun yang sedang masuk (bisa saring belum dibaca) |
+| PATCH  | `/api/notifikasi`              | 200, tandai notifikasi tertentu atau semua sebagai sudah dibaca         |
+| POST   | `/api/jurnal`                  | 200, simpan & kirim jurnal mengajar (idempoten per jadwal + tanggal)    |
+| PATCH  | `/api/jurnal/:id`              | 200, koreksi isi jurnal (materi, catatan, dan/atau kehadiran)           |
 
 `hari` boleh dikosongkan; tanpa parameter itu server memakai hari ini menurut `src/lib/tanggal.ts`. Nilai di luar daftar hari ditolak dengan 422. Hasilnya `{ "data": [{ id, classId, namaKelas, cabang, jamMulai, jamSelesai }] }` dengan jam dalam bentuk `HH:MM`, diurutkan dari jam paling awal. Saringan `guru_id` selalu memakai id dari sesi, bukan dari permintaan, jadi satu guru tidak pernah melihat jadwal guru lain.
 
@@ -77,6 +78,8 @@ Operasi jurnal milik guru ada di `src/services/jurnal.service.ts` (simpan, riway
 `GET /api/notifikasi` mengembalikan notifikasi milik akun yang sedang masuk, terbaru lebih dulu, dengan `limit` (1–100, bawaan 20), `offset`, dan `belumDibaca=true` untuk menyaring yang belum dibaca. Hasilnya `{ "data": [{ id, tipe, pesan, sudahDibaca, createdAt }], "meta": { limit, offset, hasMore, belumDibaca } }`; `meta.belumDibaca` selalu dihitung dari seluruh notifikasi akun itu, bukan dari halaman yang sedang tampil. `PATCH /api/notifikasi` menerima `{ "ids": [...] }` (maksimal 100 id) atau `{ "semua": true }` dan mengembalikan `{ "jumlah": n }` — jumlah baris yang benar-benar berubah, jadi menandai ulang yang sudah dibaca menghasilkan 0. Penyaring pemilik ada di perintah UPDATE-nya, jadi id milik akun lain tidak pernah tersentuh.
 
 `GET /api/admin/opsi-saring` mengembalikan pilihan yang dipakai tampilan pantauan: `{ "data": { "kelas": [{ classId, namaKelas, cabang }], "guru": [{ guruId, guruNama }], "cabang": ["..."] } }`. Kelas dan cabang berasal dari tabel `classes`, sedangkan `guru` adalah akun yang perannya memuat `user` (akun owner/admin tidak ikut). Dijaga `jurnal: read-any`, jadi hanya owner yang bisa membacanya.
+
+`GET /api/admin/status-pemantauan` mengembalikan angka ringkas untuk pembaruan berkala halaman owner — cukup kecil untuk dipanggil berulang: `{ "data": { "tanggal", "hari", "jumlahGuru", "sudahMengisi", "belumMengisi", "jumlahJurnal", "totalJam", "kelasKosong", "terakhirDiperbarui" } }`. Parameternya sama seperti `/api/admin/ringkasan-guru` (`tanggal`, `classId`, `guruId`, `cabang`), angkanya dihitung dari layanan pantauan yang sama sehingga selalu cocok dengan halaman, dan jawabannya `private, no-store` supaya klien selalu mengambil kondisi terbaru.
 
 ## Role-based access
 

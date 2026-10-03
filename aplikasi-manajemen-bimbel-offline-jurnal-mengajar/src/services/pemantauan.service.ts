@@ -318,3 +318,46 @@ export async function kelasKosongHariIni(
     .where(and(...syarat, isNull(teachingJournals.id)))
     .orderBy(asc(schedules.jamMulai), asc(schedules.id));
 }
+
+export type StatusPemantauan = {
+  tanggal: string;
+  hari: NamaHari;
+  jumlahGuru: number;
+  sudahMengisi: number;
+  belumMengisi: number;
+  jumlahJurnal: number;
+  totalJam: number;
+  kelasKosong: number;
+  terakhirDiperbarui: string;
+};
+
+/**
+ * Angka ringkas untuk pembaruan berkala di halaman owner: cukup untuk
+ * menyegarkan penghitung tanpa memuat ulang seluruh daftar jurnal.
+ */
+export async function statusPemantauan(
+  hari: NamaHari,
+  filter: Omit<FilterPemantauan, "limit" | "offset">,
+): Promise<StatusPemantauan> {
+  const [jurnal, statusGuru, kelasKosong] = await Promise.all([
+    listAnyJurnal({ ...filter, limit: 100, offset: 0 }),
+    ringkasanAnyGuruHariIni(hari, filter),
+    kelasKosongHariIni(hari, filter),
+  ]);
+  const sudahMengisi = statusGuru.filter((guru) => guru.sudahMengisi).length;
+
+  return {
+    tanggal: filter.tanggal,
+    hari,
+    jumlahGuru: statusGuru.length,
+    sudahMengisi,
+    belumMengisi: statusGuru.length - sudahMengisi,
+    jumlahJurnal: jurnal.data.length,
+    totalJam: jurnal.data.reduce(
+      (jumlah, baris) => jumlah + baris.jamMengajar,
+      0,
+    ),
+    kelasKosong: kelasKosong.length,
+    terakhirDiperbarui: new Date().toISOString(),
+  };
+}
