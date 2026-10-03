@@ -50,6 +50,13 @@
       "when": 1791031170522,
       "tag": "0006_tarif_gaji",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791031882114,
+      "tag": "0007_rekap_gaji",
+      "breakpoints": true
     }
   ]
 }

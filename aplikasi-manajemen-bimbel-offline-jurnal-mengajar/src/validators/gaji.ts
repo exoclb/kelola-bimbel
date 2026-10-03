@@ -13,3 +13,15 @@ export const periodeGajiSchema = z
   .strict();
 
 export type PeriodeGajiInput = z.infer<typeof periodeGajiSchema>;
+
+// Menandai pembayaran gaji satu guru pada satu bulan. Id guru memakai id akun
+// Better Auth, jadi divalidasi sebagai string pendek, bukan UUID.
+export const ubahPembayaranGajiSchema = z
+  .object({
+    guruId: z.string().min(1).max(64),
+    periode: z.string().regex(POLA_PERIODE, "Pakai format bulan YYYY-MM."),
+    dibayar: z.boolean(),
+  })
+  .strict();
+
+export type UbahPembayaranGajiInput = z.infer<typeof ubahPembayaranGajiSchema>;

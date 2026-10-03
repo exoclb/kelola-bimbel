@@ -12,3 +12,4 @@ export * from "./journal-attendances";
 export * from "./notifications";
 export * from "./notification-preferences";
 export * from "./salary-settings";
+export * from "./salary-recaps";

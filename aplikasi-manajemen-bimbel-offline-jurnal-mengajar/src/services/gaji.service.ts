@@ -4,11 +4,13 @@ import { db } from "@/db";
 import {
   classes,
   journalAttendances,
+  salaryRecaps,
   salarySettings,
   teachingJournals,
   user,
 } from "@/db/schema";
 import { hitungGaji } from "@/lib/gaji";
+import { tanggalISO } from "@/lib/tanggal";
 
 export type RincianGaji = {
   tanggal: string;
@@ -135,6 +137,7 @@ export async function rekapGajiAnyBulanan(periode: string): Promise<RekapGaji> {
   ]);
 
   const tarif = tarifPerJam ?? 0;
+  const pembayaran = await pembayaranPeriode(periode);
   const rincianPerGuru = new Map<string, RincianGaji[]>();
   for (const baris of rincian) {
     rincianPerGuru.set(baris.guruId, [
@@ -157,8 +160,9 @@ export async function rekapGajiAnyBulanan(periode: string): Promise<RekapGaji> {
       ...baris,
       tarifPerJam: tarif,
       totalGaji: hitungGaji(baris.totalJam, tarif),
-      statusPembayaran: "belum_dibayar",
-      tanggalDibayar: null,
+      statusPembayaran:
+        pembayaran.get(baris.guruId)?.statusPembayaran ?? "belum_dibayar",
+      tanggalDibayar: pembayaran.get(baris.guruId)?.tanggalDibayar ?? null,
       rincian: rincianPerGuru.get(baris.guruId) ?? [],
     })),
   };
@@ -201,6 +205,7 @@ export async function rekapGajiGuru(
 
   const tarif = tarifPerJam ?? 0;
   const totalJam = agregat[0]?.totalJam ?? 0;
+  const pembayaran = (await pembayaranPeriode(periode, guru.id)).get(guru.id);
 
   return {
     periode,
@@ -214,8 +219,8 @@ export async function rekapGajiGuru(
       totalJam,
       tarifPerJam: tarif,
       totalGaji: hitungGaji(totalJam, tarif),
-      statusPembayaran: "belum_dibayar",
-      tanggalDibayar: null,
+      statusPembayaran: pembayaran?.statusPembayaran ?? "belum_dibayar",
+      tanggalDibayar: pembayaran?.tanggalDibayar ?? null,
       rincian: rincian.map((baris) => ({
         tanggal: baris.tanggal,
         namaKelas: baris.namaKelas,
@@ -225,4 +230,109 @@ export async function rekapGajiGuru(
       })),
     },
   };
+}
+
+export type PembayaranGaji = {
+  guruId: string;
+  periodeBulan: string;
+  totalJam: number;
+  tarifPerJam: number;
+  totalGaji: number;
+  statusPembayaran: "belum_dibayar" | "dibayar";
+  tanggalDibayar: string | null;
+};
+
+export type HasilTandaiPembayaran =
+  | { status: "tersimpan"; pembayaran: PembayaranGaji }
+  | { status: "guru_tidak_ada" };
+
+/**
+ * Catatan pembayaran gaji pada satu bulan, dipakai untuk mengisi status pada
+ * rekap. `guruId` boleh diisi kalau hanya satu guru yang dibutuhkan.
+ */
+async function pembayaranPeriode(periode: string, guruId?: string) {
+  const syarat = [eq(salaryRecaps.periodeBulan, periode)];
+  if (guruId) syarat.push(eq(salaryRecaps.guruId, guruId));
+
+  const baris = await db
+    .select({
+      guruId: salaryRecaps.guruId,
+      statusPembayaran: salaryRecaps.statusPembayaran,
+      tanggalDibayar: salaryRecaps.tanggalDibayar,
+    })
+    .from(salaryRecaps)
+    .where(and(...syarat));
+
+  return new Map(baris.map((catatan) => [catatan.guruId, catatan]));
+}
+
+/**
+ * Menandai gaji satu guru pada satu bulan sebagai sudah dibayar (atau
+ * membatalkannya). Angka jam dan tarif disalin saat itu juga sebagai bukti,
+ * dan satu guru hanya punya satu catatan per bulan sehingga menandai dua kali
+ * memperbarui baris yang sama.
+ */
+export async function tandaiPembayaranGaji(
+  guruId: string,
+  periode: string,
+  dibayar: boolean,
+): Promise<HasilTandaiPembayaran> {
+  const [guru] = await db
+    .select({ id: user.id })
+    .from(user)
+    .where(eq(user.id, guruId))
+    .limit(1);
+  if (!guru) return { status: "guru_tidak_ada" };
+
+  const { awal, akhir } = rentangBulan(periode);
+  const [tarifPerJam, agregat] = await Promise.all([
+    tarifBerlaku(periode),
+    db
+      .select({
+        totalJam:
+          sql<number>`coalesce(sum(${teachingJournals.jamMengajar}), 0)::float8`.as(
+            "total_jam",
+          ),
+      })
+      .from(teachingJournals)
+      .where(
+        and(
+          eq(teachingJournals.guruId, guruId),
+          gte(teachingJournals.tanggal, awal),
+          lte(teachingJournals.tanggal, akhir),
+        ),
+      ),
+  ]);
+
+  const tarif = tarifPerJam ?? 0;
+  const totalJam = agregat[0]?.totalJam ?? 0;
+  const nilai = {
+    totalJam,
+    tarifPerJam: tarif,
+    totalGaji: hitungGaji(totalJam, tarif),
+    statusPembayaran: dibayar
+      ? ("dibayar" as const)
+      : ("belum_dibayar" as const),
+    tanggalDibayar: dibayar ? tanggalISO(new Date()) : null,
+    updatedAt: new Date(),
+  };
+
+  const [tersimpan] = await db
+    .insert(salaryRecaps)
+    .values({ guruId, periodeBulan: periode, ...nilai })
+    .onConflictDoUpdate({
+      target: [salaryRecaps.guruId, salaryRecaps.periodeBulan],
+      set: nilai,
+    })
+    .returning({
+      guruId: salaryRecaps.guruId,
+      periodeBulan: salaryRecaps.periodeBulan,
+      totalJam: salaryRecaps.totalJam,
+      tarifPerJam: salaryRecaps.tarifPerJam,
+      totalGaji: salaryRecaps.totalGaji,
+      statusPembayaran: salaryRecaps.statusPembayaran,
+      tanggalDibayar: salaryRecaps.tanggalDibayar,
+    });
+
+  return { status: "tersimpan", pembayaran: tersimpan };
 }

@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "1617b8cfc42001a01928c9a90c791ec7d15e764a",
+  "generatedForCommit": "1a2c66988427b7a48f41d0cca9a5c4e951ebe84a",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -174,7 +174,7 @@
       "path": "docs/backend.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 19721
+      "size": 20394
     },
     {
       "path": "docs/deployment.md",
@@ -532,7 +532,7 @@
     },
     {
       "path": "src/app/api/admin/gaji/route.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 806
     },
@@ -583,6 +583,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 176
+    },
+    {
+      "path": "src/app/api/gaji/route.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 856
     },
     {
       "path": "src/app/api/jadwal/route.ts",
@@ -1030,9 +1036,9 @@
     },
     {
       "path": "src/services/gaji.service.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 6440
+      "size": 6699
     },
     {
       "path": "src/services/jadwal.service.ts",
@@ -1066,7 +1072,7 @@
     },
     {
       "path": "src/validators/gaji.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 390
     },
