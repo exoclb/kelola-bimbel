@@ -7,16 +7,41 @@ import { IsianPilih, IsianTeks } from "@/components/isian-form";
 import type { JadwalKelas } from "@/lib/mock-kelas";
 import { HARI_DALAM_SEMINGGU } from "@/lib/tanggal";
 
+/** Jadwal kelas lain yang diampu guru yang sama, untuk memeriksa bentrok. */
+export type JadwalGuruLain = {
+  namaKelas: string;
+  hari: string;
+  jamMulai: string;
+  jamSelesai: string;
+};
+
 type FormJadwalKelasProps = {
   jadwalAda: JadwalKelas[];
+  guruNama: string;
+  jadwalGuruLain: JadwalGuruLain[];
   onTambah: (jadwal: JadwalKelas) => void;
 };
+
+/** Benar kalau dua rentang jam di hari yang sama saling menimpa. */
+function bentrokJam(
+  a: { hari: string; jamMulai: string; jamSelesai: string },
+  b: { hari: string; jamMulai: string; jamSelesai: string },
+) {
+  return (
+    a.hari === b.hari && a.jamMulai < b.jamSelesai && b.jamMulai < a.jamSelesai
+  );
+}
 
 /**
  * Formulir tambah jadwal untuk satu kelas: hari, jam mulai, dan jam selesai.
  * Dipakai saat kelas mengajar lebih dari sekali dalam seminggu.
  */
-export function FormJadwalKelas({ jadwalAda, onTambah }: FormJadwalKelasProps) {
+export function FormJadwalKelas({
+  jadwalAda,
+  guruNama,
+  jadwalGuruLain,
+  onTambah,
+}: FormJadwalKelasProps) {
   const idForm = useId();
   const [terbuka, setTerbuka] = useState(false);
   const [hari, setHari] = useState<string>(HARI_DALAM_SEMINGGU[0]);
@@ -42,6 +67,18 @@ export function FormJadwalKelas({ jadwalAda, onTambah }: FormJadwalKelasProps) {
     ) {
       // Jadwal dobel bukan salah isian tertentu, jadi pesannya berdiri sendiri.
       setGalatUmum("Jadwal hari itu pada jam yang sama sudah ada.");
+      return;
+    }
+
+    // Guru tidak mungkin mengajar dua kelas sekaligus, jadi jadwal kelas lain
+    // miliknya yang jamnya beririsan ditolak.
+    const bentrok = jadwalGuruLain.find((jadwal) =>
+      bentrokJam({ hari, jamMulai, jamSelesai }, jadwal),
+    );
+    if (bentrok) {
+      setGalatUmum(
+        `${guruNama} sudah mengajar ${bentrok.namaKelas} pada ${bentrok.hari} ${bentrok.jamMulai}–${bentrok.jamSelesai}.`,
+      );
       return;
     }
 
@@ -114,6 +151,19 @@ export function FormJadwalKelas({ jadwalAda, onTambah }: FormJadwalKelasProps) {
           }}
         />
       </div>
+
+      {jadwalGuruLain.length > 0 && (
+        <p className="text-xs leading-5 text-muted-foreground">
+          Jadwal {guruNama} di kelas lain:{" "}
+          {jadwalGuruLain
+            .map(
+              (jadwal) =>
+                `${jadwal.namaKelas} ${jadwal.hari} ${jadwal.jamMulai}–${jadwal.jamSelesai}`,
+            )
+            .join(", ")}
+          .
+        </p>
+      )}
 
       {galatUmum && (
         <p role="alert" className="text-sm text-destructive">

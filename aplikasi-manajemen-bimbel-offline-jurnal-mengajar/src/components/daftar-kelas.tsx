@@ -9,7 +9,10 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { FormJadwalKelas } from "@/components/form-jadwal-kelas";
+import {
+  FormJadwalKelas,
+  type JadwalGuruLain,
+} from "@/components/form-jadwal-kelas";
 import { FormUbahKelas } from "@/components/form-ubah-kelas";
 import { FormTambahKelas } from "@/components/form-tambah-kelas";
 import { KolomPencarian } from "@/components/kolom-pencarian";
@@ -96,6 +99,25 @@ export function DaftarKelas({
         kelas.id === kelasId ? { ...kelas, jadwal: ubah(kelas.jadwal) } : kelas,
       ),
     );
+  }
+
+  /**
+   * Jadwal kelas lain yang diampu guru yang sama, dipakai formulir jadwal untuk
+   * memperingatkan bentrok jam mengajar.
+   */
+  function jadwalGuruLain(kelas: Kelas): JadwalGuruLain[] {
+    return daftar
+      .filter(
+        (baris) => baris.id !== kelas.id && baris.guruNama === kelas.guruNama,
+      )
+      .flatMap((baris) =>
+        baris.jadwal.map((jadwal) => ({
+          namaKelas: baris.namaKelas,
+          hari: jadwal.hari,
+          jamMulai: jadwal.jamMulai,
+          jamSelesai: jadwal.jamSelesai,
+        })),
+      );
   }
 
   function simpanUbahKelas(
@@ -261,6 +283,8 @@ export function DaftarKelas({
                   <div className="flex flex-wrap items-start gap-2">
                     <FormJadwalKelas
                       jadwalAda={kelas.jadwal}
+                      guruNama={kelas.guruNama}
+                      jadwalGuruLain={jadwalGuruLain(kelas)}
                       onTambah={(jadwal) => {
                         ubahJadwal(kelas.id, (jadwalLama) =>
                           [...jadwalLama, jadwal].sort(urutkanJadwal),
