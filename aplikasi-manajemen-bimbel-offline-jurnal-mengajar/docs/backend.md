@@ -50,6 +50,8 @@ Operasi jurnal milik guru ada di `src/services/jurnal.service.ts` (simpan, riway
 | GET    | `/api/jadwal`                  | 200, jadwal mengajar guru yang sedang masuk pada satu hari              |
 | GET    | `/api/jadwal?hari=…`           | 200, jadwal pada hari lain (`Senin`–`Minggu`, huruf awal besar)         |
 | GET    | `/api/jurnal`                  | 200, riwayat jurnal guru (saring kelas & rentang tanggal, berhalaman)   |
+| GET    | `/api/murid`                   | 200, daftar murid (bisa dicari nama murid/orang tua, berhalaman)        |
+| POST   | `/api/murid`                   | 201, menambah murid baru                                                |
 | GET    | `/api/gaji`                    | 200, rekap & rincian jam ngajar milik guru yang sedang masuk            |
 | GET    | `/api/jurnal/:id`              | 200, detail satu jurnal beserta daftar muridnya                         |
 | GET    | `/api/admin/jurnal`            | 200, owner melihat jurnal semua guru pada satu tanggal                  |
@@ -95,6 +97,8 @@ Operasi jurnal milik guru ada di `src/services/jurnal.service.ts` (simpan, riway
 `GET /api/admin/gaji/slip?guruId=…&periode=YYYY-MM` mengunduh slip gaji satu guru sebagai dokumen HTML mandiri (`Content-Disposition: attachment`, nama berkas `slip-gaji-<nama-guru>-<periode>.html`). Isinya sama dengan yang tampil di halaman slip: identitas bimbel, identitas guru, tabel rincian jam per pertemuan, total jam × tarif, dan status pembayaran beserta tanggalnya. Gayanya ditulis di dalam dokumen dan tidak ada berkas luar, jadi berkasnya bisa langsung dicetak atau dikirim ke guru tanpa aplikasi. Dijaga `gaji: read-any`; id guru yang tidak dikenal dijawab 404.
 
 `GET /api/admin/gaji/riwayat?tahun=YYYY&bulan=MM` merangkum gaji tiap bulan yang punya jurnal: `{ "data": { "daftar": [{ periode, jumlahGuru, totalJam, totalGaji, jumlahDibayar }], "tahunTersedia": [YYYY] } }`, terbaru lebih dulu. `tahun` wajib (2000–2100) dan `bulan` opsional (`01`–`12`). Totalnya dihitung dengan tarif yang berlaku **saat bulan itu**, bukan tarif terkini, jadi menaikkan tarif tidak mengubah angka bulan-bulan lama; `jumlahDibayar` diambil dari catatan di `salary_recaps`. `tahunTersedia` dipakai tampilan untuk menyusun pilihan tahun.
+
+`GET /api/murid` mengembalikan daftar murid bimbel, terurut nama, dengan `limit` (1–100, bawaan 50), `offset`, dan `cari` (kata kunci yang dicocokkan ke nama murid **dan** nama orang tuanya; tanda `%` dan `_` diperlakukan sebagai huruf biasa). Hasilnya `{ "data": [{ id, nama, tanggalLahir, namaOrangTua, kontakOrangTua, statusAktif, createdAt }], "meta": { limit, offset, hasMore, total } }`. `POST /api/murid` menerima `{ "nama", "tanggalLahir": "YYYY-MM-DD", "namaOrangTua"?, "kontakOrangTua"?, "statusAktif"? }` — nama 1–120 karakter, tanggal lahir wajib dan harus tanggal yang benar-benar ada (masa depan boleh, tetapi tampilan yang membatasinya), kolom lain boleh kosong — lalu menjawab 201 dengan `Location: /api/murid/:id`. Data murid dipakai bersama seluruh akun bimbel, jadi guru maupun owner sama-sama boleh membacanya dan menambahkannya; cukup sesi yang sah (tanpa izin tambahan).
 
 ## Role-based access
 

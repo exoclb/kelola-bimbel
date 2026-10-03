@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "c8ebf07b854ad118af5a28bacb5a4e1c93389ae6",
+  "generatedForCommit": "64cdd002cada33509fc8544b67f66b3c4117afa8",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -358,9 +358,9 @@
     },
     {
       "path": "next-env.d.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 296
+      "size": 288
     },
     {
       "path": "next.config.ts",
@@ -508,7 +508,7 @@
     },
     {
       "path": "src/app/(protected)/app/gaji/slip/[guruId]/page.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1787
     },
@@ -561,8 +561,14 @@
       "size": 758
     },
     {
+      "path": "src/app/(protected)/app/perkembangan/riwayat/page.tsx",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 1148
+    },
+    {
       "path": "src/app/(protected)/app/perkembangan/[muridId]/page.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1963
     },
@@ -772,9 +778,9 @@
     },
     {
       "path": "src/components/daftar-perkembangan.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
-      "size": 8674
+      "size": 8287
     },
     {
       "path": "src/components/daftar-riwayat-jurnal.tsx",
@@ -838,9 +844,15 @@
     },
     {
       "path": "src/components/laporan-perkembangan.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 5815
+    },
+    {
+      "path": "src/components/lencana-nilai.tsx",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 797
     },
     {
       "path": "src/components/panel-jurnal.tsx",
@@ -898,7 +910,7 @@
     },
     {
       "path": "src/components/rekap-gaji-saya.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 3306
     },
@@ -907,6 +919,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 6577
+    },
+    {
+      "path": "src/components/riwayat-perkembangan.tsx",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 6378
     },
     {
       "path": "src/components/saring-pemantauan.tsx",
@@ -940,7 +958,7 @@
     },
     {
       "path": "src/components/tombol-cetak-unduh.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2270
     },

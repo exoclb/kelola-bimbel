@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { skemaTanggal } from "@/validators/tanggal";
 
 const kehadiranMurid = z
   .object({
@@ -61,29 +62,13 @@ export type KoreksiJurnalInput = z.infer<typeof koreksiJurnalSchema>;
 
 export const jurnalIdSchema = z.string().uuid();
 
-const POLA_TANGGAL = /^\d{4}-\d{2}-\d{2}$/;
-const tanggal = z
-  .string()
-  .regex(POLA_TANGGAL, "Pakai format tanggal YYYY-MM-DD.")
-  // Bentuknya bisa benar tapi tanggalnya tidak ada (mis. 2026-02-30); kalau
-  // lolos, PostgreSQL akan menolaknya sebagai error 500.
-  .refine((nilai) => {
-    const [tahun, bulan, hari] = nilai.split("-").map(Number);
-    const waktu = new Date(Date.UTC(tahun, bulan - 1, hari));
-    return (
-      waktu.getUTCFullYear() === tahun &&
-      waktu.getUTCMonth() === bulan - 1 &&
-      waktu.getUTCDate() === hari
-    );
-  }, "Tanggal itu tidak ada di kalender.");
-
 export const listJurnalSchema = z
   .object({
     limit: z.coerce.number().int().min(1).max(100).default(20),
     offset: z.coerce.number().int().min(0).max(1_000_000).default(0),
     classId: z.string().uuid().optional(),
-    dari: tanggal.optional(),
-    sampai: tanggal.optional(),
+    dari: skemaTanggal.optional(),
+    sampai: skemaTanggal.optional(),
   })
   .strict()
   .refine(
@@ -100,7 +85,7 @@ export type ListJurnalInput = z.infer<typeof listJurnalSchema>;
 // saringan kelas, guru, atau cabang.
 export const listJurnalHarianSchema = z
   .object({
-    tanggal: tanggal.optional(),
+    tanggal: skemaTanggal.optional(),
     classId: z.string().uuid().optional(),
     // Id akun dibuat Better Auth, bukan UUID, jadi dibatasi panjangnya saja.
     guruId: z.string().min(1).max(64).optional(),

@@ -1,14 +1,10 @@
 import { z } from "zod";
-
-const POLA_PERIODE = /^\d{4}-(0[1-9]|1[0-2])$/;
+import { skemaPeriodeBulan } from "@/validators/tanggal";
 
 /** Periode gaji dalam bentuk `YYYY-MM`; kosong berarti bulan berjalan. */
 export const periodeGajiSchema = z
   .object({
-    periode: z
-      .string()
-      .regex(POLA_PERIODE, "Pakai format bulan YYYY-MM.")
-      .optional(),
+    periode: skemaPeriodeBulan.optional(),
   })
   .strict();
 
@@ -19,7 +15,7 @@ export type PeriodeGajiInput = z.infer<typeof periodeGajiSchema>;
 export const ubahPembayaranGajiSchema = z
   .object({
     guruId: z.string().min(1).max(64),
-    periode: z.string().regex(POLA_PERIODE, "Pakai format bulan YYYY-MM."),
+    periode: skemaPeriodeBulan,
     dibayar: z.boolean(),
   })
   .strict();
@@ -30,10 +26,7 @@ export type UbahPembayaranGajiInput = z.infer<typeof ubahPembayaranGajiSchema>;
 export const slipGajiSchema = z
   .object({
     guruId: z.string().min(1).max(64),
-    periode: z
-      .string()
-      .regex(POLA_PERIODE, "Pakai format bulan YYYY-MM.")
-      .optional(),
+    periode: skemaPeriodeBulan.optional(),
   })
   .strict();
 
