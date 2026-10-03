@@ -53,3 +53,22 @@ export function hitungUsia(tanggalLahir: string, sekarang = new Date()) {
   if (belumUlangTahun) usia -= 1;
   return usia;
 }
+
+/**
+ * Urutan hari dalam seminggu (Senin lebih dulu), dipakai untuk menyusun daftar
+ * jadwal. Urutan abjad akan menghasilkan Jumat–Kamis–Minggu, jadi hari
+ * dibandingkan lewat indeks ini.
+ */
+export function indeksHari(nama: string) {
+  const indeks = HARI_DALAM_SEMINGGU.indexOf(nama as NamaHari);
+  return indeks === -1 ? HARI_DALAM_SEMINGGU.length : indeks;
+}
+
+/** Pembanding jadwal: hari (Senin–Minggu) lalu jam mulai. */
+export function urutkanJadwal(
+  a: { hari: string; jamMulai: string },
+  b: { hari: string; jamMulai: string },
+) {
+  const bedaHari = indeksHari(a.hari) - indeksHari(b.hari);
+  return bedaHari !== 0 ? bedaHari : a.jamMulai.localeCompare(b.jamMulai);
+}

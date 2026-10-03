@@ -23,7 +23,7 @@ import { Card } from "@/components/ui/card";
 import type { JadwalKelas, Kelas } from "@/lib/mock-kelas";
 import type { Murid } from "@/lib/mock-murid";
 import type { Penempatan } from "@/lib/mock-penempatan";
-import { tanggalISO } from "@/lib/tanggal";
+import { tanggalISO, urutkanJadwal } from "@/lib/tanggal";
 
 type DaftarKelasProps = {
   daftarAwal: Kelas[];
@@ -263,12 +263,7 @@ export function DaftarKelas({
                       jadwalAda={kelas.jadwal}
                       onTambah={(jadwal) => {
                         ubahJadwal(kelas.id, (jadwalLama) =>
-                          [...jadwalLama, jadwal].sort((a, b) =>
-                            `${a.hari}${a.jamMulai}`.localeCompare(
-                              `${b.hari}${b.jamMulai}`,
-                              "id",
-                            ),
-                          ),
+                          [...jadwalLama, jadwal].sort(urutkanJadwal),
                         );
                         setPesan(
                           `Jadwal ${jadwal.hari} ${jadwal.jamMulai} ditambahkan ke ${kelas.namaKelas}.`,

@@ -2,6 +2,7 @@ import "server-only";
 import { and, asc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { pelanggaranUnik } from "@/lib/db-error";
+import { urutkanJadwal } from "@/lib/tanggal";
 import {
   classes,
   schedules,
@@ -79,7 +80,9 @@ async function jadwalPerKelas(kelasIds: string[]) {
     })
     .from(schedules)
     .where(inArray(schedules.classId, kelasIds))
-    .orderBy(asc(schedules.hari), asc(schedules.jamMulai));
+    // Urutan hari (Senin–Minggu) dirapikan setelah query: abjad akan
+    // menghasilkan Jumat lebih dulu daripada Senin.
+    .orderBy(asc(schedules.jamMulai));
 
   const perKelas = new Map<string, JadwalTersimpan[]>();
   for (const jadwal of baris) {
@@ -93,6 +96,8 @@ async function jadwalPerKelas(kelasIds: string[]) {
       },
     ]);
   }
+  for (const daftar of perKelas.values()) daftar.sort(urutkanJadwal);
+
   return perKelas;
 }
 
