@@ -3,6 +3,7 @@ import { PemantauanHarian } from "@/components/pemantauan-harian";
 import { requirePermission } from "@/lib/session";
 import { formatTanggalLengkap, namaHari, tanggalISO } from "@/lib/tanggal";
 import {
+  kelasKosongHariIni,
   listAnyJurnal,
   listAnyKehadiranJurnal,
   opsiSaringPemantauan,
@@ -48,9 +49,11 @@ export default async function PemantauanPage({
   const adaSaringan = Boolean(nilai.classId || nilai.guruId || nilai.cabang);
   const filter = { tanggal, ...nilai };
 
-  const [hasil, statusGuru] = await Promise.all([
+  const hari = namaHari(sekarang);
+  const [hasil, statusGuru, kelasKosong] = await Promise.all([
     listAnyJurnal({ ...filter, limit: 50, offset: 0 }),
-    ringkasanAnyGuruHariIni(namaHari(sekarang), filter),
+    ringkasanAnyGuruHariIni(hari, filter),
+    kelasKosongHariIni(hari, filter),
   ]);
 
   const kehadiran: Record<string, KehadiranJurnal[]> = {};
@@ -67,6 +70,7 @@ export default async function PemantauanPage({
     <PemantauanHarian
       data={hasil.data}
       statusGuru={statusGuru}
+      kelasKosong={kelasKosong}
       kehadiran={kehadiran}
       saring={{
         kelas: opsi.daftarKelas,

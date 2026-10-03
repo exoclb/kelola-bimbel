@@ -1,5 +1,15 @@
 import "server-only";
-import { and, asc, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gte,
+  inArray,
+  isNull,
+  lte,
+  sql,
+} from "drizzle-orm";
 import { db } from "@/db";
 import {
   classes,
@@ -162,6 +172,7 @@ const fieldsRiwayat = {
   catatan: teachingJournals.catatan,
   jamMengajar: teachingJournals.jamMengajar,
   status: teachingJournals.status,
+  createdAt: teachingJournals.createdAt,
   jumlahMurid: sql<number>`count(${journalAttendances.id})::int`.as(
     "jumlah_murid",
   ),
@@ -374,6 +385,7 @@ const fieldsHarian = {
   catatan: teachingJournals.catatan,
   jamMengajar: teachingJournals.jamMengajar,
   status: teachingJournals.status,
+  createdAt: teachingJournals.createdAt,
   jumlahMurid: sql<number>`count(${journalAttendances.id})::int`.as(
     "jumlah_murid",
   ),
@@ -601,4 +613,56 @@ export async function listAnyKehadiranJurnal(
     .innerJoin(students, eq(journalAttendances.studentId, students.id))
     .where(inArray(journalAttendances.journalId, jurnalIds))
     .orderBy(asc(students.nama));
+}
+
+export type KelasKosong = {
+  scheduleId: string;
+  namaKelas: string;
+  cabang: string;
+  guruId: string;
+  guruNama: string;
+  jamMulai: string;
+  jamSelesai: string;
+};
+
+/**
+ * Jadwal hari ini yang jurnalnya belum dikirim. Dipakai owner sebagai
+ * pemberitahuan "kelas kosong", dihitung dari jadwal yang tidak punya jurnal
+ * pada tanggal itu.
+ */
+export async function kelasKosongHariIni(
+  hari: NamaHari,
+  filter: Omit<FilterPemantauan, "limit" | "offset">,
+): Promise<KelasKosong[]> {
+  const syarat = [eq(schedules.hari, hari)];
+  if (filter.classId) syarat.push(eq(schedules.classId, filter.classId));
+  if (filter.guruId) syarat.push(eq(schedules.guruId, filter.guruId));
+  if (filter.cabang) syarat.push(eq(classes.cabang, filter.cabang));
+
+  return db
+    .select({
+      scheduleId: schedules.id,
+      namaKelas: classes.namaKelas,
+      cabang: classes.cabang,
+      guruId: schedules.guruId,
+      guruNama: user.name,
+      jamMulai: sql<string>`to_char(${schedules.jamMulai}, 'HH24:MI')`.as(
+        "jam_mulai",
+      ),
+      jamSelesai: sql<string>`to_char(${schedules.jamSelesai}, 'HH24:MI')`.as(
+        "jam_selesai",
+      ),
+    })
+    .from(schedules)
+    .innerJoin(user, eq(schedules.guruId, user.id))
+    .innerJoin(classes, eq(schedules.classId, classes.id))
+    .leftJoin(
+      teachingJournals,
+      and(
+        eq(teachingJournals.scheduleId, schedules.id),
+        eq(teachingJournals.tanggal, filter.tanggal),
+      ),
+    )
+    .where(and(...syarat, isNull(teachingJournals.id)))
+    .orderBy(asc(schedules.jamMulai), asc(schedules.id));
 }

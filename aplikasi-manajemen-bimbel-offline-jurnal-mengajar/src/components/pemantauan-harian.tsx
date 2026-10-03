@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { PanelJurnal } from "@/components/panel-jurnal";
+import { PanelNotifikasi } from "@/components/panel-notifikasi";
 import { SaringPemantauan } from "@/components/saring-pemantauan";
 import {
   DaftarStatusGuru,
@@ -18,11 +19,13 @@ import { formatJam } from "@/lib/jurnal";
 import type {
   JurnalHarian,
   KehadiranJurnal,
+  KelasKosong,
   StatusGuruHariIni,
 } from "@/services/jurnal.service";
 
 type PemantauanHarianProps = {
   data: JurnalHarian[];
+  kelasKosong: KelasKosong[];
   saring: {
     kelas: { classId: string; namaKelas: string; cabang: string }[];
     guru: { guruId: string; guruNama: string }[];
@@ -44,6 +47,7 @@ type PemantauanHarianProps = {
  */
 export function PemantauanHarian({
   data,
+  kelasKosong,
   saring,
   statusGuru,
   kehadiran,
@@ -126,6 +130,7 @@ export function PemantauanHarian({
       </div>
 
       <div className="mt-6 space-y-6">
+        <PanelNotifikasi jurnalMasuk={data} kelasKosong={kelasKosong} />
         <RingkasanStatusGuru daftar={statusGuru} />
         <DaftarStatusGuru daftar={statusGuru} />
       </div>

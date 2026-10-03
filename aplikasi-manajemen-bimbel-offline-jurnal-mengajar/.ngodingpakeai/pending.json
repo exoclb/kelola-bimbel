@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "72eeab056f8858817dadf7dc81dd9e131caf4234",
+  "generatedForCommit": "06f80264efc7492c6f8419a20efa51a79184493e",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -172,9 +172,9 @@
     },
     {
       "path": "docs/backend.md",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "markdown",
-      "size": 14463
+      "size": 14586
     },
     {
       "path": "docs/deployment.md",
@@ -468,7 +468,7 @@
       "path": "src/app/(protected)/app/pemantauan/page.tsx",
       "reason": "changed",
       "language": "typescript",
-      "size": 1518
+      "size": 2578
     },
     {
       "path": "src/app/(protected)/layout.tsx",
@@ -622,7 +622,7 @@
     },
     {
       "path": "src/components/panel-jurnal.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 4187
     },
@@ -630,7 +630,7 @@
       "path": "src/components/pemantauan-harian.tsx",
       "reason": "changed",
       "language": "typescript",
-      "size": 4947
+      "size": 5739
     },
     {
       "path": "src/components/pemilih-jadwal.tsx",
@@ -649,6 +649,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 207
+    },
+    {
+      "path": "src/components/saring-pemantauan.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 3303
     },
     {
       "path": "src/components/sign-out-button.tsx",
@@ -858,7 +864,7 @@
       "path": "src/services/jurnal.service.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 17558
+      "size": 19244
     },
     {
       "path": "src/services/notes.service.ts",
@@ -874,9 +880,9 @@
     },
     {
       "path": "src/validators/jurnal.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 3476
+      "size": 3700
     },
     {
       "path": "src/validators/notes.ts",
