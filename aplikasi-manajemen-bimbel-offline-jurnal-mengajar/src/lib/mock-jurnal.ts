@@ -6,6 +6,8 @@
 // `JurnalInput` di bawah sudah mengikuti tabel teaching_journals &
 // journal_attendances di PRD, jadi kontraknya tidak perlu berubah.
 
+import { tanggalISO } from "@/lib/tanggal";
+
 export type MuridKelas = {
   id: string;
   nama: string;
@@ -134,6 +136,119 @@ export function getJadwalHariIni(hari: string): Jadwal[] {
       murid: item.murid,
     }))
     .sort((a, b) => a.jamMulai.localeCompare(b.jamMulai));
+}
+
+export type JurnalRiwayat = {
+  id: string;
+  tanggal: string;
+  namaKelas: string;
+  cabang: string;
+  jamMulai: string;
+  jamSelesai: string;
+  jamMengajar: number;
+  materi: string;
+  status: "terkirim" | "direview";
+  jumlahHadir: number;
+  jumlahMurid: number;
+};
+
+type RiwayatTersimpan = Omit<JurnalRiwayat, "tanggal"> & { hariLalu: number };
+
+const RIWAYAT_JURNAL: RiwayatTersimpan[] = [
+  {
+    id: "jrn-6",
+    hariLalu: 0,
+    namaKelas: "Matematika SD Kelas 4",
+    cabang: "Cabang Pusat",
+    jamMulai: "07:00",
+    jamSelesai: "08:30",
+    jamMengajar: 1.5,
+    materi: "Latihan soal — pecahan campuran",
+    status: "terkirim",
+    jumlahHadir: 3,
+    jumlahMurid: 4,
+  },
+  {
+    id: "jrn-5",
+    hariLalu: 2,
+    namaKelas: "Bahasa Inggris SMP Kelas 7",
+    cabang: "Cabang Pusat",
+    jamMulai: "09:00",
+    jamSelesai: "10:00",
+    jamMengajar: 1,
+    materi: "Materi baru — simple past tense",
+    status: "direview",
+    jumlahHadir: 3,
+    jumlahMurid: 3,
+  },
+  {
+    id: "jrn-4",
+    hariLalu: 3,
+    namaKelas: "IPA SD Kelas 6",
+    cabang: "Cabang Utara",
+    jamMulai: "10:30",
+    jamSelesai: "12:00",
+    jamMengajar: 1.5,
+    materi: "Pembahasan PR — rangkaian listrik",
+    status: "terkirim",
+    jumlahHadir: 4,
+    jumlahMurid: 5,
+  },
+  {
+    id: "jrn-3",
+    hariLalu: 4,
+    namaKelas: "Matematika SMP Kelas 8",
+    cabang: "Cabang Utara",
+    jamMulai: "13:00",
+    jamSelesai: "14:30",
+    jamMengajar: 1.5,
+    materi: "Kuis / evaluasi — persamaan linear",
+    status: "direview",
+    jumlahHadir: 3,
+    jumlahMurid: 3,
+  },
+  {
+    id: "jrn-2",
+    hariLalu: 7,
+    namaKelas: "Matematika SD Kelas 4",
+    cabang: "Cabang Pusat",
+    jamMulai: "07:00",
+    jamSelesai: "08:30",
+    jamMengajar: 1.5,
+    materi: "Lanjutan materi — perkalian bersusun",
+    status: "direview",
+    jumlahHadir: 4,
+    jumlahMurid: 4,
+  },
+  {
+    id: "jrn-1",
+    hariLalu: 9,
+    namaKelas: "Bahasa Inggris SMP Kelas 7",
+    cabang: "Cabang Pusat",
+    jamMulai: "09:00",
+    jamSelesai: "10:00",
+    jamMengajar: 1,
+    materi: "Ulangan — kosakata bab 2",
+    status: "direview",
+    jumlahHadir: 2,
+    jumlahMurid: 3,
+  },
+];
+
+/**
+ * Jurnal yang pernah diisi guru, terbaru lebih dulu. Di backend nanti fungsi
+ * ini menjadi query ke `teaching_journals` difilter `guru_id` dan `tanggal`.
+ */
+export function getRiwayatJurnal(): JurnalRiwayat[] {
+  const hariIni = new Date();
+  return RIWAYAT_JURNAL.map(({ hariLalu, ...jurnal }) => {
+    const tanggal = new Date(hariIni);
+    tanggal.setDate(tanggal.getDate() - hariLalu);
+    return {
+      ...jurnal,
+      tanggal: tanggalISO(tanggal),
+    };
+  }).sort((a, b) => b.tanggal.localeCompare(a.tanggal));
 }
 
 /** Pilihan cepat materi supaya guru tidak perlu menulis panjang. */

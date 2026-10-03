@@ -1,5 +1,12 @@
 import type { Metadata } from "next";
-import { ArrowUpRight, Check, NotebookPen, Plus, ShieldCheck } from "lucide-react";
+import {
+  ArrowUpRight,
+  Check,
+  History,
+  NotebookPen,
+  Plus,
+  ShieldCheck,
+} from "lucide-react";
 import Link from "next/link";
 import { hasPermission, requireSession } from "@/lib/session";
 import { CopyPrompt } from "@/components/copy-prompt";
@@ -33,12 +40,20 @@ export default async function AppPage() {
             Catat kelas yang kamu ajar hari ini lewat pilihan cepat.
           </CardDescription>
         </div>
-        <Button asChild>
-          <Link href="/app/jurnal">
-            <NotebookPen aria-hidden="true" />
-            Isi Jurnal Hari Ini
-          </Link>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button asChild>
+            <Link href="/app/jurnal">
+              <NotebookPen aria-hidden="true" />
+              Isi Jurnal Hari Ini
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/app/jurnal/riwayat">
+              <History aria-hidden="true" />
+              Riwayat Jurnal
+            </Link>
+          </Button>
+        </div>
       </Card>
       <section
         className="mt-6 rounded-2xl border border-dashed bg-card px-6 py-10 sm:px-10"

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { CalendarDays, LoaderCircle, Send } from "lucide-react";
+import Link from "next/link";
+import { CalendarDays, History, LoaderCircle, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -85,7 +86,9 @@ export function JurnalForm({
     event.preventDefault();
     if (pending) return;
 
-    const masalahJadwal = jadwalTerpilih ? "" : "Pilih kelas dan jam mengajar dulu.";
+    const masalahJadwal = jadwalTerpilih
+      ? ""
+      : "Pilih kelas dan jam mengajar dulu.";
     const masalahMateri = materi ? "" : "Pilih jenis materi yang diajarkan.";
     setErrorJadwal(masalahJadwal);
     setErrorMateri(masalahMateri);
@@ -161,12 +164,20 @@ export function JurnalForm({
       <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
         Isi Jurnal Hari Ini
       </h1>
-      <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-base leading-7 text-muted-foreground">
-        <CalendarDays className="size-4" aria-hidden="true" />
-        {tanggalTampil}
-        <span aria-hidden="true">·</span>
-        <span>Guru: {namaGuru}</span>
-      </p>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-base leading-7 text-muted-foreground">
+          <CalendarDays className="size-4" aria-hidden="true" />
+          {tanggalTampil}
+          <span aria-hidden="true">·</span>
+          <span>Guru: {namaGuru}</span>
+        </p>
+        <Button asChild variant="outline" size="sm">
+          <Link href="/app/jurnal/riwayat">
+            <History aria-hidden="true" />
+            Riwayat Jurnal
+          </Link>
+        </Button>
+      </div>
 
       <form
         onSubmit={onSubmit}
