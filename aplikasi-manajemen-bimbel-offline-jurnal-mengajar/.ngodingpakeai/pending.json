@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "b4b1c35048d09fb8bc062865222141e353bcdcbb",
+  "generatedForCommit": "52697b72bed00177ca7051ea315d7a9ce7bff1db",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -174,7 +174,7 @@
       "path": "docs/backend.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 15968
+      "size": 16972
     },
     {
       "path": "docs/deployment.md",
@@ -520,7 +520,7 @@
     },
     {
       "path": "src/app/api/admin/jurnal/[id]/route.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 763
     },
@@ -577,6 +577,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 1421
+    },
+    {
+      "path": "src/app/api/notifikasi/route.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1046
     },
     {
       "path": "src/app/error.tsx",
@@ -988,7 +994,7 @@
     },
     {
       "path": "src/services/jurnal.service.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 21618
     },
@@ -997,6 +1003,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 2846
+    },
+    {
+      "path": "src/services/notifikasi.service.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 2167
     },
     {
       "path": "src/validators/jadwal.ts",
@@ -1015,6 +1027,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 897
+    },
+    {
+      "path": "src/validators/notifikasi.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 873
     },
     {
       "path": "starter.config.json",

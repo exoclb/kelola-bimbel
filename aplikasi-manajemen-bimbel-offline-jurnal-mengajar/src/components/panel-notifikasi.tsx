@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { JurnalHarian, KelasKosong } from "@/services/jurnal.service";
+import type { JurnalHarian, KelasKosong } from "@/services/pemantauan.service";
 
 type PanelNotifikasiProps = {
   jurnalMasuk: JurnalHarian[];

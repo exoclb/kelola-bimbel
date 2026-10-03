@@ -1,6 +1,6 @@
 import { withApiPermission } from "@/lib/api";
 import { tanggalISO } from "@/lib/tanggal";
-import { listAnyJurnal } from "@/services/jurnal.service";
+import { listAnyJurnal } from "@/services/pemantauan.service";
 import { listJurnalHarianSchema } from "@/validators/jurnal";
 
 export const runtime = "nodejs";

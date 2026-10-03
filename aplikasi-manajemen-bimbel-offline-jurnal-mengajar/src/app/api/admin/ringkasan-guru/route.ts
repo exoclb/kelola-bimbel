@@ -1,6 +1,6 @@
 import { withApiPermission } from "@/lib/api";
 import { namaHari, tanggalISO } from "@/lib/tanggal";
-import { ringkasanAnyGuruHariIni } from "@/services/jurnal.service";
+import { ringkasanAnyGuruHariIni } from "@/services/pemantauan.service";
 import { ringkasanGuruHarianSchema } from "@/validators/jurnal";
 
 export const runtime = "nodejs";

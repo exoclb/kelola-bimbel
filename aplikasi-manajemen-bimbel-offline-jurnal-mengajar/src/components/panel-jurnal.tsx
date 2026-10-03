@@ -6,7 +6,10 @@ import { cn } from "cn";
 import { Button } from "@/components/ui/button";
 import { LabelStatusJurnal } from "@/components/label-status-jurnal";
 import { formatJam } from "@/lib/jurnal";
-import type { KehadiranJurnal, JurnalHarian } from "@/services/jurnal.service";
+import type {
+  KehadiranJurnal,
+  JurnalHarian,
+} from "@/services/pemantauan.service";
 
 type PanelJurnalProps = {
   jurnal: JurnalHarian;

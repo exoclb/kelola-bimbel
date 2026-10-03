@@ -21,7 +21,7 @@ import type {
   KehadiranJurnal,
   KelasKosong,
   StatusGuruHariIni,
-} from "@/services/jurnal.service";
+} from "@/services/pemantauan.service";
 
 type PemantauanHarianProps = {
   data: JurnalHarian[];

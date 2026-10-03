@@ -9,7 +9,7 @@ import {
   opsiSaringPemantauan,
   ringkasanAnyGuruHariIni,
   type KehadiranJurnal,
-} from "@/services/jurnal.service";
+} from "@/services/pemantauan.service";
 
 export const metadata: Metadata = { title: "Pemantauan Harian" };
 

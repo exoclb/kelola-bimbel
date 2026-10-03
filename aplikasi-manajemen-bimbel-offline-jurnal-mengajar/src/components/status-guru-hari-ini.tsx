@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { formatJam } from "@/lib/jurnal";
-import type { StatusGuruHariIni } from "@/services/jurnal.service";
+import type { StatusGuruHariIni } from "@/services/pemantauan.service";
 
 function LabelStatus({ sudahMengisi }: { sudahMengisi: boolean }) {
   return (
