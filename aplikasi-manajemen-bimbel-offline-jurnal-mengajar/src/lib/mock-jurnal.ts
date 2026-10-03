@@ -262,11 +262,27 @@ const RIWAYAT_JURNAL: RiwayatTersimpan[] = [
   },
 ];
 
+/** Saringan halaman riwayat: nama kelas dan rentang tanggal (YYYY-MM-DD). */
+export type FilterRiwayat = {
+  kelas: string;
+  dari: string;
+  sampai: string;
+};
+
+export const FILTER_RIWAYAT_KOSONG: FilterRiwayat = {
+  kelas: "",
+  dari: "",
+  sampai: "",
+};
+
 /**
  * Jurnal yang pernah diisi guru, terbaru lebih dulu. Di backend nanti fungsi
- * ini menjadi query ke `teaching_journals` difilter `guru_id` dan `tanggal`.
+ * ini menjadi query ke `teaching_journals` difilter `guru_id`, `tanggal`, dan
+ * kelas — jadi saringannya dikerjakan di sini, bukan di tampilan.
  */
-export function getRiwayatJurnal(): JurnalRiwayat[] {
+export function getRiwayatJurnal(
+  filter: FilterRiwayat = FILTER_RIWAYAT_KOSONG,
+): JurnalRiwayat[] {
   const hariIni = new Date();
   return RIWAYAT_JURNAL.map(({ hariLalu, ...jurnal }) => {
     const tanggal = new Date(hariIni);
@@ -275,7 +291,21 @@ export function getRiwayatJurnal(): JurnalRiwayat[] {
       ...jurnal,
       tanggal: tanggalISO(tanggal),
     };
-  }).sort((a, b) => b.tanggal.localeCompare(a.tanggal));
+  })
+    .filter((jurnal) => !filter.kelas || jurnal.namaKelas === filter.kelas)
+    .filter((jurnal) => !filter.dari || jurnal.tanggal >= filter.dari)
+    .filter((jurnal) => !filter.sampai || jurnal.tanggal <= filter.sampai)
+    .sort((a, b) => b.tanggal.localeCompare(a.tanggal));
+}
+
+/**
+ * Kelas yang punya jurnal, untuk pilihan pada saringan. Nanti ini menjadi
+ * `SELECT DISTINCT` dari jurnal guru yang sedang masuk.
+ */
+export function getKelasRiwayat(): string[] {
+  return [...new Set(RIWAYAT_JURNAL.map((jurnal) => jurnal.namaKelas))].sort(
+    (a, b) => a.localeCompare(b, "id"),
+  );
 }
 
 /** Satu jurnal lengkap dengan daftar muridnya, untuk halaman detail. */
