@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "8510c636dfaa0b68347ded2948e51f889714fa76",
+  "generatedForCommit": "332d59f6b531e8de2f423f234fe0d8cb51d1da37",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -322,7 +322,7 @@
     },
     {
       "path": "e2e/gaji.spec.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 7186
     },
@@ -531,10 +531,16 @@
       "size": 574
     },
     {
-      "path": "src/app/(protected)/app/page.tsx",
-      "reason": "needs_summary",
+      "path": "src/app/(protected)/app/murid/page.tsx",
+      "reason": "new",
       "language": "typescript",
-      "size": 5360
+      "size": 464
+    },
+    {
+      "path": "src/app/(protected)/app/page.tsx",
+      "reason": "changed",
+      "language": "typescript",
+      "size": 5561
     },
     {
       "path": "src/app/(protected)/app/pemantauan/page.tsx",
@@ -694,9 +700,9 @@
     },
     {
       "path": "src/components/app-nav.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 1831
+      "size": 1873
     },
     {
       "path": "src/components/auth-form.tsx",
@@ -727,6 +733,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 3744
+    },
+    {
+      "path": "src/components/daftar-murid.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 3352
     },
     {
       "path": "src/components/daftar-riwayat-jurnal.tsx",
@@ -1047,6 +1059,12 @@
       "size": 9777
     },
     {
+      "path": "src/lib/mock-murid.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 2095
+    },
+    {
       "path": "src/lib/permissions.ts",
       "reason": "needs_summary",
       "language": "typescript",
@@ -1066,9 +1084,9 @@
     },
     {
       "path": "src/lib/tanggal.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 1185
+      "size": 1664
     },
     {
       "path": "src/lib/utils.ts",

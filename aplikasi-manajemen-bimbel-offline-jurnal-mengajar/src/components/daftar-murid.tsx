@@ -1,5 +1,9 @@
+"use client";
+
+import { useState } from "react";
 import { CalendarDays, Phone, UserRound } from "lucide-react";
 import { cn } from "cn";
+import { FormTambahMurid } from "@/components/form-tambah-murid";
 import {
   Card,
   CardDescription,
@@ -10,15 +14,26 @@ import type { Murid } from "@/lib/mock-murid";
 import { formatTanggalLengkap, hitungUsia } from "@/lib/tanggal";
 
 type DaftarMuridProps = {
-  daftar: Murid[];
+  daftarAwal: Murid[];
 };
 
 /**
  * Daftar murid bimbel: data tiap anak, orang tua yang bisa dihubungi, dan
- * statusnya masih aktif atau tidak.
+ * statusnya masih aktif atau tidak. Murid baru ditambahkan lewat formulir di
+ * atas daftar; datanya masih disimpan di layar, belum ke database.
  */
-export function DaftarMurid({ daftar }: DaftarMuridProps) {
+export function DaftarMurid({ daftarAwal }: DaftarMuridProps) {
+  const [daftar, setDaftar] = useState(daftarAwal);
+  const [pesan, setPesan] = useState("");
+
   const aktif = daftar.filter((murid) => murid.statusAktif).length;
+
+  function tambahMurid(murid: Murid) {
+    setDaftar((sebelumnya) =>
+      [...sebelumnya, murid].sort((a, b) => a.nama.localeCompare(b.nama, "id")),
+    );
+    setPesan(`${murid.nama} ditambahkan ke daftar.`);
+  }
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -34,8 +49,15 @@ export function DaftarMurid({ daftar }: DaftarMuridProps) {
           : `${daftar.length} murid terdaftar · ${aktif} masih aktif.`}
       </p>
 
+      <div className="mt-8 space-y-3">
+        <FormTambahMurid onTambah={tambahMurid} />
+        <p role="status" className="text-sm text-muted-foreground">
+          {pesan}
+        </p>
+      </div>
+
       {daftar.length === 0 ? (
-        <Card className="mt-8">
+        <Card className="mt-6">
           <CardHeader>
             <CardTitle>Belum ada murid</CardTitle>
             <CardDescription>
@@ -44,7 +66,7 @@ export function DaftarMurid({ daftar }: DaftarMuridProps) {
           </CardHeader>
         </Card>
       ) : (
-        <ul className="mt-8 space-y-3">
+        <ul className="mt-6 space-y-3">
           {daftar.map((murid) => (
             <li key={murid.id}>
               <Card className="gap-3 px-5 py-4">
@@ -70,21 +92,32 @@ export function DaftarMurid({ daftar }: DaftarMuridProps) {
                     {murid.statusAktif ? "Aktif" : "Tidak aktif"}
                   </span>
                 </div>
-                <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-muted-foreground">
-                  <span className="inline-flex items-center gap-1.5">
-                    <UserRound className="size-4" aria-hidden="true" />
-                    {murid.namaOrangTua}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5">
-                    <Phone className="size-4" aria-hidden="true" />
-                    {murid.kontakOrangTua}
-                  </span>
-                </div>
+                {(murid.namaOrangTua || murid.kontakOrangTua) && (
+                  <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-muted-foreground">
+                    {murid.namaOrangTua && (
+                      <span className="inline-flex items-center gap-1.5">
+                        <UserRound className="size-4" aria-hidden="true" />
+                        {murid.namaOrangTua}
+                      </span>
+                    )}
+                    {murid.kontakOrangTua && (
+                      <span className="inline-flex items-center gap-1.5">
+                        <Phone className="size-4" aria-hidden="true" />
+                        {murid.kontakOrangTua}
+                      </span>
+                    )}
+                  </div>
+                )}
               </Card>
             </li>
           ))}
         </ul>
       )}
+
+      <p className="mt-6 text-xs leading-5 text-muted-foreground">
+        Catatan: murid baru belum tersimpan di database — penyimpanannya
+        menyusul bersama API data murid.
+      </p>
     </div>
   );
 }
