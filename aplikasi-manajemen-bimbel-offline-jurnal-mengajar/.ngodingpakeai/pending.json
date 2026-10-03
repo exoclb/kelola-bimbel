@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "4f9b944b9bc9a9208c447969ce6689ea65ca2b80",
+  "generatedForCommit": "7e76918a774f323b1bce53de017ae65ec1b76a02",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -174,7 +174,7 @@
       "path": "docs/backend.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 41600
+      "size": 42908
     },
     {
       "path": "docs/deployment.md",
@@ -280,7 +280,7 @@
     },
     {
       "path": "drizzle/0012_profil_bimbel.sql",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "sql",
       "size": 510
     },
@@ -358,13 +358,13 @@
     },
     {
       "path": "drizzle/meta/0012_snapshot.json",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "json",
       "size": 47965
     },
     {
       "path": "drizzle/meta/_journal.json",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "json",
       "size": 1874
     },
@@ -418,9 +418,9 @@
     },
     {
       "path": "e2e/pemantauan.spec.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 9352
+      "size": 10717
     },
     {
       "path": "e2e/roles.spec.ts",
@@ -450,7 +450,7 @@
       "path": "next-env.d.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 296
+      "size": 288
     },
     {
       "path": "next.config.ts",
@@ -903,6 +903,12 @@
       "size": 1046
     },
     {
+      "path": "src/app/api/pengaturan/profil/route.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 927
+    },
+    {
       "path": "src/app/api/perkembangan/ringkasan/route.ts",
       "reason": "needs_summary",
       "language": "typescript",
@@ -1336,7 +1342,7 @@
     },
     {
       "path": "src/db/schema/bimbel-profile.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1280
     },
@@ -1348,7 +1354,7 @@
     },
     {
       "path": "src/db/schema/index.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 644
     },
@@ -1453,6 +1459,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 2380
+    },
+    {
+      "path": "src/lib/db-error.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 559
     },
     {
       "path": "src/lib/env.ts",
@@ -1594,9 +1606,9 @@
     },
     {
       "path": "src/services/kelas.service.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 9851
+      "size": 9441
     },
     {
       "path": "src/services/murid.service.ts",
@@ -1621,6 +1633,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 11588
+    },
+    {
+      "path": "src/services/pengaturan.service.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 2677
     },
     {
       "path": "src/services/perkembangan.service.ts",
@@ -1681,6 +1699,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 873
+    },
+    {
+      "path": "src/validators/pengaturan.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 866
     },
     {
       "path": "src/validators/perkembangan.ts",
