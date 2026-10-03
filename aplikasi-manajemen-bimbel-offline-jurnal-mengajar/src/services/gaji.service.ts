@@ -164,14 +164,19 @@ export async function rekapGajiAnyBulanan(periode: string): Promise<RekapGaji> {
   };
 }
 
+export type RekapGajiGuru = Omit<RekapGaji, "daftar"> & {
+  guru: BarisGajiGuru;
+};
+
 /**
- * Rekap gaji satu guru pada satu bulan. `guru` datang dari sesi yang sudah
- * diverifikasi, jadi guru tidak pernah mengambil data orang lain.
+ * Rekap gaji satu guru pada satu bulan, lengkap dengan rincian tiap jurnalnya.
+ * `guru` datang dari sesi yang sudah diverifikasi, jadi guru tidak pernah
+ * mengambil data orang lain.
  */
 export async function rekapGajiGuru(
   periode: string,
   guru: { id: string; nama: string; email: string },
-): Promise<BarisGajiGuru> {
+): Promise<RekapGajiGuru> {
   const { awal, akhir } = rentangBulan(periode);
   const [tarifPerJam, agregat, rincian] = await Promise.all([
     tarifBerlaku(periode),
@@ -198,21 +203,26 @@ export async function rekapGajiGuru(
   const totalJam = agregat[0]?.totalJam ?? 0;
 
   return {
-    guruId: guru.id,
-    guruNama: guru.nama,
-    guruEmail: guru.email,
-    jumlahJurnal: agregat[0]?.jumlahJurnal ?? 0,
-    totalJam,
+    periode,
     tarifPerJam: tarif,
-    totalGaji: hitungGaji(totalJam, tarif),
-    statusPembayaran: "belum_dibayar",
-    tanggalDibayar: null,
-    rincian: rincian.map((baris) => ({
-      tanggal: baris.tanggal,
-      namaKelas: baris.namaKelas,
-      jamMengajar: baris.jamMengajar,
-      jumlahHadir: baris.jumlahHadir,
-      jumlahMurid: baris.jumlahMurid,
-    })),
+    tarifDiatur: tarifPerJam !== undefined,
+    guru: {
+      guruId: guru.id,
+      guruNama: guru.nama,
+      guruEmail: guru.email,
+      jumlahJurnal: agregat[0]?.jumlahJurnal ?? 0,
+      totalJam,
+      tarifPerJam: tarif,
+      totalGaji: hitungGaji(totalJam, tarif),
+      statusPembayaran: "belum_dibayar",
+      tanggalDibayar: null,
+      rincian: rincian.map((baris) => ({
+        tanggal: baris.tanggal,
+        namaKelas: baris.namaKelas,
+        jamMengajar: baris.jamMengajar,
+        jumlahHadir: baris.jumlahHadir,
+        jumlahMurid: baris.jumlahMurid,
+      })),
+    },
   };
 }

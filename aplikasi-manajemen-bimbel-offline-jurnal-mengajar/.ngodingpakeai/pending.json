@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "56623c113c59865ba5f8f905a1ee738c0625a570",
+  "generatedForCommit": "1617b8cfc42001a01928c9a90c791ec7d15e764a",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -174,7 +174,7 @@
       "path": "docs/backend.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 18689
+      "size": 19721
     },
     {
       "path": "docs/deployment.md",
@@ -529,6 +529,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 1215
+    },
+    {
+      "path": "src/app/api/admin/gaji/route.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 806
     },
     {
       "path": "src/app/api/admin/jurnal/route.ts",
@@ -1024,7 +1030,7 @@
     },
     {
       "path": "src/services/gaji.service.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 6440
     },
@@ -1057,6 +1063,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 11588
+    },
+    {
+      "path": "src/validators/gaji.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 390
     },
     {
       "path": "src/validators/jadwal.ts",
