@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "1fcaa269ffcb7da722631646f02e5b96ffdbc760",
+  "generatedForCommit": "d016341555e953e5c778ce2b07c107d414ecd1d3",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -172,7 +172,7 @@
     },
     {
       "path": "docs/backend.md",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "markdown",
       "size": 14463
     },
@@ -460,9 +460,15 @@
     },
     {
       "path": "src/app/(protected)/app/page.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 4077
+      "size": 4747
+    },
+    {
+      "path": "src/app/(protected)/app/pemantauan/page.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 917
     },
     {
       "path": "src/app/(protected)/layout.tsx",
@@ -472,7 +478,7 @@
     },
     {
       "path": "src/app/api/admin/jurnal/route.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 833
     },
@@ -586,27 +592,27 @@
     },
     {
       "path": "src/components/daftar-riwayat-jurnal.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 6938
+      "size": 6957
     },
     {
       "path": "src/components/detail-jurnal.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 11805
+      "size": 11834
     },
     {
       "path": "src/components/jurnal-form.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 9789
+      "size": 9816
     },
     {
       "path": "src/components/konfirmasi-jurnal.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 5069
+      "size": 5064
     },
     {
       "path": "src/components/label-status-jurnal.tsx",
@@ -615,10 +621,16 @@
       "size": 621
     },
     {
-      "path": "src/components/pemilih-jadwal.tsx",
-      "reason": "needs_summary",
+      "path": "src/components/pemantauan-harian.tsx",
+      "reason": "new",
       "language": "typescript",
-      "size": 4414
+      "size": 5848
+    },
+    {
+      "path": "src/components/pemilih-jadwal.tsx",
+      "reason": "changed",
+      "language": "typescript",
+      "size": 4445
     },
     {
       "path": "src/components/pemilih-materi.tsx",
@@ -789,14 +801,20 @@
       "size": 1059
     },
     {
-      "path": "src/lib/mock-jurnal.ts",
-      "reason": "needs_summary",
+      "path": "src/lib/jurnal.ts",
+      "reason": "new",
       "language": "typescript",
-      "size": 10325
+      "size": 773
+    },
+    {
+      "path": "src/lib/mock-jurnal.ts",
+      "reason": "changed",
+      "language": "typescript",
+      "size": 9777
     },
     {
       "path": "src/lib/permissions.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1799
     },
@@ -828,7 +846,7 @@
       "path": "src/services/jurnal.service.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 13494
+      "size": 13585
     },
     {
       "path": "src/services/notes.service.ts",
@@ -844,7 +862,7 @@
     },
     {
       "path": "src/validators/jurnal.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 3476
     },

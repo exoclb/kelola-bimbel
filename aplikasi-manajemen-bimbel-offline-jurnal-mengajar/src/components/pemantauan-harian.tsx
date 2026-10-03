@@ -8,12 +8,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { KartuStatusGuru } from "@/components/status-guru-hari-ini";
 import { LabelStatusJurnal } from "@/components/label-status-jurnal";
 import { formatJam } from "@/lib/jurnal";
-import type { JurnalHarian } from "@/services/jurnal.service";
+import type {
+  JurnalHarian,
+  StatusGuruHariIni,
+} from "@/services/jurnal.service";
 
 type PemantauanHarianProps = {
   data: JurnalHarian[];
+  statusGuru: StatusGuruHariIni[];
   tanggalTampil: string;
   namaOwner: string;
   hasMore: boolean;
@@ -26,6 +31,7 @@ type PemantauanHarianProps = {
  */
 export function PemantauanHarian({
   data,
+  statusGuru,
   tanggalTampil,
   namaOwner,
   hasMore,
@@ -92,6 +98,10 @@ export function PemantauanHarian({
             <p className="text-2xl font-semibold tracking-tight">{nilai}</p>
           </Card>
         ))}
+      </div>
+
+      <div className="mt-6">
+        <KartuStatusGuru daftar={statusGuru} />
       </div>
 
       {data.length === 0 ? (

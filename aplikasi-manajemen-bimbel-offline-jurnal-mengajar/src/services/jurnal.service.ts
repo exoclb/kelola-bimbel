@@ -10,6 +10,7 @@ import {
   user,
 } from "@/db/schema";
 import { tanggalISO } from "@/lib/tanggal";
+import type { NamaHari } from "@/lib/tanggal";
 import type {
   KoreksiJurnalInput,
   ListJurnalHarianInput,
@@ -427,3 +428,79 @@ export async function listAnyJurnal(
 export type JurnalHarian = Awaited<
   ReturnType<typeof listAnyJurnal>
 >["data"][number];
+
+export type StatusGuruHariIni = {
+  guruId: string;
+  guruNama: string;
+  guruEmail: string;
+  jumlahJadwal: number;
+  jumlahJurnal: number;
+  totalJam: number;
+  sudahMengisi: boolean;
+};
+
+/**
+ * Ringkasan status tiap guru pada satu hari: sudah mengisi jurnal atau belum.
+ * Gurunya diambil dari jadwal hari itu, ditambah siapa pun yang sudah mengirim
+ * jurnal hari ini (mis. jadwalnya sudah dihapus), supaya tidak ada yang
+ * terlewat dari pantauan. Yang belum mengisi tampil lebih dulu.
+ */
+export async function ringkasanAnyGuruHariIni(
+  hari: NamaHari,
+  tanggal: string,
+): Promise<StatusGuruHariIni[]> {
+  const barisJadwal = await db
+    .select({
+      guruId: schedules.guruId,
+      guruNama: user.name,
+      guruEmail: user.email,
+      jumlahJadwal: sql<number>`count(*)::int`.as("jumlah_jadwal"),
+    })
+    .from(schedules)
+    .innerJoin(user, eq(schedules.guruId, user.id))
+    .where(eq(schedules.hari, hari))
+    .groupBy(schedules.guruId, user.name, user.email);
+
+  const barisJurnal = await db
+    .select({
+      guruId: teachingJournals.guruId,
+      guruNama: user.name,
+      guruEmail: user.email,
+      jumlahJurnal: sql<number>`count(*)::int`.as("jumlah_jurnal"),
+      totalJam:
+        sql<number>`coalesce(sum(${teachingJournals.jamMengajar}), 0)::float8`.as(
+          "total_jam",
+        ),
+    })
+    .from(teachingJournals)
+    .innerJoin(user, eq(teachingJournals.guruId, user.id))
+    .where(eq(teachingJournals.tanggal, tanggal))
+    .groupBy(teachingJournals.guruId, user.name, user.email);
+
+  const perGuru = new Map<string, StatusGuruHariIni>();
+  for (const baris of barisJadwal) {
+    perGuru.set(baris.guruId, {
+      ...baris,
+      jumlahJurnal: 0,
+      totalJam: 0,
+      sudahMengisi: false,
+    });
+  }
+  for (const baris of barisJurnal) {
+    perGuru.set(baris.guruId, {
+      guruId: baris.guruId,
+      guruNama: baris.guruNama,
+      guruEmail: baris.guruEmail,
+      jumlahJadwal: perGuru.get(baris.guruId)?.jumlahJadwal ?? 0,
+      jumlahJurnal: baris.jumlahJurnal,
+      totalJam: baris.totalJam,
+      sudahMengisi: true,
+    });
+  }
+
+  return [...perGuru.values()].sort(
+    (a, b) =>
+      Number(a.sudahMengisi) - Number(b.sudahMengisi) ||
+      a.guruNama.localeCompare(b.guruNama, "id"),
+  );
+}
