@@ -23,8 +23,18 @@ export const auth = betterAuth({
     enabled: true,
     minPasswordLength: 8,
     maxPasswordLength: 128,
-    // Add an email provider before enabling verification or password recovery.
+    // Add an email provider before enabling verification. Password recovery
+    // already works: see sendResetPassword below.
     requireEmailVerification: false,
+    // Bimbel memakai aplikasi ini di jaringan lokal dan belum punya penyedia
+    // email, jadi tautan atur ulang sandi dicatat di log server. Siapa pun yang
+    // bisa membaca log (operator bimbel) bisa menyerahkan tautannya ke guru.
+    // Ganti isi fungsi ini dengan pengiriman email begitu penyedianya tersedia.
+    sendResetPassword: async ({ user, url }) => {
+      console.info(
+        `[lupa-sandi] tautan atur ulang untuk ${user.email}: ${url}`,
+      );
+    },
   },
   plugins: [
     // Roles come from the access control in lib/permissions.ts. New accounts get

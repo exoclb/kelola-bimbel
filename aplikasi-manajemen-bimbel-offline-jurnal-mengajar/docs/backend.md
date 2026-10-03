@@ -139,6 +139,10 @@ Aturan yang dijaga database, bukan cuma di kode: indeks unik parsial `student_en
 
 Seluruh endpoint perkembangan (`/api/perkembangan`, `/api/perkembangan/:id`, `/api/perkembangan/ringkasan`, `/api/perkembangan/riwayat`) dan `/api/kehadiran` dijaga izin `perkembangan`: **hanya guru (role `user`), owner, dan admin** yang boleh membuka. Akun yang tidak punya izin itu dijawab 403 `FORBIDDEN` — berbeda dari jurnal yang cuma boleh dibaca pemiliknya, data perkembangan memang dipakai bersama guru pengampu. Tanpa sesi tetap 401, dan menulis (POST/PATCH/DELETE) butuh izin `write` sedangkan membaca butuh `read`.
 
+## Lupa sandi
+
+`POST /api/auth/request-password-reset` dan `POST /api/auth/reset-password` milik Better Auth dipakai apa adanya; aplikasi hanya menyiapkan halamannya di `/lupa-password` dan `/atur-ulang-password?token=…`. `sendResetPassword` di `src/lib/auth.ts` mencatat tautan atur ulang ke log server (`[lupa-sandi] …`) karena bimbel belum memakai penyedia email — ganti isi fungsi itu dengan pengiriman email begitu penyedianya ada. Tautannya berlaku satu jam dan hanya bisa dipakai sekali; permintaan untuk email yang tidak terdaftar dijawab sama seperti email yang terdaftar supaya halaman ini tidak bisa dipakai menebak akun siapa saja yang ada.
+
 ## Role-based access
 
 Ownership answers "is this row mine?". Roles answer "may this account reach past its own rows?". The starter ships a worked example of the second question using the Better Auth admin plugin.

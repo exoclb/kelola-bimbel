@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { CheckCircle2, KeyRound, LogIn, Mail, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -136,6 +137,15 @@ export function HalamanMasuk({ daftarAkun }: HalamanMasukProps) {
             <LogIn aria-hidden="true" />
             Masuk
           </Button>
+
+          <p className="text-center text-sm">
+            <Link
+              href="/lupa-password"
+              className="font-medium text-primary hover:underline"
+            >
+              Lupa sandi?
+            </Link>
+          </p>
         </form>
 
         {masuk && (

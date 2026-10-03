@@ -155,6 +155,16 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
           {signingUp ? "Sign in" : "Create an account"}
         </Link>
       </p>
+      {!signingUp && (
+        <p className="mt-2 text-center text-sm">
+          <Link
+            className="font-medium text-primary hover:underline"
+            href="/lupa-password"
+          >
+            Lupa sandi?
+          </Link>
+        </p>
+      )}
     </div>
   );
 }
