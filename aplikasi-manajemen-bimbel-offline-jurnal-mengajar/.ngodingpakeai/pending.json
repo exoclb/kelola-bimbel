@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "2ede2a6b5513df9d467c389a8ac5f8dea8957c8a",
+  "generatedForCommit": "b320ad6e21df34fa4d5344af2f1a2fdcbd25ad4b",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -172,7 +172,7 @@
     },
     {
       "path": "docs/backend.md",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "markdown",
       "size": 40614
     },
@@ -406,7 +406,7 @@
     },
     {
       "path": "e2e/pemantauan.spec.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 7082
     },
@@ -658,9 +658,15 @@
     },
     {
       "path": "src/app/(protected)/app/pengaturan/page.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 440
+    },
+    {
+      "path": "src/app/(protected)/app/pengaturan/profil/page.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1092
     },
     {
       "path": "src/app/(protected)/app/perkembangan/layout.tsx",
@@ -1029,6 +1035,12 @@
       "size": 4532
     },
     {
+      "path": "src/components/form-profil-bimbel.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 8096
+    },
+    {
       "path": "src/components/form-tambah-kelas.tsx",
       "reason": "needs_summary",
       "language": "typescript",
@@ -1138,7 +1150,7 @@
     },
     {
       "path": "src/components/pengaturan-bimbel.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 5185
     },
@@ -1402,7 +1414,7 @@
     },
     {
       "path": "src/lib/mock-akun.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2302
     },
@@ -1432,7 +1444,7 @@
     },
     {
       "path": "src/lib/mock-menu.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1815
     },
@@ -1450,7 +1462,7 @@
     },
     {
       "path": "src/lib/mock-pengaturan.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2185
     },
@@ -1468,7 +1480,7 @@
     },
     {
       "path": "src/lib/permissions.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2664
     },

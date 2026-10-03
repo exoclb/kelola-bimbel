@@ -34,11 +34,13 @@ const PROFIL: ProfilBimbel = {
   email: "admin@cerdasnusantara.test",
 };
 
-const ATURAN_GAJI: AturanGaji = {
-  tarifPerJam: 60000,
-  skema: "per jam",
-  berlakuSejak: "2026-07-01",
-};
+// Riwayat tarif: yang dipakai untuk sebuah jurnal adalah baris terbaru yang
+// `berlakuSejak`-nya tidak melewati tanggal jurnal itu, sama seperti aturan di
+// tabel `salary_settings`.
+const RIWAYAT_TARIF: AturanGaji[] = [
+  { tarifPerJam: 50000, skema: "per jam", berlakuSejak: "2026-01-01" },
+  { tarifPerJam: 60000, skema: "per jam", berlakuSejak: "2026-07-01" },
+];
 
 const PREFERENSI: PreferensiNotifikasi[] = [
   {
@@ -68,9 +70,16 @@ export function getProfilBimbel(): ProfilBimbel {
   return { ...PROFIL };
 }
 
-/** Tarif dan skema gaji yang berlaku sekarang. */
+/** Riwayat tarif, yang terbaru lebih dulu. */
+export function getRiwayatTarif(): AturanGaji[] {
+  return [...RIWAYAT_TARIF].sort((a, b) =>
+    b.berlakuSejak.localeCompare(a.berlakuSejak),
+  );
+}
+
+/** Tarif dan skema gaji yang berlaku sekarang (baris riwayat terbaru). */
 export function getAturanGaji(): AturanGaji {
-  return { ...ATURAN_GAJI };
+  return { ...getRiwayatTarif()[0]! };
 }
 
 /** Daftar akun guru dan owner beserta status aktifnya. */
