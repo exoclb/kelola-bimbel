@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "33cd6ed2efe2190b44963a9836e01f1364c5dee3",
+  "generatedForCommit": "1ba68cb77a13ad4f04b3f21f155c920e465b61b7",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -237,6 +237,12 @@
       "size": 135
     },
     {
+      "path": "drizzle/0005_notifikasi.sql",
+      "reason": "new",
+      "language": "sql",
+      "size": 1468
+    },
+    {
       "path": "drizzle/meta/0000_snapshot.json",
       "reason": "needs_summary",
       "language": "json",
@@ -267,10 +273,16 @@
       "size": 27242
     },
     {
-      "path": "drizzle/meta/_journal.json",
-      "reason": "needs_summary",
+      "path": "drizzle/meta/0005_snapshot.json",
+      "reason": "new",
       "language": "json",
-      "size": 743
+      "size": 32457
+    },
+    {
+      "path": "drizzle/meta/_journal.json",
+      "reason": "changed",
+      "language": "json",
+      "size": 881
     },
     {
       "path": "drizzle.config.ts",
@@ -454,7 +466,7 @@
     },
     {
       "path": "src/app/(protected)/app/gaji/saya/page.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1036
     },
@@ -592,7 +604,7 @@
     },
     {
       "path": "src/components/app-nav.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1831
     },
@@ -706,7 +718,7 @@
     },
     {
       "path": "src/components/rekap-gaji-saya.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 3279
     },
@@ -820,9 +832,9 @@
     },
     {
       "path": "src/db/schema/index.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 390
+      "size": 467
     },
     {
       "path": "src/db/schema/journal-attendances.ts",
@@ -835,6 +847,18 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 825
+    },
+    {
+      "path": "src/db/schema/notification-preferences.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 962
+    },
+    {
+      "path": "src/db/schema/notifications.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1144
     },
     {
       "path": "src/db/schema/schedules.ts",
@@ -910,7 +934,7 @@
     },
     {
       "path": "src/lib/mock-gaji.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 5194
     },
