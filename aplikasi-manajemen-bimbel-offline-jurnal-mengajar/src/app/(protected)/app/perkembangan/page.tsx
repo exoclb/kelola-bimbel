@@ -8,11 +8,12 @@ export const metadata: Metadata = { title: "Perkembangan Anak" };
 
 export default async function PerkembanganPage() {
   // Guru dan owner sama-sama boleh melihat catatan perkembangan.
-  await requireSession();
+  const { user } = await requireSession();
   return (
     <DaftarPerkembangan
       daftarMurid={getDaftarMurid()}
-      catatan={getCatatanPerkembangan()}
+      catatanAwal={getCatatanPerkembangan()}
+      namaGuru={user.name}
     />
   );
 }

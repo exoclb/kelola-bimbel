@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "79d7991bd2c2ee2098aeb01b12a52e5fdb92fe5a",
+  "generatedForCommit": "1baf1061f9f4b243d592b21169a9e0063c2e9d62",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -544,15 +544,21 @@
     },
     {
       "path": "src/app/(protected)/app/page.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 6194
+      "size": 6743
     },
     {
       "path": "src/app/(protected)/app/pemantauan/page.tsx",
       "reason": "needs_summary",
       "language": "typescript",
       "size": 2708
+    },
+    {
+      "path": "src/app/(protected)/app/perkembangan/page.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 612
     },
     {
       "path": "src/app/(protected)/layout.tsx",
@@ -706,9 +712,9 @@
     },
     {
       "path": "src/components/app-nav.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 1915
+      "size": 1971
     },
     {
       "path": "src/components/auth-form.tsx",
@@ -742,15 +748,21 @@
     },
     {
       "path": "src/components/daftar-kelas.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 9857
     },
     {
       "path": "src/components/daftar-murid.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 5496
+    },
+    {
+      "path": "src/components/daftar-perkembangan.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 4911
     },
     {
       "path": "src/components/daftar-riwayat-jurnal.tsx",
@@ -790,7 +802,7 @@
     },
     {
       "path": "src/components/kolom-pencarian.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1108
     },
@@ -1117,6 +1129,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 1336
+    },
+    {
+      "path": "src/lib/mock-perkembangan.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 2909
     },
     {
       "path": "src/lib/permissions.ts",
