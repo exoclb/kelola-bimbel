@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "teaching_journals_guru_jadwal_tanggal_idx" ON "teaching_journals" USING btree ("guru_id","schedule_id","tanggal");

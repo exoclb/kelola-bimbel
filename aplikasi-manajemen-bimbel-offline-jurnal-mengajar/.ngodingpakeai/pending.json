@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "7aabafabab652d96483e5ce3486d236f56a10318",
+  "generatedForCommit": "a0e99c0bab0da896edecfbab42ea0a2427385292",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -28,9 +28,9 @@
     },
     {
       "path": ".claude/skills/ngodingpakeai/SKILL.md",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "markdown",
-      "size": 19096
+      "size": 20830
     },
     {
       "path": ".codex/config.toml",
@@ -40,9 +40,9 @@
     },
     {
       "path": ".codex/skills/ngodingpakeai/SKILL.md",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "markdown",
-      "size": 19096
+      "size": 20830
     },
     {
       "path": ".cursor/mcp.json",
@@ -124,9 +124,9 @@
     },
     {
       "path": "AGENTS.md",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "markdown",
-      "size": 28183
+      "size": 29918
     },
     {
       "path": "CLAUDE.md",
@@ -172,9 +172,9 @@
     },
     {
       "path": "docs/backend.md",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "markdown",
-      "size": 9789
+      "size": 10753
     },
     {
       "path": "docs/deployment.md",
@@ -226,7 +226,7 @@
     },
     {
       "path": "drizzle/0003_jurnal.sql",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "sql",
       "size": 4220
     },
@@ -250,13 +250,13 @@
     },
     {
       "path": "drizzle/meta/0003_snapshot.json",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "json",
       "size": 26477
     },
     {
       "path": "drizzle/meta/_journal.json",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "json",
       "size": 599
     },
@@ -477,6 +477,12 @@
       "size": 176
     },
     {
+      "path": "src/app/api/jadwal/route.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 741
+    },
+    {
       "path": "src/app/api/notes/route.ts",
       "reason": "needs_summary",
       "language": "typescript",
@@ -544,9 +550,9 @@
     },
     {
       "path": "src/components/daftar-kehadiran.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 3636
+      "size": 3744
     },
     {
       "path": "src/components/daftar-riwayat-jurnal.tsx",
@@ -568,9 +574,9 @@
     },
     {
       "path": "src/components/konfirmasi-jurnal.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 5006
+      "size": 5069
     },
     {
       "path": "src/components/label-status-jurnal.tsx",
@@ -580,15 +586,15 @@
     },
     {
       "path": "src/components/pemilih-jadwal.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 4366
+      "size": 4414
     },
     {
       "path": "src/components/pemilih-materi.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 2325
+      "size": 2372
     },
     {
       "path": "src/components/providers.tsx",
@@ -622,9 +628,9 @@
     },
     {
       "path": "src/components/ui/checkbox.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 1204
+      "size": 1212
     },
     {
       "path": "src/components/ui/input.tsx",
@@ -646,9 +652,9 @@
     },
     {
       "path": "src/components/ui/textarea.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 749
+      "size": 754
     },
     {
       "path": "src/config/site.ts",
@@ -670,19 +676,19 @@
     },
     {
       "path": "src/db/schema/classes.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 758
     },
     {
       "path": "src/db/schema/index.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 390
     },
     {
       "path": "src/db/schema/journal-attendances.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1050
     },
@@ -694,7 +700,7 @@
     },
     {
       "path": "src/db/schema/schedules.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1030
     },
@@ -706,13 +712,13 @@
     },
     {
       "path": "src/db/schema/students.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 784
     },
     {
       "path": "src/db/schema/teaching-journals.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1899
     },
@@ -772,9 +778,9 @@
     },
     {
       "path": "src/lib/tanggal.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 887
+      "size": 1185
     },
     {
       "path": "src/lib/utils.ts",
@@ -783,10 +789,22 @@
       "size": 91
     },
     {
+      "path": "src/services/jadwal.service.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1076
+    },
+    {
       "path": "src/services/notes.service.ts",
       "reason": "needs_summary",
       "language": "typescript",
       "size": 2846
+    },
+    {
+      "path": "src/validators/jadwal.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 318
     },
     {
       "path": "src/validators/notes.ts",

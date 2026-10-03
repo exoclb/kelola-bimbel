@@ -29,10 +29,9 @@ export type KehadiranMurid = {
   catatan: string;
 };
 
+/** Isi `POST /api/jurnal`. Kelas, tanggal, dan jam mengajar diisi server dari jadwal. */
 export type JurnalInput = {
   jadwalId: string;
-  kelasId: string;
-  tanggal: string;
   materi: string;
   catatan: string;
   kehadiran: KehadiranMurid[];

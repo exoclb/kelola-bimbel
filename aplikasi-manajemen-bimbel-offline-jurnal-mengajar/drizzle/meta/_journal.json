@@ -29,6 +29,13 @@
       "when": 1791019808400,
       "tag": "0003_jurnal",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791020177978,
+      "tag": "0004_jurnal_idempoten",
+      "breakpoints": true
     }
   ]
 }

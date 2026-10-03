@@ -6,6 +6,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -51,6 +52,14 @@ export const teachingJournals = pgTable(
       .notNull(),
   },
   (table) => [
+    // Satu guru hanya boleh punya satu jurnal per jadwal per tanggal, supaya
+    // kirim ulang (dobel klik / ulang setelah koneksi putus) tidak dihitung
+    // dua kali saat rekap gaji.
+    uniqueIndex("teaching_journals_guru_jadwal_tanggal_idx").on(
+      table.guruId,
+      table.scheduleId,
+      table.tanggal,
+    ),
     index("teaching_journals_guru_tanggal_idx").on(
       table.guruId,
       table.tanggal.desc(),

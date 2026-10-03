@@ -32,7 +32,6 @@ type JurnalFormProps = {
   jadwal: Jadwal[];
   hari: string;
   namaGuru: string;
-  tanggal: string;
   tanggalTampil: string;
 };
 
@@ -40,7 +39,6 @@ export function JurnalForm({
   jadwal,
   hari,
   namaGuru,
-  tanggal,
   tanggalTampil,
 }: JurnalFormProps) {
   const [jadwalId, setJadwalId] = useState("");
@@ -98,8 +96,6 @@ export function JurnalForm({
     const materiLengkap = topik.trim() ? `${materi} — ${topik.trim()}` : materi;
     const jurnal: JurnalInput = {
       jadwalId: jadwalTerpilih.id,
-      kelasId: jadwalTerpilih.kelasId,
-      tanggal,
       materi: materiLengkap,
       catatan: catatan.trim(),
       kehadiran: jadwalTerpilih.murid.map((murid) => ({

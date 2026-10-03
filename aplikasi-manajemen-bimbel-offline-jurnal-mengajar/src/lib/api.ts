@@ -4,11 +4,15 @@ import { auth } from "@/lib/auth";
 import { env } from "@/lib/env";
 import type { Permissions } from "@/lib/permissions";
 
+export type ApiErrorDetail = { field: string; message: string };
+
 export class ApiError extends Error {
   constructor(
     public status: number,
     public code: string,
     message: string,
+    // Dipakai untuk error per-field, sama bentuknya dengan error validasi Zod.
+    public details?: ApiErrorDetail[],
   ) {
     super(message);
   }
@@ -46,7 +50,13 @@ export async function withApiSession(
   } catch (error) {
     if (error instanceof ApiError) {
       response = Response.json(
-        { error: { code: error.code, message: error.message } },
+        {
+          error: {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+          },
+        },
         { status: error.status },
       );
     } else if (error instanceof ZodError) {
