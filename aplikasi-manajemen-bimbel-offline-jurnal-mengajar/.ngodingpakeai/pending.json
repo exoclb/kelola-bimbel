@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "b320ad6e21df34fa4d5344af2f1a2fdcbd25ad4b",
+  "generatedForCommit": "b94ef78a1c3cf9149ee651e43da34ad215d4fb61",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -657,6 +657,12 @@
       "size": 2708
     },
     {
+      "path": "src/app/(protected)/app/pengaturan/gaji/page.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1101
+    },
+    {
       "path": "src/app/(protected)/app/pengaturan/page.tsx",
       "reason": "needs_summary",
       "language": "typescript",
@@ -664,7 +670,7 @@
     },
     {
       "path": "src/app/(protected)/app/pengaturan/profil/page.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1092
     },
@@ -1017,6 +1023,12 @@
       "size": 6061
     },
     {
+      "path": "src/components/form-aturan-gaji.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 7574
+    },
+    {
       "path": "src/components/form-catatan-anak.tsx",
       "reason": "needs_summary",
       "language": "typescript",
@@ -1036,7 +1048,7 @@
     },
     {
       "path": "src/components/form-profil-bimbel.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 8096
     },
@@ -1462,9 +1474,9 @@
     },
     {
       "path": "src/lib/mock-pengaturan.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 2185
+      "size": 2678
     },
     {
       "path": "src/lib/mock-perkembangan.ts",

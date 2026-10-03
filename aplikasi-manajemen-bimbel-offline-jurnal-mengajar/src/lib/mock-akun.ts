@@ -47,6 +47,15 @@ const AKUN: AkunMasuk[] = [
     cabang: "Semua cabang",
     statusAktif: true,
   },
+  {
+    id: "akn-4",
+    nama: "Citra Lestari",
+    email: "citra@kelolabimbel.test",
+    sandi: "guru12345",
+    peran: "guru",
+    cabang: "Cabang Utara",
+    statusAktif: false,
+  },
 ];
 
 /** Daftar akun contoh; salinannya dikembalikan supaya pemanggil tidak mengubah aslinya. */
