@@ -16,8 +16,9 @@ const fields = {
 };
 
 /**
- * Daftar murid bimbel, terurut nama. `cari` mencocokkan nama murid atau nama
- * orang tuanya sehingga guru bisa menemukan anak dengan cepat.
+ * Daftar murid bimbel, terurut nama. `cari` mencocokkan nama murid, nama orang
+ * tuanya, atau kontak orang tuanya sehingga guru bisa menemukan anak dengan
+ * cepat — termasuk saat yang diketahui hanya nomor HP walinya.
  */
 export async function listMurid({ limit, offset, cari }: ListMuridInput) {
   // Tanda % dan _ pada kata kunci dianggap huruf biasa, bukan pola pencarian.
@@ -26,6 +27,7 @@ export async function listMurid({ limit, offset, cari }: ListMuridInput) {
     ? or(
         ilike(students.nama, `%${kataKunci}%`),
         ilike(students.namaOrangTua, `%${kataKunci}%`),
+        ilike(students.kontakOrangTua, `%${kataKunci}%`),
       )
     : undefined;
 
