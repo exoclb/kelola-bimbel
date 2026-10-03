@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CalendarDays, Phone, UserRound } from "lucide-react";
 import { cn } from "cn";
 import { FormTambahMurid } from "@/components/form-tambah-murid";
+import { KolomPencarian } from "@/components/kolom-pencarian";
 import {
   Card,
   CardDescription,
@@ -25,8 +26,17 @@ type DaftarMuridProps = {
 export function DaftarMurid({ daftarAwal }: DaftarMuridProps) {
   const [daftar, setDaftar] = useState(daftarAwal);
   const [pesan, setPesan] = useState("");
+  const [cari, setCari] = useState("");
 
   const aktif = daftar.filter((murid) => murid.statusAktif).length;
+  const kataKunci = cari.trim().toLowerCase();
+  const cocok = kataKunci
+    ? daftar.filter(
+        (murid) =>
+          murid.nama.toLowerCase().includes(kataKunci) ||
+          murid.namaOrangTua.toLowerCase().includes(kataKunci),
+      )
+    : daftar;
 
   function tambahMurid(murid: Murid) {
     setDaftar((sebelumnya) =>
@@ -50,24 +60,40 @@ export function DaftarMurid({ daftarAwal }: DaftarMuridProps) {
       </p>
 
       <div className="mt-8 space-y-3">
+        <KolomPencarian
+          nilai={cari}
+          onUbah={setCari}
+          label="Cari murid"
+          placeholder="Cari nama murid atau orang tua…"
+        />
+        {kataKunci && (
+          <p role="status" className="text-sm text-muted-foreground">
+            {cocok.length} dari {daftar.length} murid cocok dengan “
+            {cari.trim()}”.
+          </p>
+        )}
         <FormTambahMurid onTambah={tambahMurid} />
         <p role="status" className="text-sm text-muted-foreground">
           {pesan}
         </p>
       </div>
 
-      {daftar.length === 0 ? (
+      {cocok.length === 0 ? (
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle>Belum ada murid</CardTitle>
+            <CardTitle>
+              {kataKunci ? "Tidak ada murid yang cocok" : "Belum ada murid"}
+            </CardTitle>
             <CardDescription>
-              Data murid muncul di sini setelah ditambahkan.
+              {kataKunci
+                ? `Coba kata kunci lain, atau hapus pencarian “${cari.trim()}”.`
+                : "Data murid muncul di sini setelah ditambahkan."}
             </CardDescription>
           </CardHeader>
         </Card>
       ) : (
         <ul className="mt-6 space-y-3">
-          {daftar.map((murid) => (
+          {cocok.map((murid) => (
             <li key={murid.id}>
               <Card className="gap-3 px-5 py-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">

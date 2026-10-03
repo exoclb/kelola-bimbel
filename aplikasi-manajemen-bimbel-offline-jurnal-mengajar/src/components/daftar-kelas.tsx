@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CalendarDays, Clock, MapPin, Users, X } from "lucide-react";
 import { FormJadwalKelas } from "@/components/form-jadwal-kelas";
 import { FormTambahKelas } from "@/components/form-tambah-kelas";
+import { KolomPencarian } from "@/components/kolom-pencarian";
 import {
   PanelPenempatan,
   type MuridDiKelas,
@@ -39,11 +40,22 @@ export function DaftarKelas({
   const [daftar, setDaftar] = useState(daftarAwal);
   const [penempatan, setPenempatan] = useState(penempatanAwal);
   const [pesan, setPesan] = useState("");
+  const [cari, setCari] = useState("");
 
   const jumlahJadwal = daftar.reduce(
     (jumlah, kelas) => jumlah + kelas.jadwal.length,
     0,
   );
+
+  const kataKunci = cari.trim().toLowerCase();
+  const cocok = kataKunci
+    ? daftar.filter(
+        (kelas) =>
+          kelas.namaKelas.toLowerCase().includes(kataKunci) ||
+          kelas.cabang.toLowerCase().includes(kataKunci) ||
+          kelas.guruNama.toLowerCase().includes(kataKunci),
+      )
+    : daftar;
 
   function namaMurid(muridId: string) {
     return daftarMurid.find((murid) => murid.id === muridId)?.nama ?? "Murid";
@@ -128,24 +140,40 @@ export function DaftarKelas({
       </p>
 
       <div className="mt-8 space-y-3">
+        <KolomPencarian
+          nilai={cari}
+          onUbah={setCari}
+          label="Cari kelas"
+          placeholder="Cari nama kelas, cabang, atau guru…"
+        />
+        {kataKunci && (
+          <p role="status" className="text-sm text-muted-foreground">
+            {cocok.length} dari {daftar.length} kelas cocok dengan “
+            {cari.trim()}”.
+          </p>
+        )}
         <FormTambahKelas onTambah={tambahKelas} />
         <p role="status" className="text-sm text-muted-foreground">
           {pesan}
         </p>
       </div>
 
-      {daftar.length === 0 ? (
+      {cocok.length === 0 ? (
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle>Belum ada kelas</CardTitle>
+            <CardTitle>
+              {kataKunci ? "Tidak ada kelas yang cocok" : "Belum ada kelas"}
+            </CardTitle>
             <CardDescription>
-              Kelas muncul di sini setelah ditambahkan.
+              {kataKunci
+                ? `Coba kata kunci lain, atau hapus pencarian “${cari.trim()}”.`
+                : "Kelas muncul di sini setelah ditambahkan."}
             </CardDescription>
           </CardHeader>
         </Card>
       ) : (
         <ul className="mt-6 space-y-3">
-          {daftar.map((kelas) => {
+          {cocok.map((kelas) => {
             const terdaftar = terdaftarDi(kelas.id);
             return (
               <li key={kelas.id}>
