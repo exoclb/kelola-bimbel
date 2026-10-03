@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "c915ae64d85d14685a5f28f5a710891ebeeba6c4",
+  "generatedForCommit": "0cfbe005f2f083b135ba106bf9ecc0ce45c40274",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -174,7 +174,7 @@
       "path": "docs/backend.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 21912
+      "size": 22591
     },
     {
       "path": "docs/deployment.md",
@@ -543,6 +543,12 @@
       "size": 1215
     },
     {
+      "path": "src/app/api/admin/gaji/riwayat/route.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 731
+    },
+    {
       "path": "src/app/api/admin/gaji/route.ts",
       "reason": "needs_summary",
       "language": "typescript",
@@ -550,7 +556,7 @@
     },
     {
       "path": "src/app/api/admin/gaji/slip/route.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1377
     },
@@ -1048,7 +1054,7 @@
     },
     {
       "path": "src/lib/slip-gaji-html.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 3971
     },
@@ -1068,7 +1074,7 @@
       "path": "src/services/gaji.service.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 10699
+      "size": 14079
     },
     {
       "path": "src/services/jadwal.service.ts",
@@ -1104,7 +1110,7 @@
       "path": "src/validators/gaji.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 1164
+      "size": 1545
     },
     {
       "path": "src/validators/jadwal.ts",
