@@ -153,6 +153,20 @@ Endpoint ini terbuka (belum punya sesi) tetapi tidak melewati jalur auth begitu 
 
 Tabel akun memakai milik Better Auth (`user`, `account`, `session`, `verification`) dan tidak diganti: id-nya string acak dari Better Auth (bukan UUID), sandi tersimpan di `account.password`, dan peran di `user.role`. Kolom itu kini **wajib diisi** dengan bawaan `user` — nilai itu yang di aplikasi ini berarti **guru**; peran `owner` dan `admin` menyusul di `src/lib/permissions.ts` (`peranDariRole` di `src/lib/peran.ts` memetakan keduanya ke "owner" untuk tampilan). Kolomnya sengaja `text`, bukan enum, karena Better Auth merangkai beberapa peran sekaligus ("admin,support") di kolom yang sama. Status aktif akun memakai kolom `banned` bawaan plugin admin — akun yang di-ban tidak bisa masuk, jadi tidak ada kolom "status_aktif" terpisah yang harus dijaga tetap sinkron.
 
+## Proteksi halaman
+
+Aturan akses halaman app disimpan di dua tempat saja, mengikuti aturan starter (izin tidak diperiksa lewat middleware yang hanya melihat cookie):
+
+| Halaman                                                                                    | Syaratnya                                                                    |
+| ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| `/app`, `/app/jurnal`, `/app/jurnal/riwayat`, `/app/murid`, `/app/kelas`, `/app/gaji/saya` | cukup punya sesi (`requireSession`)                                          |
+| `/app/perkembangan`, `/app/perkembangan/riwayat`, `/app/perkembangan/[muridId]`            | izin `perkembangan: read`, diperiksa sekali di `app/perkembangan/layout.tsx` |
+| `/app/pemantauan`                                                                          | izin `jurnal: read-any`                                                      |
+| `/app/gaji`, `/app/gaji/riwayat`, `/app/gaji/slip/[guruId]`                                | izin `gaji: read-any`                                                        |
+| `/admin`                                                                                   | izin `notes: read-any`                                                       |
+
+Pengunjung tanpa sesi dialihkan ke halaman masuk. Akun yang sudah masuk tetapi tidak punya izinnya **dilihat sebagai halaman tidak ada** (404), bukan "terlarang", supaya rute yang tidak boleh dibuka tidak bisa dipetakan satu per satu. Penjagaan seksi yang dipakai bersama (`perkembangan`) diletakkan di layout, jadi halaman baru di dalam seksi itu tidak mungkin lupa menjaganya, sedangkan seksi dengan akses campuran (`gaji` vs `gaji/saya`) menjaga tiap halaman. Middleware Next.js sengaja tidak dipakai: di sana tidak ada akses basis data, jadi yang bisa diperiksa hanya keberadaan cookie — bukan sesi yang sah. Batas keamanan sebenarnya tetap di API, karena halaman hanyalah tampilan.
+
 ## Role-based access
 
 Ownership answers "is this row mine?". Roles answer "may this account reach past its own rows?". The starter ships a worked example of the second question using the Better Auth admin plugin.

@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "4eaef5e3f0e51d2423a487e3767242245843b587",
+  "generatedForCommit": "559183c58ab1c1febafd25f8c92691f1309cfafe",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -174,7 +174,7 @@
       "path": "docs/backend.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 36868
+      "size": 37163
     },
     {
       "path": "docs/deployment.md",
@@ -363,6 +363,12 @@
       "size": 378
     },
     {
+      "path": "e2e/akun-nonaktif.spec.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1989
+    },
+    {
       "path": "e2e/akun.spec.ts",
       "reason": "needs_summary",
       "language": "typescript",
@@ -400,7 +406,7 @@
     },
     {
       "path": "e2e/sesi.spec.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1307
     },
@@ -724,7 +730,7 @@
     },
     {
       "path": "src/app/api/akun/route.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 3348
     },
@@ -796,7 +802,7 @@
     },
     {
       "path": "src/app/api/masuk/route.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2288
     },
@@ -850,7 +856,7 @@
     },
     {
       "path": "src/app/api/sesi/route.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1257
     },
@@ -1320,7 +1326,7 @@
       "path": "src/lib/api.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 4954
+      "size": 5059
     },
     {
       "path": "src/lib/auth-client.ts",
@@ -1420,9 +1426,9 @@
     },
     {
       "path": "src/lib/session.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 1229
+      "size": 1623
     },
     {
       "path": "src/lib/slip-gaji-html.ts",
@@ -1564,7 +1570,7 @@
     },
     {
       "path": "src/validators/sesi.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 358
     },

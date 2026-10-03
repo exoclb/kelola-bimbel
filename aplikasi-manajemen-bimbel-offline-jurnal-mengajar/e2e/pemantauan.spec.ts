@@ -181,3 +181,29 @@ test("proteksi rute dan pengalihan setelah masuk mengikuti peran", async ({
     page.getByRole("heading", { name: "Pemantauan Harian" }),
   ).toBeVisible();
 });
+
+test("kontrol akses peran berlaku di halaman, bukan cuma di API", async ({
+  page,
+}) => {
+  await setRole("user");
+  await masuk(page.request);
+
+  // Guru boleh membuka halaman perkembangan (izin `perkembangan`).
+  await page.goto("/app/perkembangan");
+  await expect(
+    page.getByRole("heading", { name: "Perkembangan Anak" }),
+  ).toBeVisible();
+
+  // Peran tanpa izin itu tidak bisa membuka halamannya maupun API-nya.
+  await setRole("kasir");
+  await page.reload();
+  await expect(page.getByText(/This page isn.t here/)).toBeVisible();
+  expect(
+    (await page.request.get("/api/perkembangan", { headers })).status(),
+  ).toBe(403);
+  expect((await page.request.get("/api/kehadiran", { headers })).status()).toBe(
+    403,
+  );
+
+  await setRole("user");
+});
