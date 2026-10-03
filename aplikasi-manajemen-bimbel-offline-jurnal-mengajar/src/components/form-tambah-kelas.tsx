@@ -10,9 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { NativeSelect } from "@/components/ui/native-select";
+import { IsianPilih, IsianTeks } from "@/components/isian-form";
 import { GURU_KELAS, type Kelas } from "@/lib/mock-kelas";
 import { HARI_DALAM_SEMINGGU } from "@/lib/tanggal";
 
@@ -20,9 +18,12 @@ type FormTambahKelasProps = {
   onTambah: (kelas: Kelas) => void;
 };
 
+type Galat = { namaKelas?: string; cabang?: string; jamSelesai?: string };
+
 /**
- * Formulir kelas baru beserta satu jadwal mengajarnya. Kelas dan jadwal diatur
- * sekali di sini, lalu jadwal itu yang dipakai halaman jurnal harian.
+ * Formulir tambah kelas beserta satu jadwal awalnya. Jadwal dikumpulkan dari
+ * daftar hari yang sama dengan halaman jurnal, jadi nama harinya konsisten.
+ * Pesan kesalahan muncul di bawah isian yang salah.
  */
 export function FormTambahKelas({ onTambah }: FormTambahKelasProps) {
   const [terbuka, setTerbuka] = useState(false);
@@ -32,22 +33,20 @@ export function FormTambahKelas({ onTambah }: FormTambahKelasProps) {
   const [hari, setHari] = useState<string>(HARI_DALAM_SEMINGGU[0]);
   const [jamMulai, setJamMulai] = useState("07:00");
   const [jamSelesai, setJamSelesai] = useState("08:30");
-  const [error, setError] = useState("");
+  const [galat, setGalat] = useState<Galat>({});
 
   function simpan(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const namaRapi = namaKelas.trim();
-    if (!namaRapi) {
-      setError("Nama kelas wajib diisi.");
-      return;
-    }
-    if (!cabang.trim()) {
-      setError("Cabang wajib diisi.");
-      return;
-    }
-    if (jamSelesai <= jamMulai) {
-      setError("Jam selesai harus setelah jam mulai.");
+    const masalah: Galat = {};
+    if (!namaRapi) masalah.namaKelas = "Nama kelas wajib diisi.";
+    if (!cabang.trim()) masalah.cabang = "Cabang wajib diisi.";
+    if (jamSelesai <= jamMulai)
+      masalah.jamSelesai = "Jam selesai harus setelah jam mulai.";
+
+    if (Object.keys(masalah).length > 0) {
+      setGalat(masalah);
       return;
     }
 
@@ -61,7 +60,7 @@ export function FormTambahKelas({ onTambah }: FormTambahKelasProps) {
 
     setNamaKelas("");
     setCabang("");
-    setError("");
+    setGalat({});
     setTerbuka(false);
   }
 
@@ -89,89 +88,88 @@ export function FormTambahKelas({ onTambah }: FormTambahKelasProps) {
       <CardContent>
         <form onSubmit={simpan} className="space-y-4" noValidate>
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="namaKelas">Nama kelas</Label>
-              <Input
-                id="namaKelas"
-                value={namaKelas}
-                maxLength={120}
-                required
-                placeholder="Misalnya: Matematika SD Kelas 5"
-                aria-invalid={error.includes("Nama") ? true : undefined}
-                onChange={(event) => setNamaKelas(event.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="cabang">Cabang</Label>
-              <Input
-                id="cabang"
-                value={cabang}
-                maxLength={120}
-                required
-                placeholder="Misalnya: Cabang Pusat"
-                aria-invalid={error.includes("Cabang") ? true : undefined}
-                onChange={(event) => setCabang(event.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="guruNama">Guru pengampu</Label>
-              <NativeSelect
-                id="guruNama"
-                value={guruNama}
-                onChange={(event) => setGuruNama(event.target.value)}
-              >
-                {GURU_KELAS.map((nama) => (
-                  <option key={nama} value={nama}>
-                    {nama}
-                  </option>
-                ))}
-              </NativeSelect>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="hari">Hari</Label>
-              <NativeSelect
-                id="hari"
-                value={hari}
-                onChange={(event) => setHari(event.target.value)}
-              >
-                {HARI_DALAM_SEMINGGU.map((nama) => (
-                  <option key={nama} value={nama}>
-                    {nama}
-                  </option>
-                ))}
-              </NativeSelect>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="jamMulai">Jam mulai</Label>
-              <Input
-                id="jamMulai"
-                type="time"
-                value={jamMulai}
-                required
-                onChange={(event) => setJamMulai(event.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="jamSelesai">Jam selesai</Label>
-              <Input
-                id="jamSelesai"
-                type="time"
-                value={jamSelesai}
-                required
-                aria-invalid={error.includes("Jam") ? true : undefined}
-                onChange={(event) => setJamSelesai(event.target.value)}
-              />
-            </div>
-          </div>
-
-          {error && (
-            <p
-              role="alert"
-              className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm leading-6 text-destructive"
+            <IsianTeks
+              id={"namaKelas"}
+              label="Nama kelas"
+              value={namaKelas}
+              maxLength={120}
+              placeholder="Misalnya: Matematika SD Kelas 5"
+              error={galat.namaKelas}
+              onChange={(event) => {
+                setNamaKelas(event.target.value);
+                setGalat((sebelumnya) => ({
+                  ...sebelumnya,
+                  namaKelas: undefined,
+                }));
+              }}
+            />
+            <IsianTeks
+              id={"cabang"}
+              label="Cabang"
+              value={cabang}
+              maxLength={120}
+              placeholder="Misalnya: Cabang Pusat"
+              error={galat.cabang}
+              onChange={(event) => {
+                setCabang(event.target.value);
+                setGalat((sebelumnya) => ({
+                  ...sebelumnya,
+                  cabang: undefined,
+                }));
+              }}
+            />
+            <IsianPilih
+              id={"guruNama"}
+              label="Guru pengampu"
+              value={guruNama}
+              onChange={(event) => setGuruNama(event.target.value)}
             >
-              {error}
-            </p>
-          )}
+              {GURU_KELAS.map((nama) => (
+                <option key={nama} value={nama}>
+                  {nama}
+                </option>
+              ))}
+            </IsianPilih>
+            <IsianPilih
+              id={"hari"}
+              label="Hari"
+              value={hari}
+              onChange={(event) => setHari(event.target.value)}
+            >
+              {HARI_DALAM_SEMINGGU.map((nama) => (
+                <option key={nama} value={nama}>
+                  {nama}
+                </option>
+              ))}
+            </IsianPilih>
+            <IsianTeks
+              id={"jamMulai"}
+              label="Jam mulai"
+              type="time"
+              value={jamMulai}
+              onChange={(event) => {
+                setJamMulai(event.target.value);
+                setGalat((sebelumnya) => ({
+                  ...sebelumnya,
+                  jamSelesai: undefined,
+                }));
+              }}
+            />
+            <IsianTeks
+              id={"jamSelesai"}
+              label="Jam selesai"
+              type="time"
+              value={jamSelesai}
+              error={galat.jamSelesai}
+              onChange={(event) => {
+                setJamSelesai(event.target.value);
+                setGalat((sebelumnya) => ({
+                  ...sebelumnya,
+                  jamSelesai: undefined,
+                }));
+              }}
+            />
+          </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <Button type="submit">
@@ -183,7 +181,7 @@ export function FormTambahKelas({ onTambah }: FormTambahKelasProps) {
               variant="ghost"
               onClick={() => {
                 setTerbuka(false);
-                setError("");
+                setGalat({});
               }}
             >
               Batal

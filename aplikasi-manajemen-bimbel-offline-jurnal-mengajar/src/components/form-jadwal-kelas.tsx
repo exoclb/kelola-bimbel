@@ -3,9 +3,7 @@
 import { useId, useState, type FormEvent } from "react";
 import { CalendarPlus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { NativeSelect } from "@/components/ui/native-select";
+import { IsianPilih, IsianTeks } from "@/components/isian-form";
 import type { JadwalKelas } from "@/lib/mock-kelas";
 import { HARI_DALAM_SEMINGGU } from "@/lib/tanggal";
 
@@ -24,13 +22,17 @@ export function FormJadwalKelas({ jadwalAda, onTambah }: FormJadwalKelasProps) {
   const [hari, setHari] = useState<string>(HARI_DALAM_SEMINGGU[0]);
   const [jamMulai, setJamMulai] = useState("07:00");
   const [jamSelesai, setJamSelesai] = useState("08:30");
-  const [error, setError] = useState("");
+  const [galatJam, setGalatJam] = useState("");
+  const [galatUmum, setGalatUmum] = useState("");
 
   function simpan(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    setGalatJam("");
+    setGalatUmum("");
+
     if (jamSelesai <= jamMulai) {
-      setError("Jam selesai harus setelah jam mulai.");
+      setGalatJam("Jam selesai harus setelah jam mulai.");
       return;
     }
     if (
@@ -38,12 +40,12 @@ export function FormJadwalKelas({ jadwalAda, onTambah }: FormJadwalKelasProps) {
         (jadwal) => jadwal.hari === hari && jadwal.jamMulai === jamMulai,
       )
     ) {
-      setError("Jadwal hari itu pada jam yang sama sudah ada.");
+      // Jadwal dobel bukan salah isian tertentu, jadi pesannya berdiri sendiri.
+      setGalatUmum("Jadwal hari itu pada jam yang sama sudah ada.");
       return;
     }
 
     onTambah({ hari, jamMulai, jamSelesai });
-    setError("");
     setTerbuka(false);
   }
 
@@ -72,46 +74,48 @@ export function FormJadwalKelas({ jadwalAda, onTambah }: FormJadwalKelasProps) {
         Jadwal tambahan
       </p>
       <div className="grid gap-3 sm:grid-cols-3">
-        <div className="space-y-2">
-          <Label htmlFor={`${idForm}-hari`}>Hari</Label>
-          <NativeSelect
-            id={`${idForm}-hari`}
-            value={hari}
-            onChange={(event) => setHari(event.target.value)}
-          >
-            {HARI_DALAM_SEMINGGU.map((nama) => (
-              <option key={nama} value={nama}>
-                {nama}
-              </option>
-            ))}
-          </NativeSelect>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={`${idForm}-mulai`}>Jam mulai</Label>
-          <Input
-            id={`${idForm}-mulai`}
-            type="time"
-            value={jamMulai}
-            required
-            onChange={(event) => setJamMulai(event.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={`${idForm}-selesai`}>Jam selesai</Label>
-          <Input
-            id={`${idForm}-selesai`}
-            type="time"
-            value={jamSelesai}
-            required
-            aria-invalid={error ? true : undefined}
-            onChange={(event) => setJamSelesai(event.target.value)}
-          />
-        </div>
+        <IsianPilih
+          id={`${idForm}-hari`}
+          label="Hari"
+          value={hari}
+          onChange={(event) => {
+            setHari(event.target.value);
+            setGalatUmum("");
+          }}
+        >
+          {HARI_DALAM_SEMINGGU.map((nama) => (
+            <option key={nama} value={nama}>
+              {nama}
+            </option>
+          ))}
+        </IsianPilih>
+        <IsianTeks
+          id={`${idForm}-mulai`}
+          label="Jam mulai"
+          type="time"
+          value={jamMulai}
+          onChange={(event) => {
+            setJamMulai(event.target.value);
+            setGalatJam("");
+            setGalatUmum("");
+          }}
+        />
+        <IsianTeks
+          id={`${idForm}-selesai`}
+          label="Jam selesai"
+          type="time"
+          value={jamSelesai}
+          error={galatJam}
+          onChange={(event) => {
+            setJamSelesai(event.target.value);
+            setGalatJam("");
+          }}
+        />
       </div>
 
-      {error && (
+      {galatUmum && (
         <p role="alert" className="text-sm text-destructive">
-          {error}
+          {galatUmum}
         </p>
       )}
 
@@ -126,7 +130,8 @@ export function FormJadwalKelas({ jadwalAda, onTambah }: FormJadwalKelasProps) {
           size="sm"
           onClick={() => {
             setTerbuka(false);
-            setError("");
+            setGalatJam("");
+            setGalatUmum("");
           }}
         >
           Batal

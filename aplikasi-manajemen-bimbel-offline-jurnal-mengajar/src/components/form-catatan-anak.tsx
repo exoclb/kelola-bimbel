@@ -3,10 +3,11 @@
 import { useId, useState, type FormEvent } from "react";
 import { Plus, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { NativeSelect } from "@/components/ui/native-select";
-import { Textarea } from "@/components/ui/textarea";
+import {
+  IsianPilih,
+  IsianTeks,
+  IsianTeksPanjang,
+} from "@/components/isian-form";
 import { PILIHAN_SIKAP } from "@/lib/mock-perkembangan";
 import { tanggalISO } from "@/lib/tanggal";
 
@@ -48,26 +49,30 @@ export function FormCatatanAnak({
   const [catatan, setCatatan] = useState(
     catatanAwal?.catatanPerkembangan ?? "",
   );
-  const [error, setError] = useState("");
+  const [galatTanggal, setGalatTanggal] = useState("");
+  const [galatNilai, setGalatNilai] = useState("");
 
   function simpan(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    setGalatTanggal("");
+    setGalatNilai("");
+
     if (!tanggal) {
-      setError("Tanggal catatan wajib diisi.");
+      setGalatTanggal("Tanggal catatan wajib diisi.");
       return;
     }
     if (tanggal > tanggalISO(new Date())) {
-      setError("Tanggal catatan tidak boleh melewati hari ini.");
+      setGalatTanggal("Tanggal catatan tidak boleh melewati hari ini.");
       return;
     }
     const angka = Number(nilai);
     if (nilai.trim() === "" || Number.isNaN(angka)) {
-      setError("Nilai wajib diisi dengan angka.");
+      setGalatNilai("Nilai wajib diisi dengan angka.");
       return;
     }
     if (angka < 0 || angka > 100) {
-      setError("Nilai harus antara 0 sampai 100.");
+      setGalatNilai("Nilai harus antara 0 sampai 100.");
       return;
     }
 
@@ -87,68 +92,55 @@ export function FormCatatanAnak({
       aria-label={`Catatan perkembangan ${namaMurid}`}
     >
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="space-y-2">
-          <Label htmlFor={`${idForm}-tanggal`}>Tanggal</Label>
-          <Input
-            id={`${idForm}-tanggal`}
-            type="date"
-            value={tanggal}
-            max={tanggalISO(new Date())}
-            required
-            aria-invalid={error.includes("Tanggal") ? true : undefined}
-            onChange={(event) => setTanggal(event.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={`${idForm}-nilai`}>Nilai</Label>
-          <Input
-            id={`${idForm}-nilai`}
-            type="number"
-            inputMode="numeric"
-            min={0}
-            max={100}
-            value={nilai}
-            required
-            placeholder="0–100"
-            aria-invalid={error.includes("Nilai") ? true : undefined}
-            onChange={(event) => setNilai(event.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={`${idForm}-sikap`}>Sikap</Label>
-          <NativeSelect
-            id={`${idForm}-sikap`}
-            value={sikap}
-            onChange={(event) => setSikap(event.target.value)}
-          >
-            {PILIHAN_SIKAP.map((pilihan) => (
-              <option key={pilihan} value={pilihan}>
-                {pilihan}
-              </option>
-            ))}
-          </NativeSelect>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor={`${idForm}-catatan`}>Catatan (opsional)</Label>
-        <Textarea
-          id={`${idForm}-catatan`}
-          value={catatan}
-          maxLength={500}
-          placeholder="Misalnya: sudah lancar perkalian, perlu latihan soal cerita."
-          onChange={(event) => setCatatan(event.target.value)}
+        <IsianTeks
+          id={`${idForm}-tanggal`}
+          label="Tanggal"
+          type="date"
+          value={tanggal}
+          max={tanggalISO(new Date())}
+          error={galatTanggal}
+          onChange={(event) => {
+            setTanggal(event.target.value);
+            setGalatTanggal("");
+          }}
         />
+        <IsianTeks
+          id={`${idForm}-nilai`}
+          label="Nilai"
+          type="number"
+          inputMode="numeric"
+          min={0}
+          max={100}
+          value={nilai}
+          placeholder="0–100"
+          error={galatNilai}
+          onChange={(event) => {
+            setNilai(event.target.value);
+            setGalatNilai("");
+          }}
+        />
+        <IsianPilih
+          id={`${idForm}-sikap`}
+          label="Sikap"
+          value={sikap}
+          onChange={(event) => setSikap(event.target.value)}
+        >
+          {PILIHAN_SIKAP.map((pilihan) => (
+            <option key={pilihan} value={pilihan}>
+              {pilihan}
+            </option>
+          ))}
+        </IsianPilih>
       </div>
 
-      {error && (
-        <p
-          role="alert"
-          className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm leading-6 text-destructive"
-        >
-          {error}
-        </p>
-      )}
+      <IsianTeksPanjang
+        id={`${idForm}-catatan`}
+        label="Catatan (opsional)"
+        value={catatan}
+        maxLength={500}
+        placeholder="Misalnya: sudah lancar perkalian, perlu latihan soal cerita."
+        onChange={(event) => setCatatan(event.target.value)}
+      />
 
       <div className="flex flex-wrap items-center gap-2">
         <Button type="submit" size="sm">
