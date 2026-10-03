@@ -10,6 +10,7 @@ const TAUTAN = [
   { href: "/app/jurnal/riwayat", label: "Riwayat" },
   { href: "/app/murid", label: "Murid" },
   { href: "/app/kelas", label: "Kelas" },
+  { href: "/app/perkembangan", label: "Perkembangan" },
 ];
 
 /**

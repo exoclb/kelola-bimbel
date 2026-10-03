@@ -4,6 +4,7 @@ import {
   CalendarDays,
   Check,
   Eye,
+  GraduationCap,
   History,
   NotebookPen,
   Plus,
@@ -83,6 +84,20 @@ export default async function AppPage() {
             </Link>
           </Button>
         </div>
+      </Card>
+      <Card className="mt-6 flex-row flex-wrap items-center justify-between gap-4 px-6 py-5">
+        <div className="space-y-1">
+          <CardTitle>Perkembangan Anak</CardTitle>
+          <CardDescription>
+            Catat nilai, sikap, dan kemajuan belajar tiap anak.
+          </CardDescription>
+        </div>
+        <Button asChild variant="outline">
+          <Link href="/app/perkembangan">
+            <GraduationCap aria-hidden="true" />
+            Lihat perkembangan
+          </Link>
+        </Button>
       </Card>
       <section
         className="mt-6 rounded-2xl border border-dashed bg-card px-6 py-10 sm:px-10"
