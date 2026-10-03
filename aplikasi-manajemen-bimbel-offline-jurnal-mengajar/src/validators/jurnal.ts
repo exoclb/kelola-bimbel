@@ -8,6 +8,12 @@ const kehadiranMurid = z
   })
   .strict();
 
+/** Pesan yang sama dipakai di dua skema saat murid dicatat dobel. */
+const pesanDobel = {
+  message: "Setiap murid hanya boleh dicatat sekali.",
+  path: ["kehadiran"],
+};
+
 // Kelas, tanggal, dan jam mengajar dihitung server dari jadwal — klien tidak
 // boleh mengirimkannya, supaya jam gaji tidak bisa dinaikkan sendiri.
 export const simpanJurnalSchema = z
@@ -22,13 +28,38 @@ export const simpanJurnalSchema = z
     (value) =>
       new Set(value.kehadiran.map((baris) => baris.muridId)).size ===
       value.kehadiran.length,
-    {
-      message: "Setiap murid hanya boleh dicatat sekali.",
-      path: ["kehadiran"],
-    },
+    pesanDobel,
   );
 
 export type SimpanJurnalInput = z.infer<typeof simpanJurnalSchema>;
+
+// Koreksi hanya boleh menyentuh isi jurnal. Kelas, tanggal, dan jam mengajar
+// tetap seperti saat jurnal dikirim, jadi rekap gaji tidak bisa diubah diam-diam.
+export const koreksiJurnalSchema = z
+  .object({
+    materi: z.string().trim().min(1).max(200).optional(),
+    catatan: z.string().trim().max(1_000).optional(),
+    kehadiran: z.array(kehadiranMurid).max(200).optional(),
+  })
+  .strict()
+  .refine(
+    (value) =>
+      value.materi !== undefined ||
+      value.catatan !== undefined ||
+      value.kehadiran !== undefined,
+    { message: "Isi minimal satu bagian yang ingin dikoreksi." },
+  )
+  .refine(
+    (value) =>
+      !value.kehadiran ||
+      new Set(value.kehadiran.map((baris) => baris.muridId)).size ===
+        value.kehadiran.length,
+    pesanDobel,
+  );
+
+export type KoreksiJurnalInput = z.infer<typeof koreksiJurnalSchema>;
+
+export const jurnalIdSchema = z.string().uuid();
 
 const POLA_TANGGAL = /^\d{4}-\d{2}-\d{2}$/;
 const tanggal = z

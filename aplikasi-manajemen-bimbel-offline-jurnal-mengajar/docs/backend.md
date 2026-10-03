@@ -48,13 +48,17 @@ App features follow the same structure as Notes: route → `withApiSession` → 
 | GET    | `/api/jadwal`        | 200, jadwal mengajar guru yang sedang masuk pada satu hari            |
 | GET    | `/api/jadwal?hari=…` | 200, jadwal pada hari lain (`Senin`–`Minggu`, huruf awal besar)       |
 | GET    | `/api/jurnal`        | 200, riwayat jurnal guru (saring kelas & rentang tanggal, berhalaman) |
+| GET    | `/api/jurnal/:id`    | 200, detail satu jurnal beserta daftar muridnya                       |
 | POST   | `/api/jurnal`        | 200, simpan & kirim jurnal mengajar (idempoten per jadwal + tanggal)  |
+| PATCH  | `/api/jurnal/:id`    | 200, koreksi isi jurnal (materi, catatan, dan/atau kehadiran)         |
 
 `hari` boleh dikosongkan; tanpa parameter itu server memakai hari ini menurut `src/lib/tanggal.ts`. Nilai di luar daftar hari ditolak dengan 422. Hasilnya `{ "data": [{ id, classId, namaKelas, cabang, jamMulai, jamSelesai }] }` dengan jam dalam bentuk `HH:MM`, diurutkan dari jam paling awal. Saringan `guru_id` selalu memakai id dari sesi, bukan dari permintaan, jadi satu guru tidak pernah melihat jadwal guru lain.
 
 `POST /api/jurnal` menerima `{ "jadwalId", "materi", "catatan", "kehadiran": [{ "muridId", "hadir", "catatan" }] }`. Kelas, tanggal, dan jam mengajar **tidak** dikirim klien: server mengambilnya dari jadwal milik guru yang sedang masuk, sehingga jam yang ikut dihitung gaji tidak bisa dinaikkan dari sisi klien. Kirim ulang untuk jadwal dan tanggal yang sama memperbarui jurnal hari itu alih-alih menambah baris baru (dijaga indeks unik `teaching_journals_guru_jadwal_tanggal_idx`), jadi dobel klik atau kirim ulang setelah koneksi putus tidak pernah terhitung dua kali saat rekap gaji; karena isinya berubah, statusnya kembali ke `terkirim` supaya owner meninjau ulang. Jadwal milik guru lain dijawab 404 yang sama dengan jadwal yang tidak ada, dan murid yang tidak terdaftar dijawab 422 dengan `details` per baris.
 
 `GET /api/jurnal` menerima `limit` (1–100, bawaan 20), `offset` (bawaan 0), `classId` (UUID kelas), `dari`, dan `sampai` (format `YYYY-MM-DD`, keduanya inklusif; `dari` setelah `sampai` ditolak 422). Hasilnya `{ "data": [...], "meta": { "limit", "offset", "hasMore", "kelas": [{ "classId", "namaKelas" }] } }`; `meta.kelas` berisi semua kelas yang pernah diisi guru ini (tanpa ikut tersaring) supaya tampilan bisa menyusun pilihan saringan. Setiap baris memuat `id`, `classId`, `namaKelas`, `cabang`, `hari`, `jamMulai`, `jamSelesai`, `tanggal`, `materi`, `catatan`, `jamMengajar`, `status`, `jumlahMurid`, dan `jumlahHadir`. Baris lama yang jadwalnya sudah dihapus tetap muncul dengan `jamMulai`/`jamSelesai` bernilai `null`.
+
+`GET /api/jurnal/:id` mengembalikan satu jurnal milik guru yang sedang masuk beserta `kehadiran: [{ muridId, nama, hadir, catatan }]` yang diurutkan menurut nama murid. Jurnal milik guru lain dan id yang tidak ada sama-sama dijawab 404. `PATCH /api/jurnal/:id` menerima sebagian saja dari `{ "materi", "catatan", "kehadiran" }` (minimal satu; field lain seperti `jamMengajar`, `classId`, atau `tanggal` ditolak 422) dan mengembalikan bentuk yang sama seperti `GET`. Mengirim `kehadiran` akan mengganti seluruh daftar kehadiran jurnal itu. Kelas, tanggal, dan jam mengajar tidak pernah ikut berubah lewat koreksi, dan status dikembalikan ke `terkirim` supaya owner meninjau ulang.
 
 ## Role-based access
 

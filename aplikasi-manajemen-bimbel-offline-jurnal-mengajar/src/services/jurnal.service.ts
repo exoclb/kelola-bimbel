@@ -9,7 +9,11 @@ import {
   teachingJournals,
 } from "@/db/schema";
 import { tanggalISO } from "@/lib/tanggal";
-import type { ListJurnalInput, SimpanJurnalInput } from "@/validators/jurnal";
+import type {
+  KoreksiJurnalInput,
+  ListJurnalInput,
+  SimpanJurnalInput,
+} from "@/validators/jurnal";
 
 export type HasilSimpanJurnal =
   | { status: "tersimpan"; jurnal: JurnalTersimpan }
@@ -217,4 +221,132 @@ export async function listJurnalGuru(guruId: string, filter: ListJurnalInput) {
       kelas,
     },
   };
+}
+
+const fieldsDetail = {
+  id: teachingJournals.id,
+  classId: teachingJournals.classId,
+  namaKelas: classes.namaKelas,
+  cabang: classes.cabang,
+  scheduleId: teachingJournals.scheduleId,
+  hari: schedules.hari,
+  jamMulai: sql<string | null>`to_char(${schedules.jamMulai}, 'HH24:MI')`.as(
+    "jam_mulai",
+  ),
+  jamSelesai: sql<
+    string | null
+  >`to_char(${schedules.jamSelesai}, 'HH24:MI')`.as("jam_selesai"),
+  tanggal: teachingJournals.tanggal,
+  materi: teachingJournals.materi,
+  catatan: teachingJournals.catatan,
+  jamMengajar: teachingJournals.jamMengajar,
+  status: teachingJournals.status,
+  updatedAt: teachingJournals.updatedAt,
+};
+
+/**
+ * Satu jurnal milik guru ini lengkap dengan daftar muridnya. Mengembalikan
+ * `null` untuk jurnal yang tidak ada maupun yang bukan milik guru ini, supaya
+ * keduanya tidak bisa dibedakan dari luar.
+ */
+export async function getJurnalGuru(guruId: string, id: string) {
+  const [jurnal] = await db
+    .select(fieldsDetail)
+    .from(teachingJournals)
+    .innerJoin(classes, eq(teachingJournals.classId, classes.id))
+    .leftJoin(schedules, eq(teachingJournals.scheduleId, schedules.id))
+    .where(
+      and(eq(teachingJournals.id, id), eq(teachingJournals.guruId, guruId)),
+    )
+    .limit(1);
+  if (!jurnal) return null;
+
+  const kehadiran = await db
+    .select({
+      muridId: journalAttendances.studentId,
+      nama: students.nama,
+      hadir: journalAttendances.hadir,
+      catatan: journalAttendances.catatan,
+    })
+    .from(journalAttendances)
+    .innerJoin(students, eq(journalAttendances.studentId, students.id))
+    .where(eq(journalAttendances.journalId, jurnal.id))
+    .orderBy(asc(students.nama));
+
+  return { ...jurnal, kehadiran };
+}
+
+export type HasilKoreksiJurnal =
+  | {
+      status: "tersimpan";
+      jurnal: NonNullable<Awaited<ReturnType<typeof getJurnalGuru>>>;
+    }
+  | { status: "tidak_ada" }
+  | { status: "murid_tidak_ada"; muridIds: string[] };
+
+/**
+ * Mengoreksi isi jurnal yang pernah dikirim: materi, catatan, dan/atau
+ * kehadiran. Kelas, tanggal, dan jam mengajar tidak ikut berubah supaya angka
+ * gaji tetap sesuai jadwal. Karena isinya berubah, status kembali ke
+ * `terkirim` agar owner meninjau ulang.
+ */
+export async function koreksiJurnal(
+  guruId: string,
+  id: string,
+  input: KoreksiJurnalInput,
+): Promise<HasilKoreksiJurnal> {
+  const [milik] = await db
+    .select({ id: teachingJournals.id })
+    .from(teachingJournals)
+    .where(
+      and(eq(teachingJournals.id, id), eq(teachingJournals.guruId, guruId)),
+    )
+    .limit(1);
+  if (!milik) return { status: "tidak_ada" };
+
+  const muridIds = input.kehadiran?.map((baris) => baris.muridId) ?? [];
+  if (muridIds.length > 0) {
+    const dikenal = await db
+      .select({ id: students.id })
+      .from(students)
+      .where(inArray(students.id, muridIds));
+    const ketemu = new Set(dikenal.map((murid) => murid.id));
+    const tidakDikenal = muridIds.filter((muridId) => !ketemu.has(muridId));
+    if (tidakDikenal.length > 0)
+      return { status: "murid_tidak_ada", muridIds: tidakDikenal };
+  }
+
+  await db.transaction(async (tx) => {
+    await tx
+      .update(teachingJournals)
+      .set({
+        status: "terkirim",
+        updatedAt: new Date(),
+        ...(input.materi === undefined ? {} : { materi: input.materi }),
+        ...(input.catatan === undefined ? {} : { catatan: input.catatan }),
+      })
+      .where(
+        and(eq(teachingJournals.id, id), eq(teachingJournals.guruId, guruId)),
+      );
+
+    if (!input.kehadiran) return;
+
+    await tx
+      .delete(journalAttendances)
+      .where(eq(journalAttendances.journalId, id));
+    if (input.kehadiran.length > 0) {
+      await tx.insert(journalAttendances).values(
+        input.kehadiran.map((baris) => ({
+          journalId: id,
+          studentId: baris.muridId,
+          hadir: baris.hadir,
+          catatan: baris.catatan,
+        })),
+      );
+    }
+  });
+
+  const jurnal = await getJurnalGuru(guruId, id);
+  if (!jurnal) return { status: "tidak_ada" };
+  return { status: "tersimpan", jurnal };
 }
