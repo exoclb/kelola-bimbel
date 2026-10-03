@@ -1,7 +1,19 @@
 import "server-only";
-import { and, asc, desc, eq, gte, ilike, lte, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gte,
+  ilike,
+  inArray,
+  lte,
+  or,
+  sql,
+} from "drizzle-orm";
 import { db } from "@/db";
 import { studentProgress, students, user } from "@/db/schema";
+import { ringkasanKehadiranPerMurid } from "@/services/kehadiran.service";
 import type {
   CreatePerkembanganInput,
   ListPerkembanganInput,
@@ -199,4 +211,148 @@ export async function hapusCatatanPerkembangan(
     .where(and(eq(studentProgress.id, id), eq(studentProgress.guruId, guruId)))
     .returning({ id: studentProgress.id });
   return terhapus.length > 0;
+}
+
+/** Ringkasan perkembangan satu anak, dipakai laporan agregat. */
+export type RingkasanPerkembanganTersimpan = {
+  muridId: string;
+  muridNama: string;
+  jumlahCatatan: number;
+  rataNilai: number;
+  nilaiTerakhir: number | null;
+  sikapTerakhir: string | null;
+  tanggalCatatanTerakhir: string | null;
+  jumlahPertemuan: number;
+  jumlahHadir: number;
+};
+
+export type DaftarRingkasanPerkembangan = {
+  data: RingkasanPerkembanganTersimpan[];
+  meta: {
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+    total: number;
+    muridPunyaCatatan: number;
+    totalCatatan: number;
+  };
+};
+
+/**
+ * Laporan agregat perkembangan anak: satu baris per anak berisi banyaknya
+ * catatan, rata-rata dan nilai terakhir, sikap terakhir, serta rekap kehadiran
+ * dari jurnal. Anak yang belum pernah dicatat maupun tercatat hadir tidak
+ * muncul, dan pencarian nama dilakukan setelah penggabungan supaya hasilnya
+ * sama rata untuk anak yang punya catatan maupun yang hanya punya kehadiran.
+ */
+export async function listRingkasanPerkembangan({
+  limit,
+  offset,
+  muridId,
+  dari,
+  sampai,
+  cari,
+}: ListPerkembanganInput): Promise<DaftarRingkasanPerkembangan> {
+  const syarat = and(
+    muridId ? eq(studentProgress.studentId, muridId) : undefined,
+    dari ? gte(studentProgress.tanggal, dari) : undefined,
+    sampai ? lte(studentProgress.tanggal, sampai) : undefined,
+  );
+
+  const [catatan, terakhir, kehadiran] = await Promise.all([
+    db
+      .select({
+        muridId: studentProgress.studentId,
+        jumlahCatatan: sql<number>`count(*)::int`.as("jumlahCatatan"),
+        rataNilai:
+          sql<number>`coalesce(round(avg(${studentProgress.nilai})::numeric, 1), 0)::float8`.as(
+            "rataNilai",
+          ),
+        tanggalCatatanTerakhir:
+          sql<string>`max(${studentProgress.tanggal})::text`.as(
+            "tanggalCatatanTerakhir",
+          ),
+      })
+      .from(studentProgress)
+      .where(syarat)
+      .groupBy(studentProgress.studentId),
+    // Nilai dan sikap dari catatan terbaru tiap anak.
+    db
+      .selectDistinctOn([studentProgress.studentId], {
+        muridId: studentProgress.studentId,
+        nilaiTerakhir: studentProgress.nilai,
+        sikapTerakhir: studentProgress.sikap,
+      })
+      .from(studentProgress)
+      .where(syarat)
+      .orderBy(
+        asc(studentProgress.studentId),
+        desc(studentProgress.tanggal),
+        desc(studentProgress.createdAt),
+      ),
+    ringkasanKehadiranPerMurid({ limit, offset, muridId, dari, sampai }),
+  ]);
+
+  const catatanPerMurid = new Map(
+    catatan.map((baris) => [baris.muridId, baris]),
+  );
+  const terakhirPerMurid = new Map(
+    terakhir.map((baris) => [baris.muridId, baris]),
+  );
+  const kehadiranPerMurid = new Map(
+    kehadiran.map((baris) => [baris.muridId, baris]),
+  );
+
+  const muridIds = [
+    ...new Set([...catatanPerMurid.keys(), ...kehadiranPerMurid.keys()]),
+  ];
+  const namaPerMurid = new Map<string, string>();
+
+  if (muridIds.length > 0) {
+    const daftarNama = await db
+      .select({ id: students.id, nama: students.nama })
+      .from(students)
+      .where(inArray(students.id, muridIds));
+    for (const murid of daftarNama) namaPerMurid.set(murid.id, murid.nama);
+  }
+
+  const kataKunci = cari?.toLowerCase();
+  const semua = muridIds
+    .map((id) => {
+      const ringkas = catatanPerMurid.get(id);
+      const nilai = terakhirPerMurid.get(id);
+      const hadir = kehadiranPerMurid.get(id);
+      return {
+        muridId: id,
+        muridNama: namaPerMurid.get(id) ?? "Murid",
+        jumlahCatatan: ringkas?.jumlahCatatan ?? 0,
+        rataNilai: ringkas?.rataNilai ?? 0,
+        nilaiTerakhir: nilai?.nilaiTerakhir ?? null,
+        sikapTerakhir: nilai?.sikapTerakhir ?? null,
+        tanggalCatatanTerakhir: ringkas?.tanggalCatatanTerakhir ?? null,
+        jumlahPertemuan: hadir?.pertemuan ?? 0,
+        jumlahHadir: hadir?.hadir ?? 0,
+      };
+    })
+    .filter(
+      (baris) =>
+        !kataKunci || baris.muridNama.toLowerCase().includes(kataKunci),
+    )
+    .sort((a, b) => a.muridNama.localeCompare(b.muridNama));
+
+  return {
+    data: semua.slice(offset, offset + limit),
+    meta: {
+      limit,
+      offset,
+      hasMore: semua.length > offset + limit,
+      total: semua.length,
+      muridPunyaCatatan: semua.filter((baris) => baris.jumlahCatatan > 0)
+        .length,
+      totalCatatan: semua.reduce(
+        (total, baris) => total + baris.jumlahCatatan,
+        0,
+      ),
+    },
+  };
 }

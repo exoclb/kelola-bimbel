@@ -126,3 +126,38 @@ export async function listKehadiran(
     },
   };
 }
+
+/** Jumlah pertemuan dan kehadiran satu murid, dipakai laporan agregat. */
+export type RingkasanKehadiranMurid = {
+  muridId: string;
+  pertemuan: number;
+  hadir: number;
+};
+
+/**
+ * Menghitung pertemuan dan kehadiran per murid dengan penyaring yang sama
+ * seperti `listKehadiran`. Hanya murid yang punya baris kehadiran yang muncul,
+ * jadi laporan bisa membedakan "belum pernah hadir" dari "tidak dihitung".
+ */
+export async function ringkasanKehadiranPerMurid(
+  filter: ListKehadiranInput,
+): Promise<RingkasanKehadiranMurid[]> {
+  const baris = await db
+    .select({
+      muridId: journalAttendances.studentId,
+      pertemuan: sql<number>`count(*)::int`.as("pertemuan"),
+      hadir:
+        sql<number>`count(*) filter (where ${journalAttendances.hadir})::int`.as(
+          "hadir",
+        ),
+    })
+    .from(journalAttendances)
+    .innerJoin(
+      teachingJournals,
+      eq(journalAttendances.journalId, teachingJournals.id),
+    )
+    .where(syaratKehadiran(filter))
+    .groupBy(journalAttendances.studentId);
+
+  return baris;
+}

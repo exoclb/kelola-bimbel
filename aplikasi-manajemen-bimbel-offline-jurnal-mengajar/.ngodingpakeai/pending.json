@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "c46636d107589103072fbc5d112c016dea509777",
+  "generatedForCommit": "9927850168bd61598d89ba49f1d6fa9537c0fa35",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -174,7 +174,7 @@
       "path": "docs/backend.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 30387
+      "size": 31269
     },
     {
       "path": "docs/deployment.md",
@@ -705,6 +705,12 @@
       "size": 1586
     },
     {
+      "path": "src/app/api/kehadiran/route.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 669
+    },
+    {
       "path": "src/app/api/kelas/route.ts",
       "reason": "needs_summary",
       "language": "typescript",
@@ -760,13 +766,13 @@
     },
     {
       "path": "src/app/api/perkembangan/route.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1401
     },
     {
       "path": "src/app/api/perkembangan/[id]/route.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1857
     },
@@ -1329,6 +1335,12 @@
       "size": 11761
     },
     {
+      "path": "src/services/kehadiran.service.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 3367
+    },
+    {
       "path": "src/services/kelas.service.ts",
       "reason": "needs_summary",
       "language": "typescript",
@@ -1360,7 +1372,7 @@
     },
     {
       "path": "src/services/perkembangan.service.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 5863
     },
@@ -1381,6 +1393,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 3471
+    },
+    {
+      "path": "src/validators/kehadiran.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 786
     },
     {
       "path": "src/validators/kelas.ts",
@@ -1408,7 +1426,7 @@
     },
     {
       "path": "src/validators/perkembangan.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1887
     },
