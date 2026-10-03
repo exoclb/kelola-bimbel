@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "6e5dd33b04960de2eb7be224b15c124f1e406cba",
+  "generatedForCommit": "320e4104c37fba48b3a00caea17ed16d797233c0",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -174,7 +174,7 @@
       "path": "docs/backend.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 26106
+      "size": 29048
     },
     {
       "path": "docs/deployment.md",
@@ -267,6 +267,12 @@
       "size": 1161
     },
     {
+      "path": "drizzle/0010_catatan_perkembangan.sql",
+      "reason": "new",
+      "language": "sql",
+      "size": 1068
+    },
+    {
       "path": "drizzle/meta/0000_snapshot.json",
       "reason": "needs_summary",
       "language": "json",
@@ -327,10 +333,16 @@
       "size": 41879
     },
     {
-      "path": "drizzle/meta/_journal.json",
-      "reason": "needs_summary",
+      "path": "drizzle/meta/0010_snapshot.json",
+      "reason": "new",
       "language": "json",
-      "size": 1440
+      "size": 45441
+    },
+    {
+      "path": "drizzle/meta/_journal.json",
+      "reason": "changed",
+      "language": "json",
+      "size": 1589
     },
     {
       "path": "drizzle.config.ts",
@@ -1090,9 +1102,9 @@
     },
     {
       "path": "src/db/schema/index.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 574
+      "size": 610
     },
     {
       "path": "src/db/schema/journal-attendances.ts",
@@ -1147,6 +1159,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 1449
+    },
+    {
+      "path": "src/db/schema/student-progress.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1619
     },
     {
       "path": "src/db/schema/students.ts",
@@ -1306,7 +1324,7 @@
     },
     {
       "path": "src/services/murid.service.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2135
     },

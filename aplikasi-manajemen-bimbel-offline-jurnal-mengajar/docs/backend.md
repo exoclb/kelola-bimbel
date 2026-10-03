@@ -127,6 +127,10 @@ Selain tabel bawaan starter (`user`, `session`, `account`, `verification`, `note
 
 Aturan yang dijaga database, bukan cuma di kode: indeks unik parsial `student_enrollments_student_aktif_idx` (satu kelas aktif per murid), indeks unik `teaching_journals_guru_jadwal_tanggal_idx` (jurnal tidak dobel sehingga gaji tidak terhitung dua kali), dan indeks unik `schedules_class_hari_jam_idx` (jadwal kelas tidak dobel). Penghapusan murid/kelas ikut menghapus baris turunannya (`on delete cascade`), sedangkan data yang tidak boleh hilang memakai `restrict`.
 
+`GET /api/perkembangan` mengembalikan catatan perkembangan semua anak, terbaru lebih dulu (urut tanggal lalu waktu dibuat), dengan `limit` (1–100, bawaan 50), `offset`, serta penyaring `muridId`, `dari`/`sampai` (`YYYY-MM-DD`), dan `cari` (nama anak atau isi catatannya). Rentang tanggal yang terbalik dijawab 422. Setiap baris memuat `{ id, muridId, muridNama, guruId, guruNama, tanggal, nilai, sikap, catatanPerkembangan, createdAt, updatedAt }` dan `meta.total` adalah jumlah seluruh catatan yang cocok.
+
+`POST /api/perkembangan` menerima `{ muridId, tanggal, nilai, sikap, catatanPerkembangan? }` — nilai 0–100 dan wajib berupa angka, tanggal wajib tanggal yang benar-benar ada, dan murid harus ada (kalau tidak: 404). **Guru penulisnya diambil dari sesi**, jadi mengirim `guruId` sendiri dijawab 422 dan catatan tidak bisa diatasnamakan akun lain. `GET /api/perkembangan/:id` menampilkan satu catatan; `PATCH` hanya menerima `tanggal`, `nilai`, `sikap`, dan `catatanPerkembangan` (murid tidak bisa dipindah) dan wajib mengirim minimal satu kolom. `PATCH` dan `DELETE` terbatas untuk **penulis catatannya**: catatan guru lain dijawab 404 yang sama dengan catatan yang tidak ada, sehingga tidak bisa ditimpa atau dihapus akun lain. Perubahan catatan tidak menyentuh baris lain; kolom yang tidak dikirim dibiarkan seperti semula.
+
 ## Role-based access
 
 Ownership answers "is this row mine?". Roles answer "may this account reach past its own rows?". The starter ships a worked example of the second question using the Better Auth admin plugin.
