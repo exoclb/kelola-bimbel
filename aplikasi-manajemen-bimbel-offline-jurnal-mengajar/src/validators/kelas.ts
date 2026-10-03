@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { HARI_DALAM_SEMINGGU } from "@/lib/tanggal";
+import { skemaTanggal } from "@/validators/tanggal";
 
 const nama = z.string().trim().min(1).max(120);
 const jam = z
@@ -61,3 +62,16 @@ export type TambahJadwalInput = z.infer<typeof tambahJadwalSchema>;
 
 export const kelasIdSchema = z.string().uuid();
 export const jadwalIdSchema = z.string().uuid();
+
+// Menempatkan satu murid ke kelas; tanggal mulainya boleh ditentukan, kalau
+// kosong dipakai hari ini.
+export const tempatkanMuridSchema = z
+  .object({
+    muridId: z.string().uuid(),
+    tanggalMulai: skemaTanggal.optional(),
+  })
+  .strict();
+
+export type TempatkanMuridInput = z.infer<typeof tempatkanMuridSchema>;
+
+export const muridIdSchema = z.string().uuid();

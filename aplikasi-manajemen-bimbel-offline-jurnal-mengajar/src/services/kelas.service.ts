@@ -1,7 +1,13 @@
 import "server-only";
 import { and, asc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { classes, schedules, user } from "@/db/schema";
+import {
+  classes,
+  schedules,
+  studentEnrollments,
+  students,
+  user,
+} from "@/db/schema";
 import type {
   CreateKelasInput,
   ListKelasInput,
@@ -22,6 +28,7 @@ export type KelasTersimpan = {
   guruId: string | null;
   guruNama: string | null;
   createdAt: Date;
+  jumlahMurid: number;
   jadwal: JadwalTersimpan[];
 };
 
@@ -45,6 +52,26 @@ function kodeError(error: unknown): unknown {
 
 function pelanggaranUnik(error: unknown) {
   return kodeError(error) === "23505";
+}
+
+async function jumlahMuridPerKelas(kelasIds: string[]) {
+  if (kelasIds.length === 0) return new Map<string, number>();
+
+  const baris = await db
+    .select({
+      kelasId: studentEnrollments.classId,
+      jumlah: sql<number>`count(*)::int`.as("jumlah"),
+    })
+    .from(studentEnrollments)
+    .where(
+      and(
+        inArray(studentEnrollments.classId, kelasIds),
+        eq(studentEnrollments.status, "aktif"),
+      ),
+    )
+    .groupBy(studentEnrollments.classId);
+
+  return new Map(baris.map((catatan) => [catatan.kelasId, catatan.jumlah]));
 }
 
 async function jadwalPerKelas(kelasIds: string[]) {
@@ -91,8 +118,15 @@ export async function getKelasById(id: string): Promise<KelasTersimpan | null> {
     .limit(1);
   if (!kelas) return null;
 
-  const jadwal = await jadwalPerKelas([kelas.id]);
-  return { ...kelas, jadwal: jadwal.get(kelas.id) ?? [] };
+  const [jadwal, jumlah] = await Promise.all([
+    jadwalPerKelas([kelas.id]),
+    jumlahMuridPerKelas([kelas.id]),
+  ]);
+  return {
+    ...kelas,
+    jumlahMurid: jumlah.get(kelas.id) ?? 0,
+    jadwal: jadwal.get(kelas.id) ?? [],
+  };
 }
 
 /**
@@ -119,7 +153,10 @@ export async function listKelas({ limit, offset, cari }: ListKelasInput) {
     .offset(offset);
 
   const halaman = rows.slice(0, limit);
-  const jadwal = await jadwalPerKelas(halaman.map((kelas) => kelas.id));
+  const [jadwal, jumlahMurid] = await Promise.all([
+    jadwalPerKelas(halaman.map((kelas) => kelas.id)),
+    jumlahMuridPerKelas(halaman.map((kelas) => kelas.id)),
+  ]);
 
   const [jumlah] = await db
     .select({ total: sql<number>`count(*)::int`.as("total") })
@@ -130,6 +167,7 @@ export async function listKelas({ limit, offset, cari }: ListKelasInput) {
   return {
     data: halaman.map((kelas) => ({
       ...kelas,
+      jumlahMurid: jumlahMurid.get(kelas.id) ?? 0,
       jadwal: jadwal.get(kelas.id) ?? [],
     })),
     meta: {
@@ -219,4 +257,105 @@ export async function hapusJadwal(kelasId: string, jadwalId: string) {
     .where(and(eq(schedules.id, jadwalId), eq(schedules.classId, kelasId)))
     .returning({ id: schedules.id });
   return dihapus.length > 0;
+}
+
+export type MuridDiKelasTersimpan = {
+  muridId: string;
+  nama: string;
+  tanggalLahir: string | null;
+  namaOrangTua: string | null;
+  kontakOrangTua: string | null;
+  statusAktif: boolean;
+  tanggalMulai: string;
+};
+
+/**
+ * Murid yang sedang belajar di satu kelas, terurut nama. Hanya penempatan
+ * berstatus 'aktif' yang ikut; riwayat yang sudah selesai tidak ditampilkan.
+ */
+export async function listMuridKelas(
+  kelasId: string,
+): Promise<MuridDiKelasTersimpan[]> {
+  return db
+    .select({
+      muridId: studentEnrollments.studentId,
+      nama: students.nama,
+      tanggalLahir: students.tanggalLahir,
+      namaOrangTua: students.namaOrangTua,
+      kontakOrangTua: students.kontakOrangTua,
+      statusAktif: students.statusAktif,
+      tanggalMulai: studentEnrollments.tanggalMulai,
+    })
+    .from(studentEnrollments)
+    .innerJoin(students, eq(studentEnrollments.studentId, students.id))
+    .where(
+      and(
+        eq(studentEnrollments.classId, kelasId),
+        eq(studentEnrollments.status, "aktif"),
+      ),
+    )
+    .orderBy(asc(students.nama));
+}
+
+export type HasilTempatkanMurid =
+  | { status: "tersimpan" }
+  | { status: "kelas_tidak_ada" }
+  | { status: "murid_tidak_ada" }
+  | { status: "sudah_terdaftar" };
+
+/**
+ * Menempatkan murid ke kelas. Satu murid hanya boleh punya satu penempatan
+ * aktif, jadi murid yang sudah punya kelas lain ditolak — kehadirannya tidak
+ * boleh terhitung di dua kelas sekaligus.
+ */
+export async function tempatkanMurid(
+  kelasId: string,
+  muridId: string,
+  tanggalMulai: string,
+): Promise<HasilTempatkanMurid> {
+  const [kelas] = await db
+    .select({ id: classes.id })
+    .from(classes)
+    .where(eq(classes.id, kelasId))
+    .limit(1);
+  if (!kelas) return { status: "kelas_tidak_ada" };
+
+  const [murid] = await db
+    .select({ id: students.id })
+    .from(students)
+    .where(eq(students.id, muridId))
+    .limit(1);
+  if (!murid) return { status: "murid_tidak_ada" };
+
+  try {
+    await db.insert(studentEnrollments).values({
+      studentId: muridId,
+      classId: kelasId,
+      tanggalMulai,
+    });
+  } catch (error) {
+    if (pelanggaranUnik(error)) return { status: "sudah_terdaftar" };
+    throw error;
+  }
+
+  return { status: "tersimpan" };
+}
+
+/**
+ * Mengeluarkan murid dari kelas: penempatannya ditandai 'selesai', bukan
+ * dihapus, supaya riwayatnya tetap bisa ditelusuri.
+ */
+export async function keluarkanMurid(kelasId: string, muridId: string) {
+  const diubah = await db
+    .update(studentEnrollments)
+    .set({ status: "selesai" })
+    .where(
+      and(
+        eq(studentEnrollments.classId, kelasId),
+        eq(studentEnrollments.studentId, muridId),
+        eq(studentEnrollments.status, "aktif"),
+      ),
+    )
+    .returning({ id: studentEnrollments.id });
+  return diubah.length > 0;
 }
