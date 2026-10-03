@@ -2,6 +2,8 @@ import { AppNav } from "@/components/app-nav";
 import { Brand } from "@/components/brand";
 import { SignOutButton } from "@/components/sign-out-button";
 import { hasPermission, requireSession } from "@/lib/session";
+import { labelPeran } from "@/lib/mock-akun";
+import { menuUntukPeran, peranDariRole, type MenuApp } from "@/lib/mock-menu";
 
 export const runtime = "nodejs";
 
@@ -11,11 +13,18 @@ export default async function ProtectedLayout({
   children: React.ReactNode;
 }) {
   const { user } = await requireSession();
-  // Menu Pemantauan dan Gaji hanya untuk yang punya izin membacanya.
-  const [bolehPantau, bolehGaji] = await Promise.all([
-    hasPermission(user.id, { jurnal: ["read-any"] }),
-    hasPermission(user.id, { gaji: ["read-any"] }),
-  ]);
+
+  // Peran akun menentukan susunan menunya (guru atau owner), sementara menu
+  // yang butuh izin khusus tetap diperiksa izinnya — jadi akun yang izinnya
+  // dicabut kehilangan menunya tanpa menunggu perannya diganti.
+  const peran = peranDariRole(user.role);
+  const menu: MenuApp[] = (
+    await Promise.all(
+      menuUntukPeran(peran).map(async (item) =>
+        item.perlu && !(await hasPermission(user.id, item.perlu)) ? null : item,
+      ),
+    )
+  ).filter((item): item is MenuApp => item !== null);
 
   return (
     <>
@@ -23,7 +32,13 @@ export default async function ProtectedLayout({
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-6 py-4 sm:px-10">
           <Brand />
           <div className="flex flex-wrap items-center gap-4">
-            <AppNav pemantauan={bolehPantau} gaji={bolehGaji} />
+            <AppNav menu={menu} />
+            <p className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">{user.name}</span>
+              <span className="rounded-full border bg-muted px-2.5 py-0.5 text-xs font-medium">
+                {labelPeran(peran)}
+              </span>
+            </p>
             <SignOutButton />
           </div>
         </div>

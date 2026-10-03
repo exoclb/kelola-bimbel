@@ -3,38 +3,16 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "cn";
-
-const TAUTAN = [
-  { href: "/app", label: "Beranda" },
-  { href: "/app/jurnal", label: "Isi Jurnal" },
-  { href: "/app/jurnal/riwayat", label: "Riwayat" },
-  { href: "/app/murid", label: "Murid" },
-  { href: "/app/kelas", label: "Kelas" },
-  { href: "/app/perkembangan", label: "Perkembangan" },
-];
+import type { MenuApp } from "@/lib/mock-menu";
 
 /**
- * Menu utama aplikasi. Menu Pemantauan hanya ditampilkan kalau akunnya memang
- * boleh membukanya, dan menu Gaji mengarah ke rekap semua guru (owner) atau
- * rekap milik sendiri (guru). Ini murni tampilan — halaman dan API-nya tetap
- * memeriksa izin sendiri, jadi menyembunyikan menu bukan pengaman.
+ * Menu utama aplikasi. Daftarnya datang dari pemanggil (sudah disesuaikan
+ * dengan peran akun), jadi komponen ini hanya mengurus tampilan dan penanda
+ * halaman yang sedang dibuka.
  */
-export function AppNav({
-  pemantauan,
-  gaji,
-}: {
-  pemantauan: boolean;
-  gaji: boolean;
-}) {
+export function AppNav({ menu }: { menu: MenuApp[] }) {
   const pathname = usePathname();
-  const daftar = [
-    ...TAUTAN,
-    ...(pemantauan ? [{ href: "/app/pemantauan", label: "Pemantauan" }] : []),
-    ...(gaji
-      ? [{ href: "/app/gaji", label: "Gaji" }]
-      : [{ href: "/app/gaji/saya", label: "Gaji saya" }]),
-  ];
-  const hrefAktif = daftar
+  const hrefAktif = menu
     .map((tautan) => tautan.href)
     .filter((href) => pathname === href || pathname.startsWith(`${href}/`))
     .sort((a, b) => b.length - a.length)[0];
@@ -44,7 +22,7 @@ export function AppNav({
       aria-label="Menu aplikasi"
       className="flex flex-wrap items-center gap-1"
     >
-      {daftar.map(({ href, label }) => {
+      {menu.map(({ href, label }) => {
         const aktif = href === hrefAktif;
         return (
           <Link
