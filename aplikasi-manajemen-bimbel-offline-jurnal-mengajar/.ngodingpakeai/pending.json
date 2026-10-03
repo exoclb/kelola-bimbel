@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "2a2bcdf9b229289a34e5a08aa3a08160afbc3d13",
+  "generatedForCommit": "c8bda3af69a8ce8916e3dbe6e5b6d94af076c2f2",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -466,7 +466,7 @@
     },
     {
       "path": "src/app/(protected)/app/pemantauan/page.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1115
     },
@@ -624,7 +624,7 @@
       "path": "src/components/pemantauan-harian.tsx",
       "reason": "changed",
       "language": "typescript",
-      "size": 6081
+      "size": 6171
     },
     {
       "path": "src/components/pemilih-jadwal.tsx",
@@ -658,9 +658,9 @@
     },
     {
       "path": "src/components/status-guru-hari-ini.tsx",
-      "reason": "new",
+      "reason": "changed",
       "language": "typescript",
-      "size": 2881
+      "size": 5209
     },
     {
       "path": "src/components/ui/button.tsx",
@@ -852,7 +852,7 @@
       "path": "src/services/jurnal.service.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 15895
+      "size": 16599
     },
     {
       "path": "src/services/notes.service.ts",

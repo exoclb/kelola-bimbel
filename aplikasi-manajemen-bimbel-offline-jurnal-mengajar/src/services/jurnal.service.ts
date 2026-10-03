@@ -528,3 +528,33 @@ export async function ringkasanAnyGuruHariIni(
       a.guruNama.localeCompare(b.guruNama, "id"),
   );
 }
+
+export type KehadiranJurnal = {
+  nama: string;
+  hadir: boolean;
+  catatan: string;
+};
+
+// --- Lintas akun (lanjutan) -------------------------------------------------
+
+/**
+ * Kehadiran murid untuk sekumpulan jurnal sekaligus, diurutkan menurut nama
+ * murid. Dipanggil dengan id jurnal yang sudah didapat dari pembacaan yang
+ * dijaga izin, jadi fungsi ini sendiri tidak menyaring pemilik baris.
+ */
+export async function listAnyKehadiranJurnal(
+  jurnalIds: string[],
+): Promise<(KehadiranJurnal & { journalId: string })[]> {
+  if (jurnalIds.length === 0) return [];
+  return db
+    .select({
+      journalId: journalAttendances.journalId,
+      nama: students.nama,
+      hadir: journalAttendances.hadir,
+      catatan: journalAttendances.catatan,
+    })
+    .from(journalAttendances)
+    .innerJoin(students, eq(journalAttendances.studentId, students.id))
+    .where(inArray(journalAttendances.journalId, jurnalIds))
+    .orderBy(asc(students.nama));
+}

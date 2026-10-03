@@ -8,20 +8,22 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { PanelJurnal } from "@/components/panel-jurnal";
 import {
   DaftarStatusGuru,
   RingkasanStatusGuru,
 } from "@/components/status-guru-hari-ini";
-import { LabelStatusJurnal } from "@/components/label-status-jurnal";
 import { formatJam } from "@/lib/jurnal";
 import type {
   JurnalHarian,
+  KehadiranJurnal,
   StatusGuruHariIni,
 } from "@/services/jurnal.service";
 
 type PemantauanHarianProps = {
   data: JurnalHarian[];
   statusGuru: StatusGuruHariIni[];
+  kehadiran: Record<string, KehadiranJurnal[]>;
   tanggalTampil: string;
   namaOwner: string;
   hasMore: boolean;
@@ -35,6 +37,7 @@ type PemantauanHarianProps = {
 export function PemantauanHarian({
   data,
   statusGuru,
+  kehadiran,
   tanggalTampil,
   namaOwner,
   hasMore,
@@ -138,34 +141,11 @@ export function PemantauanHarian({
               <CardContent>
                 <ul className="divide-y">
                   {guru.jurnal.map((jurnal) => (
-                    <li
+                    <PanelJurnal
                       key={jurnal.id}
-                      className="flex flex-wrap items-start justify-between gap-3 py-4 first:pt-0 last:pb-0"
-                    >
-                      <div className="min-w-0 space-y-1">
-                        <p className="font-medium">
-                          {jurnal.namaKelas} · {jurnal.cabang}
-                        </p>
-                        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-                          <span>
-                            {jurnal.jamMulai ?? "—"}–{jurnal.jamSelesai ?? "—"}
-                          </span>
-                          <span>{formatJam(jurnal.jamMengajar)}</span>
-                          <span className="inline-flex items-center gap-1">
-                            <Users className="size-3.5" aria-hidden="true" />
-                            {jurnal.jumlahHadir} dari {jurnal.jumlahMurid} murid
-                            hadir
-                          </span>
-                        </p>
-                        <p className="text-sm">{jurnal.materi}</p>
-                        {jurnal.catatan && (
-                          <p className="text-sm text-muted-foreground">
-                            Catatan: {jurnal.catatan}
-                          </p>
-                        )}
-                      </div>
-                      <LabelStatusJurnal status={jurnal.status} />
-                    </li>
+                      jurnal={jurnal}
+                      kehadiran={kehadiran[jurnal.id] ?? []}
+                    />
                   ))}
                 </ul>
               </CardContent>

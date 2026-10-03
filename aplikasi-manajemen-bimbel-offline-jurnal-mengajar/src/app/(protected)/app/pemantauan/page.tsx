@@ -4,7 +4,9 @@ import { requirePermission } from "@/lib/session";
 import { formatTanggalLengkap, namaHari, tanggalISO } from "@/lib/tanggal";
 import {
   listAnyJurnal,
+  listAnyKehadiranJurnal,
   ringkasanAnyGuruHariIni,
+  type KehadiranJurnal,
 } from "@/services/jurnal.service";
 
 export const metadata: Metadata = { title: "Pemantauan Harian" };
@@ -21,10 +23,21 @@ export default async function PemantauanPage() {
     ringkasanAnyGuruHariIni(namaHari(sekarang), tanggal),
   ]);
 
+  const kehadiran: Record<string, KehadiranJurnal[]> = {};
+  for (const baris of await listAnyKehadiranJurnal(
+    hasil.data.map((jurnal) => jurnal.id),
+  )) {
+    kehadiran[baris.journalId] = [
+      ...(kehadiran[baris.journalId] ?? []),
+      { nama: baris.nama, hadir: baris.hadir, catatan: baris.catatan },
+    ];
+  }
+
   return (
     <PemantauanHarian
       data={hasil.data}
       statusGuru={statusGuru}
+      kehadiran={kehadiran}
       tanggalTampil={formatTanggalLengkap(tanggal)}
       namaOwner={user.name}
       hasMore={hasil.meta.hasMore}
