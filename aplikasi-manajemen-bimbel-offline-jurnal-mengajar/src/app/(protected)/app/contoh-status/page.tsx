@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AlertTriangle, Plus, RefreshCw } from "lucide-react";
+import { IsianTeks } from "@/components/isian-form";
 import { Button } from "@/components/ui/button";
 import {
   PanelStatus,
@@ -108,6 +109,40 @@ export default async function ContohStatusPage() {
             <li>Tanggal lahir wajib diisi.</li>
             <li>Tarif harus lebih besar dari nol.</li>
           </ul>
+        </div>
+      </PanelStatus>
+
+      <PanelStatus
+        judul="Isian formulir dengan pesan kesalahan"
+        keterangan="Pesan kesalahan muncul tepat di bawah isian yang salah, ditandai aria-invalid dan tersambung lewat aria-describedby. Contoh di bawah sengaja dalam keadaan salah supaya bentuknya terlihat."
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <IsianTeks
+            id="contoh-nama"
+            label="Nama murid"
+            defaultValue=""
+            error="Nama murid wajib diisi."
+            placeholder="Misalnya: Aisyah Putri"
+          />
+          <IsianTeks
+            id="contoh-tanggal"
+            label="Tanggal lahir"
+            type="date"
+            defaultValue="2026-12-31"
+            error="Tanggal lahir tidak boleh melewati hari ini."
+          />
+          <IsianTeks
+            id="contoh-email"
+            label="Email orang tua"
+            defaultValue="bukan-email"
+            error="Email belum berbentuk alamat email yang benar."
+          />
+          <IsianTeks
+            id="contoh-kontak"
+            label="Kontak orang tua"
+            defaultValue="0812-3456-7890"
+            keterangan="Boleh dikosongkan; dipakai saat perlu menghubungi wali murid."
+          />
         </div>
       </PanelStatus>
 
