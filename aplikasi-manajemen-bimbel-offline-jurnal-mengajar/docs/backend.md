@@ -108,25 +108,6 @@ Operasi jurnal milik guru ada di `src/services/jurnal.service.ts` (simpan, riway
 
 `POST /api/kelas/:id/murid` menerima `{ muridId, tanggalMulai? }` (tanggal mulai kosong berarti hari ini) dan menjawab 201 dengan daftar murid terbaru kelas itu. Satu murid hanya boleh punya satu penempatan aktif — dijaga indeks unik parsial `student_enrollments_student_aktif_idx` — sehingga murid yang sudah punya kelas lain dijawab 409 `SUDAH_TERDAFTAR`; pindah kelas caranya keluarkan dulu dari kelas lama. `DELETE /api/kelas/:id/murid/:muridId` mengeluarkan murid dengan menandai penempatannya `selesai` (riwayat tetap tersimpan, bukan dihapus) dan menjawab 404 kalau murid itu memang tidak sedang di kelas tersebut.
 
-## Data model
-
-Selain tabel bawaan starter (`user`, `session`, `account`, `verification`, `notes`), aplikasi ini memakai tabel berikut — semuanya di `src/db/schema/` dan dibuat lewat migrasi Drizzle:
-
-| Tabel                                       | Isinya                                                                                                                                     |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `students`                                  | Data murid bimbel (nama, tanggal lahir, orang tua, status aktif).                                                                          |
-| `classes`                                   | Kelas bimbel beserta cabang dan guru pengampunya.                                                                                          |
-| `schedules`                                 | Jadwal mengajar per kelas (hari, jam mulai, jam selesai). Satu kelas tidak boleh punya dua jadwal dengan hari & jam mulai yang sama.       |
-| `student_enrollments`                       | Penempatan murid ke kelas. Satu murid hanya boleh punya satu penempatan `aktif`; yang lama ditandai `selesai` supaya riwayatnya tetap ada. |
-| `teaching_journals`                         | Jurnal mengajar guru; sumber jam mengajar yang dihitung ke gaji. Satu guru satu jurnal per jadwal per tanggal.                             |
-| `journal_attendances`                       | Kehadiran tiap murid di dalam satu jurnal.                                                                                                 |
-| `student_progress`                          | Catatan perkembangan anak (nilai, sikap, catatan naratif) dari guru.                                                                       |
-| `salary_settings`                           | Riwayat tarif per jam; tarif yang dipakai adalah yang berlaku pada bulan yang dihitung.                                                    |
-| `salary_recaps`                             | Catatan pembayaran gaji yang sudah ditandai owner.                                                                                         |
-| `notifications`, `notification_preferences` | Pemberitahuan dalam aplikasi dan preferensi penerimaannya.                                                                                 |
-
-Aturan yang dijaga database, bukan cuma di kode: indeks unik parsial `student_enrollments_student_aktif_idx` (satu kelas aktif per murid), indeks unik `teaching_journals_guru_jadwal_tanggal_idx` (jurnal tidak dobel sehingga gaji tidak terhitung dua kali), dan indeks unik `schedules_class_hari_jam_idx` (jadwal kelas tidak dobel). Penghapusan murid/kelas ikut menghapus baris turunannya (`on delete cascade`), sedangkan data yang tidak boleh hilang memakai `restrict`.
-
 `GET /api/perkembangan` mengembalikan catatan perkembangan semua anak, terbaru lebih dulu (urut tanggal lalu waktu dibuat), dengan `limit` (1–100, bawaan 50), `offset`, serta penyaring `muridId`, `dari`/`sampai` (`YYYY-MM-DD`), dan `cari` (nama anak atau isi catatannya). Rentang tanggal yang terbalik dijawab 422. Setiap baris memuat `{ id, muridId, muridNama, guruId, guruNama, tanggal, nilai, sikap, catatanPerkembangan, createdAt, updatedAt }` dan `meta.total` adalah jumlah seluruh catatan yang cocok.
 
 `POST /api/perkembangan` menerima `{ muridId, tanggal, nilai, sikap, catatanPerkembangan? }` — nilai 0–100 dan wajib berupa angka, tanggal wajib tanggal yang benar-benar ada, dan murid harus ada (kalau tidak: 404). **Guru penulisnya diambil dari sesi**, jadi mengirim `guruId` sendiri dijawab 422 dan catatan tidak bisa diatasnamakan akun lain. `GET /api/perkembangan/:id` menampilkan satu catatan; `PATCH` hanya menerima `tanggal`, `nilai`, `sikap`, dan `catatanPerkembangan` (murid tidak bisa dipindah) dan wajib mengirim minimal satu kolom. `PATCH` dan `DELETE` terbatas untuk **penulis catatannya**: catatan guru lain dijawab 404 yang sama dengan catatan yang tidak ada, sehingga tidak bisa ditimpa atau dihapus akun lain. Perubahan catatan tidak menyentuh baris lain; kolom yang tidak dikirim dibiarkan seperti semula.
@@ -149,8 +130,26 @@ Endpoint ini terbuka (belum punya sesi) tetapi tidak melewati jalur auth begitu 
 
 ## Lupa sandi
 
-`POST /api/auth/request-password-reset` dan `POST /api/auth/reset-password` milik Better Auth dipakai apa adanya; aplikasi hanya menyiapkan halamannya di `/lupa-password` dan `/atur-ulang-password?token=…`. `sendResetPassword` di `src/lib/auth.ts` mencatat tautan atur ulang ke log server (`[lupa-sandi] …`) karena bimbel belum memakai penyedia email — ganti isi fungsi itu dengan pengiriman email begitu penyedianya ada. Tautannya berlaku satu jam dan hanya bisa dipakai sekali; permintaan untuk email yang tidak terdaftar dijawab sama seperti email yang terdaftar supaya halaman ini tidak bisa dipakai menebak akun siapa saja yang ada.
+`POST /api/lupa-sandi` menerima `{ email }` dan selalu menjawab 200 `{ terkirim: true }` — baik emailnya terdaftar maupun tidak — supaya halaman lupa sandi tidak bisa dipakai menebak email mana yang punya akun. Yang membuat dan mengirim tautannya tetap Better Auth (lewat `sendResetPassword` di `src/lib/auth.ts`); kalau fitur itu dimatikan di servernya, jawabannya 503 `FITUR_BELUM_AKTIF` alih-alih mengaku sudah mengirim. Tautannya berlaku satu jam dan hanya bisa dipakai sekali. Halaman `/lupa-password` memakai endpoint ini untuk minta tautan, dan `/atur-ulang-password?token=…` menukar token itu dengan sandi baru lewat `POST /api/auth/reset-password` milik Better Auth.
 
+## Data model
+
+Selain tabel bawaan starter (`user`, `session`, `account`, `verification`, `notes`), aplikasi ini memakai tabel berikut — semuanya di `src/db/schema/` dan dibuat lewat migrasi Drizzle:
+
+| Tabel                                       | Isinya                                                                                                                                     |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `students`                                  | Data murid bimbel (nama, tanggal lahir, orang tua, status aktif).                                                                          |
+| `classes`                                   | Kelas bimbel beserta cabang dan guru pengampunya.                                                                                          |
+| `schedules`                                 | Jadwal mengajar per kelas (hari, jam mulai, jam selesai). Satu kelas tidak boleh punya dua jadwal dengan hari & jam mulai yang sama.       |
+| `student_enrollments`                       | Penempatan murid ke kelas. Satu murid hanya boleh punya satu penempatan `aktif`; yang lama ditandai `selesai` supaya riwayatnya tetap ada. |
+| `teaching_journals`                         | Jurnal mengajar guru; sumber jam mengajar yang dihitung ke gaji. Satu guru satu jurnal per jadwal per tanggal.                             |
+| `journal_attendances`                       | Kehadiran tiap murid di dalam satu jurnal.                                                                                                 |
+| `student_progress`                          | Catatan perkembangan anak (nilai, sikap, catatan naratif) dari guru.                                                                       |
+| `salary_settings`                           | Riwayat tarif per jam; tarif yang dipakai adalah yang berlaku pada bulan yang dihitung.                                                    |
+| `salary_recaps`                             | Catatan pembayaran gaji yang sudah ditandai owner.                                                                                         |
+| `notifications`, `notification_preferences` | Pemberitahuan dalam aplikasi dan preferensi penerimaannya.                                                                                 |
+
+Aturan yang dijaga database, bukan cuma di kode: indeks unik parsial `student_enrollments_student_aktif_idx` (satu kelas aktif per murid), indeks unik `teaching_journals_guru_jadwal_tanggal_idx` (jurnal tidak dobel sehingga gaji tidak terhitung dua kali), dan indeks unik `schedules_class_hari_jam_idx` (jadwal kelas tidak dobel). Penghapusan murid/kelas ikut menghapus baris turunannya (`on delete cascade`), sedangkan data yang tidak boleh hilang memakai `restrict`.
 Tabel akun memakai milik Better Auth (`user`, `account`, `session`, `verification`) dan tidak diganti: id-nya string acak dari Better Auth (bukan UUID), sandi tersimpan di `account.password`, dan peran di `user.role`. Kolom itu kini **wajib diisi** dengan bawaan `user` — nilai itu yang di aplikasi ini berarti **guru**; peran `owner` dan `admin` menyusul di `src/lib/permissions.ts` (`peranDariRole` di `src/lib/peran.ts` memetakan keduanya ke "owner" untuk tampilan). Kolomnya sengaja `text`, bukan enum, karena Better Auth merangkai beberapa peran sekaligus ("admin,support") di kolom yang sama. Status aktif akun memakai kolom `banned` bawaan plugin admin — akun yang di-ban tidak bisa masuk, jadi tidak ada kolom "status_aktif" terpisah yang harus dijaga tetap sinkron.
 
 ## Proteksi halaman
