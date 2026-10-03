@@ -66,7 +66,11 @@ export function PemilihMateri({
           })}
         </div>
         {error && (
-          <p id="materi-error" role="alert" className="text-sm text-destructive">
+          <p
+            id="materi-error"
+            role="alert"
+            className="text-sm text-destructive"
+          >
             {error}
           </p>
         )}

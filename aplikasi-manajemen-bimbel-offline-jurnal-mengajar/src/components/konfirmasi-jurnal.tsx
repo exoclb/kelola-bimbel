@@ -74,8 +74,8 @@ export function KonfirmasiJurnal({
             </span>
             <CardTitle className="text-xl">Jurnal terkirim ke owner</CardTitle>
             <CardDescription>
-              Laporan {ringkasan.namaKelas} untuk {ringkasan.tanggalTampil} sudah
-              tercatat. Owner bisa langsung membacanya.
+              Laporan {ringkasan.namaKelas} untuk {ringkasan.tanggalTampil}{" "}
+              sudah tercatat. Owner bisa langsung membacanya.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
@@ -108,7 +108,10 @@ export function KonfirmasiJurnal({
             {tidakHadir.length > 0 && (
               <div className="rounded-xl border px-4 py-3 text-sm">
                 <p className="flex items-center gap-2 font-medium">
-                  <UserX className="size-4 text-muted-foreground" aria-hidden="true" />
+                  <UserX
+                    className="size-4 text-muted-foreground"
+                    aria-hidden="true"
+                  />
                   Tidak hadir
                 </p>
                 <ul className="mt-2 space-y-1 text-muted-foreground">

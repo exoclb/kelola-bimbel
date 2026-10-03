@@ -74,7 +74,9 @@ export function DaftarKehadiran({
                     id={`hadir-${anak.id}`}
                     checked={hadir}
                     disabled={disabled}
-                    onCheckedChange={(nilai) => onHadir(anak.id, nilai === true)}
+                    onCheckedChange={(nilai) =>
+                      onHadir(anak.id, nilai === true)
+                    }
                   />
                   <Label
                     htmlFor={`hadir-${anak.id}`}
@@ -89,7 +91,10 @@ export function DaftarKehadiran({
                   </span>
                 ) : (
                   <div className="pl-7 sm:w-64 sm:pl-0">
-                    <Label htmlFor={`keterangan-${anak.id}`} className="sr-only">
+                    <Label
+                      htmlFor={`keterangan-${anak.id}`}
+                      className="sr-only"
+                    >
                       Keterangan {anak.nama}
                     </Label>
                     <Input

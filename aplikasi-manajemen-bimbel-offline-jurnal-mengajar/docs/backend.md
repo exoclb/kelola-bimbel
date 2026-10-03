@@ -39,6 +39,17 @@ Single-item responses wrap a note in `data`. Each note contains `id`, `title`, `
 
 Errors use `{ "error": { "code": "...", "message": "..." } }`, with field `details` for validation errors. Statuses are 400 for malformed JSON, 401 for missing/invalid sessions, 403 for rejected origins, 404 for missing or unowned records, 415 for unsupported content types, 422 for invalid input, and 500 for unexpected failures. Missing and unowned records have identical responses. Database exceptions and private values are not returned. Application API responses use `Cache-Control: private, no-store`.
 
+## App endpoints
+
+App features follow the same structure as Notes: route → `withApiSession` → validator → service → Drizzle table.
+
+| Method | Path                 | Result                                                          |
+| ------ | -------------------- | --------------------------------------------------------------- |
+| GET    | `/api/jadwal`        | 200, jadwal mengajar guru yang sedang masuk pada satu hari      |
+| GET    | `/api/jadwal?hari=…` | 200, jadwal pada hari lain (`Senin`–`Minggu`, huruf awal besar) |
+
+`hari` boleh dikosongkan; tanpa parameter itu server memakai hari ini menurut `src/lib/tanggal.ts`. Nilai di luar daftar hari ditolak dengan 422. Hasilnya `{ "data": [{ id, classId, namaKelas, cabang, jamMulai, jamSelesai }] }` dengan jam dalam bentuk `HH:MM`, diurutkan dari jam paling awal. Saringan `guru_id` selalu memakai id dari sesi, bukan dari permintaan, jadi satu guru tidak pernah melihat jadwal guru lain.
+
 ## Role-based access
 
 Ownership answers "is this row mine?". Roles answer "may this account reach past its own rows?". The starter ships a worked example of the second question using the Better Auth admin plugin.

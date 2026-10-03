@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "cd1e39640e17d790dae42011fa5ec4cba77bc7b4",
+  "generatedForCommit": "7aabafabab652d96483e5ce3486d236f56a10318",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -225,6 +225,12 @@
       "size": 376
     },
     {
+      "path": "drizzle/0003_jurnal.sql",
+      "reason": "new",
+      "language": "sql",
+      "size": 4220
+    },
+    {
       "path": "drizzle/meta/0000_snapshot.json",
       "reason": "needs_summary",
       "language": "json",
@@ -243,10 +249,16 @@
       "size": 12557
     },
     {
-      "path": "drizzle/meta/_journal.json",
-      "reason": "needs_summary",
+      "path": "drizzle/meta/0003_snapshot.json",
+      "reason": "new",
       "language": "json",
-      "size": 465
+      "size": 26477
+    },
+    {
+      "path": "drizzle/meta/_journal.json",
+      "reason": "changed",
+      "language": "json",
+      "size": 599
     },
     {
       "path": "drizzle.config.ts",
@@ -424,7 +436,7 @@
     },
     {
       "path": "src/app/(protected)/app/jurnal/riwayat/page.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1719
     },
@@ -538,7 +550,7 @@
     },
     {
       "path": "src/components/daftar-riwayat-jurnal.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 6938
     },
@@ -628,7 +640,7 @@
     },
     {
       "path": "src/components/ui/native-select.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 910
     },
@@ -657,10 +669,22 @@
       "size": 1057
     },
     {
-      "path": "src/db/schema/index.ts",
-      "reason": "needs_summary",
+      "path": "src/db/schema/classes.ts",
+      "reason": "new",
       "language": "typescript",
-      "size": 230
+      "size": 758
+    },
+    {
+      "path": "src/db/schema/index.ts",
+      "reason": "changed",
+      "language": "typescript",
+      "size": 390
+    },
+    {
+      "path": "src/db/schema/journal-attendances.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1050
     },
     {
       "path": "src/db/schema/notes.ts",
@@ -669,10 +693,28 @@
       "size": 825
     },
     {
+      "path": "src/db/schema/schedules.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1030
+    },
+    {
       "path": "src/db/schema/session.ts",
       "reason": "needs_summary",
       "language": "typescript",
       "size": 904
+    },
+    {
+      "path": "src/db/schema/students.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 784
+    },
+    {
+      "path": "src/db/schema/teaching-journals.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1899
     },
     {
       "path": "src/db/schema/user.ts",
@@ -712,7 +754,7 @@
     },
     {
       "path": "src/lib/mock-jurnal.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 10273
     },

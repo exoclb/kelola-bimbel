@@ -80,7 +80,9 @@ export function PemilihJadwal({
                       className="mt-1 size-4 shrink-0 accent-primary"
                     />
                     <span className="min-w-0 space-y-1.5">
-                      <span className="block font-medium">{item.namaKelas}</span>
+                      <span className="block font-medium">
+                        {item.namaKelas}
+                      </span>
                       <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
                         <span className="inline-flex items-center gap-1">
                           <Clock className="size-3.5" aria-hidden="true" />
