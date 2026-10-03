@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { LabelStatusJurnal } from "@/components/label-status-jurnal";
+import { PesanKosong } from "@/components/status-antarmuka";
 import { formatJam } from "@/lib/jurnal";
 import type { FilterRiwayat, JurnalRiwayat } from "@/lib/mock-jurnal";
 import { formatTanggalLengkap } from "@/lib/tanggal";
@@ -128,20 +129,19 @@ export function DaftarRiwayatJurnal({
       </Card>
 
       {daftar.length === 0 ? (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>
-              {adaSaringan
-                ? "Tidak ada jurnal pada saringan ini"
-                : "Belum ada jurnal"}
-            </CardTitle>
-            <CardDescription>
-              {adaSaringan
-                ? "Coba ganti kelas atau lebarkan rentang tanggalnya."
-                : "Setelah kamu mengirim jurnal pertama, riwayatnya muncul di sini."}
-            </CardDescription>
-          </CardHeader>
-        </Card>
+        <PesanKosong
+          className="mt-6"
+          judul={
+            adaSaringan
+              ? "Tidak ada jurnal pada saringan ini"
+              : "Belum ada jurnal"
+          }
+          keterangan={
+            adaSaringan
+              ? "Coba ganti kelas atau lebarkan rentang tanggalnya."
+              : "Setelah kamu mengirim jurnal pertama, riwayatnya muncul di sini."
+          }
+        />
       ) : (
         <ul className="mt-6 space-y-3">
           {daftar.map((jurnal) => (

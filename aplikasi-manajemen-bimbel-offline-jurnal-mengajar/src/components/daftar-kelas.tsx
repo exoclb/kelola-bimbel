@@ -5,17 +5,13 @@ import { CalendarDays, Clock, MapPin, Users, X } from "lucide-react";
 import { FormJadwalKelas } from "@/components/form-jadwal-kelas";
 import { FormTambahKelas } from "@/components/form-tambah-kelas";
 import { KolomPencarian } from "@/components/kolom-pencarian";
+import { PesanKosong } from "@/components/status-antarmuka";
 import {
   PanelPenempatan,
   type MuridDiKelas,
 } from "@/components/panel-penempatan";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import type { JadwalKelas, Kelas } from "@/lib/mock-kelas";
 import type { Murid } from "@/lib/mock-murid";
 import type { Penempatan } from "@/lib/mock-penempatan";
@@ -159,18 +155,15 @@ export function DaftarKelas({
       </div>
 
       {cocok.length === 0 ? (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>
-              {kataKunci ? "Tidak ada kelas yang cocok" : "Belum ada kelas"}
-            </CardTitle>
-            <CardDescription>
-              {kataKunci
-                ? `Coba kata kunci lain, atau hapus pencarian “${cari.trim()}”.`
-                : "Kelas muncul di sini setelah ditambahkan."}
-            </CardDescription>
-          </CardHeader>
-        </Card>
+        <PesanKosong
+          className="mt-6"
+          judul={kataKunci ? "Tidak ada kelas yang cocok" : "Belum ada kelas"}
+          keterangan={
+            kataKunci
+              ? `Coba kata kunci lain, atau hapus pencarian “${cari.trim()}”.`
+              : "Kelas muncul di sini setelah ditambahkan."
+          }
+        />
       ) : (
         <ul className="mt-6 space-y-3">
           {cocok.map((kelas) => {
