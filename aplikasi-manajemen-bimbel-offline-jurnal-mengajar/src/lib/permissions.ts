@@ -9,6 +9,9 @@ import { adminAc, defaultStatements } from "better-auth/plugins/admin/access";
 export const statement = {
   ...defaultStatements,
   notes: ["read-any", "delete-any"],
+  // Guru hanya melihat jurnalnya sendiri lewat sesi; aksi ini memberi owner
+  // (dan admin) kemampuan membaca jurnal guru lain.
+  jurnal: ["read-any"],
 } as const;
 
 export const ac = createAccessControl(statement);
@@ -17,9 +20,12 @@ export const ac = createAccessControl(statement);
 // signed-in default should be able to do nothing beyond its own records.
 export const roles = {
   user: ac.newRole({ notes: [] }),
+  // Pemilik bimbel: memantau jurnal semua guru, tanpa hak admin sistem.
+  owner: ac.newRole({ jurnal: ["read-any"] }),
   admin: ac.newRole({
     ...adminAc.statements,
     notes: ["read-any", "delete-any"],
+    jurnal: ["read-any"],
   }),
 } as const;
 

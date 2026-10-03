@@ -49,6 +49,7 @@ App features follow the same structure as Notes: route → `withApiSession` → 
 | GET    | `/api/jadwal?hari=…` | 200, jadwal pada hari lain (`Senin`–`Minggu`, huruf awal besar)       |
 | GET    | `/api/jurnal`        | 200, riwayat jurnal guru (saring kelas & rentang tanggal, berhalaman) |
 | GET    | `/api/jurnal/:id`    | 200, detail satu jurnal beserta daftar muridnya                       |
+| GET    | `/api/admin/jurnal`  | 200, owner melihat jurnal semua guru pada satu tanggal                |
 | POST   | `/api/jurnal`        | 200, simpan & kirim jurnal mengajar (idempoten per jadwal + tanggal)  |
 | PATCH  | `/api/jurnal/:id`    | 200, koreksi isi jurnal (materi, catatan, dan/atau kehadiran)         |
 
@@ -59,6 +60,8 @@ App features follow the same structure as Notes: route → `withApiSession` → 
 `GET /api/jurnal` menerima `limit` (1–100, bawaan 20), `offset` (bawaan 0), `classId` (UUID kelas), `dari`, dan `sampai` (format `YYYY-MM-DD`, keduanya inklusif; `dari` setelah `sampai` ditolak 422). Hasilnya `{ "data": [...], "meta": { "limit", "offset", "hasMore", "kelas": [{ "classId", "namaKelas" }] } }`; `meta.kelas` berisi semua kelas yang pernah diisi guru ini (tanpa ikut tersaring) supaya tampilan bisa menyusun pilihan saringan. Setiap baris memuat `id`, `classId`, `namaKelas`, `cabang`, `hari`, `jamMulai`, `jamSelesai`, `tanggal`, `materi`, `catatan`, `jamMengajar`, `status`, `jumlahMurid`, dan `jumlahHadir`. Baris lama yang jadwalnya sudah dihapus tetap muncul dengan `jamMulai`/`jamSelesai` bernilai `null`.
 
 `GET /api/jurnal/:id` mengembalikan satu jurnal milik guru yang sedang masuk beserta `kehadiran: [{ muridId, nama, hadir, catatan }]` yang diurutkan menurut nama murid. Jurnal milik guru lain dan id yang tidak ada sama-sama dijawab 404. `PATCH /api/jurnal/:id` menerima sebagian saja dari `{ "materi", "catatan", "kehadiran" }` (minimal satu; field lain seperti `jamMengajar`, `classId`, atau `tanggal` ditolak 422) dan mengembalikan bentuk yang sama seperti `GET`. Mengirim `kehadiran` akan mengganti seluruh daftar kehadiran jurnal itu. Kelas, tanggal, dan jam mengajar tidak pernah ikut berubah lewat koreksi, dan status dikembalikan ke `terkirim` supaya owner meninjau ulang.
+
+`GET /api/admin/jurnal` dipakai owner untuk memantau jurnal harian semua guru. Endpoint ini membaca baris milik akun lain, jadi dijaga `withApiPermission(request, { jurnal: ["read-any"] }, …)`: guru biasa (role `user`) menerima 403 walau punya sesi yang sah, sedangkan role `owner` (atau `admin`) boleh membacanya. Parameter yang diterima: `tanggal` (bawaan hari ini), `classId`, `limit` (bawaan 50), dan `offset`; hasilnya `{ "data": [...], "meta": { "tanggal", "limit", "offset", "hasMore" } }` dengan setiap baris memuat `guruNama`, `guruEmail`, kelas, jam, jam mengajar, status, dan jumlah kehadiran, diurutkan menurut nama guru lalu jam mulai. Guru yang membuka `/api/jurnal` tetap hanya melihat jurnalnya sendiri — izin tambahan hanya melebarkan endpoint lintas akun.
 
 ## Role-based access
 
@@ -78,15 +81,18 @@ A statement lists every resource and the actions it allows. A role is a subset. 
 export const statement = {
   ...defaultStatements, // Better Auth's own user and session management
   notes: ["read-any", "delete-any"],
+  jurnal: ["read-any"],
 } as const;
 
 export const ac = createAccessControl(statement);
 
 export const roles = {
-  user: ac.newRole({ notes: [] }),
+  user: ac.newRole({ notes: [] }), // guru: hanya jurnalnya sendiri
+  owner: ac.newRole({ jurnal: ["read-any"] }), // pemilik bimbel
   admin: ac.newRole({
     ...adminAc.statements,
     notes: ["read-any", "delete-any"],
+    jurnal: ["read-any"],
   }),
 };
 ```

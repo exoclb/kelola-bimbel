@@ -7,10 +7,12 @@ import {
   schedules,
   students,
   teachingJournals,
+  user,
 } from "@/db/schema";
 import { tanggalISO } from "@/lib/tanggal";
 import type {
   KoreksiJurnalInput,
+  ListJurnalHarianInput,
   ListJurnalInput,
   SimpanJurnalInput,
 } from "@/validators/jurnal";
@@ -349,4 +351,75 @@ export async function koreksiJurnal(
   const jurnal = await getJurnalGuru(guruId, id);
   if (!jurnal) return { status: "tidak_ada" };
   return { status: "tersimpan", jurnal };
+}
+
+const fieldsHarian = {
+  id: teachingJournals.id,
+  guruId: teachingJournals.guruId,
+  guruNama: user.name,
+  guruEmail: user.email,
+  classId: teachingJournals.classId,
+  namaKelas: classes.namaKelas,
+  cabang: classes.cabang,
+  hari: schedules.hari,
+  jamMulai: sql<string | null>`to_char(${schedules.jamMulai}, 'HH24:MI')`.as(
+    "jam_mulai",
+  ),
+  jamSelesai: sql<
+    string | null
+  >`to_char(${schedules.jamSelesai}, 'HH24:MI')`.as("jam_selesai"),
+  tanggal: teachingJournals.tanggal,
+  materi: teachingJournals.materi,
+  catatan: teachingJournals.catatan,
+  jamMengajar: teachingJournals.jamMengajar,
+  status: teachingJournals.status,
+  jumlahMurid: sql<number>`count(${journalAttendances.id})::int`.as(
+    "jumlah_murid",
+  ),
+  jumlahHadir:
+    sql<number>`count(${journalAttendances.id}) filter (where ${journalAttendances.hadir})::int`.as(
+      "jumlah_hadir",
+    ),
+};
+
+// --- Lintas akun -----------------------------------------------------------
+// Fungsi di bawah ini sengaja tidak menyaring pemilik baris, jadi hanya aman
+// dipanggil dari endpoint yang dijaga `withApiPermission` (atau halaman dengan
+// `requirePermission`). Akhiran "Any" menandai jangkauan itu.
+
+/**
+ * Jurnal semua guru pada satu tanggal, untuk pantauan owner. Diurutkan menurut
+ * nama guru lalu jam mengajar supaya mudah dibaca dalam satu layar.
+ */
+export async function listAnyJurnal(
+  filter: Omit<ListJurnalHarianInput, "tanggal"> & { tanggal: string },
+) {
+  const syarat = [eq(teachingJournals.tanggal, filter.tanggal)];
+  if (filter.classId) syarat.push(eq(teachingJournals.classId, filter.classId));
+
+  const rows = await db
+    .select(fieldsHarian)
+    .from(teachingJournals)
+    .innerJoin(classes, eq(teachingJournals.classId, classes.id))
+    .innerJoin(user, eq(teachingJournals.guruId, user.id))
+    .leftJoin(schedules, eq(teachingJournals.scheduleId, schedules.id))
+    .leftJoin(
+      journalAttendances,
+      eq(journalAttendances.journalId, teachingJournals.id),
+    )
+    .where(and(...syarat))
+    .groupBy(teachingJournals.id, classes.id, schedules.id, user.id)
+    .orderBy(asc(user.name), asc(schedules.jamMulai), desc(teachingJournals.id))
+    .limit(filter.limit + 1)
+    .offset(filter.offset);
+
+  return {
+    data: rows.slice(0, filter.limit),
+    meta: {
+      tanggal: filter.tanggal,
+      limit: filter.limit,
+      offset: filter.offset,
+      hasMore: rows.length > filter.limit,
+    },
+  };
 }
