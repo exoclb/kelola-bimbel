@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { SlipGaji } from "@/components/slip-gaji";
-import { TombolSlipGaji } from "@/components/tombol-slip-gaji";
+import { TombolCetakUnduh } from "@/components/tombol-cetak-unduh";
 import { Button } from "@/components/ui/button";
 import { formatPeriode, periodeBulan } from "@/lib/gaji";
 import { getRekapGajiBulanan } from "@/lib/mock-gaji";
@@ -48,7 +48,7 @@ export default async function SlipGajiPage({
       <SlipGaji baris={baris} periodeTampil={formatPeriode(periode)} />
 
       <div className="mt-6">
-        <TombolSlipGaji namaBerkas={namaBerkas} />
+        <TombolCetakUnduh targetId="slip-gaji" namaBerkas={namaBerkas} />
       </div>
     </div>
   );

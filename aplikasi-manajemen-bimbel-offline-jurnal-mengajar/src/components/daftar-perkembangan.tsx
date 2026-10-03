@@ -5,11 +5,13 @@ import {
   CalendarDays,
   ClipboardList,
   GraduationCap,
+  FileText,
   Pencil,
   Plus,
   UserRound,
 } from "lucide-react";
 import { cn } from "cn";
+import Link from "next/link";
 import { CatatanSikapKehadiran } from "@/components/catatan-sikap-kehadiran";
 import { Button } from "@/components/ui/button";
 import {
@@ -215,6 +217,12 @@ export function DaftarPerkembangan({
                       >
                         <Pencil aria-hidden="true" />
                         Ubah catatan terbaru
+                      </Button>
+                      <Button asChild variant="outline" size="sm">
+                        <Link href={`/app/perkembangan/${murid.id}`}>
+                          <FileText aria-hidden="true" />
+                          Laporan orang tua
+                        </Link>
                       </Button>
                     </div>
                   )}

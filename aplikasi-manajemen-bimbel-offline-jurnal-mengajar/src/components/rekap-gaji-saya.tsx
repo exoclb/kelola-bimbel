@@ -10,7 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SlipGaji } from "@/components/slip-gaji";
-import { TombolSlipGaji } from "@/components/tombol-slip-gaji";
+import { TombolCetakUnduh } from "@/components/tombol-cetak-unduh";
 import { formatRupiah } from "@/lib/gaji";
 import { formatJam } from "@/lib/jurnal";
 import type { BarisRekapGaji } from "@/lib/mock-gaji";
@@ -100,7 +100,7 @@ export function RekapGajiSaya({
       </div>
 
       <div className="mt-6">
-        <TombolSlipGaji namaBerkas={namaBerkas} />
+        <TombolCetakUnduh targetId="slip-gaji" namaBerkas={namaBerkas} />
       </div>
     </div>
   );

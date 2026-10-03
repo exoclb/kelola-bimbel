@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "271c9c598b0fcd4dec73182d6ce69797db573199",
+  "generatedForCommit": "d69aadbe822a3ebb189c5ef0dedd3903c3cdbfbd",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -558,7 +558,7 @@
       "path": "src/app/(protected)/app/perkembangan/page.tsx",
       "reason": "changed",
       "language": "typescript",
-      "size": 660
+      "size": 758
     },
     {
       "path": "src/app/(protected)/layout.tsx",
@@ -729,6 +729,12 @@
       "size": 753
     },
     {
+      "path": "src/components/catatan-sikap-kehadiran.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 2186
+    },
+    {
       "path": "src/components/copy-prompt.tsx",
       "reason": "needs_summary",
       "language": "typescript",
@@ -762,7 +768,7 @@
       "path": "src/components/daftar-perkembangan.tsx",
       "reason": "changed",
       "language": "typescript",
-      "size": 7889
+      "size": 8329
     },
     {
       "path": "src/components/daftar-riwayat-jurnal.tsx",
@@ -778,7 +784,7 @@
     },
     {
       "path": "src/components/form-catatan-anak.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 4913
     },
@@ -1117,6 +1123,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 9777
+    },
+    {
+      "path": "src/lib/mock-kehadiran.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 2494
     },
     {
       "path": "src/lib/mock-kelas.ts",

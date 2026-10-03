@@ -4,22 +4,28 @@ import { useState } from "react";
 import { Download, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-type TombolSlipGajiProps = {
-  /** Nama berkas tanpa ekstensi, mis. "slip-gaji-ahmad-fauzi-2026-10". */
+type TombolCetakUnduhProps = {
+  /** Elemen yang dipakai sebagai isi berkas, mis. "laporan-perkembangan". */
+  targetId: string;
+  /** Nama berkas tanpa ekstensi. */
   namaBerkas: string;
 };
 
 /**
- * Tombol cetak dan unduh untuk slip gaji. Cetak memakai dialog cetak browser
- * (di sana tersedia "Simpan sebagai PDF"), sedangkan unduh menyimpan slip
- * sebagai berkas HTML mandiri beserta gayanya.
+ * Tombol cetak dan unduh untuk dokumen seperti slip gaji dan laporan
+ * perkembangan. Cetak memakai dialog cetak browser (di sana tersedia "Simpan
+ * sebagai PDF"), sedangkan unduh menyimpan dokumen sebagai berkas HTML mandiri
+ * beserta gayanya.
  */
-export function TombolSlipGaji({ namaBerkas }: TombolSlipGajiProps) {
+export function TombolCetakUnduh({
+  targetId,
+  namaBerkas,
+}: TombolCetakUnduhProps) {
   const [pesan, setPesan] = useState("");
 
   function unduh() {
-    const slip = document.getElementById("slip-gaji");
-    if (!slip) return;
+    const dokumen = document.getElementById(targetId);
+    if (!dokumen) return;
 
     // Salin gaya yang sudah dimuat supaya berkas hasil unduhan tampil sama.
     const gaya = [...document.styleSheets]
@@ -37,7 +43,7 @@ export function TombolSlipGaji({ namaBerkas }: TombolSlipGajiProps) {
     const berkas = `<!doctype html>
 <html lang="id">
 <head><meta charset="utf-8"><title>${namaBerkas}</title><style>${gaya}</style></head>
-<body class="${document.body.className}">${slip.outerHTML}</body>
+<body class="${document.body.className}">${dokumen.outerHTML}</body>
 </html>`;
 
     const tautan = document.createElement("a");
@@ -47,7 +53,7 @@ export function TombolSlipGaji({ namaBerkas }: TombolSlipGajiProps) {
     tautan.download = `${namaBerkas}.html`;
     tautan.click();
     URL.revokeObjectURL(tautan.href);
-    setPesan(`Slip tersimpan sebagai ${namaBerkas}.html`);
+    setPesan(`Dokumen tersimpan sebagai ${namaBerkas}.html`);
   }
 
   return (
@@ -59,7 +65,7 @@ export function TombolSlipGaji({ namaBerkas }: TombolSlipGajiProps) {
         </Button>
         <Button type="button" variant="outline" onClick={unduh}>
           <Download aria-hidden="true" />
-          Unduh slip
+          Unduh
         </Button>
       </div>
       {pesan && (
