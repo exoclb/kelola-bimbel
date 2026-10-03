@@ -96,11 +96,15 @@ export const listJurnalSchema = z
 
 export type ListJurnalInput = z.infer<typeof listJurnalSchema>;
 
-// Dipakai owner untuk memantau jurnal seluruh guru pada satu tanggal.
+// Dipakai owner untuk memantau jurnal seluruh guru pada satu tanggal, dengan
+// saringan kelas, guru, atau cabang.
 export const listJurnalHarianSchema = z
   .object({
     tanggal: tanggal.optional(),
     classId: z.string().uuid().optional(),
+    // Id akun dibuat Better Auth, bukan UUID, jadi dibatasi panjangnya saja.
+    guruId: z.string().min(1).max(64).optional(),
+    cabang: z.string().min(1).max(120).optional(),
     limit: z.coerce.number().int().min(1).max(100).default(50),
     offset: z.coerce.number().int().min(0).max(1_000_000).default(0),
   })

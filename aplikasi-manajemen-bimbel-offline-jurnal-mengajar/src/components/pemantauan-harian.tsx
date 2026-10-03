@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { PanelJurnal } from "@/components/panel-jurnal";
+import { SaringPemantauan } from "@/components/saring-pemantauan";
 import {
   DaftarStatusGuru,
   RingkasanStatusGuru,
@@ -22,6 +23,13 @@ import type {
 
 type PemantauanHarianProps = {
   data: JurnalHarian[];
+  saring: {
+    kelas: { classId: string; namaKelas: string; cabang: string }[];
+    guru: { guruId: string; guruNama: string }[];
+    cabang: string[];
+    nilai: { classId: string; guruId: string; cabang: string };
+    adaSaringan: boolean;
+  };
   statusGuru: StatusGuruHariIni[];
   kehadiran: Record<string, KehadiranJurnal[]>;
   tanggalTampil: string;
@@ -36,6 +44,7 @@ type PemantauanHarianProps = {
  */
 export function PemantauanHarian({
   data,
+  saring,
   statusGuru,
   kehadiran,
   tanggalTampil,
@@ -106,6 +115,16 @@ export function PemantauanHarian({
         ))}
       </div>
 
+      <div className="mt-6">
+        <SaringPemantauan
+          kelas={saring.kelas}
+          guru={saring.guru}
+          cabang={saring.cabang}
+          nilai={saring.nilai}
+          adaSaringan={saring.adaSaringan}
+        />
+      </div>
+
       <div className="mt-6 space-y-6">
         <RingkasanStatusGuru daftar={statusGuru} />
         <DaftarStatusGuru daftar={statusGuru} />
@@ -114,10 +133,15 @@ export function PemantauanHarian({
       {data.length === 0 ? (
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle>Belum ada jurnal hari ini</CardTitle>
+            <CardTitle>
+              {saring.adaSaringan
+                ? "Tidak ada jurnal yang cocok dengan saringan"
+                : "Belum ada jurnal hari ini"}
+            </CardTitle>
             <CardDescription>
-              Begitu guru mengirim jurnal, isinya langsung muncul di halaman
-              ini.
+              {saring.adaSaringan
+                ? "Coba ganti kelas, guru, atau cabangnya."
+                : "Begitu guru mengirim jurnal, isinya langsung muncul di halaman ini."}
             </CardDescription>
           </CardHeader>
         </Card>

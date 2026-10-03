@@ -392,11 +392,11 @@ const fieldsHarian = {
  * Jurnal semua guru pada satu tanggal, untuk pantauan owner. Diurutkan menurut
  * nama guru lalu jam mengajar supaya mudah dibaca dalam satu layar.
  */
-export async function listAnyJurnal(
-  filter: Omit<ListJurnalHarianInput, "tanggal"> & { tanggal: string },
-) {
+export async function listAnyJurnal(filter: FilterPemantauan) {
   const syarat = [eq(teachingJournals.tanggal, filter.tanggal)];
   if (filter.classId) syarat.push(eq(teachingJournals.classId, filter.classId));
+  if (filter.guruId) syarat.push(eq(teachingJournals.guruId, filter.guruId));
+  if (filter.cabang) syarat.push(eq(classes.cabang, filter.cabang));
 
   const rows = await db
     .select(fieldsHarian)
@@ -429,6 +429,11 @@ export type JurnalHarian = Awaited<
   ReturnType<typeof listAnyJurnal>
 >["data"][number];
 
+/** Saringan pantauan owner: satu tanggal wajib, sisanya opsional. */
+export type FilterPemantauan = Omit<ListJurnalHarianInput, "tanggal"> & {
+  tanggal: string;
+};
+
 export type JadwalRingkas = {
   namaKelas: string;
   jamMulai: string;
@@ -454,8 +459,13 @@ export type StatusGuruHariIni = {
  */
 export async function ringkasanAnyGuruHariIni(
   hari: NamaHari,
-  tanggal: string,
+  filter: Omit<FilterPemantauan, "limit" | "offset">,
 ): Promise<StatusGuruHariIni[]> {
+  const syaratJadwal = [eq(schedules.hari, hari)];
+  if (filter.classId) syaratJadwal.push(eq(schedules.classId, filter.classId));
+  if (filter.guruId) syaratJadwal.push(eq(schedules.guruId, filter.guruId));
+  if (filter.cabang) syaratJadwal.push(eq(classes.cabang, filter.cabang));
+
   const barisJadwal = await db
     .select({
       guruId: schedules.guruId,
@@ -472,8 +482,15 @@ export async function ringkasanAnyGuruHariIni(
     .from(schedules)
     .innerJoin(user, eq(schedules.guruId, user.id))
     .innerJoin(classes, eq(schedules.classId, classes.id))
-    .where(eq(schedules.hari, hari))
+    .where(and(...syaratJadwal))
     .orderBy(asc(schedules.jamMulai), asc(schedules.id));
+
+  const syaratJurnal = [eq(teachingJournals.tanggal, filter.tanggal)];
+  if (filter.classId)
+    syaratJurnal.push(eq(teachingJournals.classId, filter.classId));
+  if (filter.guruId)
+    syaratJurnal.push(eq(teachingJournals.guruId, filter.guruId));
+  if (filter.cabang) syaratJurnal.push(eq(classes.cabang, filter.cabang));
 
   const barisJurnal = await db
     .select({
@@ -488,7 +505,8 @@ export async function ringkasanAnyGuruHariIni(
     })
     .from(teachingJournals)
     .innerJoin(user, eq(teachingJournals.guruId, user.id))
-    .where(eq(teachingJournals.tanggal, tanggal))
+    .innerJoin(classes, eq(teachingJournals.classId, classes.id))
+    .where(and(...syaratJurnal))
     .groupBy(teachingJournals.guruId, user.name, user.email);
 
   const perGuru = new Map<string, StatusGuruHariIni>();
@@ -527,6 +545,32 @@ export async function ringkasanAnyGuruHariIni(
       Number(a.sudahMengisi) - Number(b.sudahMengisi) ||
       a.guruNama.localeCompare(b.guruNama, "id"),
   );
+}
+
+/** Pilihan saringan pantauan: kelas, guru (role `user`), dan cabang. */
+export async function opsiSaringPemantauan() {
+  const daftarKelas = await db
+    .select({
+      classId: classes.id,
+      namaKelas: classes.namaKelas,
+      cabang: classes.cabang,
+    })
+    .from(classes)
+    .orderBy(asc(classes.namaKelas), asc(classes.id));
+
+  const daftarGuru = await db
+    .select({ guruId: user.id, guruNama: user.name })
+    .from(user)
+    .where(sql`'user' = any(string_to_array(coalesce(${user.role}, ''), ','))`)
+    .orderBy(asc(user.name));
+
+  return {
+    daftarKelas,
+    daftarGuru,
+    daftarCabang: [...new Set(daftarKelas.map((kelas) => kelas.cabang))].sort(
+      (a, b) => a.localeCompare(b, "id"),
+    ),
+  };
 }
 
 export type KehadiranJurnal = {
