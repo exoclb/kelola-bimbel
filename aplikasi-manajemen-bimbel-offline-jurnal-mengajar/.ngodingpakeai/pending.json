@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "67a22e220118301fe177fa70cdf62f7bf5ef95d5",
+  "generatedForCommit": "aae8e823189eef50040d2027caba8733531e2530",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -174,7 +174,7 @@
       "path": "docs/backend.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 47177
+      "size": 48418
     },
     {
       "path": "docs/deployment.md",
@@ -420,7 +420,7 @@
       "path": "e2e/pemantauan.spec.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 14439
+      "size": 15927
     },
     {
       "path": "e2e/roles.spec.ts",
@@ -910,15 +910,21 @@
     },
     {
       "path": "src/app/api/pengaturan/guru/route.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1336
     },
     {
       "path": "src/app/api/pengaturan/guru/[id]/route.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1158
+    },
+    {
+      "path": "src/app/api/pengaturan/notifikasi/route.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1069
     },
     {
       "path": "src/app/api/pengaturan/profil/route.ts",
@@ -1563,6 +1569,12 @@
       "size": 2909
     },
     {
+      "path": "src/lib/notifikasi.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1175
+    },
+    {
       "path": "src/lib/peran.ts",
       "reason": "needs_summary",
       "language": "typescript",
@@ -1656,7 +1668,7 @@
       "path": "src/services/pengaturan.service.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 10100
+      "size": 12024
     },
     {
       "path": "src/services/perkembangan.service.ts",
@@ -1722,7 +1734,7 @@
       "path": "src/validators/pengaturan.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 3012
+      "size": 3316
     },
     {
       "path": "src/validators/perkembangan.ts",

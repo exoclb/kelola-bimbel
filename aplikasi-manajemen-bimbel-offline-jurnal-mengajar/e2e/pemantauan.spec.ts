@@ -347,6 +347,10 @@ test("aturan gaji disimpan bertanggal dan tarifnya diresolusi per tanggal", asyn
     aturan(50000, "2026-01-01"),
   );
   expect(ditolak.status()).toBe(403);
+  // Riwayat tarif pun hanya untuk pengaturan bimbel, bukan untuk guru.
+  expect(
+    (await request.get("/api/pengaturan/gaji", { headers })).status(),
+  ).toBe(403);
 
   await setRole("owner");
   expect(

@@ -1,9 +1,4 @@
-import {
-  ApiError,
-  readJson,
-  withApiPermission,
-  withApiSession,
-} from "@/lib/api";
+import { ApiError, readJson, withApiPermission } from "@/lib/api";
 import {
   ambilAturanGaji,
   tambahAturanGaji,
@@ -17,10 +12,11 @@ import {
 export const runtime = "nodejs";
 
 // Aturan gaji yang berlaku pada satu tanggal (`?tanggal=YYYY-MM-DD`, bawaan
-// hari ini) beserta seluruh riwayatnya. Boleh dibaca semua akun: tarifnya juga
-// muncul di rekap gaji milik guru sendiri.
+// hari ini) beserta seluruh riwayatnya. Riwayat tarif adalah urusan pengaturan
+// bimbel, jadi hanya owner dan admin; tarif yang dipakai rekap gaji guru
+// sendiri sudah ikut di `GET /api/gaji`.
 export function GET(request: Request) {
-  return withApiSession(request, async () => {
+  return withApiPermission(request, { pengaturan: ["read"] }, async () => {
     const { tanggal } = listAturanGajiSchema.parse(
       Object.fromEntries(new URL(request.url).searchParams),
     );
