@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PanelRincianJam } from "@/components/panel-rincian-jam";
 import { formatJam } from "@/lib/jurnal";
 import { formatRupiah } from "@/lib/gaji";
 import type { RekapGaji, StatusPembayaran } from "@/lib/mock-gaji";
@@ -122,7 +123,7 @@ export function RekapGajiBulanan({
           <CardDescription>
             {rekap.daftar.length === 0
               ? "Belum ada jurnal pada bulan ini."
-              : `${rekap.daftar.length} guru · ${belumDibayar} belum dibayar.`}
+              : `${rekap.daftar.length} guru · ${belumDibayar} belum dibayar. Buka rincian untuk melihat dasar perhitungannya.`}
           </CardDescription>
         </CardHeader>
         {rekap.daftar.length > 0 && (
@@ -150,6 +151,11 @@ export function RekapGajiBulanan({
                       {formatRupiah(baris.totalGaji)}
                     </span>
                   </div>
+                  <PanelRincianJam
+                    rincian={baris.rincian}
+                    totalJam={baris.totalJam}
+                    tarifPerJam={baris.tarifPerJam}
+                  />
                 </li>
               ))}
             </ul>

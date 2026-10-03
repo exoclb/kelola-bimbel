@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "74cfd439b2b7edabf3fd96c5efb9912b2ce2ec43",
+  "generatedForCommit": "9b9a6b22413d00b3292948e1913abd7fd1e5b08c",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -441,6 +441,12 @@
       "size": 2616
     },
     {
+      "path": "src/app/(protected)/app/gaji/page.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 941
+    },
+    {
       "path": "src/app/(protected)/app/jurnal/page.tsx",
       "reason": "needs_summary",
       "language": "typescript",
@@ -460,9 +466,9 @@
     },
     {
       "path": "src/app/(protected)/app/page.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 4747
+      "size": 5360
     },
     {
       "path": "src/app/(protected)/app/pemantauan/page.tsx",
@@ -474,7 +480,7 @@
       "path": "src/app/(protected)/layout.tsx",
       "reason": "changed",
       "language": "typescript",
-      "size": 1087
+      "size": 1202
     },
     {
       "path": "src/app/api/admin/jurnal/route.ts",
@@ -568,9 +574,9 @@
     },
     {
       "path": "src/components/app-nav.tsx",
-      "reason": "new",
+      "reason": "changed",
       "language": "typescript",
-      "size": 1586
+      "size": 1695
     },
     {
       "path": "src/components/auth-form.tsx",
@@ -661,6 +667,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 207
+    },
+    {
+      "path": "src/components/rekap-gaji-bulanan.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 5362
     },
     {
       "path": "src/components/saring-pemantauan.tsx",
@@ -831,10 +843,22 @@
       "size": 1059
     },
     {
+      "path": "src/lib/gaji.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 942
+    },
+    {
       "path": "src/lib/jurnal.ts",
       "reason": "needs_summary",
       "language": "typescript",
       "size": 773
+    },
+    {
+      "path": "src/lib/mock-gaji.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1863
     },
     {
       "path": "src/lib/mock-jurnal.ts",
@@ -844,9 +868,9 @@
     },
     {
       "path": "src/lib/permissions.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 1799
+      "size": 1922
     },
     {
       "path": "src/lib/session.ts",

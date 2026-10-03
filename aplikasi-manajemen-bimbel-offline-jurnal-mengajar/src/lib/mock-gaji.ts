@@ -2,12 +2,20 @@
 //
 // Tabel `salary_settings` (tarif per jam) dan `salary_recaps` (rekap + status
 // pembayaran) belum ada, jadi halaman ini memakai angka tiruan. Bentuk
-// `BarisRekapGaji` di bawah sudah mengikuti kolom di PRD, jadi saat endpoint
-// gaji siap, halaman cukup mengganti sumber datanya.
+// `BarisRekapGaji` dan `RincianJam` di bawah sudah mengikuti kolom di PRD, jadi
+// saat endpoint gaji siap, halaman cukup mengganti sumber datanya.
 
 import { hitungGaji } from "@/lib/gaji";
 
 export type StatusPembayaran = "belum_dibayar" | "dibayar";
+
+export type RincianJam = {
+  tanggal: string;
+  namaKelas: string;
+  jamMengajar: number;
+  jumlahHadir: number;
+  jumlahMurid: number;
+};
 
 export type BarisRekapGaji = {
   guruId: string;
@@ -19,6 +27,7 @@ export type BarisRekapGaji = {
   totalGaji: number;
   statusPembayaran: StatusPembayaran;
   tanggalDibayar: string | null;
+  rincian: RincianJam[];
 };
 
 export type RekapGaji = {
@@ -29,45 +38,76 @@ export type RekapGaji = {
 
 const TARIF_PER_JAM = 50_000;
 
-const GURU: Omit<BarisRekapGaji, "tarifPerJam" | "totalGaji">[] = [
+// `tanggalKe` dan `kelas` dipakai bergantian supaya rinciannya terlihat wajar,
+// sementara `jamPerJurnal` menjaga jumlah jam selalu sama dengan totalnya.
+const GURU = [
   {
     guruId: "contoh-guru-1",
     guruNama: "Ahmad Fauzi",
     guruEmail: "ahmad@example.test",
-    jumlahJurnal: 22,
-    totalJam: 33,
-    statusPembayaran: "belum_dibayar",
+    jamPerJurnal: 1.5,
+    kelas: ["Matematika SD Kelas 4", "IPA SD Kelas 6"],
+    tanggalKe: [2, 5, 7, 12, 14, 19],
+    statusPembayaran: "belum_dibayar" as StatusPembayaran,
     tanggalDibayar: null,
   },
   {
     guruId: "contoh-guru-2",
     guruNama: "Bella Kartika",
     guruEmail: "bella@example.test",
-    jumlahJurnal: 18,
-    totalJam: 27,
-    statusPembayaran: "dibayar",
+    jamPerJurnal: 1,
+    kelas: ["Bahasa Inggris SMP Kelas 7"],
+    tanggalKe: [3, 6, 10, 17],
+    statusPembayaran: "dibayar" as StatusPembayaran,
     tanggalDibayar: "2026-09-30",
   },
   {
     guruId: "contoh-guru-3",
     guruNama: "Citra Lestari",
     guruEmail: "citra@example.test",
-    jumlahJurnal: 12,
-    totalJam: 18,
-    statusPembayaran: "belum_dibayar",
+    jamPerJurnal: 1.5,
+    kelas: ["Calistung TK"],
+    tanggalKe: [4, 11, 18],
+    statusPembayaran: "belum_dibayar" as StatusPembayaran,
     tanggalDibayar: null,
   },
 ];
 
 /** Pengganti sementara `GET /api/gaji?periode=YYYY-MM`. */
 export function getRekapGajiBulanan(periode: string): RekapGaji {
+  const [tahun, bulan] = periode.split("-").map(Number);
+
   return {
     periode,
     tarifPerJam: TARIF_PER_JAM,
-    daftar: GURU.map((baris) => ({
-      ...baris,
-      tarifPerJam: TARIF_PER_JAM,
-      totalGaji: hitungGaji(baris.totalJam, TARIF_PER_JAM),
-    })),
+    daftar: GURU.map((guru) => {
+      const rincian: RincianJam[] = guru.tanggalKe.map((hari, urutan) => {
+        const jumlahMurid = 4;
+        return {
+          tanggal: `${tahun}-${String(bulan).padStart(2, "0")}-${String(hari).padStart(2, "0")}`,
+          namaKelas: guru.kelas[urutan % guru.kelas.length],
+          jamMengajar: guru.jamPerJurnal,
+          jumlahHadir: urutan % 3 === 2 ? jumlahMurid - 1 : jumlahMurid,
+          jumlahMurid,
+        };
+      });
+      const totalJam = rincian.reduce(
+        (jumlah, baris) => jumlah + baris.jamMengajar,
+        0,
+      );
+
+      return {
+        guruId: guru.guruId,
+        guruNama: guru.guruNama,
+        guruEmail: guru.guruEmail,
+        jumlahJurnal: rincian.length,
+        totalJam,
+        tarifPerJam: TARIF_PER_JAM,
+        totalGaji: hitungGaji(totalJam, TARIF_PER_JAM),
+        statusPembayaran: guru.statusPembayaran,
+        tanggalDibayar: guru.tanggalDibayar,
+        rincian,
+      };
+    }),
   };
 }
