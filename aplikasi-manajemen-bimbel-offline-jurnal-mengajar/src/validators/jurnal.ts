@@ -29,3 +29,27 @@ export const simpanJurnalSchema = z
   );
 
 export type SimpanJurnalInput = z.infer<typeof simpanJurnalSchema>;
+
+const POLA_TANGGAL = /^\d{4}-\d{2}-\d{2}$/;
+const tanggal = z
+  .string()
+  .regex(POLA_TANGGAL, "Pakai format tanggal YYYY-MM-DD.");
+
+export const listJurnalSchema = z
+  .object({
+    limit: z.coerce.number().int().min(1).max(100).default(20),
+    offset: z.coerce.number().int().min(0).max(1_000_000).default(0),
+    classId: z.string().uuid().optional(),
+    dari: tanggal.optional(),
+    sampai: tanggal.optional(),
+  })
+  .strict()
+  .refine(
+    (value) => !value.dari || !value.sampai || value.dari <= value.sampai,
+    {
+      message: "Tanggal 'dari' harus lebih awal daripada 'sampai'.",
+      path: ["sampai"],
+    },
+  );
+
+export type ListJurnalInput = z.infer<typeof listJurnalSchema>;

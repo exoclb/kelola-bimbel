@@ -1,14 +1,15 @@
 import "server-only";
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
+  classes,
   journalAttendances,
   schedules,
   students,
   teachingJournals,
 } from "@/db/schema";
 import { tanggalISO } from "@/lib/tanggal";
-import type { SimpanJurnalInput } from "@/validators/jurnal";
+import type { ListJurnalInput, SimpanJurnalInput } from "@/validators/jurnal";
 
 export type HasilSimpanJurnal =
   | { status: "tersimpan"; jurnal: JurnalTersimpan }
@@ -135,4 +136,85 @@ export async function simpanJurnal(
 
     return { status: "tersimpan", jurnal: { ...jurnal, kehadiran } };
   });
+}
+
+const fieldsRiwayat = {
+  id: teachingJournals.id,
+  classId: teachingJournals.classId,
+  namaKelas: classes.namaKelas,
+  cabang: classes.cabang,
+  hari: schedules.hari,
+  jamMulai: sql<string | null>`to_char(${schedules.jamMulai}, 'HH24:MI')`.as(
+    "jam_mulai",
+  ),
+  jamSelesai: sql<
+    string | null
+  >`to_char(${schedules.jamSelesai}, 'HH24:MI')`.as("jam_selesai"),
+  tanggal: teachingJournals.tanggal,
+  materi: teachingJournals.materi,
+  catatan: teachingJournals.catatan,
+  jamMengajar: teachingJournals.jamMengajar,
+  status: teachingJournals.status,
+  jumlahMurid: sql<number>`count(${journalAttendances.id})::int`.as(
+    "jumlah_murid",
+  ),
+  jumlahHadir:
+    sql<number>`count(${journalAttendances.id}) filter (where ${journalAttendances.hadir})::int`.as(
+      "jumlah_hadir",
+    ),
+};
+
+export type JurnalRiwayatGuru = Awaited<
+  ReturnType<typeof listJurnalGuru>
+>["data"][number];
+
+/**
+ * Riwayat jurnal satu guru, terbaru lebih dulu, dengan saringan kelas dan
+ * rentang tanggal. `meta.kelas` berisi daftar kelas yang pernah diisi guru ini
+ * supaya tampilan bisa menyusun pilihan saringan tanpa endpoint terpisah.
+ */
+export async function listJurnalGuru(guruId: string, filter: ListJurnalInput) {
+  const syarat = [eq(teachingJournals.guruId, guruId)];
+  if (filter.classId) syarat.push(eq(teachingJournals.classId, filter.classId));
+  if (filter.dari) syarat.push(gte(teachingJournals.tanggal, filter.dari));
+  if (filter.sampai) syarat.push(lte(teachingJournals.tanggal, filter.sampai));
+
+  const rows = await db
+    .select(fieldsRiwayat)
+    .from(teachingJournals)
+    .innerJoin(classes, eq(teachingJournals.classId, classes.id))
+    .leftJoin(schedules, eq(teachingJournals.scheduleId, schedules.id))
+    .leftJoin(
+      journalAttendances,
+      eq(journalAttendances.journalId, teachingJournals.id),
+    )
+    .where(and(...syarat))
+    .groupBy(teachingJournals.id, classes.id, schedules.id)
+    .orderBy(
+      desc(teachingJournals.tanggal),
+      desc(teachingJournals.createdAt),
+      desc(teachingJournals.id),
+    )
+    .limit(filter.limit + 1)
+    .offset(filter.offset);
+
+  const kelas = await db
+    .selectDistinct({
+      classId: teachingJournals.classId,
+      namaKelas: classes.namaKelas,
+    })
+    .from(teachingJournals)
+    .innerJoin(classes, eq(teachingJournals.classId, classes.id))
+    .where(eq(teachingJournals.guruId, guruId))
+    .orderBy(asc(classes.namaKelas));
+
+  return {
+    data: rows.slice(0, filter.limit),
+    meta: {
+      limit: filter.limit,
+      offset: filter.offset,
+      hasMore: rows.length > filter.limit,
+      kelas,
+    },
+  };
 }

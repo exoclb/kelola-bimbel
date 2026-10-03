@@ -1,8 +1,19 @@
 import { ApiError, readJson, withApiSession } from "@/lib/api";
-import { simpanJurnal } from "@/services/jurnal.service";
-import { simpanJurnalSchema } from "@/validators/jurnal";
+import { listJurnalGuru, simpanJurnal } from "@/services/jurnal.service";
+import { listJurnalSchema, simpanJurnalSchema } from "@/validators/jurnal";
 
 export const runtime = "nodejs";
+
+// Riwayat jurnal guru yang sedang masuk, terbaru lebih dulu. Saringan kelas
+// dan rentang tanggal dikerjakan di database, bukan di tampilan.
+export function GET(request: Request) {
+  return withApiSession(request, async (session) => {
+    const filter = listJurnalSchema.parse(
+      Object.fromEntries(new URL(request.url).searchParams),
+    );
+    return Response.json(await listJurnalGuru(session.user.id, filter));
+  });
+}
 
 // Menyimpan & mengirim jurnal mengajar guru. Kirim ulang untuk jadwal dan
 // tanggal yang sama hanya memperbarui jurnal hari itu — tidak pernah menjadi
