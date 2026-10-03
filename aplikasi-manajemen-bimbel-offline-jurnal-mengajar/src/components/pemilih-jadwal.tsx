@@ -53,6 +53,7 @@ export function PemilihJadwal({
               role="radiogroup"
               aria-label={`Jadwal mengajar hari ${hari}`}
               className="space-y-3"
+              aria-invalid={error ? true : undefined}
               aria-describedby={error ? "jadwal-error" : undefined}
             >
               {jadwal.map((item) => {

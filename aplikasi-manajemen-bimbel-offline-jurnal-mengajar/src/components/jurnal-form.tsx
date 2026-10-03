@@ -52,6 +52,14 @@ export function JurnalForm({
 
   const jadwalTerpilih = jadwal.find((item) => item.id === jadwalId);
 
+  // Tombol kirim hanya aktif setelah data wajib lengkap, jadi guru tidak
+  // pernah menekan tombol yang berakhir dengan error.
+  const bagianKurang = [
+    jadwalTerpilih ? null : "kelas & jam mengajar",
+    materi ? null : "jenis materi",
+  ].filter((bagian): bagian is string => bagian !== null);
+  const siapKirim = bagianKurang.length === 0;
+
   function pilihJadwal(item: Jadwal) {
     setJadwalId(item.id);
     setErrorJadwal("");
@@ -262,20 +270,26 @@ export function JurnalForm({
               </Card>
 
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm text-muted-foreground">
-                  {jadwalTerpilih
-                    ? `Jam mengajar yang dicatat: ${formatJam(
-                        hitungJamMengajar(
-                          jadwalTerpilih.jamMulai,
-                          jadwalTerpilih.jamSelesai,
-                        ),
-                      )} — dipakai untuk rekap gaji.`
-                    : "Jam mengajar dihitung otomatis dari jadwal."}
+                <p
+                  aria-live="polite"
+                  className="text-sm leading-6 text-muted-foreground"
+                >
+                  {!siapKirim
+                    ? `Tinggal lengkapi: ${bagianKurang.join(" dan ")}.`
+                    : jadwalTerpilih
+                      ? `Jam mengajar yang dicatat: ${formatJam(
+                          hitungJamMengajar(
+                            jadwalTerpilih.jamMulai,
+                            jadwalTerpilih.jamSelesai,
+                          ),
+                        )} — dipakai untuk rekap gaji.`
+                      : "Jam mengajar dihitung otomatis dari jadwal."}
                 </p>
                 <Button
                   type="submit"
                   size="lg"
-                  disabled={pending}
+                  disabled={pending || !siapKirim}
+                  aria-busy={pending}
                   className="w-full sm:w-auto"
                 >
                   {pending ? (
