@@ -4,7 +4,10 @@ import { useState } from "react";
 import { CalendarDays, Clock, MapPin, Users, X } from "lucide-react";
 import { FormJadwalKelas } from "@/components/form-jadwal-kelas";
 import { FormTambahKelas } from "@/components/form-tambah-kelas";
-import { PanelPenempatan } from "@/components/panel-penempatan";
+import {
+  PanelPenempatan,
+  type MuridDiKelas,
+} from "@/components/panel-penempatan";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -46,11 +49,15 @@ export function DaftarKelas({
     return daftarMurid.find((murid) => murid.id === muridId)?.nama ?? "Murid";
   }
 
-  function terdaftarDi(kelasId: string) {
+  function terdaftarDi(kelasId: string): MuridDiKelas[] {
     return penempatan
       .filter((baris) => baris.kelasId === kelasId && baris.status === "aktif")
-      .map((baris) => daftarMurid.find((murid) => murid.id === baris.muridId))
-      .filter((murid): murid is Murid => murid !== undefined);
+      .map((baris) => {
+        const murid = daftarMurid.find((anak) => anak.id === baris.muridId);
+        return murid ? { murid, tanggalMulai: baris.tanggalMulai } : undefined;
+      })
+      .filter((baris): baris is MuridDiKelas => baris !== undefined)
+      .sort((a, b) => a.murid.nama.localeCompare(b.murid.nama, "id"));
   }
 
   const muridTerdaftar = new Set(
