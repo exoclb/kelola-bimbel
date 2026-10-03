@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "64cdd002cada33509fc8544b67f66b3c4117afa8",
+  "generatedForCommit": "82c0718cce3310dcb0765cc8a6450fef5f7176d6",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -172,9 +172,9 @@
     },
     {
       "path": "docs/backend.md",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "markdown",
-      "size": 22591
+      "size": 23729
     },
     {
       "path": "docs/deployment.md",
@@ -360,7 +360,7 @@
       "path": "next-env.d.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 288
+      "size": 296
     },
     {
       "path": "next.config.ts",
@@ -667,6 +667,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 1586
+    },
+    {
+      "path": "src/app/api/murid/route.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1021
     },
     {
       "path": "src/app/api/notes/route.ts",
@@ -1233,6 +1239,12 @@
       "size": 11761
     },
     {
+      "path": "src/services/murid.service.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1996
+    },
+    {
       "path": "src/services/notes.service.ts",
       "reason": "needs_summary",
       "language": "typescript",
@@ -1252,9 +1264,9 @@
     },
     {
       "path": "src/validators/gaji.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 1545
+      "size": 1380
     },
     {
       "path": "src/validators/jadwal.ts",
@@ -1264,9 +1276,15 @@
     },
     {
       "path": "src/validators/jurnal.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 4003
+      "size": 3471
+    },
+    {
+      "path": "src/validators/murid.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 918
     },
     {
       "path": "src/validators/notes.ts",
@@ -1279,6 +1297,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 873
+    },
+    {
+      "path": "src/validators/tanggal.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 878
     },
     {
       "path": "starter.config.json",

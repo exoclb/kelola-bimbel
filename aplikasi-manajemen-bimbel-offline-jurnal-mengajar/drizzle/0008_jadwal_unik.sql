@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "schedules_class_hari_jam_idx" ON "schedules" USING btree ("class_id","hari","jam_mulai");
