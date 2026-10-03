@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "e98d2adc4d172dad5c7131f220ba5988010c585e",
+  "generatedForCommit": "67a22e220118301fe177fa70cdf62f7bf5ef95d5",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -174,7 +174,7 @@
       "path": "docs/backend.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 45089
+      "size": 47177
     },
     {
       "path": "docs/deployment.md",
@@ -418,9 +418,9 @@
     },
     {
       "path": "e2e/pemantauan.spec.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 12303
+      "size": 14439
     },
     {
       "path": "e2e/roles.spec.ts",
@@ -907,6 +907,18 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 1474
+    },
+    {
+      "path": "src/app/api/pengaturan/guru/route.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1336
+    },
+    {
+      "path": "src/app/api/pengaturan/guru/[id]/route.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1158
     },
     {
       "path": "src/app/api/pengaturan/profil/route.ts",
@@ -1642,9 +1654,9 @@
     },
     {
       "path": "src/services/pengaturan.service.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 4921
+      "size": 10100
     },
     {
       "path": "src/services/perkembangan.service.ts",
@@ -1708,9 +1720,9 @@
     },
     {
       "path": "src/validators/pengaturan.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 1726
+      "size": 3012
     },
     {
       "path": "src/validators/perkembangan.ts",

@@ -454,3 +454,48 @@ test("owner bisa menambah guru lalu menonaktifkan dan mengaktifkannya lagi", asy
 
   await setRole("user");
 });
+
+test("preferensi notifikasi tersimpan per akun", async ({ request }) => {
+  await setRole("user");
+  await masuk(request);
+
+  const ambil = async () => {
+    const jawaban = await request.get("/api/pengaturan/notifikasi", {
+      headers,
+    });
+    expect(jawaban.status()).toBe(200);
+    return (await jawaban.json()).data as { jenis: string; aktif: boolean }[];
+  };
+  const nilai = (daftar: { jenis: string; aktif: boolean }[], jenis: string) =>
+    daftar.find((item) => item.jenis === jenis)?.aktif;
+
+  // Semua jenis yang dikenal aplikasi muncul, lengkap dengan judulnya.
+  const awal = await ambil();
+  expect(awal.map((item) => item.jenis)).toEqual([
+    "jurnal_baru",
+    "kelas_kosong",
+    "gaji_dibayar",
+    "laporan_bulanan",
+  ]);
+
+  // Nilainya bisa dimatikan lalu dinyalakan lagi, dan menetap di antara
+  // permintaan (dites dua arah supaya tidak bergantung keadaan awal).
+  for (const aktif of [false, true]) {
+    const ubah = await request.patch("/api/pengaturan/notifikasi", {
+      headers,
+      data: { jenis: "kelas_kosong", aktif },
+    });
+    expect(ubah.status()).toBe(200);
+    expect(nilai((await ubah.json()).data, "kelas_kosong")).toBe(aktif);
+    expect(nilai(await ambil(), "kelas_kosong")).toBe(aktif);
+  }
+
+  // Jenis yang tidak dikenal ditolak.
+  const asing = await request.patch("/api/pengaturan/notifikasi", {
+    headers,
+    data: { jenis: "entah_apa", aktif: true },
+  });
+  expect(asing.status()).toBe(422);
+
+  await setRole("user");
+});

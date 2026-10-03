@@ -67,6 +67,8 @@ Operasi jurnal milik guru ada di `src/services/jurnal.service.ts` (simpan, riway
 | PATCH  | `/api/notifikasi`              | 200, tandai notifikasi tertentu atau semua sebagai sudah dibaca         |
 | POST   | `/api/jurnal`                  | 200, simpan & kirim jurnal mengajar (idempoten per jadwal + tanggal)    |
 | PATCH  | `/api/jurnal/:id`              | 200, koreksi isi jurnal (materi, catatan, dan/atau kehadiran)           |
+| GET    | `/api/pengaturan/notifikasi`   | 200, preferensi notifikasi milik akun yang sedang masuk                 |
+| PATCH  | `/api/pengaturan/notifikasi`   | 200, menyalakan/mematikan satu jenis pemberitahuan                      |
 | GET    | `/api/pengaturan/guru`         | 200, daftar akun guru & owner + status aktifnya (owner & admin)         |
 | POST   | `/api/pengaturan/guru`         | 201, menambah akun guru baru (selalu berperan guru)                     |
 | PATCH  | `/api/pengaturan/guru/:id`     | 200, mengaktifkan/menonaktifkan akun guru                               |
@@ -154,6 +156,10 @@ Tabelnya sengaja hanya boleh berisi **satu baris** (dijaga indeks unik pada eksp
 `POST /api/pengaturan/guru` menambah akun guru dengan `{ nama, email, sandi }`. **Peran tidak bisa dipilih** — permintaan yang menyertakan `peran` dijawab 422 dan akun barunya selalu berperan guru. Barisnya dibuat langsung di tabel `user` + `account` (sandi di-hash memakai `hashPassword` milik Better Auth, jadi formatnya sama dengan pendaftaran biasa), **bukan** lewat `signUpEmail`: alur itu ikut membuat sesi dan menulis cookie sesi akun baru ke respons endpoint ini, sehingga owner yang menambah guru bisa ikut masuk sebagai guru itu. Akibatnya endpoint ini tidak membuat sesi sama sekali — yang bisa masuk adalah guru yang bersangkutan, memakai sandi yang diberikan owner. Email yang sudah dipakai dijawab 409 `EMAIL_SUDAH_DIPAKAI`.
 
 `PATCH /api/pengaturan/guru/:id` menerima `{ statusAktif }` untuk menonaktifkan (`false`) atau mengaktifkan lagi (`true`) seorang guru. Menonaktifkan berarti akunnya tidak bisa masuk dan sesi yang masih tersimpan langsung tidak berlaku (kolom `banned` + pemeriksaan sesi di `withApiSession`); jurnal dan catatannya tetap ada. Akun owner sengaja **tidak bisa** dinonaktifkan lewat endpoint ini (422 `AKUN_OWNER`) supaya owner tidak terkunci di luar aplikasinya sendiri, dan id yang tidak ada dijawab 404.
+
+Preferensi notifikasi disimpan per akun di `notification_preferences` (unik per `user_id` + `jenis_notifikasi`). `GET /api/pengaturan/notifikasi` mengembalikan **semua** jenis yang dikenal aplikasi — `jurnal_baru`, `kelas_kosong`, `gaji_dibayar`, `laporan_bulanan` (katalognya di `src/lib/notifikasi.ts`, lengkap dengan judul dan keterangannya) — dengan `aktif` hasil gabungan bawaan tiap jenis dan baris yang tersimpan. Barisnya hanya dibuat saat akun mengubah pengaturannya, jadi akun baru tetap melihat daftar yang lengkap tanpa perlu diisi lebih dulu.
+
+`PATCH /api/pengaturan/notifikasi` menerima `{ jenis, aktif }` dan menyimpannya sebagai upsert (satu baris per akun per jenis), lalu menjawab daftar terbaru supaya tampilan tidak perlu menyusun ulang sendiri. Keduanya hanya bekerja pada akun yang sedang masuk: tidak ada parameter akun, penyaring apa pun, atau izin khusus — setiap akun mengatur pemberitahuannya sendiri. Jenis yang tidak dikenal dan `aktif` yang bukan boolean dijawab 422.
 
 ## Lupa sandi
 

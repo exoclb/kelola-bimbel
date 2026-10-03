@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DAFTAR_JENIS_NOTIFIKASI } from "@/lib/notifikasi";
 import { skemaTanggal } from "@/validators/tanggal";
 
 // Logo dikirim sebagai data URL (base64) dan disimpan apa adanya di basis data.
@@ -91,3 +92,14 @@ export type UbahStatusGuruInput = z.infer<typeof ubahStatusGuruSchema>;
 
 // Id akun dibuat Better Auth (string acak, bukan UUID).
 export const guruIdSchema = z.string().trim().min(1).max(64);
+
+export const ubahPreferensiNotifikasiSchema = z
+  .object({
+    jenis: z.enum(DAFTAR_JENIS_NOTIFIKASI),
+    aktif: z.boolean(),
+  })
+  .strict();
+
+export type UbahPreferensiNotifikasiInput = z.infer<
+  typeof ubahPreferensiNotifikasiSchema
+>;

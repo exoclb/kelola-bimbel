@@ -2,8 +2,15 @@ import "server-only";
 import { generateRandomString, hashPassword } from "better-auth/crypto";
 import { and, asc, desc, eq, ilike, isNull, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { account, bimbelProfile, salarySettings, user } from "@/db/schema";
+import {
+  account,
+  bimbelProfile,
+  notificationPreferences,
+  salarySettings,
+  user,
+} from "@/db/schema";
 import { pelanggaranUnik } from "@/lib/db-error";
+import { JENIS_NOTIFIKASI, type JenisNotifikasi } from "@/lib/notifikasi";
 import { peranDariRole, type PeranPengguna } from "@/lib/peran";
 import { aturanGajiBerlaku } from "@/services/gaji.service";
 import type {
@@ -353,4 +360,63 @@ export async function ubahStatusGuru(
 
   if (!baris) return { status: "tidak_ada" };
   return { status: "tersimpan", akun: keAkun(baris) };
+}
+
+/** Satu preferensi notifikasi seperti yang dikirim ke klien. */
+export type PreferensiNotifikasiTersimpan = {
+  jenis: JenisNotifikasi;
+  judul: string;
+  keterangan: string;
+  aktif: boolean;
+};
+
+/**
+ * Preferensi notifikasi satu akun. Baris di `notification_preferences` hanya ada
+ * untuk jenis yang pernah diubah, jadi jawabannya menggabungkannya dengan
+ * bawaan tiap jenis — akun yang belum pernah mengubah apa pun tetap melihat
+ * daftar yang lengkap dengan keadaannya masing-masing.
+ */
+export async function ambilPreferensiNotifikasi(
+  userId: string,
+): Promise<PreferensiNotifikasiTersimpan[]> {
+  const baris = await db
+    .select({
+      jenis: notificationPreferences.jenisNotifikasi,
+      aktif: notificationPreferences.aktif,
+    })
+    .from(notificationPreferences)
+    .where(eq(notificationPreferences.userId, userId));
+
+  const tersimpan = new Map(baris.map((item) => [item.jenis, item.aktif]));
+
+  return JENIS_NOTIFIKASI.map((item) => ({
+    jenis: item.jenis,
+    judul: item.judul,
+    keterangan: item.keterangan,
+    aktif: tersimpan.get(item.jenis) ?? item.bawaanAktif,
+  }));
+}
+
+/**
+ * Mengubah satu preferensi notifikasi milik sendiri. Satu akun hanya punya satu
+ * baris per jenis (dijaga indeks unik), jadi penyimpanannya upsert: barisnya
+ * dibuat kalau belum ada, diperbarui kalau sudah ada.
+ */
+export async function ubahPreferensiNotifikasi(
+  userId: string,
+  jenis: JenisNotifikasi,
+  aktif: boolean,
+): Promise<PreferensiNotifikasiTersimpan[]> {
+  await db
+    .insert(notificationPreferences)
+    .values({ userId, jenisNotifikasi: jenis, aktif })
+    .onConflictDoUpdate({
+      target: [
+        notificationPreferences.userId,
+        notificationPreferences.jenisNotifikasi,
+      ],
+      set: { aktif },
+    });
+
+  return ambilPreferensiNotifikasi(userId);
 }
