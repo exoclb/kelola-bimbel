@@ -1,5 +1,5 @@
-import { readJson, withApiSession } from "@/lib/api";
-import { createKelas, listKelas } from "@/services/kelas.service";
+import { ApiError, readJson, withApiSession } from "@/lib/api";
+import { adaGuru, createKelas, listKelas } from "@/services/kelas.service";
 import { createKelasSchema, listKelasSchema } from "@/validators/kelas";
 
 export const runtime = "nodejs";
@@ -20,6 +20,15 @@ export function GET(request: Request) {
 export function POST(request: Request) {
   return withApiSession(request, async () => {
     const input = createKelasSchema.parse(await readJson(request));
+    // Tanpa pemeriksaan ini, guru yang tidak ada berhenti sebagai galat
+    // foreign key dan klien hanya menerima 500 tanpa keterangan.
+    if (input.guruId && !(await adaGuru(input.guruId)))
+      throw new ApiError(
+        422,
+        "GURU_TIDAK_ADA",
+        "Guru pengampu tidak ditemukan.",
+      );
+
     const kelas = await createKelas(input);
     return Response.json(
       { data: kelas },

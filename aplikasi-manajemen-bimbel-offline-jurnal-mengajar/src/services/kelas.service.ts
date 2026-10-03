@@ -14,6 +14,7 @@ import type {
   CreateKelasInput,
   ListKelasInput,
   TambahJadwalInput,
+  UpdateKelasInput,
 } from "@/validators/kelas";
 
 export type JadwalTersimpan = {
@@ -204,6 +205,63 @@ export async function createKelas(input: CreateKelasInput) {
   });
 
   return getKelasById(kelasId);
+}
+
+/** Benar kalau akun guru dengan id itu ada di tabel pengguna. */
+export async function adaGuru(guruId: string) {
+  const [guru] = await db
+    .select({ id: user.id })
+    .from(user)
+    .where(eq(user.id, guruId))
+    .limit(1);
+  return Boolean(guru);
+}
+
+export type HasilUbahKelas =
+  | { status: "tersimpan"; kelas: KelasTersimpan }
+  | { status: "kelas_tidak_ada" }
+  | { status: "guru_tidak_ada" };
+
+/**
+ * Mengubah data kelas: nama, cabang, dan guru pengampu. Guru pengampu ikut
+ * dipindahkan ke seluruh jadwal kelas itu karena jurnal, kehadiran, dan gaji
+ * membaca guru dari jadwal — kalau tidak, kelas akan tampak diampu guru baru
+ * sementara jurnalnya tetap milik guru lama.
+ */
+export async function updateKelas(
+  kelasId: string,
+  input: UpdateKelasInput,
+): Promise<HasilUbahKelas> {
+  const kelas = await getKelasById(kelasId);
+  if (!kelas) return { status: "kelas_tidak_ada" };
+  if (input.guruId !== undefined && !(await adaGuru(input.guruId))) {
+    return { status: "guru_tidak_ada" };
+  }
+
+  await db.transaction(async (tx) => {
+    await tx
+      .update(classes)
+      .set({
+        ...(input.namaKelas !== undefined
+          ? { namaKelas: input.namaKelas }
+          : {}),
+        ...(input.cabang !== undefined ? { cabang: input.cabang } : {}),
+        ...(input.guruId !== undefined ? { guruId: input.guruId } : {}),
+      })
+      .where(eq(classes.id, kelasId));
+
+    if (input.guruId !== undefined) {
+      await tx
+        .update(schedules)
+        .set({ guruId: input.guruId })
+        .where(eq(schedules.classId, kelasId));
+    }
+  });
+
+  const terbaru = await getKelasById(kelasId);
+  return terbaru
+    ? { status: "tersimpan", kelas: terbaru }
+    : { status: "kelas_tidak_ada" };
 }
 
 /**

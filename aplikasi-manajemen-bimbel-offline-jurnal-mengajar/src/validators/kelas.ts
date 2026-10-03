@@ -58,6 +58,22 @@ export const createKelasSchema = z
 
 export type CreateKelasInput = z.infer<typeof createKelasSchema>;
 
+// Ubah data kelas. Minimal satu kolom; jadwal punya endpointnya sendiri
+// supaya penjagaan bentrok jam tetap di satu tempat. Guru pengampu tidak bisa
+// dikosongkan lewat sini — kelas selalu punya guru begitu jadwalnya ada.
+export const updateKelasSchema = z
+  .object({
+    namaKelas: nama.optional(),
+    cabang: nama.optional(),
+    guruId: z.string().min(1).max(64).optional(),
+  })
+  .strict()
+  .refine((nilai) => Object.keys(nilai).length > 0, {
+    message: "Kirim minimal satu kolom yang ingin diubah.",
+  });
+
+export type UpdateKelasInput = z.infer<typeof updateKelasSchema>;
+
 export const tambahJadwalSchema = jadwal;
 export type TambahJadwalInput = z.infer<typeof tambahJadwalSchema>;
 
