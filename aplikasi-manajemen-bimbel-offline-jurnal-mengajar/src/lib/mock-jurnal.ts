@@ -138,6 +138,13 @@ export function getJadwalHariIni(hari: string): Jadwal[] {
     .sort((a, b) => a.jamMulai.localeCompare(b.jamMulai));
 }
 
+export type MuridJurnal = {
+  id: string;
+  nama: string;
+  hadir: boolean;
+  keterangan: string;
+};
+
 export type JurnalRiwayat = {
   id: string;
   tanggal: string;
@@ -147,10 +154,28 @@ export type JurnalRiwayat = {
   jamSelesai: string;
   jamMengajar: number;
   materi: string;
+  catatan: string;
   status: "terkirim" | "direview";
-  jumlahHadir: number;
-  jumlahMurid: number;
+  murid: MuridJurnal[];
 };
+
+export type KoreksiJurnal = {
+  materi: string;
+  catatan: string;
+  kehadiran: KehadiranMurid[];
+};
+
+function kehadiranMurid(
+  murid: MuridKelas[],
+  absen: string[] = [],
+  keterangan: Record<string, string> = {},
+): MuridJurnal[] {
+  return murid.map((anak) => ({
+    ...anak,
+    hadir: !absen.includes(anak.id),
+    keterangan: absen.includes(anak.id) ? (keterangan[anak.id] ?? "") : "",
+  }));
+}
 
 type RiwayatTersimpan = Omit<JurnalRiwayat, "tanggal"> & { hariLalu: number };
 
@@ -164,9 +189,11 @@ const RIWAYAT_JURNAL: RiwayatTersimpan[] = [
     jamSelesai: "08:30",
     jamMengajar: 1.5,
     materi: "Latihan soal — pecahan campuran",
+    catatan: "Dua murid perlu diulang materinya pekan depan.",
     status: "terkirim",
-    jumlahHadir: 3,
-    jumlahMurid: 4,
+    murid: kehadiranMurid(MURID_SD4, ["mrd-3"], {
+      "mrd-3": "Sakit, ada surat",
+    }),
   },
   {
     id: "jrn-5",
@@ -177,9 +204,9 @@ const RIWAYAT_JURNAL: RiwayatTersimpan[] = [
     jamSelesai: "10:00",
     jamMengajar: 1,
     materi: "Materi baru — simple past tense",
+    catatan: "PR halaman 12 dikumpulkan pekan depan.",
     status: "direview",
-    jumlahHadir: 3,
-    jumlahMurid: 3,
+    murid: kehadiranMurid(MURID_SMP7),
   },
   {
     id: "jrn-4",
@@ -190,9 +217,9 @@ const RIWAYAT_JURNAL: RiwayatTersimpan[] = [
     jamSelesai: "12:00",
     jamMengajar: 1.5,
     materi: "Pembahasan PR — rangkaian listrik",
+    catatan: "",
     status: "terkirim",
-    jumlahHadir: 4,
-    jumlahMurid: 5,
+    murid: kehadiranMurid(MURID_SD6, ["mrd-11"], { "mrd-11": "Izin lomba" }),
   },
   {
     id: "jrn-3",
@@ -203,9 +230,9 @@ const RIWAYAT_JURNAL: RiwayatTersimpan[] = [
     jamSelesai: "14:30",
     jamMengajar: 1.5,
     materi: "Kuis / evaluasi — persamaan linear",
+    catatan: "Semua murid sudah paham.",
     status: "direview",
-    jumlahHadir: 3,
-    jumlahMurid: 3,
+    murid: kehadiranMurid(MURID_SMP8),
   },
   {
     id: "jrn-2",
@@ -216,9 +243,9 @@ const RIWAYAT_JURNAL: RiwayatTersimpan[] = [
     jamSelesai: "08:30",
     jamMengajar: 1.5,
     materi: "Lanjutan materi — perkalian bersusun",
+    catatan: "",
     status: "direview",
-    jumlahHadir: 4,
-    jumlahMurid: 4,
+    murid: kehadiranMurid(MURID_SD4),
   },
   {
     id: "jrn-1",
@@ -229,9 +256,9 @@ const RIWAYAT_JURNAL: RiwayatTersimpan[] = [
     jamSelesai: "10:00",
     jamMengajar: 1,
     materi: "Ulangan — kosakata bab 2",
+    catatan: "Nilai rata-rata 78.",
     status: "direview",
-    jumlahHadir: 2,
-    jumlahMurid: 3,
+    murid: kehadiranMurid(MURID_SMP7, ["mrd-6"], { "mrd-6": "Demam" }),
   },
 ];
 
@@ -249,6 +276,32 @@ export function getRiwayatJurnal(): JurnalRiwayat[] {
       tanggal: tanggalISO(tanggal),
     };
   }).sort((a, b) => b.tanggal.localeCompare(a.tanggal));
+}
+
+/** Satu jurnal lengkap dengan daftar muridnya, untuk halaman detail. */
+export function getJurnalById(id: string): JurnalRiwayat | null {
+  return getRiwayatJurnal().find((jurnal) => jurnal.id === id) ?? null;
+}
+
+/** Memisahkan materi tersimpan menjadi pilihan cepat + topik bebas. */
+export function pisahMateri(materi: string) {
+  const pemisah = " — ";
+  const posisi = materi.indexOf(pemisah);
+  const pilihan = posisi === -1 ? materi : materi.slice(0, posisi);
+  const topik = posisi === -1 ? "" : materi.slice(posisi + pemisah.length);
+  const dikenal = (PILIHAN_MATERI as readonly string[]).includes(pilihan);
+  return dikenal ? { pilihan, topik } : { pilihan: "", topik: materi };
+}
+
+/** Pengganti sementara `PATCH /api/jurnal/[id]` untuk koreksi jurnal. */
+export async function koreksiJurnalStub(koreksi: KoreksiJurnal) {
+  const { promise, resolve } = Promise.withResolvers<void>();
+  setTimeout(resolve, 500);
+  await promise;
+  return {
+    ok: true as const,
+    jumlahHadir: koreksi.kehadiran.filter((baris) => baris.hadir).length,
+  };
 }
 
 /** Pilihan cepat materi supaya guru tidak perlu menulis panjang. */

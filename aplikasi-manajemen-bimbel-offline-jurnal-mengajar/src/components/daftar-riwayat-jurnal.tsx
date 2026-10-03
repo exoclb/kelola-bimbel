@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { CalendarDays, Clock, NotebookPen, Users } from "lucide-react";
-import { cn } from "cn";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -8,28 +7,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { LabelStatusJurnal } from "@/components/label-status-jurnal";
 import { formatJam, type JurnalRiwayat } from "@/lib/mock-jurnal";
 import { formatTanggalLengkap } from "@/lib/tanggal";
 
 type DaftarRiwayatJurnalProps = {
   daftar: JurnalRiwayat[];
 };
-
-function LabelStatus({ status }: { status: JurnalRiwayat["status"] }) {
-  const ditinjau = status === "direview";
-  return (
-    <span
-      className={cn(
-        "rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
-        ditinjau
-          ? "border-primary/30 bg-primary/10 text-primary"
-          : "bg-muted text-muted-foreground",
-      )}
-    >
-      {ditinjau ? "Sudah ditinjau" : "Terkirim"}
-    </span>
-  );
-}
 
 /**
  * Daftar jurnal yang pernah diisi guru, terbaru di atas. Dipakai halaman
@@ -83,20 +67,29 @@ export function DaftarRiwayatJurnal({ daftar }: DaftarRiwayatJurnalProps) {
                       {formatTanggalLengkap(jurnal.tanggal)}
                     </p>
                   </div>
-                  <LabelStatus status={jurnal.status} />
+                  <LabelStatusJurnal status={jurnal.status} />
                 </div>
                 <p className="text-sm">{jurnal.materi}</p>
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                  <span className="inline-flex items-center gap-1.5">
-                    <Clock className="size-4" aria-hidden="true" />
-                    {jurnal.jamMulai}–{jurnal.jamSelesai} ·{" "}
-                    {formatJam(jurnal.jamMengajar)}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5">
-                    <Users className="size-4" aria-hidden="true" />
-                    {jurnal.jumlahHadir} dari {jurnal.jumlahMurid} murid hadir
-                  </span>
-                  <span>{jurnal.cabang}</span>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                    <span className="inline-flex items-center gap-1.5">
+                      <Clock className="size-4" aria-hidden="true" />
+                      {jurnal.jamMulai}–{jurnal.jamSelesai} ·{" "}
+                      {formatJam(jurnal.jamMengajar)}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <Users className="size-4" aria-hidden="true" />
+                      {
+                        jurnal.murid.filter((anak) => anak.hadir).length
+                      } dari {jurnal.murid.length} murid hadir
+                    </span>
+                    <span>{jurnal.cabang}</span>
+                  </div>
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`/app/jurnal/riwayat/${jurnal.id}`}>
+                      Buka &amp; koreksi
+                    </Link>
+                  </Button>
                 </div>
               </Card>
             </li>

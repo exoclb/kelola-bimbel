@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "4525d6a2fe6bc4cfa6183a9dd0c4938a247b07eb",
+  "generatedForCommit": "2141ed06b05893b42c94cbf72d0af96ac7ed9d27",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -418,15 +418,21 @@
     },
     {
       "path": "src/app/(protected)/app/jurnal/page.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 1038
+      "size": 847
+    },
+    {
+      "path": "src/app/(protected)/app/jurnal/riwayat/page.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 421
     },
     {
       "path": "src/app/(protected)/app/page.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 3763
+      "size": 4077
     },
     {
       "path": "src/app/(protected)/layout.tsx",
@@ -525,14 +531,20 @@
       "size": 3636
     },
     {
+      "path": "src/components/daftar-riwayat-jurnal.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 3944
+    },
+    {
       "path": "src/components/jurnal-form.tsx",
       "reason": "changed",
       "language": "typescript",
-      "size": 9520
+      "size": 9873
     },
     {
       "path": "src/components/konfirmasi-jurnal.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 5006
     },
@@ -676,9 +688,9 @@
     },
     {
       "path": "src/lib/mock-jurnal.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 4704
+      "size": 7445
     },
     {
       "path": "src/lib/permissions.ts",
@@ -691,6 +703,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 1229
+    },
+    {
+      "path": "src/lib/tanggal.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 887
     },
     {
       "path": "src/lib/utils.ts",
