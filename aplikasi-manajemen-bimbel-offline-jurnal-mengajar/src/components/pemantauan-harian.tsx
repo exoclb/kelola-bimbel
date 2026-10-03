@@ -8,7 +8,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { KartuStatusGuru } from "@/components/status-guru-hari-ini";
+import {
+  DaftarStatusGuru,
+  RingkasanStatusGuru,
+} from "@/components/status-guru-hari-ini";
 import { LabelStatusJurnal } from "@/components/label-status-jurnal";
 import { formatJam } from "@/lib/jurnal";
 import type {
@@ -100,8 +103,9 @@ export function PemantauanHarian({
         ))}
       </div>
 
-      <div className="mt-6">
-        <KartuStatusGuru daftar={statusGuru} />
+      <div className="mt-6 space-y-6">
+        <RingkasanStatusGuru daftar={statusGuru} />
+        <DaftarStatusGuru daftar={statusGuru} />
       </div>
 
       {data.length === 0 ? (

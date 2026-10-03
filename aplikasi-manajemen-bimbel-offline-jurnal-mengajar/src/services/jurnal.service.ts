@@ -429,21 +429,28 @@ export type JurnalHarian = Awaited<
   ReturnType<typeof listAnyJurnal>
 >["data"][number];
 
+export type JadwalRingkas = {
+  namaKelas: string;
+  jamMulai: string;
+  jamSelesai: string;
+};
+
 export type StatusGuruHariIni = {
   guruId: string;
   guruNama: string;
   guruEmail: string;
-  jumlahJadwal: number;
+  jadwal: JadwalRingkas[];
   jumlahJurnal: number;
   totalJam: number;
   sudahMengisi: boolean;
 };
 
 /**
- * Ringkasan status tiap guru pada satu hari: sudah mengisi jurnal atau belum.
- * Gurunya diambil dari jadwal hari itu, ditambah siapa pun yang sudah mengirim
- * jurnal hari ini (mis. jadwalnya sudah dihapus), supaya tidak ada yang
- * terlewat dari pantauan. Yang belum mengisi tampil lebih dulu.
+ * Status tiap guru pada satu hari: jadwal apa saja yang harus dia ajar, sudah
+ * mengisi jurnal atau belum, dan berapa jam yang sudah tercatat. Gurunya
+ * diambil dari jadwal hari itu ditambah siapa pun yang sudah mengirim jurnal
+ * hari ini (mis. jadwalnya sudah dihapus), supaya tidak ada yang terlewat dari
+ * pantauan. Yang belum mengisi tampil lebih dulu.
  */
 export async function ringkasanAnyGuruHariIni(
   hari: NamaHari,
@@ -454,12 +461,19 @@ export async function ringkasanAnyGuruHariIni(
       guruId: schedules.guruId,
       guruNama: user.name,
       guruEmail: user.email,
-      jumlahJadwal: sql<number>`count(*)::int`.as("jumlah_jadwal"),
+      namaKelas: classes.namaKelas,
+      jamMulai: sql<string>`to_char(${schedules.jamMulai}, 'HH24:MI')`.as(
+        "jam_mulai",
+      ),
+      jamSelesai: sql<string>`to_char(${schedules.jamSelesai}, 'HH24:MI')`.as(
+        "jam_selesai",
+      ),
     })
     .from(schedules)
     .innerJoin(user, eq(schedules.guruId, user.id))
+    .innerJoin(classes, eq(schedules.classId, classes.id))
     .where(eq(schedules.hari, hari))
-    .groupBy(schedules.guruId, user.name, user.email);
+    .orderBy(asc(schedules.jamMulai), asc(schedules.id));
 
   const barisJurnal = await db
     .select({
@@ -479,19 +493,29 @@ export async function ringkasanAnyGuruHariIni(
 
   const perGuru = new Map<string, StatusGuruHariIni>();
   for (const baris of barisJadwal) {
-    perGuru.set(baris.guruId, {
-      ...baris,
+    const guru = perGuru.get(baris.guruId) ?? {
+      guruId: baris.guruId,
+      guruNama: baris.guruNama,
+      guruEmail: baris.guruEmail,
+      jadwal: [],
       jumlahJurnal: 0,
       totalJam: 0,
       sudahMengisi: false,
+    };
+    guru.jadwal.push({
+      namaKelas: baris.namaKelas,
+      jamMulai: baris.jamMulai,
+      jamSelesai: baris.jamSelesai,
     });
+    perGuru.set(baris.guruId, guru);
   }
   for (const baris of barisJurnal) {
+    const guru = perGuru.get(baris.guruId);
     perGuru.set(baris.guruId, {
       guruId: baris.guruId,
       guruNama: baris.guruNama,
       guruEmail: baris.guruEmail,
-      jumlahJadwal: perGuru.get(baris.guruId)?.jumlahJadwal ?? 0,
+      jadwal: guru?.jadwal ?? [],
       jumlahJurnal: baris.jumlahJurnal,
       totalJam: baris.totalJam,
       sudahMengisi: true,
