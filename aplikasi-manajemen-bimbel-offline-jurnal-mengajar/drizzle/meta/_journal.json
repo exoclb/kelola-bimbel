@@ -85,6 +85,13 @@
       "when": 1791040223674,
       "tag": "0011_peran_pengguna",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791044873361,
+      "tag": "0012_profil_bimbel",
+      "breakpoints": true
     }
   ]
 }

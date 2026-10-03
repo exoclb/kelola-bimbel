@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "07e59a698c93ba498d83e5c51022adf0aa3126b7",
+  "generatedForCommit": "7026da26549e3c615bd10e47403d18f0723dc57b",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -172,7 +172,7 @@
     },
     {
       "path": "docs/backend.md",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "markdown",
       "size": 41032
     },
@@ -408,7 +408,7 @@
       "path": "e2e/pemantauan.spec.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 7676
+      "size": 9352
     },
     {
       "path": "e2e/roles.spec.ts",
@@ -670,13 +670,13 @@
     },
     {
       "path": "src/app/(protected)/app/pengaturan/notifikasi/page.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1188
     },
     {
       "path": "src/app/(protected)/app/pengaturan/page.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 705
     },
@@ -994,9 +994,9 @@
     },
     {
       "path": "src/components/daftar-guru.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 5969
+      "size": 7793
     },
     {
       "path": "src/components/daftar-kehadiran.tsx",
@@ -1042,9 +1042,9 @@
     },
     {
       "path": "src/components/form-aturan-gaji.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 7574
+      "size": 8931
     },
     {
       "path": "src/components/form-catatan-anak.tsx",
@@ -1066,9 +1066,9 @@
     },
     {
       "path": "src/components/form-profil-bimbel.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 8096
+      "size": 9561
     },
     {
       "path": "src/components/form-tambah-kelas.tsx",
@@ -1111,6 +1111,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 5064
+    },
+    {
+      "path": "src/components/konfirmasi-pengaturan.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 2291
     },
     {
       "path": "src/components/label-status-jurnal.tsx",
@@ -1180,13 +1186,13 @@
     },
     {
       "path": "src/components/pengaturan-bimbel.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 5572
     },
     {
       "path": "src/components/preferensi-notifikasi.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2921
     },
@@ -1480,7 +1486,7 @@
     },
     {
       "path": "src/lib/mock-menu.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1757
     },

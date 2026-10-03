@@ -5,6 +5,7 @@ export * from "./account";
 export * from "./verification";
 export * from "./notes";
 export * from "./classes";
+export * from "./bimbel-profile";
 export * from "./students";
 export * from "./student-enrollments";
 export * from "./student-progress";
