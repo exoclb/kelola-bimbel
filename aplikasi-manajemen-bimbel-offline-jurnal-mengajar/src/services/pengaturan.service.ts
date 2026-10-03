@@ -1,12 +1,16 @@
 import "server-only";
-import { desc, eq } from "drizzle-orm";
+import { generateRandomString, hashPassword } from "better-auth/crypto";
+import { and, asc, desc, eq, ilike, isNull, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { bimbelProfile, salarySettings } from "@/db/schema";
+import { account, bimbelProfile, salarySettings, user } from "@/db/schema";
 import { pelanggaranUnik } from "@/lib/db-error";
+import { peranDariRole, type PeranPengguna } from "@/lib/peran";
 import { aturanGajiBerlaku } from "@/services/gaji.service";
 import type {
   AturanGajiInput,
+  ListGuruInput,
   ProfilBimbelInput,
+  TambahGuruInput,
 } from "@/validators/pengaturan";
 
 /** Profil bimbel seperti yang dikirim ke klien. */
@@ -167,4 +171,186 @@ export async function tambahAturanGaji(
     if (pelanggaranUnik(error)) return { status: "tanggal_sudah_ada" };
     throw error;
   }
+}
+
+/** Satu akun guru/owner seperti yang dikirim ke klien. */
+export type AkunTersimpan = {
+  id: string;
+  nama: string;
+  email: string;
+  peran: PeranPengguna;
+  statusAktif: boolean;
+  dibuatPada: Date;
+};
+
+export type DaftarAkun = {
+  data: AkunTersimpan[];
+  meta: { limit: number; offset: number; hasMore: boolean; total: number };
+};
+
+const fieldsAkun = {
+  id: user.id,
+  nama: user.name,
+  email: user.email,
+  role: user.role,
+  banned: user.banned,
+  dibuatPada: user.createdAt,
+};
+
+function keAkun(baris: {
+  id: string;
+  nama: string;
+  email: string;
+  role: string;
+  banned: boolean | null;
+  dibuatPada: Date;
+}): AkunTersimpan {
+  return {
+    id: baris.id,
+    nama: baris.nama,
+    email: baris.email,
+    peran: peranDariRole(baris.role),
+    statusAktif: !baris.banned,
+    dibuatPada: baris.dibuatPada,
+  };
+}
+
+/**
+ * Daftar akun bimbel (guru dan owner) beserta status aktifnya. Karena peran
+ * disimpan di kolom akun Better Auth, penyaringnya memakai kolom itu juga:
+ * `cari` dicocokkan ke nama dan email, `status` menyaring akun yang aktif atau
+ * yang dinonaktifkan.
+ */
+export async function listAkunBimbel({
+  limit,
+  offset,
+  cari,
+  status,
+}: ListGuruInput): Promise<DaftarAkun> {
+  // Tanda % dan _ pada kata kunci dianggap huruf biasa, bukan pola pencarian.
+  const kataKunci = cari?.replaceAll(/[%_\\]/g, "\\$&");
+  const syarat = and(
+    kataKunci
+      ? or(
+          ilike(user.name, `%${kataKunci}%`),
+          ilike(user.email, `%${kataKunci}%`),
+        )
+      : undefined,
+    status === "aktif"
+      ? or(eq(user.banned, false), isNull(user.banned))
+      : status === "nonaktif"
+        ? eq(user.banned, true)
+        : undefined,
+  );
+
+  const rows = await db
+    .select(fieldsAkun)
+    .from(user)
+    .where(syarat)
+    .orderBy(asc(user.name), asc(user.id))
+    .limit(limit + 1)
+    .offset(offset);
+
+  const [jumlah] = await db
+    .select({ total: sql<number>`count(*)::int`.as("total") })
+    .from(user)
+    .where(syarat);
+
+  return {
+    data: rows.slice(0, limit).map(keAkun),
+    meta: {
+      limit,
+      offset,
+      hasMore: rows.length > limit,
+      total: jumlah?.total ?? 0,
+    },
+  };
+}
+
+export type HasilTambahGuru =
+  | { status: "tersimpan"; akun: AkunTersimpan }
+  | { status: "email_sudah_dipakai" };
+
+/**
+ * Menambah akun guru. Barisnya dibuat langsung di `user` + `account` (yang
+ * dipakai Better Auth untuk sandi terenkripsi), bukan lewat `signUpEmail`,
+ * karena alur itu ikut membuat sesi dan menulis cookie sesi akun baru ke
+ * respons endpoint ini — owner yang menambah guru bisa ikut masuk sebagai guru
+ * itu. Sandinya di-hash memakai `hashPassword` milik Better Auth, jadi aturan
+ * dan formatnya sama dengan pendaftaran biasa. Perannya eksplisit `user`
+ * (guru), tidak pernah dari isi permintaan.
+ */
+export async function tambahGuru(
+  input: TambahGuruInput,
+): Promise<HasilTambahGuru> {
+  const sandi = await hashPassword(input.sandi);
+
+  try {
+    const baris = await db.transaction(async (tx) => {
+      const id = generateRandomString(32);
+      const [akun] = await tx
+        .insert(user)
+        .values({
+          id,
+          name: input.nama,
+          email: input.email,
+          emailVerified: false,
+          role: "user",
+        })
+        .returning(fieldsAkun);
+
+      await tx.insert(account).values({
+        id: generateRandomString(32),
+        accountId: id,
+        providerId: "credential",
+        userId: id,
+        password: sandi,
+      });
+
+      return akun ?? null;
+    });
+
+    if (!baris) throw new Error("Akun guru gagal dibuat.");
+    return { status: "tersimpan", akun: keAkun(baris) };
+  } catch (error) {
+    // Email unik dijaga indeks basis data; tabrakan berarti emailnya terpakai.
+    if (pelanggaranUnik(error)) return { status: "email_sudah_dipakai" };
+    throw error;
+  }
+}
+
+export type HasilUbahStatusGuru =
+  | { status: "tersimpan"; akun: AkunTersimpan }
+  | { status: "tidak_ada" }
+  | { status: "bukan_guru" };
+
+/**
+ * Mengaktifkan atau menonaktifkan akun. Menonaktifkan memakai kolom `banned`
+ * milik Better Auth, sehingga akunnya tidak bisa masuk lagi dan sesi yang masih
+ * tersimpan langsung tidak berlaku. Akun owner tidak bisa dinonaktifkan dari
+ * sini supaya owner tidak terkunci di luar aplikasinya sendiri.
+ */
+export async function ubahStatusGuru(
+  id: string,
+  statusAktif: boolean,
+): Promise<HasilUbahStatusGuru> {
+  const [target] = await db
+    .select({ role: user.role })
+    .from(user)
+    .where(eq(user.id, id))
+    .limit(1);
+  if (!target) return { status: "tidak_ada" };
+  if (peranDariRole(target.role) === "owner") return { status: "bukan_guru" };
+
+  const [baris] = await db
+    .update(user)
+    .set({
+      banned: !statusAktif,
+      banReason: statusAktif ? null : "Dinonaktifkan owner bimbel",
+    })
+    .where(eq(user.id, id))
+    .returning(fieldsAkun);
+
+  if (!baris) return { status: "tidak_ada" };
+  return { status: "tersimpan", akun: keAkun(baris) };
 }

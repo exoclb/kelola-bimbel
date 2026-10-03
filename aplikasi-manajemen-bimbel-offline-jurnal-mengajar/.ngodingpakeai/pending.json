@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "8311f25e341f811afb395f400e554132299d7179",
+  "generatedForCommit": "e98d2adc4d172dad5c7131f220ba5988010c585e",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -174,7 +174,7 @@
       "path": "docs/backend.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 44628
+      "size": 45089
     },
     {
       "path": "docs/deployment.md",
@@ -418,7 +418,7 @@
     },
     {
       "path": "e2e/pemantauan.spec.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 12303
     },
@@ -904,7 +904,7 @@
     },
     {
       "path": "src/app/api/pengaturan/gaji/route.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1474
     },
@@ -1588,7 +1588,7 @@
     },
     {
       "path": "src/services/gaji.service.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 14324
     },
@@ -1642,7 +1642,7 @@
     },
     {
       "path": "src/services/pengaturan.service.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 4921
     },
@@ -1708,7 +1708,7 @@
     },
     {
       "path": "src/validators/pengaturan.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1726
     },

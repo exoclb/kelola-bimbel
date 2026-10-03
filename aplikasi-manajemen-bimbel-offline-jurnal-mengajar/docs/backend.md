@@ -67,6 +67,9 @@ Operasi jurnal milik guru ada di `src/services/jurnal.service.ts` (simpan, riway
 | PATCH  | `/api/notifikasi`              | 200, tandai notifikasi tertentu atau semua sebagai sudah dibaca         |
 | POST   | `/api/jurnal`                  | 200, simpan & kirim jurnal mengajar (idempoten per jadwal + tanggal)    |
 | PATCH  | `/api/jurnal/:id`              | 200, koreksi isi jurnal (materi, catatan, dan/atau kehadiran)           |
+| GET    | `/api/pengaturan/guru`         | 200, daftar akun guru & owner + status aktifnya (owner & admin)         |
+| POST   | `/api/pengaturan/guru`         | 201, menambah akun guru baru (selalu berperan guru)                     |
+| PATCH  | `/api/pengaturan/guru/:id`     | 200, mengaktifkan/menonaktifkan akun guru                               |
 | GET    | `/api/pengaturan/gaji`         | 200, aturan gaji yang berlaku pada satu tanggal + riwayatnya            |
 | POST   | `/api/pengaturan/gaji`         | 201, menambah aturan gaji bertanggal berlaku (owner & admin)            |
 | GET    | `/api/pengaturan/profil`       | 200, profil bimbel (kosong kalau belum diatur)                          |
@@ -145,6 +148,12 @@ Tabelnya sengaja hanya boleh berisi **satu baris** (dijaga indeks unik pada eksp
 `GET /api/pengaturan/gaji` mengembalikan `{ berlaku, riwayat }`. `berlaku` adalah aturan gaji yang dipakai pada tanggal yang diminta (`?tanggal=YYYY-MM-DD`, kalau kosong berarti hari ini) — baris dengan `berlaku_sejak` terbaru yang tidak melewati tanggal itu — atau `null` kalau belum ada aturan yang berlaku. Angka ini dihitung memakai resolver yang sama dengan rekap gaji (`aturanGajiBerlaku`), jadi tarif yang terlihat di pengaturan dan yang dipakai menghitung gaji tidak bisa berbeda. `riwayat` memuat semua aturan, yang terbaru lebih dulu, sehingga halaman pengaturan bisa menampilkan kapan tarif berubah. Semua akun boleh membacanya (tarif juga muncul di rekap gaji guru sendiri).
 
 `POST /api/pengaturan/gaji` menerima `{ tarifPerJam, skema, berlakuSejak }` — tarif wajib angka positif, `skema` hanya `"per jam"` atau `"tetap"`, dan tanggalnya harus tanggal yang benar-benar ada — lalu menjawab 201 dengan aturan yang tersimpan. Endpoint ini hanya untuk pemilik izin `pengaturan: write` (owner & admin); akun lain dijawab 403. Karena satu tanggal hanya boleh punya satu aturan (indeks unik `salary_settings_berlaku_sejak_idx`), tanggal yang sudah dipakai dijawab 409 `TANGGAL_SUDAH_ADA` — aturan lama tidak ditimpa supaya riwayat tarifnya tetap utuh.
+
+`GET /api/pengaturan/guru` mengembalikan daftar akun bimbel — guru maupun owner — dengan `{ id, nama, email, peran, statusAktif, dibuatPada }`, terurut nama, dan mendukung `limit`/`offset`, `cari` (nama atau email), serta `status` (`semua`/`aktif`/`nonaktif`). Status aktif dibaca dari kolom `banned` milik Better Auth, dan `peran` memakai pemetaan tampilan yang sama dengan menu (`peranDariRole`). Hanya akun dengan izin `pengaturan: read` (owner & admin) yang boleh membukanya.
+
+`POST /api/pengaturan/guru` menambah akun guru dengan `{ nama, email, sandi }`. **Peran tidak bisa dipilih** — permintaan yang menyertakan `peran` dijawab 422 dan akun barunya selalu berperan guru. Barisnya dibuat langsung di tabel `user` + `account` (sandi di-hash memakai `hashPassword` milik Better Auth, jadi formatnya sama dengan pendaftaran biasa), **bukan** lewat `signUpEmail`: alur itu ikut membuat sesi dan menulis cookie sesi akun baru ke respons endpoint ini, sehingga owner yang menambah guru bisa ikut masuk sebagai guru itu. Akibatnya endpoint ini tidak membuat sesi sama sekali — yang bisa masuk adalah guru yang bersangkutan, memakai sandi yang diberikan owner. Email yang sudah dipakai dijawab 409 `EMAIL_SUDAH_DIPAKAI`.
+
+`PATCH /api/pengaturan/guru/:id` menerima `{ statusAktif }` untuk menonaktifkan (`false`) atau mengaktifkan lagi (`true`) seorang guru. Menonaktifkan berarti akunnya tidak bisa masuk dan sesi yang masih tersimpan langsung tidak berlaku (kolom `banned` + pemeriksaan sesi di `withApiSession`); jurnal dan catatannya tetap ada. Akun owner sengaja **tidak bisa** dinonaktifkan lewat endpoint ini (422 `AKUN_OWNER`) supaya owner tidak terkunci di luar aplikasinya sendiri, dan id yang tidak ada dijawab 404.
 
 ## Lupa sandi
 

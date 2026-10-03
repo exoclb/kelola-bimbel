@@ -385,3 +385,72 @@ test("aturan gaji disimpan bertanggal dan tarifnya diresolusi per tanggal", asyn
 
   await setRole("user");
 });
+
+test("owner bisa menambah guru lalu menonaktifkan dan mengaktifkannya lagi", async ({
+  request,
+}) => {
+  const email = `guru-baru-${randomUUID()}@example.com`;
+  const sandiBaru = "Guru-baru-123!";
+
+  await setRole("user");
+  await masuk(request);
+  const ditolak = await request.post("/api/pengaturan/guru", {
+    headers,
+    data: { nama: "Guru Baru", email, sandi: sandiBaru },
+  });
+  expect(ditolak.status()).toBe(403);
+
+  await setRole("owner");
+  const tambah = await request.post("/api/pengaturan/guru", {
+    headers,
+    data: { nama: "Guru Baru", email, sandi: sandiBaru },
+  });
+  expect(tambah.status()).toBe(201);
+  const akun = (await tambah.json()).data as { id: string; peran: string };
+  expect(akun.peran).toBe("guru");
+
+  // Dinonaktifkan: akunnya tidak bisa masuk lagi.
+  const turun = await request.patch(`/api/pengaturan/guru/${akun.id}`, {
+    headers,
+    data: { statusAktif: false },
+  });
+  expect(turun.status()).toBe(200);
+  expect((await turun.json()).data.statusAktif).toBe(false);
+  const diblokir = await request.post("/api/masuk", {
+    headers,
+    data: { email, sandi: sandiBaru },
+  });
+  expect(diblokir.status()).toBe(403);
+
+  // Owner tetap tidak bisa dinonaktifkan.
+  const ownerSendiri = await request.get("/api/pengaturan/guru", { headers });
+  const daftar = (await ownerSendiri.json()).data as {
+    id: string;
+    peran: string;
+  }[];
+  const owner = daftar.find((baris) => baris.peran === "owner");
+  expect(owner).toBeTruthy();
+  expect(
+    (
+      await request.patch(`/api/pengaturan/guru/${owner?.id}`, {
+        headers,
+        data: { statusAktif: false },
+      })
+    ).status(),
+  ).toBe(422);
+
+  // Diaktifkan lagi: akun guru itu bisa masuk memakai sandinya sendiri.
+  const naik = await request.patch(`/api/pengaturan/guru/${akun.id}`, {
+    headers,
+    data: { statusAktif: true },
+  });
+  expect(naik.status()).toBe(200);
+  const masukGuru = await request.post("/api/masuk", {
+    headers,
+    data: { email, sandi: sandiBaru },
+  });
+  expect(masukGuru.status()).toBe(200);
+  expect((await masukGuru.json()).data.peran).toBe("guru");
+
+  await setRole("user");
+});

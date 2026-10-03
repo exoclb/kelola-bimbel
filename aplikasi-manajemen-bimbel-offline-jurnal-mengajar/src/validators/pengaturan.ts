@@ -52,3 +52,42 @@ export const listAturanGajiSchema = z
   .strict();
 
 export type ListAturanGajiInput = z.infer<typeof listAturanGajiSchema>;
+
+// Guru dan owner disimpan sebagai akun Better Auth, jadi status aktifnya
+// memakai kolom `banned` (dibalik supaya enak dibaca di tampilan).
+export const STATUS_AKUN = ["semua", "aktif", "nonaktif"] as const;
+
+export const listGuruSchema = z
+  .object({
+    limit: z.coerce.number().int().min(1).max(100).default(50),
+    offset: z.coerce.number().int().min(0).max(1_000_000).default(0),
+    // Kata kunci bebas: dicocokkan ke nama dan email akun.
+    cari: z.string().trim().max(120).optional(),
+    status: z.enum(STATUS_AKUN).default("semua"),
+  })
+  .strict();
+
+export type ListGuruInput = z.infer<typeof listGuruSchema>;
+
+// Peran tidak ikut di sini: akun guru baru selalu berperan `user` (bawaan
+// kolomnya), sama seperti pendaftaran biasa.
+export const tambahGuruSchema = z
+  .object({
+    nama: z.string().trim().min(2).max(120),
+    email: z.email().max(254),
+    sandi: z.string().min(8).max(128),
+  })
+  .strict();
+
+export type TambahGuruInput = z.infer<typeof tambahGuruSchema>;
+
+export const ubahStatusGuruSchema = z
+  .object({
+    statusAktif: z.boolean(),
+  })
+  .strict();
+
+export type UbahStatusGuruInput = z.infer<typeof ubahStatusGuruSchema>;
+
+// Id akun dibuat Better Auth (string acak, bukan UUID).
+export const guruIdSchema = z.string().trim().min(1).max(64);
