@@ -7,6 +7,7 @@ export * from "./notes";
 export * from "./classes";
 export * from "./students";
 export * from "./student-enrollments";
+export * from "./student-progress";
 export * from "./schedules";
 export * from "./teaching-journals";
 export * from "./journal-attendances";

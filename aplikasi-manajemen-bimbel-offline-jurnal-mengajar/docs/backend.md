@@ -108,6 +108,25 @@ Operasi jurnal milik guru ada di `src/services/jurnal.service.ts` (simpan, riway
 
 `POST /api/kelas/:id/murid` menerima `{ muridId, tanggalMulai? }` (tanggal mulai kosong berarti hari ini) dan menjawab 201 dengan daftar murid terbaru kelas itu. Satu murid hanya boleh punya satu penempatan aktif — dijaga indeks unik parsial `student_enrollments_student_aktif_idx` — sehingga murid yang sudah punya kelas lain dijawab 409 `SUDAH_TERDAFTAR`; pindah kelas caranya keluarkan dulu dari kelas lama. `DELETE /api/kelas/:id/murid/:muridId` mengeluarkan murid dengan menandai penempatannya `selesai` (riwayat tetap tersimpan, bukan dihapus) dan menjawab 404 kalau murid itu memang tidak sedang di kelas tersebut.
 
+## Data model
+
+Selain tabel bawaan starter (`user`, `session`, `account`, `verification`, `notes`), aplikasi ini memakai tabel berikut — semuanya di `src/db/schema/` dan dibuat lewat migrasi Drizzle:
+
+| Tabel                                       | Isinya                                                                                                                                     |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `students`                                  | Data murid bimbel (nama, tanggal lahir, orang tua, status aktif).                                                                          |
+| `classes`                                   | Kelas bimbel beserta cabang dan guru pengampunya.                                                                                          |
+| `schedules`                                 | Jadwal mengajar per kelas (hari, jam mulai, jam selesai). Satu kelas tidak boleh punya dua jadwal dengan hari & jam mulai yang sama.       |
+| `student_enrollments`                       | Penempatan murid ke kelas. Satu murid hanya boleh punya satu penempatan `aktif`; yang lama ditandai `selesai` supaya riwayatnya tetap ada. |
+| `teaching_journals`                         | Jurnal mengajar guru; sumber jam mengajar yang dihitung ke gaji. Satu guru satu jurnal per jadwal per tanggal.                             |
+| `journal_attendances`                       | Kehadiran tiap murid di dalam satu jurnal.                                                                                                 |
+| `student_progress`                          | Catatan perkembangan anak (nilai, sikap, catatan naratif) dari guru.                                                                       |
+| `salary_settings`                           | Riwayat tarif per jam; tarif yang dipakai adalah yang berlaku pada bulan yang dihitung.                                                    |
+| `salary_recaps`                             | Catatan pembayaran gaji yang sudah ditandai owner.                                                                                         |
+| `notifications`, `notification_preferences` | Pemberitahuan dalam aplikasi dan preferensi penerimaannya.                                                                                 |
+
+Aturan yang dijaga database, bukan cuma di kode: indeks unik parsial `student_enrollments_student_aktif_idx` (satu kelas aktif per murid), indeks unik `teaching_journals_guru_jadwal_tanggal_idx` (jurnal tidak dobel sehingga gaji tidak terhitung dua kali), dan indeks unik `schedules_class_hari_jam_idx` (jadwal kelas tidak dobel). Penghapusan murid/kelas ikut menghapus baris turunannya (`on delete cascade`), sedangkan data yang tidak boleh hilang memakai `restrict`.
+
 ## Role-based access
 
 Ownership answers "is this row mine?". Roles answer "may this account reach past its own rows?". The starter ships a worked example of the second question using the Better Auth admin plugin.

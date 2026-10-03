@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "907a18bc31d8f7d72601c0d6d31be09cc8b980ca",
+  "generatedForCommit": "6e5dd33b04960de2eb7be224b15c124f1e406cba",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -174,7 +174,7 @@
       "path": "docs/backend.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 26090
+      "size": 26106
     },
     {
       "path": "docs/deployment.md",
@@ -712,13 +712,13 @@
     },
     {
       "path": "src/app/api/kelas/[id]/murid/route.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1674
     },
     {
       "path": "src/app/api/kelas/[id]/murid/[muridId]/route.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 837
     },
@@ -1300,15 +1300,15 @@
     },
     {
       "path": "src/services/kelas.service.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 9851
     },
     {
       "path": "src/services/murid.service.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 1996
+      "size": 2135
     },
     {
       "path": "src/services/notes.service.ts",
@@ -1348,7 +1348,7 @@
     },
     {
       "path": "src/validators/kelas.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2352
     },
