@@ -1,5 +1,4 @@
-import { CalendarRange, FileText, Receipt, Users, Wallet } from "lucide-react";
-import { cn } from "cn";
+import { CalendarRange, Receipt, Users, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,33 +9,16 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import Link from "next/link";
-import { PanelRincianJam } from "@/components/panel-rincian-jam";
+import { DaftarGajiGuru } from "@/components/daftar-gaji-guru";
 import { formatJam } from "@/lib/jurnal";
 import { formatRupiah } from "@/lib/gaji";
-import type { RekapGaji, StatusPembayaran } from "@/lib/mock-gaji";
+import type { RekapGaji } from "@/lib/mock-gaji";
 
 type RekapGajiBulananProps = {
   rekap: RekapGaji;
   periodeTampil: string;
   namaOwner: string;
 };
-
-function LabelPembayaran({ status }: { status: StatusPembayaran }) {
-  const dibayar = status === "dibayar";
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
-        dibayar
-          ? "border-primary/30 bg-primary/10 text-primary"
-          : "bg-muted text-muted-foreground",
-      )}
-    >
-      {dibayar ? "Sudah dibayar" : "Belum dibayar"}
-    </span>
-  );
-}
 
 /**
  * Rekap gaji satu bulan untuk owner: total jam mengajar tiap guru dikalikan
@@ -55,10 +37,6 @@ export function RekapGajiBulanan({
     (jumlah, baris) => jumlah + baris.totalGaji,
     0,
   );
-  const belumDibayar = rekap.daftar.filter(
-    (baris) => baris.statusPembayaran === "belum_dibayar",
-  ).length;
-
   const statistik = [
     { label: "Guru dibayar", nilai: String(rekap.daftar.length), ikon: Users },
     {
@@ -122,56 +100,12 @@ export function RekapGajiBulanan({
         <CardHeader>
           <CardTitle>Gaji per guru</CardTitle>
           <CardDescription>
-            {rekap.daftar.length === 0
-              ? "Belum ada jurnal pada bulan ini."
-              : `${rekap.daftar.length} guru · ${belumDibayar} belum dibayar. Buka rincian untuk melihat dasar perhitungannya.`}
+            Tandai pembayaran setelah gaji diberikan ke guru.
           </CardDescription>
         </CardHeader>
-        {rekap.daftar.length > 0 && (
-          <CardContent>
-            <ul className="divide-y">
-              {rekap.daftar.map((baris) => (
-                <li
-                  key={baris.guruId}
-                  className="space-y-2 py-4 first:pt-0 last:pb-0"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="font-medium">{baris.guruNama}</p>
-                      <p className="break-all text-sm text-muted-foreground">
-                        {baris.guruEmail}
-                      </p>
-                    </div>
-                    <LabelPembayaran status={baris.statusPembayaran} />
-                  </div>
-                  <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-muted-foreground">
-                    <span>{baris.jumlahJurnal} jurnal</span>
-                    <span>{formatJam(baris.totalJam)} mengajar</span>
-                    <span>{formatRupiah(baris.tarifPerJam)}/jam</span>
-                    <span className="font-semibold text-foreground">
-                      {formatRupiah(baris.totalGaji)}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <PanelRincianJam
-                      rincian={baris.rincian}
-                      totalJam={baris.totalJam}
-                      tarifPerJam={baris.tarifPerJam}
-                    />
-                    <Button asChild variant="outline" size="sm">
-                      <Link
-                        href={`/app/gaji/slip/${baris.guruId}?periode=${rekap.periode}`}
-                      >
-                        <FileText aria-hidden="true" />
-                        Slip gaji
-                      </Link>
-                    </Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        )}
+        <CardContent>
+          <DaftarGajiGuru daftar={rekap.daftar} periode={rekap.periode} />
+        </CardContent>
       </Card>
     </div>
   );

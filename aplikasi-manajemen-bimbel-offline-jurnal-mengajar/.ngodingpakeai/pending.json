@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "deb5f817b208af32800f88cb9341c55e7a79b5ae",
+  "generatedForCommit": "d57ea1590e1c9c138e023188dc4ae8968e6f4d0c",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -447,6 +447,12 @@
       "size": 941
     },
     {
+      "path": "src/app/(protected)/app/gaji/slip/[guruId]/page.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1760
+    },
+    {
       "path": "src/app/(protected)/app/jurnal/page.tsx",
       "reason": "needs_summary",
       "language": "typescript",
@@ -478,9 +484,9 @@
     },
     {
       "path": "src/app/(protected)/layout.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 1202
+      "size": 1215
     },
     {
       "path": "src/app/api/admin/jurnal/route.ts",
@@ -646,7 +652,7 @@
     },
     {
       "path": "src/components/panel-rincian-jam.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2787
     },
@@ -678,7 +684,7 @@
       "path": "src/components/rekap-gaji-bulanan.tsx",
       "reason": "changed",
       "language": "typescript",
-      "size": 5675
+      "size": 6176
     },
     {
       "path": "src/components/saring-pemantauan.tsx",
@@ -693,6 +699,12 @@
       "size": 1138
     },
     {
+      "path": "src/components/slip-gaji.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 3930
+    },
+    {
       "path": "src/components/starter-intro.tsx",
       "reason": "needs_summary",
       "language": "typescript",
@@ -703,6 +715,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 5209
+    },
+    {
+      "path": "src/components/tombol-slip-gaji.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 2138
     },
     {
       "path": "src/components/ui/button.tsx",
@@ -862,7 +880,7 @@
     },
     {
       "path": "src/lib/mock-gaji.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 3261
     },
