@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "1a2c66988427b7a48f41d0cca9a5c4e951ebe84a",
+  "generatedForCommit": "0870153c1aca369783e60c6107e0a9733eee6ee2",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -174,7 +174,7 @@
       "path": "docs/backend.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 20394
+      "size": 21215
     },
     {
       "path": "docs/deployment.md",
@@ -249,6 +249,12 @@
       "size": 412
     },
     {
+      "path": "drizzle/0007_rekap_gaji.sql",
+      "reason": "new",
+      "language": "sql",
+      "size": 1062
+    },
+    {
       "path": "drizzle/meta/0000_snapshot.json",
       "reason": "needs_summary",
       "language": "json",
@@ -291,10 +297,16 @@
       "size": 34078
     },
     {
-      "path": "drizzle/meta/_journal.json",
-      "reason": "needs_summary",
+      "path": "drizzle/meta/0007_snapshot.json",
+      "reason": "new",
       "language": "json",
-      "size": 1019
+      "size": 37717
+    },
+    {
+      "path": "drizzle/meta/_journal.json",
+      "reason": "changed",
+      "language": "json",
+      "size": 1157
     },
     {
       "path": "drizzle.config.ts",
@@ -532,9 +544,9 @@
     },
     {
       "path": "src/app/api/admin/gaji/route.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 806
+      "size": 1583
     },
     {
       "path": "src/app/api/admin/jurnal/route.ts",
@@ -586,7 +598,7 @@
     },
     {
       "path": "src/app/api/gaji/route.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 856
     },
@@ -892,9 +904,9 @@
     },
     {
       "path": "src/db/schema/index.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 502
+      "size": 535
     },
     {
       "path": "src/db/schema/journal-attendances.ts",
@@ -919,6 +931,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 1144
+    },
+    {
+      "path": "src/db/schema/salary-recaps.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1899
     },
     {
       "path": "src/db/schema/salary-settings.ts",
@@ -1038,7 +1056,7 @@
       "path": "src/services/gaji.service.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 6699
+      "size": 10166
     },
     {
       "path": "src/services/jadwal.service.ts",
@@ -1072,9 +1090,9 @@
     },
     {
       "path": "src/validators/gaji.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 390
+      "size": 831
     },
     {
       "path": "src/validators/jadwal.ts",

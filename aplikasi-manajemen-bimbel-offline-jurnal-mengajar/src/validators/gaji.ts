@@ -25,3 +25,16 @@ export const ubahPembayaranGajiSchema = z
   .strict();
 
 export type UbahPembayaranGajiInput = z.infer<typeof ubahPembayaranGajiSchema>;
+
+// Unduh slip gaji satu guru pada satu bulan (dipakai owner).
+export const slipGajiSchema = z
+  .object({
+    guruId: z.string().min(1).max(64),
+    periode: z
+      .string()
+      .regex(POLA_PERIODE, "Pakai format bulan YYYY-MM.")
+      .optional(),
+  })
+  .strict();
+
+export type SlipGajiInput = z.infer<typeof slipGajiSchema>;

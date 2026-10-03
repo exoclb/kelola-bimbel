@@ -59,6 +59,7 @@ Operasi jurnal milik guru ada di `src/services/jurnal.service.ts` (simpan, riway
 | GET    | `/api/admin/status-pemantauan` | 200, angka ringkas pantauan untuk pembaruan berkala                     |
 | GET    | `/api/admin/gaji`              | 200, rekap gaji semua guru pada satu bulan (owner)                      |
 | PATCH  | `/api/admin/gaji`              | 200, tandai/batalkan pembayaran gaji satu guru pada satu bulan          |
+| GET    | `/api/admin/gaji/slip`         | 200, unduh slip gaji satu guru sebagai dokumen HTML                     |
 | GET    | `/api/notifikasi`              | 200, notifikasi milik akun yang sedang masuk (bisa saring belum dibaca) |
 | PATCH  | `/api/notifikasi`              | 200, tandai notifikasi tertentu atau semua sebagai sudah dibaca         |
 | POST   | `/api/jurnal`                  | 200, simpan & kirim jurnal mengajar (idempoten per jadwal + tanggal)    |
@@ -89,6 +90,8 @@ Operasi jurnal milik guru ada di `src/services/jurnal.service.ts` (simpan, riway
 `PATCH /api/admin/gaji` menandai pembayaran: `{ "guruId", "periode": "YYYY-MM", "dibayar": true|false }`. Saat ditandai dibayar, jumlah jam, tarif, dan total gaji disalin ke `salary_recaps` sebagai bukti — kalau tarif atau jurnal berubah setelahnya, catatan pembayaran tetap seperti saat itu, sementara angka di rekap selalu dihitung ulang dari data terbaru. Satu guru hanya punya satu catatan per bulan, jadi mengirim ulang memperbarui baris yang sama (tidak menumpuk), dan `dibayar: false` mengembalikan statusnya menjadi `belum_dibayar` sekaligus menghapus tanggal pembayarannya. Id guru yang tidak dikenal dijawab 404, dan endpoint ini juga wajib lewat izin `gaji: read-any`.
 
 `GET /api/gaji` adalah pasangan milik sendiri dari `/api/admin/gaji`: guru yang sedang masuk menerima rekap dan rincian jam ngajarnya pada satu bulan (`periode` `YYYY-MM`, bawaan bulan berjalan). Hasilnya `{ "data": { "periode", "tarifPerJam", "tarifDiatur", "guru": { guruId, guruNama, guruEmail, jumlahJurnal, totalJam, tarifPerJam, totalGaji, statusPembayaran, tanggalDibayar, rincian: [...] } } }`. Id guru selalu diambil dari sesi — parameter `guruId` tidak diterima (ditolak 422), jadi guru tidak bisa membaca gaji orang lain lewat endpoint ini.
+
+`GET /api/admin/gaji/slip?guruId=…&periode=YYYY-MM` mengunduh slip gaji satu guru sebagai dokumen HTML mandiri (`Content-Disposition: attachment`, nama berkas `slip-gaji-<nama-guru>-<periode>.html`). Isinya sama dengan yang tampil di halaman slip: identitas bimbel, identitas guru, tabel rincian jam per pertemuan, total jam × tarif, dan status pembayaran beserta tanggalnya. Gayanya ditulis di dalam dokumen dan tidak ada berkas luar, jadi berkasnya bisa langsung dicetak atau dikirim ke guru tanpa aplikasi. Dijaga `gaji: read-any`; id guru yang tidak dikenal dijawab 404.
 
 ## Role-based access
 

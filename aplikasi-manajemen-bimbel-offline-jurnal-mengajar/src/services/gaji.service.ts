@@ -336,3 +336,21 @@ export async function tandaiPembayaranGaji(
 
   return { status: "tersimpan", pembayaran: tersimpan };
 }
+
+/**
+ * Rekap gaji seorang guru yang dipilih owner (bukan dari sesi). Mengembalikan
+ * `null` kalau akunnya tidak ada, dan hanya aman dipanggil dari endpoint yang
+ * dijaga izin `gaji: read-any`.
+ */
+export async function rekapGajiAnyGuru(
+  periode: string,
+  guruId: string,
+): Promise<RekapGajiGuru | null> {
+  const [guru] = await db
+    .select({ id: user.id, nama: user.name, email: user.email })
+    .from(user)
+    .where(eq(user.id, guruId))
+    .limit(1);
+  if (!guru) return null;
+  return rekapGajiGuru(periode, guru);
+}
