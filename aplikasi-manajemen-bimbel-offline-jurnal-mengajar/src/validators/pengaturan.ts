@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { skemaLimit, skemaOffset } from "@/validators/bersama";
 import { DAFTAR_JENIS_NOTIFIKASI } from "@/lib/notifikasi";
 import { skemaTanggal } from "@/validators/tanggal";
 
@@ -60,8 +61,8 @@ export const STATUS_AKUN = ["semua", "aktif", "nonaktif"] as const;
 
 export const listGuruSchema = z
   .object({
-    limit: z.coerce.number().int().min(1).max(100).default(50),
-    offset: z.coerce.number().int().min(0).max(1_000_000).default(0),
+    limit: skemaLimit(50),
+    offset: skemaOffset,
     // Kata kunci bebas: dicocokkan ke nama dan email akun.
     cari: z.string().trim().max(120).optional(),
     status: z.enum(STATUS_AKUN).default("semua"),

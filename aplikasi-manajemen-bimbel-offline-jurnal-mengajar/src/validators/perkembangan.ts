@@ -1,4 +1,10 @@
 import { z } from "zod";
+import {
+  pesanRentang,
+  rentangSah,
+  skemaLimit,
+  skemaOffset,
+} from "@/validators/bersama";
 import { skemaTanggal } from "@/validators/tanggal";
 
 const nilai = z.number().min(0).max(100);
@@ -7,8 +13,8 @@ const catatanPerkembangan = z.string().trim().max(1_000);
 
 export const listPerkembanganSchema = z
   .object({
-    limit: z.coerce.number().int().min(1).max(100).default(50),
-    offset: z.coerce.number().int().min(0).max(1_000_000).default(0),
+    limit: skemaLimit(50),
+    offset: skemaOffset,
     // Menyaring catatan satu anak saja, misalnya untuk laporan ke orang tua.
     muridId: z.string().uuid().optional(),
     dari: skemaTanggal.optional(),
@@ -17,13 +23,7 @@ export const listPerkembanganSchema = z
     cari: z.string().trim().max(120).optional(),
   })
   .strict()
-  .refine(
-    (nilai) => !nilai.dari || !nilai.sampai || nilai.dari <= nilai.sampai,
-    {
-      path: ["sampai"],
-      message: "Tanggal akhir tidak boleh lebih awal dari tanggal mulai.",
-    },
-  );
+  .refine(rentangSah, { path: ["sampai"], message: pesanRentang });
 
 export type ListPerkembanganInput = z.infer<typeof listPerkembanganSchema>;
 
@@ -62,8 +62,8 @@ export const catatanIdSchema = z.string().uuid();
 export const riwayatPerkembanganSchema = z
   .object({
     muridId: z.string().uuid(),
-    limit: z.coerce.number().int().min(1).max(100).default(50),
-    offset: z.coerce.number().int().min(0).max(1_000_000).default(0),
+    limit: skemaLimit(50),
+    offset: skemaOffset,
   })
   .strict();
 

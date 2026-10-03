@@ -1,4 +1,10 @@
 import { z } from "zod";
+import {
+  pesanRentang,
+  rentangSah,
+  skemaLimit,
+  skemaOffset,
+} from "@/validators/bersama";
 import { skemaTanggal } from "@/validators/tanggal";
 
 const kehadiranMurid = z
@@ -64,20 +70,14 @@ export const jurnalIdSchema = z.string().uuid();
 
 export const listJurnalSchema = z
   .object({
-    limit: z.coerce.number().int().min(1).max(100).default(20),
-    offset: z.coerce.number().int().min(0).max(1_000_000).default(0),
+    limit: skemaLimit(20),
+    offset: skemaOffset,
     classId: z.string().uuid().optional(),
     dari: skemaTanggal.optional(),
     sampai: skemaTanggal.optional(),
   })
   .strict()
-  .refine(
-    (value) => !value.dari || !value.sampai || value.dari <= value.sampai,
-    {
-      message: "Tanggal 'dari' harus lebih awal daripada 'sampai'.",
-      path: ["sampai"],
-    },
-  );
+  .refine(rentangSah, { path: ["sampai"], message: pesanRentang });
 
 export type ListJurnalInput = z.infer<typeof listJurnalSchema>;
 
@@ -90,8 +90,8 @@ export const listJurnalHarianSchema = z
     // Id akun dibuat Better Auth, bukan UUID, jadi dibatasi panjangnya saja.
     guruId: z.string().min(1).max(64).optional(),
     cabang: z.string().min(1).max(120).optional(),
-    limit: z.coerce.number().int().min(1).max(100).default(50),
-    offset: z.coerce.number().int().min(0).max(1_000_000).default(0),
+    limit: skemaLimit(20),
+    offset: skemaOffset,
   })
   .strict();
 

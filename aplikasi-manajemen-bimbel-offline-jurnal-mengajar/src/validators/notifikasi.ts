@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { skemaLimit, skemaOffset } from "@/validators/bersama";
 
 // `belumDibaca` datang dari query string, jadi diterjemahkan eksplisit:
 // z.coerce.boolean() akan menganggap "false" sebagai true.
@@ -8,8 +9,8 @@ const belumDibaca = z
 
 export const listNotifikasiSchema = z
   .object({
-    limit: z.coerce.number().int().min(1).max(100).default(20),
-    offset: z.coerce.number().int().min(0).max(1_000_000).default(0),
+    limit: skemaLimit(20),
+    offset: skemaOffset,
     belumDibaca: belumDibaca.optional(),
   })
   .strict();

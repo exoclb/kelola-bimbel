@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { skemaLimit, skemaOffset } from "@/validators/bersama";
 import { HARI_DALAM_SEMINGGU } from "@/lib/tanggal";
 import { skemaTanggal } from "@/validators/tanggal";
 
@@ -21,8 +22,8 @@ const jadwal = z
 
 export const listKelasSchema = z
   .object({
-    limit: z.coerce.number().int().min(1).max(100).default(50),
-    offset: z.coerce.number().int().min(0).max(1_000_000).default(0),
+    limit: skemaLimit(50),
+    offset: skemaOffset,
     // Kata kunci bebas: nama kelas, cabang, atau nama guru pengampu.
     cari: z.string().trim().max(120).optional(),
   })
