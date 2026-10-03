@@ -43,7 +43,7 @@ Errors use `{ "error": { "code": "...", "message": "..." } }`, with field `detai
 
 App features follow the same structure as Notes: route → `withApiSession` → validator → service → Drizzle table.
 
-Operasi jurnal milik guru ada di `src/services/jurnal.service.ts` (simpan, riwayat, detail, koreksi), sedangkan pembacaan lintas akun untuk pantauan owner — ringkasan harian, deteksi kelas kosong, daftar jurnal harian, saringan — ada di `src/services/pemantauan.service.ts`. Fungsi yang menjangkau akun lain memakai akhiran `Any` dan hanya boleh dipanggil dari endpoint yang dijaga izin role.
+Operasi jurnal milik guru ada di `src/services/jurnal.service.ts` (simpan, riwayat, detail, koreksi), pembacaan lintas akun untuk pantauan owner — ringkasan harian, deteksi kelas kosong, daftar jurnal harian, saringan — ada di `src/services/pemantauan.service.ts`, dan perhitungan gaji (jam mengajar × tarif yang berlaku) ada di `src/services/gaji.service.ts`. Fungsi yang menjangkau akun lain memakai akhiran `Any` dan hanya boleh dipanggil dari endpoint yang dijaga izin role.
 
 | Method | Path                           | Result                                                                  |
 | ------ | ------------------------------ | ----------------------------------------------------------------------- |

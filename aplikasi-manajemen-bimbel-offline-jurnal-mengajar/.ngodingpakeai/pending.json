@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "e6f5b64ef841df6b58afbc96ab52d015b9c6d31b",
+  "generatedForCommit": "57ac6891ae7e132b14201b7dae2b34b2535c4ec4",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -172,7 +172,7 @@
     },
     {
       "path": "docs/backend.md",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "markdown",
       "size": 18602
     },
@@ -243,6 +243,12 @@
       "size": 1468
     },
     {
+      "path": "drizzle/0006_tarif_gaji.sql",
+      "reason": "new",
+      "language": "sql",
+      "size": 412
+    },
+    {
       "path": "drizzle/meta/0000_snapshot.json",
       "reason": "needs_summary",
       "language": "json",
@@ -279,10 +285,16 @@
       "size": 32457
     },
     {
-      "path": "drizzle/meta/_journal.json",
-      "reason": "needs_summary",
+      "path": "drizzle/meta/0006_snapshot.json",
+      "reason": "new",
       "language": "json",
-      "size": 881
+      "size": 34078
+    },
+    {
+      "path": "drizzle/meta/_journal.json",
+      "reason": "changed",
+      "language": "json",
+      "size": 1019
     },
     {
       "path": "drizzle.config.ts",
@@ -550,13 +562,13 @@
     },
     {
       "path": "src/app/api/admin/ringkasan-guru/route.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1248
     },
     {
       "path": "src/app/api/admin/status-pemantauan/route.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1015
     },
@@ -868,9 +880,9 @@
     },
     {
       "path": "src/db/schema/index.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 467
+      "size": 502
     },
     {
       "path": "src/db/schema/journal-attendances.ts",
@@ -895,6 +907,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 1144
+    },
+    {
+      "path": "src/db/schema/salary-settings.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1199
     },
     {
       "path": "src/db/schema/schedules.ts",
@@ -1030,7 +1048,7 @@
     },
     {
       "path": "src/services/pemantauan.service.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 11588
     },
@@ -1042,7 +1060,7 @@
     },
     {
       "path": "src/validators/jurnal.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 4003
     },
