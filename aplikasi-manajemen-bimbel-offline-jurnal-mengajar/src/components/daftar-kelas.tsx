@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   CalendarDays,
   Clock,
@@ -46,7 +46,14 @@ export function DaftarKelas({
 }: DaftarKelasProps) {
   const [daftar, setDaftar] = useState(daftarAwal);
   const [penempatan, setPenempatan] = useState(penempatanAwal);
+  /**
+   * Cermin penempatan yang diperbarui seketika. Dua panel kelas bisa diklik
+   * pada render yang sama, dan saat itu state React masih berisi data lama —
+   * tanpa cermin ini satu murid bisa masuk dua kelas sekaligus.
+   */
+  const penempatanTerkini = useRef(penempatanAwal);
   const [pesan, setPesan] = useState("");
+  const [galat, setGalat] = useState("");
   const [cari, setCari] = useState("");
   // Id kelas yang sedang diubah datanya; sisanya tampil seperti biasa.
   const [ubahUntuk, setUbahUntuk] = useState<string | null>(null);
@@ -65,6 +72,21 @@ export function DaftarKelas({
           kelas.guruNama.toLowerCase().includes(kataKunci),
       )
     : daftar;
+
+  function tampilkanPesan(teks: string) {
+    setPesan(teks);
+    setGalat("");
+  }
+
+  function tampilkanGalat(teks: string) {
+    setGalat(teks);
+    setPesan("");
+  }
+
+  function simpanPenempatan(baru: Penempatan[]) {
+    penempatanTerkini.current = baru;
+    setPenempatan(baru);
+  }
 
   function namaMurid(muridId: string) {
     return daftarMurid.find((murid) => murid.id === muridId)?.nama ?? "Murid";
@@ -133,7 +155,7 @@ export function DaftarKelas({
         .sort((a, b) => a.namaKelas.localeCompare(b.namaKelas, "id")),
     );
     setUbahUntuk(null);
-    setPesan(
+    tampilkanPesan(
       kelas && kelas.namaKelas !== perubahan.namaKelas
         ? `Kelas ${kelas.namaKelas} diubah menjadi ${perubahan.namaKelas}.`
         : `Perubahan ${perubahan.namaKelas} disimpan.`,
@@ -146,12 +168,25 @@ export function DaftarKelas({
         a.namaKelas.localeCompare(b.namaKelas, "id"),
       ),
     );
-    setPesan(`Kelas ${kelas.namaKelas} ditambahkan.`);
+    tampilkanPesan(`Kelas ${kelas.namaKelas} ditambahkan.`);
   }
 
   function tempatkanMurid(kelasId: string, muridId: string) {
-    setPenempatan((sebelumnya) => [
-      ...sebelumnya,
+    // Satu murid hanya boleh punya satu penempatan aktif, jadi penempatan
+    // kedua ditolak dengan pesan yang menyebut kelasnya.
+    const sudahAda = penempatanTerkini.current.find(
+      (baris) => baris.muridId === muridId && baris.status === "aktif",
+    );
+    if (sudahAda) {
+      const kelasLama = daftar.find((baris) => baris.id === sudahAda.kelasId);
+      tampilkanGalat(
+        `${namaMurid(muridId)} sudah terdaftar di ${kelasLama?.namaKelas ?? "kelas lain"}. Satu murid hanya boleh punya satu kelas.`,
+      );
+      return;
+    }
+
+    simpanPenempatan([
+      ...penempatanTerkini.current,
       {
         muridId,
         kelasId,
@@ -159,18 +194,18 @@ export function DaftarKelas({
         status: "aktif",
       },
     ]);
-    setPesan(`${namaMurid(muridId)} ditempatkan di kelas ini.`);
+    tampilkanPesan(`${namaMurid(muridId)} ditempatkan di kelas ini.`);
   }
 
   function keluarkanMurid(kelasId: string, muridId: string) {
-    setPenempatan((sebelumnya) =>
-      sebelumnya.map((baris) =>
+    simpanPenempatan(
+      penempatanTerkini.current.map((baris) =>
         baris.kelasId === kelasId && baris.muridId === muridId
           ? { ...baris, status: "selesai" }
           : baris,
       ),
     );
-    setPesan(`${namaMurid(muridId)} dikeluarkan dari kelas ini.`);
+    tampilkanPesan(`${namaMurid(muridId)} dikeluarkan dari kelas ini.`);
   }
 
   return (
@@ -204,6 +239,11 @@ export function DaftarKelas({
         <p role="status" className="text-sm text-muted-foreground">
           {pesan}
         </p>
+        {galat && (
+          <p role="alert" className="text-sm text-destructive">
+            {galat}
+          </p>
+        )}
       </div>
 
       {cocok.length === 0 ? (
@@ -289,7 +329,7 @@ export function DaftarKelas({
                         ubahJadwal(kelas.id, (jadwalLama) =>
                           [...jadwalLama, jadwal].sort(urutkanJadwal),
                         );
-                        setPesan(
+                        tampilkanPesan(
                           `Jadwal ${jadwal.hari} ${jadwal.jamMulai} ditambahkan ke ${kelas.namaKelas}.`,
                         );
                       }}
