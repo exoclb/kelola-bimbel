@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "ff9ee125fa5ad99e6dd73d4ae03c0b4c7a16158f",
+  "generatedForCommit": "e6f5b64ef841df6b58afbc96ab52d015b9c6d31b",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -172,9 +172,9 @@
     },
     {
       "path": "docs/backend.md",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "markdown",
-      "size": 17882
+      "size": 18602
     },
     {
       "path": "docs/deployment.md",
@@ -304,7 +304,7 @@
     },
     {
       "path": "e2e/pemantauan.spec.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 4869
     },
@@ -550,9 +550,15 @@
     },
     {
       "path": "src/app/api/admin/ringkasan-guru/route.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 1242
+      "size": 1248
+    },
+    {
+      "path": "src/app/api/admin/status-pemantauan/route.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1015
     },
     {
       "path": "src/app/api/auth/[...all]/route.ts",
@@ -940,7 +946,7 @@
     },
     {
       "path": "src/lib/auth.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1665
     },
@@ -1024,9 +1030,9 @@
     },
     {
       "path": "src/services/pemantauan.service.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 10379
+      "size": 11588
     },
     {
       "path": "src/validators/jadwal.ts",
@@ -1036,9 +1042,9 @@
     },
     {
       "path": "src/validators/jurnal.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 3972
+      "size": 4003
     },
     {
       "path": "src/validators/notes.ts",
