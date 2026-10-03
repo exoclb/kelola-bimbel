@@ -1,0 +1,899 @@
+{
+ "package-lock.json": {
+  "summary": "Berkas lockfile npm turunan (generated) untuk proyek \"ngodingpakeai-starter\" versi 0.1.0 dengan lockfileVersion 3, berisi 627 entri paket beserta resolved URL dan integrity hash. Mencatat dependensi runtime utama (next 16.3.4, react 19.2.8, better-auth 1.7.3, drizzle-orm 0.45.2, pg 8.23.0, zod, radix-ui, motion, lucide-react) dan devDependencies (typescript, tailwindcss, drizzle-kit, @playwright/test, eslint, prettier). Tidak perlu dibaca penuh; hanya mencerminkan hasil instalasi, bukan logika aplikasi."
+ },
+ ".codex/skills/ngodingpakeai/SKILL.md": {
+  "summary": "Skill untuk agen Codex yang menjelaskan alur sinkronisasi repo ke NgodingPakeAI: menyebut workspace ID, token `ngpk_` lewat env `NGODINGPAKEAI_TOKEN` atau flag `--token`, loop perintah CLI `npx ngodingpakeai doctor|connect|sync`, dan format berkas `summaries.json` berupa objek datar path→ringkasan. Juga memuat aturan keras (kode mentah tidak boleh diunggah, CLI sebagai gerbang keamanan) serta alur mengerjakan tugas lewat `task next`."
+ },
+ "README.md": {
+  "summary": "Dokumentasi utama starter edisi PostgreSQL: Next.js App Router, Drizzle ORM + PostgreSQL, Better Auth, Tailwind v4, shadcn/ui, dan Motion. Menjelaskan alur `npm run setup`/`npm run dev`, dukungan `DATABASE_URL` eksternal, tabel perintah `db:*`, `doctor`, `role:set`, contoh standar backend Notes API (route → services → Drizzle), serta ringkasan fitur dan lisensi."
+ },
+ "THIRD_PARTY_NOTICES.md": {
+  "summary": "Catatan lisensi pihak ketiga. Menyatakan primitif UI di `src/components/ui` berasal dari shadcn/ui (MIT, copyright 2023 shadcn) sehingga teks lisensi MIT pada LICENSE berlaku untuk berkas tersebut, sementara dependensi lain tetap memakai lisensi masing-masing."
+ },
+ "compose.dev.yaml": {
+  "summary": "Definisi Docker Compose khusus database pengembangan (aplikasi Next.js berjalan di host). Berisi satu service `postgres` dengan image `postgres:17-alpine`, kredensial dari variabel env, port yang dipublikasikan hanya di loopback `127.0.0.1:${POSTGRES_PORT}:5432`, volume persisten `postgres-data`, dan healthcheck `pg_isready`."
+ },
+ "docs/local-development.md": {
+  "summary": "Panduan pengembangan lokal: menjelaskan pembagian peran (`compose.dev.yaml` menjalankan PostgreSQL 17 di Docker, Next.js di komputer), langkah `npm run setup` dan `npm run dev`, tabel perintah `db:up`/`db:status`/`db:logs`/`db:down`/`db:migrate`/`doctor`, penanganan koneksi PostgreSQL eksternal, serta verifikasi setup bersih lewat `npm run test:setup`."
+ },
+ "drizzle/0001_notes.sql": {
+  "summary": "Berkas migrasi SQL Drizzle yang membuat tabel `notes` (id uuid primary key, user_id text, title varchar(160), content text, created_at/updated_at timestamptz), menambahkan foreign key `notes_user_id_user_id_fk` ke `public.user` dengan ON DELETE cascade, dan membuat indeks `notes_user_created_id_idx` pada (user_id, created_at desc, id desc)."
+ },
+ "drizzle/meta/0005_snapshot.json": {
+  "summary": "Snapshot metadata skema Drizzle (berkas turunan/generated, version 7, dialect postgresql) berisi id dan prevId migrasi. Mendaftarkan tabel `user`, `session`, `account`, `verification`, `notes`, `classes`, `students`, `schedules`, `teaching_journals`, `journal_attendances`, `notifications`, `notification_preferences`, serta enum `status_jurnal` lengkap dengan kolom, foreign key, dan indeksnya."
+ },
+ "e2e/akun.spec.ts": {
+  "summary": "Uji end-to-end Playwright untuk endpoint pendaftaran `/api/akun`. Memverifikasi penolakan permintaan tanpa Origin yang benar atau dengan Origin asing (status 403, kode `FORBIDDEN_ORIGIN`), dan penolakan kunci `peran` dari klien (status 422, `VALIDATION_ERROR` dengan detail 'Unrecognized key: \"peran\"')."
+ },
+ "scripts/doctor.mjs": {
+  "summary": "Skrip diagnostik `npm run doctor` berbasis Node: memuat environment lalu memeriksa versi Node, panjang `BETTER_AUTH_SECRET` (minimal 32 karakter), bentuk origin `BETTER_AUTH_URL`, koneksi PostgreSQL sekaligus keberadaan tabel auth (user/session/account/verification), berkas instruksi/skill proyek, dan konfigurasi Context7; keluar dengan kode 1 bila ada kegagalan."
+ },
+ "src/app/(auth)/lupa-password/page.tsx": {
+  "summary": "Halaman Next.js untuk rute `/lupa-password` di grup route `(auth)`. Menetapkan metadata judul 'Lupa Sandi' dan merender komponen klien `FormLupaSandi` dari `@/components/form-lupa-sandi`."
+ },
+ "src/app/(auth)/sign-up/page.tsx": {
+  "summary": "Halaman Next.js untuk rute `/sign-up` di grup route `(auth)`. Menetapkan metadata judul 'Create an account' dan merender komponen `AuthForm` dari `@/components/auth-form` dengan prop `mode=\"sign-up\"`."
+ },
+ "src/app/(protected)/app/jurnal/riwayat/page.tsx": {
+  "summary": "Halaman server rute `/app/jurnal/riwayat`: memanggil `requireSession()`, memvalidasi `searchParams` (kelas, dari, sampai) terhadap `getKelasRiwayat()` dan pola tanggal `YYYY-MM-DD`, mendeteksi rentang tanggal terbalik, lalu merender `DaftarRiwayatJurnal` dengan data dari `getRiwayatJurnal()` (keduanya di `@/lib/mock-jurnal`) beserta pesan filter."
+ },
+ "src/app/(protected)/app/murid/page.tsx": {
+  "summary": "Halaman server rute `/app/murid`: cukup memanggil `requireSession()` karena guru dan owner sama-sama boleh melihat data murid, lalu merender komponen `DaftarMurid` dengan data awal dari `getDaftarMurid()` di `@/lib/mock-murid`."
+ },
+ "src/app/api/gaji/route.ts": {
+  "summary": "Route handler GET `/api/gaji` (runtime nodejs) untuk rekap dan rincian jam mengajar guru yang sedang masuk. Memakai `withApiSession` sehingga identitas diambil dari sesi, memvalidasi query `periode` lewat `periodeGajiSchema`, dan memanggil `rekapGajiGuru` (default `periodeBulan(new Date())`)."
+ },
+ "src/app/api/masuk/route.ts": {
+  "summary": "Route handler POST `/api/masuk` untuk login email+sandi: memeriksa origin (`assertSameOrigin`), memvalidasi `masukSchema`, meneruskan ke Better Auth `/api/auth/sign-in/email` via `callAuthHandler`, menerjemahkan galat lewat helper `galatMasuk` (`INVALID_EMAIL_OR_PASSWORD` → 401, `BANNED_USER` → 403), lalu mengembalikan data user, `peran`, `tujuan` (`homePathUntukPeran`), dan cookie sesi."
+ },
+ "src/app/api/perkembangan/[id]/route.ts": {
+  "summary": "Route dinamis `/api/perkembangan/[id]` (runtime nodejs) untuk satu catatan perkembangan: GET dengan izin `perkembangan:read` via `withApiPermission` memanggil `getCatatanPerkembangan`; PATCH dan DELETE dengan izin `write` memakai id sesi guru pada `updateCatatanPerkembangan`/`hapusCatatanPerkembangan`, membalas 404 bila catatan bukan milik guru tersebut dan 204 untuk hapus."
+ },
+ "src/app/api/perkembangan/route.ts": {
+  "summary": "Route `/api/perkembangan` (runtime nodejs): GET berizin `perkembangan:read` mengembalikan daftar catatan dari `listCatatanPerkembangan` dengan filter `listPerkembanganSchema` (muridId, dari, sampai, cari); POST berizin `write` membuat catatan lewat `createCatatanPerkembangan` dengan penulis dari sesi, membalas 404 saat murid tidak ada dan 201 plus header `Location` saat sukses."
+ },
+ "src/components/daftar-riwayat-jurnal.tsx": {
+  "summary": "Komponen tampilan `DaftarRiwayatJurnal` untuk halaman riwayat jurnal: menampilkan jurnal terbaru di atas, menghitung total jam mengajar, menyediakan kartu filter kelas dan rentang tanggal yang dikirim lewat query URL (bukan disaring di klien), menampilkan pesan filter, lalu daftar kartu jurnal memakai `LabelStatusJurnal`, `formatJam`, dan `formatTanggalLengkap`."
+ },
+ "src/components/kolom-pencarian.tsx": {
+  "summary": "Komponen klien `KolomPencarian`: kolom input `type=\"search\"` dengan ikon `Search`, label tersembunyi (`sr-only`) dan id dari `useId()`, dikendalikan props `nilai`/`onUbah` serta `label`/`placeholder`; dipakai bersama oleh halaman data murid dan kelas agar pencarian seragam."
+ },
+ "src/components/panel-penempatan.tsx": {
+  "summary": "Komponen klien `PanelPenempatan` beserta tipe `MuridDiKelas`: menampilkan daftar murid yang terdaftar di satu kelas (usia via `hitungUsia`, orang tua, `formatTanggalLengkap`) dan select murid yang belum ditempatkan, dengan callback `onTambah`/`onKeluarkan` untuk memasukkan atau mengeluarkan murid dari kelas."
+ },
+ "src/components/ui/checkbox.tsx": {
+  "summary": "Primitif UI `Checkbox` bergaya shadcn/ui yang membungkus `CheckboxPrimitive.Root` dari paket `radix-ui`, memakai helper `cn` untuk kelas Tailwind, dukungan `data-slot`, state checked/invalid, serta indikator centang `CheckIcon`."
+ },
+ "src/db/schema/account.ts": {
+  "summary": "Skema Drizzle untuk tabel `account` (Better Auth): kolom id, accountId, providerId, userId yang mereferensi `user.id` dengan onDelete cascade, accessToken/refreshToken/idToken, masa berlaku token, scope, password, createdAt/updatedAt dengan `$onUpdate`, plus indeks `account_user_id_idx`."
+ },
+ "src/lib/api.ts": {
+  "summary": "Utilitas API sisi server (`server-only`): kelas `ApiError`, `assertSameOrigin` (menolak mutasi tanpa Origin yang cocok dengan `BETTER_AUTH_URL`), pembungkus `withApiError` yang menyeragamkan bentuk error ApiError/ZodError (422) / 500 dan header `Cache-Control: no-store`, serta `withApiSession`, `withApiPermission`, `callAuthHandler`, dan `readJson`."
+ },
+ "src/lib/jurnal.ts": {
+  "summary": "Modul helper hitungan jam mengajar yang dipakai bersama tampilan guru dan pantauan owner: `hitungJamMengajar(jamMulai, jamSelesai)` menghitung selisih jam (mis. 07:00→08:30 = 1,5) dan `formatJam(nilai)` memformatnya dengan pemisah desimal Indonesia (\"1,5 jam\")."
+ },
+ "src/lib/mock-akun.ts": {
+  "summary": "Data contoh akun untuk halaman masuk: tipe `AkunMasuk` (id, nama, email, sandi contoh, peran `PeranPengguna`, cabang, statusAktif) dan fungsi `getDaftarAkun()`, `cariAkun(email, sandi)` (trim + lowercase), serta `emailSudahDipakai(email)`. Daftar ini belum tersambung ke tabel `user` Better Auth dan hanya untuk meninjau alur tampilan."
+ },
+ "src/lib/slip-gaji-html.ts": {
+  "summary": "Pembuat slip gaji berupa dokumen HTML mandiri siap cetak A4 (gaya inline, tanpa berkas luar): fungsi `namaBerkasSlip(namaGuru, periode)` menghasilkan nama berkas aman, sedangkan `slipGajiHtml({ baris, periodeTampil, namaBimbel })` merender identitas guru, status pembayaran, tabel rincian tanggal/kelas/jam, dan total gaji memakai `formatRupiah`, `formatJam`, dan `formatTanggalLengkap`."
+ },
+ "src/validators/murid.ts": {
+  "summary": "Skema validasi Zod untuk data murid: `listMuridSchema` (limit 1–100 default 50, offset, kata kunci `cari` yang dicocokkan ke nama murid/orang tua, `.strict()`) dan `createMuridSchema` (nama 1–120, `tanggalLahir` dari `skemaTanggal`, nama/kontak orang tua opsional, `statusAktif` default true), beserta tipe `ListMuridInput` dan `CreateMuridInput`."
+ },
+ ".claude/skills/ngodingpakeai/SKILL.md": {
+  "summary": "Berkas skill NgodingPakeAI: panduan sinkronisasi project memory lewat CLI `npx ngodingpakeai` (doctor, connect, sync --plan, sync, status). Menjelaskan format `summaries.json` datar berisi `summary` dan opsional `sections`, alur task via `task next`/`task start`/`task complete`, workspace ID tetap, serta aturan keras agar tidak pernah mengunggah kode mentah, rahasia, atau memanggil HTTP API langsung."
+ },
+ ".codex/config.toml": {
+  "summary": "Konfigurasi project-scoped untuk Codex: mendaftarkan MCP server `context7` (url https://mcp.context7.com/mcp) dengan `startup_timeout_sec` dan `tool_timeout_sec`, dipakai untuk mengambil dokumentasi library terkini tanpa kredensial."
+ },
+ "AGENTS.md": {
+  "summary": "Instruksi utama agen untuk starter PostgreSQL berbasis NgodingPakeAI: alur first prompt (setup, predev, doctor, dev server), peta kode (src/app, src/lib/auth.ts, src/lib/permissions.ts, src/db/schema, src/services, src/validators, src/components/ui), batasan arsitektur (autentikasi via requireSession/withApiSession, otorisasi withApiPermission), serta perintah verifikasi (`npm run check`, `build`, `test:e2e`). Berkas juga memuat blok skill NgodingPakeAI dan aturan Next.js versi ini."
+ },
+ "e2e/gaji.spec.ts": {
+  "summary": "Tes end-to-end Playwright untuk fitur gaji: memverifikasi endpoint gaji menjawab 401 tanpa sesi, guru hanya menerima rekap gajinya sendiri, guru tidak bisa membuka jalur gaji owner, owner dapat melihat gaji setiap guru dan penandaan pembayaran berlaku, serta halaman rekap gaji hanya untuk owner. Memakai helper `signUp`, `setRole`, `masuk`, `idAkun`, dan kolam koneksi `pg`."
+ },
+ "scripts/create-variant.mjs": {
+  "summary": "Skrip CLI pembuat varian/derivatif starter: menyalin daftar `sources` eksplisit (src, scripts, e2e, drizzle, config, dsb.) ke folder tujuan, dengan `allowed()` memblokir berkas .env/rahasia dan `copySource()` menangani direktori serta symlink. Mengekspor fungsi `createVariant(slug, destination, sourceRoot)` yang memvalidasi slug."
+ },
+ "scripts/lib.mjs": {
+  "summary": "Pustaka helper bersama untuk skrip setup: mengekspor `root`, `assertNode()` (Node >= 22.12), `runNpm()`, `loadEnvironment()` (via @next/env), `availablePostgresPort()`, dan `prepareEnvironment()` yang mengisi BETTER_AUTH_SECRET/DATABASE_URL ke .env.local. Bergantung pada `postgres.mjs` untuk `localDatabaseUrl` dan `databaseUrl`."
+ },
+ "src/app/(protected)/app/pengaturan/gaji/page.tsx": {
+  "summary": "Halaman Pengaturan Bimbel \"Aturan Gaji & Tarif\" (Server Component) yang dijaga `requirePermission({ pengaturan: [\"read\"] })`. Merender `FormAturanGaji` dengan data awal dari `getRiwayatTarif()` dan menyediakan tautan kembali ke /app/pengaturan."
+ },
+ "src/app/api/auth/[...all]/route.ts": {
+  "summary": "Route handler catch-all Better Auth: mengekspor `GET` dan `POST` hasil `toNextJsHandler(auth)` dengan `runtime = \"nodejs\"`, melayani seluruh endpoint autentikasi (sign-in/up, session, admin)."
+ },
+ "src/app/api/kelas/[id]/jadwal/route.ts": {
+  "summary": "Endpoint POST /api/kelas/[id]/jadwal untuk menambah satu jadwal ke kelas lewat `withApiSession`. Memvalidasi `kelasIdSchema` dan `tambahJadwalSchema`, memanggil service `tambahJadwal`, lalu memetakan status ke error 404 (kelas tidak ada), 422 (guru belum ada), dan 409 (jadwal sudah ada)."
+ },
+ "src/app/api/perkembangan/ringkasan/route.ts": {
+  "summary": "Endpoint GET /api/perkembangan/ringkasan yang dijaga `withApiPermission({ perkembangan: [\"read\"] })`. Memvalidasi query dengan `listPerkembanganSchema` (filter muridId, dari/sampai, cari) lalu mengembalikan laporan agregat dari `listRingkasanPerkembangan` berisi jumlah catatan, rata-rata nilai, nilai & sikap terakhir, serta rekap kehadiran per anak."
+ },
+ "src/app/globals.css": {
+  "summary": "Stylesheet global Tailwind v4: mengimpor `tailwindcss` dan `tw-animate-css`, mendefinisikan `@custom-variant dark`, token tema `@theme inline`, variabel warna :root dan .dark (primary, muted, border, destructive), serta aturan base untuk body, seleksi, dan tap-highlight."
+ },
+ "src/app/layout.tsx": {
+  "summary": "Root layout Next.js: menyusun `metadata` (title default/template dan description dari `siteConfig`), membungkus konten dengan `Providers`, dan menyediakan tautan skip-to-content ke #main-content mengimpor globals.css."
+ },
+ "src/app/not-found.tsx": {
+  "summary": "Halaman 404 kustom (Server Component) yang menampilkan kode 404, judul \"This page isn't here\", pesan navigasi, dan tombol `Button` menuju beranda via `Link`."
+ },
+ "src/components/konfirmasi-pengaturan.tsx": {
+  "summary": "Komponen klien kartu konfirmasi setelah pengaturan \"disimpan\": menampilkan `BarisKonfirmasi[]` (label/nilai), catatan bahwa perubahan masih memakai data tiruan, dan tombol \"Ubah lagi\" (`onUbahLagi`). Memindahkan fokus ke kartu lewat `useEffect` dengan `role=\"status\"` agar pembaca layar ikut tahu."
+ },
+ "src/components/label-status-jurnal.tsx": {
+  "summary": "Komponen penanda status jurnal: menerima `JurnalRiwayat[\"status\"]` dan menampilkan lencana \"Sudah ditinjau\" (status direview, warna primary) atau \"Terkirim\" (muted), memakai util `cn`."
+ },
+ "src/components/pemantauan-harian.tsx": {
+  "summary": "Komponen halaman pantauan owner untuk satu hari yang mengelompokkan jurnal per guru. Menerima props `data` (JurnalHarian[]), `kelasKosong`, `saring`, `statusGuru`, `kehadiran`, `tanggalTampil`, `namaOwner`, `hasMore`, dan merender `PanelJurnal`, `PanelNotifikasi`, `SaringPemantauan`, serta `DaftarStatusGuru`/`RingkasanStatusGuru`; memakai `formatJam`."
+ },
+ "src/components/slip-gaji.tsx": {
+  "summary": "Komponen slip gaji satu guru untuk satu bulan dari `BarisRekapGaji` dan `periodeTampil`. Menampilkan identitas guru, rincian jam mengajar, subtotal, dan total dalam format rupiah (`formatRupiah`), dengan gaya `print:` agar rapi saat dicetak; menjadi sumber isi cetak/unduh."
+ },
+ "src/components/ui/input.tsx": {
+  "summary": "Primitif shadcn/ui `Input` untuk elemen <input> dengan styling varian ring, aria-invalid, file, disabled, dan dark mode; meneruskan props React serta menggabungkan className lewat `cn`."
+ },
+ "src/components/ui/textarea.tsx": {
+  "summary": "Primitif shadcn/ui `Textarea` untuk elemen <textarea> dengan field-sizing-content, min-height, styling focus/ring, aria-invalid, dan dark mode; className digabung via `cn`."
+ },
+ "src/db/schema/schedules.ts": {
+  "summary": "Skema Drizzle tabel `schedules` (jadwal mengajar satu kelas pada satu hari): kolom id uuid, classId (FK classes, cascade), guruId (FK user, cascade), hari, jamMulai, jamSelesai, createdAt. Memiliki unique index `schedules_class_hari_jam_idx` (classId, hari, jamMulai) untuk mencegah jadwal ganda dan index `schedules_guru_hari_jam_idx`; dibaca halaman \"Isi Jurnal Hari Ini\"."
+ },
+ "src/db/schema/user.ts": {
+  "summary": "Skema Drizzle tabel `user` milik Better Auth: id, name, email unik, emailVerified, image, `role` (text berisi satu/beberapa peran dipisah koma, default \"user\"), `banned`, banReason, banExpires, createdAt/updatedAt, dan index `user_role_idx` untuk menyaring daftar guru/owner per peran."
+ },
+ "src/lib/env.ts": {
+  "summary": "Validasi environment server-only dengan Zod: mewajibkan `DATABASE_URL` berupa koneksi PostgreSQL valid, `BETTER_AUTH_SECRET` minimal 32 karakter, dan `BETTER_AUTH_URL` berupa origin http/https (default http://localhost:3000). Mengekspor objek `env` hasil parse."
+ },
+ "src/lib/mock-kehadiran.ts": {
+  "summary": "Data contoh kehadiran murid per pertemuan (tipe `KehadiranPertemuan`) sebagai pengganti tabel `journal_attendances` yang API-nya belum ada; mengekspor `getKehadiranAwal()` yang mengembalikan salinan daftar kehadiran."
+ },
+ "src/lib/mock-menu.ts": {
+  "summary": "Susunan menu tampilan per peran: tipe `MenuApp` (href, label, `perlu?: Permissions`), konstanta `MENU_DASAR` dan `MENU_PER_PERAN` untuk guru (termasuk /app/gaji/saya) dan owner (/app/pemantauan, /app/gaji), serta fungsi `menuUntukPeran()` yang mengembalikan salinan. Menu hanya tampilan — halaman/API tetap memeriksa izin sendiri."
+ },
+ "src/lib/mock-pengaturan.ts": {
+  "summary": "Data tiruan Pengaturan Bimbel sebagai pengganti tabel `salary_settings`/`notification_preferences`: tipe `ProfilBimbel`, `AturanGaji`, `PreferensiNotifikasi`, dan fungsi `getProfilBimbel()`, `getRiwayatTarif()`, `getAturanGaji()`, `getDaftarGuru()`, `getPreferensiNotifikasi()`. Riwayat tarif meniru aturan baris terbaru yang berlaku sejak tanggal tertentu."
+ },
+ "src/services/pemantauan.service.ts": {
+  "summary": "Service server-only pembacaan lintas akun untuk pantauan owner (fungsi berakhiran `Any`, hanya aman dari endpoint `withApiPermission`): `listAnyJurnal`, `ringkasanAnyGuruHariIni` (StatusGuruHariIni), `opsiSaringPemantauan`, `listAnyKehadiranJurnal` (KehadiranJurnal), `kelasKosongHariIni` (KelasKosong), dan `statusPemantauan` (StatusPemantauan). Mengkueri tabel teaching_journals, classes, schedules, journal_attendances, dan user dengan agregat jumlah murid/hadir serta paginasi hasMore."
+ },
+ "src/validators/sesi.ts": {
+  "summary": "Validator Zod untuk sesi masuk: `masukSchema` strict berisi `email` (valid, maks 254) dan `sandi` (1–128 karakter, sengaja tanpa aturan isi), beserta tipe `MasukInput`."
+ },
+ ".gitignore": {
+  "summary": "Daftar berkas dan direktori yang diabaikan Git pada proyek bimbel ini, mencakup node_modules, hasil build Next.js (.next, out, dist), environment (.env* kecuali contoh), basis data lokal (*.db, *.sqlite beserta berkas WAL/SHM), laporan Playwright, coverage, dan konfigurasi lokal editor (.claude/settings.local.json, .codex/config.local.toml)."
+ },
+ "agent.md": {
+  "summary": "Berkas pintu masuk agen yang mengarahkan pembaca ke AGENTS.md sebagai instruksi kanonik, lalu menyebut skill starter-setup dan dev-database, serta menegaskan konvensi backend: API route, pemeriksaan sesi Better Auth, validator, service untuk semua query, dan berkas tabel Drizzle terpisah sesuai docs/backend.md."
+ },
+ "components.json": {
+  "summary": "Konfigurasi shadcn/ui untuk proyek: gaya new-york, React Server Components aktif, Tailwind tanpa berkas config (CSS di src/app/globals.css), baseColor neutral dengan CSS variables, ikon lucide, dan alias @/components, @/lib/utils, @/components/ui, @/lib, @/hooks."
+ },
+ "drizzle/0011_peran_pengguna.sql": {
+  "summary": "Migrasi SQL yang mengisi kolom role pada tabel user dengan nilai bawaan 'user' untuk akun lama, menetapkan default 'user', menjadikannya NOT NULL, dan membuat indeks user_role_idx guna mendukung penyaringan berbasis peran."
+ },
+ "drizzle/meta/0003_snapshot.json": {
+  "summary": "Snapshot metadata Drizzle (versi 7, dialect postgresql) untuk kondisi skema sebelum migrasi peran pengguna; mencakup tabel public.user, session, account, verification, notes, classes, students, schedules, teaching_journals, journal_attendances dan enum status_jurnal."
+ },
+ "drizzle/meta/0004_snapshot.json": {
+  "summary": "Snapshot metadata Drizzle lanjutan dari snapshot 0003 (prevId menunjuk 0003), merekam daftar tabel dan enum yang sama setelah perubahan skema; berkas turunan hasil drizzle-kit yang dipakai untuk membangkitkan migrasi, bukan kode aplikasi."
+ },
+ "e2e/auth.spec.ts": {
+  "summary": "Uji end-to-end Playwright untuk autentikasi: pengunjung anonim dialihkan ke /sign-in, alur daftar-sesi-logout-masuk ulang dengan sandi salah ditolak, penolakan permintaan lintas origin (403) dan data pendaftaran tidak valid pada /api/auth/sign-up/email, serta uji tata letak layar sempit 390px dan tombol salin prompt di beranda."
+ },
+ "e2e/lupa-sandi.spec.ts": {
+  "summary": "Uji end-to-end Playwright untuk endpoint POST /api/lupa-sandi yang memastikan permintaan tanpa Origin benar ditolak dengan kode FORBIDDEN_ORIGIN (403), email tidak valid ditolak VALIDATION_ERROR (422), dan email tak terdaftar tetap dijawab {data:{terkirim:true}} demi mencegah penebakan akun."
+ },
+ "playwright.config.ts": {
+  "summary": "Konfigurasi Playwright: hanya boleh dijalankan lewat npm run test:e2e karena mewajibkan STARTER_TEST_DATABASE_URL dan penanda STARTER_TEST_RUN, menjalankan satu worker non-paralel dengan reporter list, baseURL http://localhost:3101, dan webServer `npm run start --port 3101` bermode produksi memakai basis data uji sekali pakai."
+ },
+ "src/app/(auth)/sign-in/page.tsx": {
+  "summary": "Halaman Next.js App Router untuk masuk akun: mengekspor metadata judul 'Sign in' dan merender komponen klien AuthForm dengan mode=\"sign-in\"."
+ },
+ "src/app/(protected)/admin/page.tsx": {
+  "summary": "Halaman admin terlindungi yang memanggil requirePermission({notes:['read-any']}) sehingga tampil not-found tanpa izin tersebut, lalu menampilkan daftar catatan semua akun via listAnyNotes beserta pemiliknya dan tombol kembali ke /app."
+ },
+ "src/app/(protected)/app/kelas/page.tsx": {
+  "summary": "Halaman server 'Kelas & Jadwal' yang hanya memerlukan sesi sah (requireSession), lalu merender komponen DaftarKelas dengan data awal dari getDaftarKelas, getDaftarMurid, dan getPenempatanAwal (masih data mock)."
+ },
+ "src/app/(protected)/app/pemantauan/page.tsx": {
+  "summary": "Halaman 'Pemantauan Harian' untuk owner dengan izin jurnal:read-any; membaca searchParams classId/guruId/cabang, memvalidasi nilainya terhadap opsiSaringPemantauan, lalu memuat listAnyJurnal, ringkasanAnyGuruHariIni, kelasKosongHariIni, dan peta kehadiran per jurnal untuk dirender komponen PemantauanHarian."
+ },
+ "src/app/(protected)/app/pengaturan/notifikasi/page.tsx": {
+  "summary": "Halaman server preferensi notifikasi milik akun sendiri yang cukup memakai requireSession, merender komponen PreferensiNotifikasi dengan daftarAwal dari getPreferensiNotifikasi, serta tombol kembali ke /app/pengaturan."
+ },
+ "src/app/(protected)/app/pengaturan/page.tsx": {
+  "summary": "Halaman utama Pengaturan Bimbel yang memanggil requireSession dan hasPermission(user.id,{pengaturan:['read']}) untuk menentukan flag bolehKelola, lalu merender komponen PengaturanBimbel; kartu pengaturan seluruh bimbel hanya tampil bagi yang berizin."
+ },
+ "src/app/api/lupa-sandi/route.ts": {
+  "summary": "Route API POST /api/lupa-sandi (runtime nodejs) yang memakai assertSameOrigin, validasi lupaSandiSchema, dan meneruskan permintaan ke Better Auth /api/auth/request-password-reset dengan redirectTo /atur-ulang-password; jawabannya selalu {data:{terkirim:true}} agar email tidak bisa ditebak, dan mengembalikan 503 FITUR_BELUM_AKTIF bila reset sandi dimatikan server."
+ },
+ "src/app/api/pengaturan/guru/[id]/route.ts": {
+  "summary": "Route API PATCH /api/pengaturan/guru/[id] berizin pengaturan:write yang memvalidasi id via guruIdSchema serta body via ubahStatusGuruSchema, lalu memanggil ubahStatusGuru untuk mengaktifkan/menonaktifkan akun guru; mengembalikan 404 NOT_FOUND atau 422 AKUN_OWNER bila akun owner dicoba dinonaktifkan."
+ },
+ "src/app/api/perkembangan/riwayat/route.ts": {
+  "summary": "Route API GET /api/perkembangan/riwayat berizin perkembangan:read yang memvalidasi query muridId/limit/offset lewat riwayatPerkembanganSchema lalu memanggil getRiwayatPerkembangan; dipakai halaman riwayat dan laporan ke orang tua, mengembalikan 404 NOT_FOUND bila murid tidak ada."
+ },
+ "src/components/form-profil-bimbel.tsx": {
+  "summary": "Komponen klien Formulir Profil Bimbel: mengelola isian nama, alamat, telepon, email, dan pratinjau logo (PNG/JPG maksimal 1 MB via URL.createObjectURL), memvalidasi semua isian sekaligus, menampilkan masalah dalam role=\"alert\", dan menunjukkan ringkasan tersimpan lewat KonfirmasiPengaturan; data masih lokal/belum dikirim ke server."
+ },
+ "src/components/pengaturan-bimbel.tsx": {
+  "summary": "Komponen server halaman Pengaturan Bimbel yang merangkum profil bimbel, aturan gaji (formatRupiah/getAturanGaji), jumlah akun guru aktif, dan preferensi notifikasi dalam kartu berisi tautan ke /app/pengaturan/profil, /gaji, /guru, dan /notifikasi; kartu bagian pemilik hanya dirender bila prop bolehKelola benar, dan daftar akun menampilkan labelPeran serta status aktif."
+ },
+ "src/components/starter-intro.tsx": {
+  "summary": "Komponen klien beranda starter (StarterIntro) dengan animasi motion/react yang menampilkan judul 'A small base. A world of ideas.', tombol menuju /app atau /sign-up bergantung status signedIn, kotak prompt siap salin lewat CopyPrompt, dan lima kartu teknologi: Next.js, Drizzle+PostgreSQL, Better Auth, Tailwind+shadcn/ui, serta Motion."
+ },
+ "src/components/ui/native-select.tsx": {
+  "summary": "Komponen UI tipis NativeSelect yang membungkus elemen <select> bawaan browser dengan atribut data-slot=\"native-select\" dan kelas Tailwind gabungan via cn; dipakai untuk saringan di dalam form GET agar nilai terkirim sebagai query URL tanpa JavaScript tambahan."
+ },
+ "src/db/schema/salary-recaps.ts": {
+  "summary": "Skema Drizzle tabel salary_recaps berisi catatan pembayaran gaji per guru per bulan (guruId, periodeBulan, totalJam, tarifPerJam, totalGaji, statusPembayaran enum status_pembayaran_gaji, tanggalDibayar) dengan uniqueIndex salary_recaps_guru_periode_idx (satu baris per guru-bulan) dan indeks periode; angkanya salinan saat pembayaran ditandai sebagai bukti audit."
+ },
+ "src/db/schema/teaching-journals.ts": {
+  "summary": "Skema Drizzle tabel teaching_journals untuk jurnal mengajar harian (guruId, classId, scheduleId, tanggal, materi, catatan, jamMengajar, status enum status_jurnal terkirim/direview) dengan uniqueIndex teaching_journals_guru_jadwal_tanggal_idx untuk mencegah jurnal dobel, serta indeks guru-tanggal dan kelas-tanggal; jam mengajar menjadi dasar hitung gaji."
+ },
+ "src/lib/mock-kelas.ts": {
+  "summary": "Data contoh kelas dan jadwal beserta tipe Kelas/JadwalKelas dan konstanta GURU_KELAS, dengan fungsi getDaftarKelas yang menjadi pengganti sementara GET /api/kelas; bentuk datanya mengikuti kolom tabel classes/schedules (nama_kelas, cabang, guru_id, hari, jam_mulai, jam_selesai) agar mudah diganti sumber asli."
+ },
+ "src/services/kehadiran.service.ts": {
+  "summary": "Service server-only kehadiran murid: listKehadiran() menggabungkan journal_attendances dengan teaching_journals, classes, students, dan user, menyaring per muridId/kelasId/rentang tanggal serta mengembalikan meta total/hadir/tidakHadir; ringkasanKehadiranPerMurid() mengagregasi pertemuan dan kehadiran per murid untuk laporan."
+ },
+ "src/validators/jurnal.ts": {
+  "summary": "Validator Zod untuk jurnal mengajar: simpanJurnalSchema (jadwalId, materi, catatan, kehadiran tanpa kelas/tanggal/jam karena dihitung server, menolak murid dobel), koreksiJurnalSchema (hanya materi/catatan/kehadiran), jurnalIdSchema, listJurnalSchema (limit/offset/classId/dari/sampai), serta listJurnalHarianSchema dan filterPemantauanHarianSchema untuk pemantauan owner."
+ },
+ ".agents/skills/dev-database/SKILL.md": {
+  "summary": "Skill panduan kerja untuk database PostgreSQL lokal proyek ini lewat Docker Compose. Menjelaskan alur npm run setup, db:up, db:migrate, db:status, doctor, db:logs, dan db:down, plus aturan menjaga nama project Compose, kredensial, port, serta DATABASE_URL/MIGRATION_DATABASE_URL tetap konsisten. Berguna saat mengubah compose, setup, atau menelusuri masalah koneksi database."
+ },
+ ".ngodingpakeaiignore": {
+  "summary": "Berkas konfigurasi tambahan untuk sinkronisasi NgodingPakeAI, memakai sintaks .gitignore. Hanya berisi komentar contoh pola pengecualian; berkas rahasia, node_modules, hasil build, dan .env selalu diblokir CLI tanpa perlu didaftarkan di sini."
+ },
+ "docs/architecture.md": {
+  "summary": "Dokumentasi arsitektur aplikasi: satu paket Next.js App Router dengan satu database PostgreSQL dan Drizzle. Membahas struktur src (app, components, db/schema, services, validators, lib), alur request API route → session/validation → service → Drizzle, helper getSession/requireSession, pengaturan DATABASE_URL, skema auth Better Auth, aturan UI Server Component/Tailwind v4, serta kompatibilitas TypeScript 5.9 dan ESLint 9."
+ },
+ "docs/backend.md": {
+  "summary": "Panduan standar backend dan kontrak HTTP aplikasi. Menegaskan pembagian tanggung jawab route vs service (service memfilter kepemilikan lewat user id), mendokumentasikan endpoint Notes (/api/notes CRUD), tabel endpoint aplikasi (/api/jurnal, /api/jadwal, /api/murid, /api/gaji, /api/admin/jurnal, /api/admin/ringkasan-guru), format error `{ error: { code, message } }`, aturan origin/CSRF, dan data model seperti classes, schedules, teaching_journals, journal_attendances, student_progress, salary_settings."
+ },
+ "drizzle/0003_jurnal.sql": {
+  "summary": "Migrasi Drizzle yang membuat enum status_jurnal ('terkirim','direview') dan tabel inti bimbel: classes, students, schedules, teaching_journals, dan journal_attendances. Menyertakan foreign key ke tabel user/kelas/murid serta indeks penting seperti teaching_journals_guru_tanggal_idx, schedules_guru_hari_jam_idx, dan indeks unik journal_attendances_journal_student_idx."
+ },
+ "next.config.ts": {
+  "summary": "Konfigurasi Next.js: turbopack.root diarahkan ke process.cwd(), header X-Powered-By dimatikan, dan output \"standalone\" agar build menghasilkan .next/standalone untuk image Docker. Berkas ini hanya menyentuh perilaku build/deploy, bukan fitur aplikasi."
+ },
+ "src/app/(protected)/app/gaji/page.tsx": {
+  "summary": "Halaman server Rekap Gaji Bulanan (RekapGajiPage). Membaca searchParams.periode dengan pola YYYY-MM (bawaan bulan berjalan via periodeBulan), melindungi akses dengan requirePermission({ gaji: [\"read-any\"] }) supaya hanya owner, lalu merender komponen RekapGajiBulanan dari data getRekapGajiBulanan."
+ },
+ "src/app/(protected)/app/gaji/slip/[guruId]/page.tsx": {
+  "summary": "Halaman server Slip Gaji per guru (SlipGajiPage) pada rute dinamis /app/gaji/slip/[guruId]. Memvalidasi periode YYYY-MM, mencari baris rekap lewat getRekapGajiBulanan dan memanggil notFound() bila tidak ada, lalu menampilkan komponen SlipGaji beserta TombolCetakUnduh; dilindungi requirePermission({ gaji: [\"read-any\"] })."
+ },
+ "src/app/(protected)/app/jurnal/page.tsx": {
+  "summary": "Halaman server Jurnal Ngajar (JurnalPage). Mengambil sesi dengan requireSession, menghitung tanggal dan nama hari di server lewat formatTanggalLengkap/namaHari, lalu merender JurnalForm dengan jadwal dari getJadwalHariIni(hari), nama guru, dan tanggal tampil."
+ },
+ "src/app/(protected)/app/jurnal/riwayat/[id]/page.tsx": {
+  "summary": "Halaman server detail jurnal (DetailJurnalPage) pada /app/jurnal/riwayat/[id]. Mengambil parameter id, memvalidasi sesi dengan requireSession, mencari jurnal lewat getJurnalById dan memanggil notFound() jika tidak ada, lalu merender komponen DetailJurnal."
+ },
+ "src/app/(protected)/app/pengaturan/guru/page.tsx": {
+  "summary": "Halaman server Kelola Guru. Dilindungi requirePermission({ pengaturan: [\"read\"] }), menampilkan judul, tautan kembali ke /app/pengaturan, dan komponen DaftarGuru yang diisi data awal getDaftarGuru sebagai pengganti sementara data backend."
+ },
+ "src/app/api/admin/jurnal/route.ts": {
+  "summary": "Route API GET /api/admin/jurnal untuk pantauan owner. Membungkus handler dengan withApiPermission({ jurnal: [\"read-any\"] }), memvalidasi query memakai listJurnalHarianSchema, memberi tanggal bawaan hari ini via tanggalISO, lalu mengembalikan hasil listAnyJurnal dari pemantauan.service. runtime diset nodejs."
+ },
+ "src/app/api/admin/ringkasan-guru/route.ts": {
+  "summary": "Route API GET /api/admin/ringkasan-guru yang memberi ringkasan harian tiap guru (jadwal hari ini dan status jurnal). Menghitung nama hari dari filter tanggal, memvalidasi dengan filterPemantauanHarianSchema, memanggil ringkasanAnyGuruHariIni, dan mengembalikan data plus meta (tanggal, hari, jumlahGuru, sudahMengisi, belumMengisi); dijaga izin jurnal:read-any."
+ },
+ "src/app/api/kelas/[id]/jadwal/[jadwalId]/route.ts": {
+  "summary": "Route API DELETE /api/kelas/[id]/jadwal/[jadwalId] untuk menghapus satu jadwal kelas. Memvalidasi id kelas dan jadwal lewat kelasIdSchema/jadwalIdSchema, memanggil hapusJadwal di kelas.service, mengembalikan 204 bila berhasil atau melempar ApiError 404 NOT_FOUND bila tidak ditemukan; memakai withApiSession."
+ },
+ "src/app/api/kelas/route.ts": {
+  "summary": "Route API /api/kelas: GET mengembalikan daftar kelas beserta jadwalnya dengan saringan ?cari= (nama kelas, cabang, guru) dan paginasi ?limit=&offset= lewat listKelasSchema; POST membuat kelas baru (opsional sekaligus jadwalnya) dengan createKelasSchema dan readJson, membalas 201 plus header Location. Keduanya memakai withApiSession."
+ },
+ "src/app/api/notes/[id]/route.ts": {
+  "summary": "Route API contoh /api/notes/[id] dengan GET, PATCH, dan DELETE. Setiap handler memvalidasi UUID id memakai noteIdSchema, memakai withApiSession, dan memanggil getNote/updateNote/deleteNote dari notes.service dengan session.user.id agar hanya baris milik pengguna yang disentuh; mengembalikan 404 NOT_FOUND bila tidak ada dan 204 tanpa body saat hapus."
+ },
+ "src/app/loading.tsx": {
+  "summary": "Komponen fallback Next.js untuk root loading. Menampilkan teks \"Loading your app…\" di dalam elemen ber-role status dan memakai kelas Tailwind muted, tanpa state atau data."
+ },
+ "src/components/form-catatan-anak.tsx": {
+  "summary": "Komponen client FormCatatanAnak untuk menambah atau mengubah catatan perkembangan satu murid. Menerima props namaMurid, catatanAwal, onSimpan, dan onBatal; menyusun state tanggal, nilai, sikap (dari PILIHAN_SIKAP), dan catatan, lalu mengirim objek bertipe IsiCatatan. Dipakai pada alur student_progress."
+ },
+ "src/components/halaman-masuk.tsx": {
+  "summary": "Komponen client HalamanMasuk untuk masuk guru/owner. Saat ini autentikasinya tiruan: memvalidasi email dan sandi lalu mencocokkannya lewat cariAkun dari lib/mock-akun, menampilkan pesan galat, tombol isi otomatis akun contoh, dan label peran dari labelPeran. Belum memakai Better Auth sungguhan."
+ },
+ "src/components/panel-notifikasi.tsx": {
+  "summary": "Komponen panel pemberitahuan aktivitas owner yang menerima props jurnalMasuk dan kelasKosong (tipe dari pemantauan.service). Menghitung total notifikasi, mengurutkan jurnal terbaru berdasarkan createdAt, dan menampilkan daftar di dalam Card; dirancang agar sumbernya bisa diganti tabel notifications nanti."
+ },
+ "src/components/panel-rincian-jam.tsx": {
+  "summary": "Komponen client PanelRincianJam yang menampilkan rincian jam ngajar sebagai dasar gaji secara collapsible (aria-expanded/aria-controls). Menerima rincian, totalJam, dan tarifPerJam, memformat tanggal dan jam lewat formatTanggalLengkap/formatJam, serta menghitung total dengan formatRupiah dan hitungGaji dari lib/gaji."
+ },
+ "src/components/tombol-cetak-unduh.tsx": {
+  "summary": "Komponen client TombolCetakUnduh untuk dokumen seperti slip gaji dan laporan. Tombol cetak memanggil window.print() (Simpan sebagai PDF), sedangkan tombol unduh menyalin elemen ber-targetId beserta CSS yang dimuat menjadi berkas HTML mandiri via Blob dan URL.createObjectURL, lalu menampilkan pesan status."
+ },
+ "src/components/ui/card.tsx": {
+  "summary": "Sumber komponen shadcn/ui Card beserta subkomponen CardHeader, CardTitle, CardDescription, CardAction, CardContent, dan CardFooter. Semuanya komponen React tipis yang menggabungkan className dengan util cn dari paket \"cn\" dan memberi atribut data-slot untuk styling."
+ },
+ "src/lib/mock-jurnal.ts": {
+  "summary": "Data contoh sementara untuk halaman Jurnal Ngajar beserta tipe kontraknya (Jadwal, MuridKelas, JurnalInput, JurnalRiwayat, KoreksiJurnal, FilterRiwayat). Mengekspor getJadwalHariIni, getRiwayatJurnal, getKelasRiwayat, getJurnalById, pisahMateri, PILIHAN_MATERI, serta stub kirimJurnalStub dan koreksiJurnalStub yang meniru POST/PATCH /api/jurnal sampai service backend dipakai."
+ },
+ "src/validators/gaji.ts": {
+  "summary": "Validator Zod untuk fitur gaji: periodeGajiSchema (periode YYYY-MM opsional), ubahPembayaranGajiSchema (guruId string 1–64, periode, dibayar boolean) untuk menandai pembayaran, slipGajiSchema untuk unduh slip per guru, dan riwayatGajiSchema (tahun 2000–2100 dan bulan opsional). Semua skema bersifat strict."
+ },
+ "tsconfig.json": {
+  "summary": "Konfigurasi TypeScript proyek: strict mode, target ES2017, moduleResolution bundler, jsx react-jsx, dan alias path \"@/*\" ke ./src/*. Mengaktifkan plugin \"next\" serta menyertakan next-env.d.ts, seluruh .ts/.tsx, dan tipe hasil generate Next.js, sambil mengecualikan node_modules."
+ },
+ ".github/workflows/ci.yml": {
+  "summary": "Workflow GitHub Actions bernama \"PostgreSQL starter checks\" yang berjalan pada push dan pull_request dengan izin contents: read. Alurnya: checkout, setup Node dari .nvmrc, lalu menjalankan npm run setup, check, format:check, dan build, dilanjutkan instalasi Chromium Playwright dan npm run test:e2e; artefak test-results/ diunggah saat gagal. Berkas ini menggerakkan gerbang mutu CI untuk seluruh aplikasi bimbel."
+ },
+ "drizzle/0005_notifikasi.sql": {
+  "summary": "Migrasi Drizzle yang membuat tabel notifications (kolom user_id, tipe, pesan, sudah_dibaca, created_at) dan notification_preferences (user_id, jenis_notifikasi, aktif). Keduanya berelasi foreign key ke tabel user dengan ON DELETE cascade, plus indeks notifications_user_dibaca_created_idx, notifications_user_created_idx, dan unique index notification_preferences_user_jenis_idx. Berkas ini menyiapkan penyimpanan pemberitahuan dan preferensi notifikasinya."
+ },
+ "drizzle/0012_profil_bimbel.sql": {
+  "summary": "Migrasi Drizzle yang membuat tabel bimbel_profile berisi nama, alamat, telepon, email, logo, created_at, dan updated_at. Indeks unik bimbel_profile_tunggal_idx pada ekspresi (true) memastikan tabel hanya boleh berisi satu baris profil bimbel. Berkas ini menopang fitur identitas/logo bimbel yang dipakai laporan."
+ },
+ "drizzle/meta/0012_snapshot.json": {
+  "summary": "Berkas snapshot meta Drizzle (versi 7, dialek postgresql) yang dihasilkan otomatis oleh drizzle-kit dan berisi deskripsi lengkap skema seluruh tabel — misalnya public.user beserta kolom dan batasannya. Berkas turunan ini hanya dipakai perkakas migrasi untuk menghitung diff, bukan kode aplikasi; cukup diringkas sebagai artefak generated tanpa dibaca penuh."
+ },
+ "e2e/akun-nonaktif.spec.ts": {
+  "summary": "Uji end-to-end Playwright yang memverifikasi akun dinonaktifkan (banned) kehilangan sesinya dan diblokir saat masuk lagi. Skenarionya memakai helper setBanned lewat pg Pool ke STARTER_TEST_DATABASE_URL, mendaftar via POST /api/akun, memeriksa GET /api/sesi dan /api/murid jadi 401, redirect /app ke /sign-in, lalu POST /api/masuk menjawab 403 dengan kode AKUN_NONAKTIF sebelum akun diaktifkan kembali."
+ },
+ "src/app/(auth)/atur-ulang-password/page.tsx": {
+  "summary": "Server component halaman atur ulang sandi pada route /atur-ulang-password dengan metadata title \"Atur Ulang Sandi\". Halaman membaca searchParams (Promise) untuk mengambil token dari tautan, membersihkannya dengan trim, lalu meneruskannya ke komponen klien FormAturUlangSandi. Berkas ini adalah titik masuk UI pemulihan sandi."
+ },
+ "src/app/(protected)/layout.tsx": {
+  "summary": "Layout server untuk seluruh halaman terproteksi (runtime nodejs) yang memanggil requireSession, menurunkan peran lewat peranDariRole, lalu menyusun menu dari menuUntukPeran sambil menyaring item berdasarkan hasPermission(user.id, item.perlu). Header menampilkan Brand, AppNav, PenandaPengguna, dan SignOutButton, sedangkan konten dibungkus main#main-content. Layout ini menegakkan sesi dan kontrol menu berbasis izin."
+ },
+ "src/app/api/admin/notes/[id]/route.ts": {
+  "summary": "Route handler DELETE /api/admin/notes/[id] (runtime nodejs) yang memakai withApiPermission dengan izin notes: [\"delete-any\"]. ID divalidasi noteIdSchema, lalu deleteAnyNote dipanggil; bila catatan tidak ada dibalas ApiError 404 NOT_FOUND, dan sukses mengembalikan status 204 tanpa isi. Berkas ini menyediakan penghapusan catatan milik akun lain oleh peran berwenang."
+ },
+ "src/app/api/admin/status-pemantauan/route.ts": {
+  "summary": "Route handler GET /api/admin/status-pemantauan (runtime nodejs) yang dijaga withApiPermission dengan izin jurnal: [\"read-any\"]. Ia memvalidasi query lewat filterPemantauanHarianSchema, menghitung nama hari (namaHari) dan tanggal ISO, lalu mengembalikan statusPemantauan(hari, filter) sebagai ringkasan angka pantauan yang sengaja kecil untuk polling halaman owner."
+ },
+ "src/app/api/atur-ulang-sandi/route.ts": {
+  "summary": "Route handler POST /api/atur-ulang-sandi (runtime nodejs) yang menukar token tautan dengan sandi baru. Alurnya memanggil assertSameOrigin, memvalidasi aturUlangSandiSchema, lalu meneruskan permintaan ke handler Better Auth /api/auth/reset-password lewat callAuthHandler. Fungsi galatAturUlang menerjemahkan kode INVALID_TOKEN, PASSWORD_TOO_SHORT, dan PASSWORD_TOO_LONG menjadi ApiError 422 berpesan Bahasa Indonesia, sementara batas laju 429 diteruskan apa adanya."
+ },
+ "src/app/api/pengaturan/guru/route.ts": {
+  "summary": "Route handler pengaturan guru (runtime nodejs). GET /api/pengaturan/guru dilindungi izin pengaturan: [\"read\"] dan mengembalikan listAkunBimbel(filter) hasil validasi listGuruSchema; POST berizin pengaturan: [\"write\"] menerima tambahGuruSchema dan memanggil tambahGuru, membalas 201, atau ApiError 409 EMAIL_SUDAH_DIPAKAI bila email sudah terpakai. Akun baru selalu berperan guru dan owner tidak bisa dinonaktifkan lewat endpoint ini."
+ },
+ "src/app/api/pengaturan/notifikasi/route.ts": {
+  "summary": "Route handler preferensi notifikasi milik akun yang sedang masuk (runtime nodejs) berbasis withApiSession. GET mengembalikan ambilPreferensiNotifikasi(session.user.id); PATCH memvalidasi ubahPreferensiNotifikasiSchema atas pasangan jenis dan aktif, lalu mengembalikan daftar terbaru hasil ubahPreferensiNotifikasi. Karena tidak ada penyaring, tiap akun hanya melihat dan mengubah preferensinya sendiri."
+ },
+ "src/app/page.tsx": {
+  "summary": "Server component halaman beranda aplikasi yang memanggil getSession untuk mengetahui status masuk. Halaman menampilkan header dengan Brand dan label \"POSTGRES / 01\", komponen StarterIntro dengan prop signedIn, serta footer bertanda ngodingpakeai / starters. Berkas ini adalah landing page yang mengarahkan pengguna sesuai status sesinya."
+ },
+ "src/components/daftar-kehadiran.tsx": {
+  "summary": "Komponen klien DaftarKehadiran yang menampilkan daftar murid satu kelas untuk presensi jurnal mengajar dengan pola cepat: semua murid dianggap hadir sejak awal, guru hanya menghapus centang murid yang tidak masuk lalu menulis keterangan. Props-nya mencakup murid (MuridKelas[]), peta kehadiran, peta keterangan, callback onHadir/onKeterangan, dan disabled; komponen menghitung jumlahHadir serta semuaHadir untuk label ringkasan."
+ },
+ "src/components/form-tambah-kelas.tsx": {
+  "summary": "Komponen klien FormTambahKelas, formulir untuk membuat kelas baru sekaligus satu jadwal mengajarnya (dipakai halaman jurnal harian). State-nya mencakup namaKelas, cabang, guruNama (dari GURU_KELAS), hari (dari HARI_DALAM_SEMINGGU), jamMulai, dan jamSelesai; fungsi simpan memvalidasi nama dan cabang tidak kosong serta jamSelesai harus lebih besar dari jamMulai sebelum memanggil callback onTambah dengan objek Kelas."
+ },
+ "src/components/halaman-daftar.tsx": {
+  "summary": "Komponen klien HalamanDaftar untuk pendaftaran akun guru dan owner; datanya masih tiruan sehingga belum menyimpan apa pun ke server. Formulir memakai state nama, email, sandi, ulangiSandi, dan peran, lalu memvalidasi aturan yang sudah final lewat emailSudahDipakai, konfirmasi sandi, dan MIN_SANDI = 8, dengan pilihan peran memakai labelPeran/PeranPengguna. Tampilannya grid dua kolom (lg:grid-cols-2) berisi formulir dan panel status pendaftaran."
+ },
+ "src/components/pemilih-jadwal.tsx": {
+  "summary": "Komponen klien PemilihJadwal yang menampilkan kartu pilihan kelas dan jam mengajar untuk hari tertentu; guru cukup menekan satu kartu untuk memilihnya. Props-nya jadwal (Jadwal[]), hari, nilai terpilih, onPilih, disabled, dan error; tiap kartu menampilkan formatJam dan hitungJamMengajar karena durasinya dipakai untuk rekap gaji. Bila jadwal kosong, komponen menampilkan pesan bahwa tidak ada jadwal hari ini."
+ },
+ "src/components/providers.tsx": {
+  "summary": "Komponen klien tipis Providers yang membungkus seluruh aplikasi dengan MotionConfig dari motion/react dan mengatur reducedMotion=\"user\". Fungsinya adalah menghormati preferensi aksesibilitas pengguna terhadap animasi. Berkas ini tidak memiliki state atau logika bisnis lain."
+ },
+ "src/components/status-guru-hari-ini.tsx": {
+  "summary": "Modul komponen status guru hari ini untuk halaman pantauan owner. Ia mengekspor RingkasanStatusGuru yang menghitung jumlah guru sudah/belum mengisi beserta persentasenya, DaftarStatusGuru yang merinci tiap guru dengan penanda status jurnal, dan helper LabelStatus yang menampilkan lencana \"Sudah mengisi\"/\"Belum mengisi\" dengan ikon CheckCircle2/XCircle. Semua menerima daftar StatusGuruHariIni dari pemantauan.service."
+ },
+ "src/config/site.ts": {
+  "summary": "Konfigurasi identitas situs yang membaca starter.config.json dan mengekspor siteConfig berisi id, name, description, serta homePath: \"/app\". Nilainya dipakai antara lain oleh lib/auth.ts sebagai appName dan cookiePrefix Better Auth. Berkas ini adalah satu titik ubah untuk penamaan dan deskripsi aplikasi."
+ },
+ "src/db/schema/bimbel-profile.ts": {
+  "summary": "Definisi tabel Drizzle bimbelProfile untuk profil bimbel (nama, alamat, telepon, email, logo sebagai data URL, createdAt, updatedAt). Karena aplikasi hanya dipakai satu bimbel, tabel dibatasi satu baris lewat uniqueIndex(\"bimbel_profile_tunggal_idx\") pada ekspresi sql`(true)`; logo disimpan di basis data agar ikut backup dan tetap tampil di laporan pada jaringan lokal. Berkas ini adalah sumber skema bagi migrasi 0012_profil_bimbel.sql."
+ },
+ "src/db/schema/journal-attendances.ts": {
+  "summary": "Definisi tabel Drizzle journalAttendances yang mencatat kehadiran satu murid pada satu jurnal (kolom journalId, studentId, hadir, catatan). Relasinya ke teachingJournals memakai ON DELETE cascade, sedangkan ke students memakai ON DELETE restrict karena murid dinonaktifkan lewat status_aktif sehingga riwayat kehadiran tidak boleh hilang. Unique index journal_attendances_journal_student_idx mencegah murid yang sama tercatat dua kali dalam satu jurnal."
+ },
+ "src/lib/auth.ts": {
+  "summary": "Konfigurasi Better Auth (modul server-only) dengan drizzleAdapter ke Postgres, appName dan cookiePrefix dari siteConfig, serta emailAndPassword (min 8, max 128, requireEmailVerification false, revokeSessionsOnPasswordReset true). sendResetPassword mencatat tautan atur ulang ke log server karena bimbel belum punya penyedia email. Plugin admin memakai ac/roles/DEFAULT_ROLE dari lib/permissions sehingga peran tidak bisa diberikan sendiri saat signup, dan rateLimit dimatikan hanya ketika STARTER_TEST_RUN aktif."
+ },
+ "src/lib/mock-perkembangan.ts": {
+  "summary": "Data tiruan catatan perkembangan murid karena tabel student_progress belum ada di basis data. Berkas mengekspor tipe CatatanPerkembangan (muridId, guruNama, tanggal, nilai, sikap, catatanPerkembangan), konstanta PILIHAN_SIKAP, dan fungsi getCatatanPerkembangan yang mengurutkan catatan terbaru lebih dulu sebagai pengganti sementara GET /api/perkembangan. Bentuk datanya sengaja mengikuti kolom tabel tujuan agar mudah diganti sumbernya."
+ },
+ "src/services/jurnal.service.ts": {
+  "summary": "Layanan inti jurnal mengajar (server-only) dengan fungsi simpanJurnal yang mengembalikan HasilSimpanJurnal berstatus tersimpan, jadwal_tidak_ada, jadwal_tidak_valid, atau murid_tidak_ada beserta muridIds. Berkas ini juga mengekspor listJurnalGuru (riwayat guru dengan saringan kelas/rentang tanggal dan meta.kelas), getJurnalGuru dan getAnyJurnal lewat helper ambilDetailJurnal (membedakan jurnal milik sendiri versus akses owner), serta koreksiJurnal untuk mengubah materi dan daftar kehadiran. Tipe pendukungnya antara lain JurnalTersimpan, JurnalRiwayatGuru, dan HasilKoreksiJurnal."
+ },
+ "src/validators/sandi.ts": {
+  "summary": "Validator Zod untuk alur sandi, menetapkan konstanta MIN_SANDI = 8 dan MAX_SANDI = 128 serta tipe LupaSandiInput dan AturUlangSandiInput. lupaSandiSchema menerima email valid maksimal 254 karakter, sedangkan aturUlangSandiSchema (strict) mewajibkan token 1–200 karakter hasil trim dan sandi dalam rentang MIN_SANDI–MAX_SANDI dengan pesan \"Sandi terlalu panjang.\" Berkas ini dipakai route lupa/atur ulang sandi dan komponen formulirnya."
+ },
+ ".agents/skills/create-variant/SKILL.md": {
+  "summary": "Skill instruksi untuk agen pembuat varian (dashboard/chatbot) dari starter PostgreSQL: memakai perintah npm run create:variant, menyiapkan kredensial & database baru, serta menjaga konvensi auth/UI/AI. Ditulis sebagai panduan langkah, bukan kode aplikasi."
+ },
+ ".cursor/rules/starter.mdc": {
+  "summary": "Aturan Cursor (alwaysApply) yang mengarahkan pembaca ke AGENTS.md untuk konvensi stack, Context7, dan validasi, serta menyuruh membaca .agents/skills/*/SKILL.md yang relevan. Ringkas dan hanya berisi instruksi, tanpa logika program."
+ },
+ ".dockerignore": {
+  "summary": "Daftar pengecualian konteks build Docker: menyembunyikan .env, node_modules, .next, artefak uji (e2e/tests), konfigurasi lokal (.git, .cursor, .agents), dokumentasi, serta berkas database/log agar image produksi tetap ramping."
+ },
+ ".mcp.json": {
+  "summary": "Konfigurasi MCP server proyek: mendefinisikan satu server bernama context7 bertipe http di https://mcp.context7.com/mcp. Dipakai tooling agen untuk mengambil dokumentasi pustaka."
+ },
+ "Dockerfile": {
+  "summary": "Image produksi Next.js multi-stage: tahap deps, builder (npm run build dengan placeholder DATABASE_URL/BETTER_AUTH_SECRET), runtime standalone, migrator yang menjalankan scripts/migrate.mjs, dan runner default dengan healthcheck /icon.svg pada PORT 3000."
+ },
+ "drizzle/0007_rekap_gaji.sql": {
+  "summary": "Migrasi SQL Drizzle yang membuat enum status_pembayaran_gaji (belum_dibayar/dibayar) dan tabel salary_recaps (guru_id, periode_bulan, total_jam, tarif_per_jam, total_gaji, status_pembayaran, tanggal_dibayar) beserta FK ke user dan indeks unik guru+periode."
+ },
+ "drizzle/meta/0011_snapshot.json": {
+  "summary": "Snapshot metadata Drizzle (berkas turunan yang dihasilkan otomatis, id 5b1d16dd…, dialect postgresql) berisi definisi lengkap tabel termasuk public.user. Tidak diedit manual; cukup dirujuk sebagai riwayat skema 0011."
+ },
+ "e2e/roles.spec.ts": {
+  "summary": "Uji end-to-end Playwright (via @playwright/test, origin localhost:3101) untuk otorisasi berbasis peran: endpoint admin harus 401 tanpa sesi, peran default tak bisa mengakses catatan akun lain, pemberian/pencabutan peran mengubah akses, dan halaman admin hanya muncul untuk peran berizin. Memakai helper signUp/setRole lewat pg Pool."
+ },
+ "scripts/prepare.mjs": {
+  "summary": "Skrip persiapan lingkungan: memanggil assertNode dan prepareEnvironment dari scripts/lib.mjs, lalu menjalankan npm run db:up dan db:migrate. Dipakai alur setup proyek, bukan kode runtime aplikasi."
+ },
+ "src/app/api/admin/jurnal/[id]/route.ts": {
+  "summary": "Route handler Next.js GET /api/admin/jurnal/[id] untuk owner: memvalidasi id via jurnalIdSchema, membaca jurnal akun lain lewat getAnyJurnal, dan dilindungi izin jurnal:read-any memakai withApiPermission; mengembalikan 404 bila tak ditemukan."
+ },
+ "src/app/api/kelas/[id]/murid/[muridId]/route.ts": {
+  "summary": "Route handler DELETE /api/kelas/[id]/murid/[muridId]: memanggil keluarkanMurid lewat withApiSession dengan validasi kelasIdSchema/muridIdSchema, menandai penempatan selesai (bukan menghapus) dan mengembalikan 204 atau 404 bila murid tidak di kelas itu."
+ },
+ "src/app/error.tsx": {
+  "summary": "Error boundary klien Next.js (default export ErrorPage): menampilkan pesan kesalahan dan tombol Try again yang memanggil reset(). Menyertakan id main-content dan komponen Button dari shadcn/ui."
+ },
+ "src/components/detail-jurnal.tsx": {
+  "summary": "Komponen klien DetailJurnal untuk melihat dan mengoreksi satu jurnal (materi, kehadiran, catatan) milik guru. Mengelola mode lihat/koreksi, memakai DaftarKehadiran, PemilihMateri, LabelStatusJurnal, formatJam, dan stub koreksiJurnalStub/pisahMateri dari lib/mock-jurnal."
+ },
+ "src/components/form-aturan-gaji.tsx": {
+  "summary": "Komponen klien FormAturanGaji: formulir tarif per jam, skema, dan tanggal berlaku dengan validasi (MAX_TARIF 10 juta) serta riwayat aturan. Memakai formatRupiah dari lib/gaji dan data tiruan dari lib/mock-pengaturan (belum tersimpan ke server)."
+ },
+ "src/components/form-jadwal-kelas.tsx": {
+  "summary": "Komponen klien FormJadwalKelas: formulir tambah jadwal kelas (hari, jam mulai, jam selesai) dengan validasi jam selesai > mulai dan penolakan duplikat hari+jam, memakai HARI_DALAM_SEMINGGU dan tipe JadwalKelas dari lib/mock-kelas."
+ },
+ "src/components/form-lupa-sandi.tsx": {
+  "summary": "Komponen klien FormLupaSandi: meminta tautan atur ulang sandi via Better Auth (authClient), selalu menampilkan jawaban sama untuk email terdaftar maupun tidak agar tidak bisa dipakai menebak akun. Validasi email sederhana lalu menampilkan status terkirim."
+ },
+ "src/components/riwayat-gaji.tsx": {
+  "summary": "Komponen RiwayatGaji: menampilkan ringkasan gaji per bulan dengan saringan tahun dan bulan (daftar BULAN), memakai formatRupiah/formatPeriode dari lib/gaji dan formatJam. Menerima props daftar, tahunTersedia, nilai, dan adaSaringan."
+ },
+ "src/components/saring-pemantauan.tsx": {
+  "summary": "Komponen SaringPemantauan: saringan pantauan owner berdasarkan kelas, guru, atau cabang yang dikirim lewat query URL (form method=get) agar penyaringan tetap di sisi server. Menerima props kelas, guru, cabang, nilai, dan adaSaringan."
+ },
+ "src/components/sign-out-button.tsx": {
+  "summary": "Komponen klien SignOutButton: tombol keluar yang memanggil authClient.signOut(), lalu router.replace('/sign-in') dan refresh; menampilkan status pending dan pesan error bila gagal."
+ },
+ "src/db/schema/classes.ts": {
+  "summary": "Definisi tabel Drizzle `classes`: kolom id (uuid), nama_kelas, cabang, guru_id (FK ke user, onDelete set null), dan created_at, dengan indeks classes_guru_id_idx. Dipakai sebagai sumber skema kelas bimbel."
+ },
+ "src/db/schema/student-progress.ts": {
+  "summary": "Definisi tabel Drizzle `student_progress`: catatan perkembangan anak (student_id FK, guru_id FK, tanggal, nilai numeric, sikap text, catatan_perkembangan, timestamp) dengan indeks student_progress_student_tanggal_idx dan student_progress_guru_idx."
+ },
+ "src/lib/gaji.ts": {
+  "summary": "Utilitas perhitungan dan format gaji: formatRupiah (Rp1.200.000), hitungGaji (total jam × tarif per jam, dibulatkan), periodeBulan (YYYY-MM), dan formatPeriode ('2026-10' → 'Oktober 2026')."
+ },
+ "src/lib/mock-penempatan.ts": {
+  "summary": "Data contoh penempatan murid ke kelas beserta tipe Penempatan (muridId, kelasId, tanggalMulai, status aktif/selesai) dan fungsi getPenempatanAwal. Pengganti sementara GET /api/penempatan karena tabel student_enrollments belum ada."
+ },
+ "src/lib/utils.ts": {
+  "summary": "Utilitas bersama kecil: mengekspor ulang `cn` (penggabung kelas) dari paket 'cn' sesuai konvensi shadcn/ui."
+ },
+ "src/services/jadwal.service.ts": {
+  "summary": "Layanan server-only jadwal: listJadwalGuruHariIni(guruId, hari) memakai Drizzle untuk join schedules ke classes, memformat jamMulai/jamSelesai sebagai 'HH24:MI', dan memfilter hanya jadwal milik guru dari sesi."
+ },
+ "src/services/notifikasi.service.ts": {
+  "summary": "Layanan server-only notifikasi: listNotifikasi(userId, {limit, offset, belumDibaca}) mengembalikan data terbaru plus meta.belumDibaca/hasMore, dan tandaiNotifikasiDibaca(userId, input) menandai id tertentu atau semua notifikasi milik akun sebagai sudah dibaca."
+ },
+ "src/validators/kelas.ts": {
+  "summary": "Skema validasi Zod untuk kelas: listKelasSchema (limit/offset/cari), createKelasSchema (namaKelas, cabang, guruId opsional, jadwal maks 20 dengan cek duplikat hari+jam), tambahJadwalSchema, kelasIdSchema/jadwalIdSchema, tempatkanMuridSchema, dan muridIdSchema."
+ },
+ ".prettierignore": {
+  "summary": "Daftar path yang diabaikan Prettier saat memformat repo: node_modules, .next, .data, package-lock.json, drizzle/meta, next-env.d.ts, playwright-report, test-results, *.tsbuildinfo, dan .env*. Berkas konfigurasi saja, tanpa simbol program."
+ },
+ ".prettierrc.json": {
+  "summary": "Konfigurasi Prettier untuk seluruh repo: semi aktif, tanda kutip ganda (singleQuote false), dan trailingComma all. Dipakai bersama oleh semua berkas TypeScript/TSX agar gaya formatnya seragam."
+ },
+ "LICENSE": {
+  "summary": "Lisensi MIT untuk proyek aplikasi manajemen bimbel, hak cipta 2026 ngodingpakeai contributors. Berisi teks izin penggunaan, salinan, modifikasi, dan distribusi perangkat lunak beserta penafian garansi."
+ },
+ "compose.test.yaml": {
+  "summary": "Definisi Docker Compose untuk PostgreSQL 17-alpine sekali pakai yang khusus dipakai pengujian: database starter_test, kredensial dari STARTER_TEST_PASSWORD, data di tmpfs, healthcheck pg_isready, dan port 5432 dipetakan acak di 127.0.0.1. Tidak pernah menunjuk database aplikasi."
+ },
+ "drizzle.config.ts": {
+  "summary": "Konfigurasi drizzle-kit: skema dari ./src/db/schema/index.ts, keluaran migrasi ke ./drizzle, dialek postgresql, kredensial dari MIGRATION_DATABASE_URL atau DATABASE_URL, dan loadEnvConfig Next dipanggil lebih dulu agar .env terbaca."
+ },
+ "drizzle/meta/0000_snapshot.json": {
+  "summary": "Berkas turunan drizzle-kit yang merekam snapshot migrasi 0000_auth: tabel basis data auth Better Auth `account`, `session`, `user`, dan `verification` beserta kolom, indeks, dan foreign key-nya. Tidak perlu dibaca manual karena dihasilkan otomatis."
+ },
+ "drizzle/meta/0010_snapshot.json": {
+  "summary": "Snapshot skema drizzle-kit termutakhir pada batch ini (setelah migrasi 0010_catatan_perkembangan): memuat tabel `user`, `session`, `account`, `verification`, `notes`, `classes`, `students`, `student_enrollments`, `student_progress`, `schedules`, `teaching_journals`, `journal_attendances`, `notifications`, `notification_preferences`, `salary_settings`, `salary_recaps`, serta enum `status_penempatan`, `status_jurnal`, dan `status_pembayaran_gaji`."
+ },
+ "drizzle/meta/_journal.json": {
+  "summary": "Jurnal migrasi drizzle-kit versi 7 dialek postgresql berisi 13 entri berurutan dari 0000_auth, 0001_notes, 0002_roles, 0003_jurnal, 0004_jurnal_idempoten, 0005_notifikasi, 0006_tarif_gaji, 0007_rekap_gaji, 0008_jadwal_unik, 0009_penempatan_murid, 0010_catatan_perkembangan, 0011_peran_pengguna, sampai 0012_profil_bimbel. Berkas turunan yang mengurutkan migrasi saat dijalankan."
+ },
+ "src/app/(auth)/masuk/page.tsx": {
+  "summary": "Halaman Next App Router untuk route /masuk dengan metadata judul Masuk. Merender komponen klien `HalamanMasuk` dan menyuplai daftar akun dari `getDaftarAkun` sebagai data awal layar masuk."
+ },
+ "src/app/(protected)/app/gaji/riwayat/page.tsx": {
+  "summary": "Server component halaman riwayat gaji owner yang dijaga `requirePermission({ gaji: [read-any] })`. Membaca searchParams tahun/bulan, memvalidasi bulan dengan pola POLA_BULAN, menyaring `getRiwayatGaji`, lalu merender `RiwayatGaji` dengan daftar tahun tersedia."
+ },
+ "src/app/(protected)/app/perkembangan/page.tsx": {
+  "summary": "Server component halaman perkembangan anak dengan metadata Perkembangan Anak, hanya menuntut `requireSession` karena guru dan owner sama-sama boleh melihat. Merender `DaftarPerkembangan` dengan data murid, kehadiran awal, catatan perkembangan mock, dan nama guru dari sesi."
+ },
+ "src/app/api/admin/notes/route.ts": {
+  "summary": "Route handler GET /api/admin/notes berjalan di runtime nodejs. Dilindungi `withApiPermission` dengan izin notes:read-any (401 tanpa sesi, 403 tanpa izin), memvalidasi query lewat `listNotesSchema`, lalu mengembalikan hasil `listAnyNotes` berupa JSON."
+ },
+ "src/app/api/sesi/route.ts": {
+  "summary": "Route handler runtime nodejs untuk informasi sesi: GET /api/sesi mengembalikan id, nama, email, peran hasil `peranDariRole`, tujuan `homePathUntukPeran`, dan waktu kedaluwarsa; DELETE /api/sesi melakukan sign-out server lewat `auth.api.signOut` dan meneruskan cookie pembersih dengan status 204."
+ },
+ "src/components/brand.tsx": {
+  "summary": "Komponen `Brand` yang menampilkan tautan ke beranda berisi ikon Layers2 dan nama dari `siteConfig.name` dengan label aksesibilitas. Dipakai sebagai identitas visual aplikasi pada layout."
+ },
+ "src/components/catatan-sikap-kehadiran.tsx": {
+  "summary": "Komponen klien `CatatanSikapKehadiran` yang merangkum sikap dan kehadiran anak dari props `kehadiran` dan `sikap`: menghitung jumlah pertemuan dihadiri, menampilkan sikap terakhir, dan mendaftar pertemuan tidak hadir beserta alasannya memakai `formatTanggalLengkap`."
+ },
+ "src/components/copy-prompt.tsx": {
+  "summary": "Komponen klien `CopyPrompt` dengan tombol yang menyalin teks prompt ke clipboard lewat `navigator.clipboard.writeText`. Status idle, copied, atau error ditampilkan sebagai pesan status, dan bila gagal pengguna diminta menyalin manual."
+ },
+ "src/components/daftar-gaji-guru.tsx": {
+  "summary": "Komponen klien `DaftarGajiGuru` yang menampilkan gaji tiap guru pada satu periode beserta tombol Tandai sudah dibayar / Batalkan pembayaran. Status pembayaran disimpan di state lokal (belum tersimpan ke database) dan tiap baris menautkan ke /app/gaji/slip/[guruId] serta `PanelRincianJam`, memakai `formatRupiah`, `formatJam`, dan `tanggalISO`."
+ },
+ "src/components/pemilih-materi.tsx": {
+  "summary": "Komponen klien `PemilihMateri` untuk memilih materi ajar lewat tombol cepat dari `PILIHAN_MATERI` plus kolom topik spesifik opsional (maks 120 karakter). Mendukung state disabled dan penampilan pesan error dengan `role=alert`."
+ },
+ "src/components/rekap-gaji-bulanan.tsx": {
+  "summary": "Komponen `RekapGajiBulanan` untuk owner: menghitung total jam dan total gaji dari `rekap.daftar`, menampilkan kartu statistik (jumlah guru, total jam, total gaji), form GET pemilih bulan bertipe month, dan `DaftarGajiGuru` per guru. Menautkan ke /app/gaji/riwayat."
+ },
+ "src/components/rekap-gaji-saya.tsx": {
+  "summary": "Komponen `RekapGajiSaya` menampilkan rekap gaji guru yang sedang masuk: statistik jam mengajar, total gaji, dan status pembayaran, plus form pemilih bulan. Merender `SlipGaji` dan `TombolCetakUnduh` dengan `namaBerkas` untuk cetak/unduh slip."
+ },
+ "src/components/riwayat-perkembangan.tsx": {
+  "summary": "Komponen `RiwayatPerkembangan` untuk satu murid: form pemilih anak, ringkasan dan daftar kehadiran (hadir/tidak hadir), serta catatan guru terbaru lebih dulu lengkap dengan `LencanaNilai`, sikap, dan nama guru. Memakai `hitungUsia` dan `formatTanggalLengkap`."
+ },
+ "src/db/schema/notes.ts": {
+  "summary": "Definisi skema Drizzle tabel `notes`: kolom id uuid primary key, user_id teks berelasi ke `user.id` dengan onDelete cascade, title varchar(160), content teks, created_at dan updated_at bertimezone, serta indeks `notes_user_created_id_idx` pada (user_id, created_at desc, id desc)."
+ },
+ "src/db/schema/notification-preferences.ts": {
+  "summary": "Definisi skema Drizzle tabel `notification_preferences` untuk preferensi notifikasi per akun: id uuid, user_id berelasi ke `user.id` cascade, jenis_notifikasi varchar(40), aktif boolean bawaan true, dan created_at, dijaga uniqueIndex `notification_preferences_user_jenis_idx` pada (user_id, jenis_notifikasi)."
+ },
+ "src/lib/permissions.ts": {
+  "summary": "Pusat izin berbasis better-auth access control: `statement` mendefinisikan resource notes (read-any, delete-any), jurnal (read-any), gaji (read-any), perkembangan (read, write), dan pengaturan (read, write); `roles` menetapkan role user, owner, dan admin. Mengekspor juga `DEFAULT_ROLE`, `ADMIN_ROLES`, tipe `AppRole`, dan `Permissions`."
+ },
+ "src/lib/session.ts": {
+  "summary": "Pembantu sesi server-only: `getSession` (di-cache React) menganggap akun dengan `banned` tidak punya sesi, `requireSession` mengalihkan ke /sign-in, `hasPermission` memakai `auth.api.userHasPermission`, dan `requirePermission` merender notFound agar pengguna tidak bisa memetakan route yang tidak boleh diaksesnya."
+ },
+ "src/services/pengaturan.service.ts": {
+  "summary": "Service pengaturan bimbel berisi fungsi: `ambilProfilBimbel`/`simpanProfilBimbel` (satu baris, tahan balapan lewat retry `pelanggaranUnik`), `ambilAturanGaji`/`tambahAturanGaji` memakai resolver `aturanGajiBerlaku`, `listAkunBimbel` dengan pencarian ilike dan filter status aktif, `tambahGuru` (membuat baris user + account dengan `hashPassword`), `ubahStatusGuru` lewat kolom banned, serta `ambilPreferensiNotifikasi`/`ubahPreferensiNotifikasi` (upsert per jenis)."
+ },
+ "tests/setup.test.mjs": {
+  "summary": "Tes node:test untuk alur setup lingkungan: pembuatan pertama .env.local yang menghasilkan BETTER_AUTH_SECRET dan POSTGRES_PASSWORD acak serta DATABASE_URL dan COMPOSE_PROJECT_NAME, sifatnya idempoten, mempertahankan kredensial database eksternal, tidak menuliskan kredensial dari environment proses ke disk, dan menguji `managesLocalDatabase`/`databaseUrl` dari scripts/postgres.mjs."
+ },
+ "docs/ai-workflow.md": {
+  "summary": "Panduan integrasi editor AI pada starter ini: instruksi proyek, empat skill lokal (starter-setup, dev-database, build-feature, create-variant), dan server MCP Context7. Menjelaskan cara mengaktifkan koneksi per editor (Codex, Claude Code, Cursor, VS Code/Copilot), batas akses anonim Context7, serta alur kerja membangun fitur dan pemeriksaan lewat npm run doctor."
+ },
+ "docs/prompts.md": {
+  "summary": "Kumpulan contoh prompt pembuka untuk membangun aplikasi: setup lokal, fitur pertama, mengubah tampilan, mendiagnosis error, membuat varian (create-variant), verifikasi fitur, dan fitur backend baru. Prompt merujuk AGENTS.md serta skill build-feature dan menekankan isolasi data per akun."
+ },
+ "drizzle/0000_auth.sql": {
+  "summary": "Migrasi awal Drizzle untuk skema autentikasi Better Auth: membuat tabel account, session, user, dan verification beserta indeks (account_user_id_idx, session_user_id_idx, verification_identifier_idx), constraint unik email/token, dan foreign key cascade ke user."
+ },
+ "drizzle/0008_jadwal_unik.sql": {
+  "summary": "Migrasi Drizzle yang menambahkan unique index schedules_class_hari_jam_idx pada tabel schedules (class_id, hari, jam_mulai) untuk mencegah jadwal kelas bentrok pada hari dan jam yang sama."
+ },
+ "drizzle/0009_penempatan_murid.sql": {
+  "summary": "Migrasi Drizzle yang membuat enum status_penempatan ('aktif', 'selesai') dan tabel student_enrollments (student_id, class_id, tanggal_mulai, status) dengan foreign key ke students dan classes. Menambahkan unique index parsial student_enrollments_student_aktif_idx agar satu murid hanya punya satu penempatan aktif, plus indeks class_status."
+ },
+ "drizzle/meta/0009_snapshot.json": {
+  "summary": "Berkas turunan yang dihasilkan drizzle-kit: snapshot skema database versi 7 dialek PostgreSQL (id 044b4ba1-…) yang memuat seluruh definisi tabel publik termasuk user, account, session, students, classes, dan student_enrollments. Tidak diedit manual; dipakai drizzle-kit untuk menghitung diff migrasi berikutnya."
+ },
+ "e2e/sesi.spec.ts": {
+  "summary": "Uji end-to-end Playwright untuk endpoints sesi: POST /api/masuk menolak origin salah dengan 403 FORBIDDEN_ORIGIN, menolak isian tidak valid dengan 422 VALIDATION_ERROR (field email dan sandi), dan GET/DELETE /api/sesi menjawab 401 UNAUTHORIZED tanpa cookie."
+ },
+ "package.json": {
+  "summary": "Manifes proyek ngodingpakeai-starter (Next.js 16, React 19, Better Auth, Drizzle ORM, Zod, Tailwind v4). Mendefinisikan skrip npm seperti setup, dev, build, check, test, test:e2e, db:generate, db:migrate, db:up/down/status/logs, doctor, role:set, dan create:variant beserta seluruh dependensi dan devDependencies."
+ },
+ "postcss.config.mjs": {
+  "summary": "Konfigurasi PostCSS minimal yang mendaftarkan plugin @tailwindcss/postcss untuk memproses Tailwind CSS versi 4 pada proyek Next.js ini."
+ },
+ "scripts/database.mjs": {
+  "summary": "Skrip CLI pengelola database lokal untuk perintah npm run db:up/down/status/logs: memeriksa Node, memuat environment, lalu menjalankan docker compose pada compose.dev.yaml dengan project name dari COMPOSE_PROJECT_NAME. Menolak perintah kontainer bila koneksi PostgreSQL tidak dikelola starter dan memberi pesan diagnostik Docker."
+ },
+ "scripts/setup.mjs": {
+  "summary": "Skrip bootstrap npm run setup: memverifikasi versi Node, menjalankan npm ci (atau install bila tanpa lockfile), lalu predev dan doctor, dan menutup dengan petunjuk menjalankan npm run dev serta mencocokkan BETTER_AUTH_URL."
+ },
+ "scripts/test-setup.mjs": {
+  "summary": "Uji first-run npm run test:setup: membuat salinan proyek di direktori sementara (mkdtemp), membersihkan variabel environment sensitif (POSTGRES_, COMPOSE_, BETTER_AUTH_, STARTER_TEST_, PG), lalu menjalankan alur setup lewat npm dan memverifikasi data seed. Menangani SIGINT/SIGTERM untuk mematikan proses aktif."
+ },
+ "scripts/test.mjs": {
+  "summary": "Runner uji npm test (mode unit) dan npm run test:e2e: menyalakan PostgreSQL terisolasi via docker compose project acak (compose.test.yaml), mengambil port, menjalankan scripts/migrate.mjs, lalu mengeksekusi suite sesuai mode. Database aplikasi tidak disentuh dan proses dibersihkan saat interupsi."
+ },
+ "src/app/(auth)/daftar/page.tsx": {
+  "summary": "Halaman route /daftar (grup auth) berjudul 'Daftar Akun' yang merender komponen klien HalamanDaftar dengan data dari getDaftarAkun()."
+ },
+ "src/app/(auth)/layout.tsx": {
+  "summary": "Layout grup route (auth): memanggil getSession dan mengalihkan pengguna yang sudah masuk ke halaman utama perannya lewat homePathUntukPeran(peranDariRole(...)). Menampilkan header Brand dan kontainer main ber-id main-content."
+ },
+ "src/app/(protected)/app/page.tsx": {
+  "summary": "Halaman utama /app di grup protected: memanggil requireSession lalu hasPermission untuk menentukan pintasan per peran (notes read-any, jurnal read-any, gaji read-any). Menampilkan sapaan pengguna, kartu CopyPrompt untuk memulai fitur, dan tautan admin/owner yang bersifat presentasional saja karena halaman dan API-nya menjaga sendiri."
+ },
+ "src/app/api/admin/gaji/route.ts": {
+  "summary": "Route API gaji dengan runtime nodejs: GET mengembalikan rekap gaji semua guru per bulan (parameter periode, default periodeBulan) via rekapGajiAnyBulanan; PATCH menandai gaji satu guru dibayar/batal via tandaiPembayaranGaji. Keduanya dibungkus withApiPermission dengan izin gaji: read-any dan validasi periodeGajiSchema/ubahPembayaranGajiSchema."
+ },
+ "src/app/api/jadwal/route.ts": {
+  "summary": "Route GET /api/jadwal (runtime nodejs) yang mengembalikan jadwal mengajar guru yang sedang masuk untuk hari ini atau hari lain lewat query ?hari=. Divalidasi listJadwalSchema dan dibungkus withApiSession dengan pemanggilan listJadwalGuruHariIni."
+ },
+ "src/app/api/murid/route.ts": {
+  "summary": "Route API murid (runtime nodejs): GET mengembalikan daftar murid dengan filter ?cari= serta ?limit=&offset= (listMuridSchema, listMurid); POST menambah murid baru (createMuridSchema, createMurid) dan membalas 201 dengan header Location. Keduanya memakai withApiSession sehingga guru maupun owner dapat menambah data."
+ },
+ "src/app/api/pengaturan/profil/route.ts": {
+  "summary": "Route profil bimbel (runtime nodejs): GET memakai withApiSession agar semua akun dapat membaca profil (ambilProfilBimbel); PUT memakai withApiPermission dengan izin pengaturan: write untuk menyimpan profil termasuk logo data URL (profilBimbelSchema, simpanProfilBimbel)."
+ },
+ "src/components/daftar-murid.tsx": {
+  "summary": "Komponen klien DaftarMurid yang menampilkan daftar murid bimbel beserta kontak orang tua dan status aktif, dengan pencarian nama murid/orang tua, penghitung murid aktif, serta penyisipan murid baru lewat FormTambahMurid dan KolomPencarian. Data masih disimpan di state layar (belum ke database) dan memakai formatTanggalLengkap serta hitungUsia."
+ },
+ "src/components/penanda-pengguna.tsx": {
+  "summary": "Komponen PenandaPengguna yang menampilkan inisial, nama, email, dan lencana peran (labelPeran) pengguna yang sedang masuk. Bersifat informatif saja; penentuan hak akses tetap dilakukan halaman dan API."
+ },
+ "src/components/ui/label.tsx": {
+  "summary": "Komponen shadcn Label (klien) berbasis LabelPrimitive.Root dari radix-ui dengan atribut data-slot=\"label\", kelas Tailwind untuk tipografi dan status disabled, serta className yang dapat digabung lewat cn."
+ },
+ "src/db/schema/students.ts": {
+  "summary": "Skema Drizzle tabel students untuk data murid bimbel: kolom id (uuid default random), nama, tanggalLahir, namaOrangTua, kontakOrangTua, statusAktif (default true), dan createdAt. Menambahkan indeks students_nama_idx dan menggunakan penonaktifan statusAktif alih-alih penghapusan agar riwayat jurnal tetap utuh."
+ },
+ "src/services/kelas.service.ts": {
+  "summary": "Service server-only untuk kelas dan penempatan murid: getKelasById, listKelas (filter cari nama kelas/cabang/guru), createKelas (kelas dan jadwal dalam satu transaksi), tambahJadwal, hapusJadwal, listMuridKelas (hanya penempatan aktif), tempatkanMurid (menolak penempatan aktif ganda), serta keluarkanMurid (menandai 'selesai', bukan menghapus)."
+ },
+ "src/services/notes.service.ts": {
+  "summary": "Service server-only untuk catatan (notes): fungsi terikat pemilik listNotes, getNote, createNote, updateNote, deleteNote, plus fungsi lintas akun listAnyNotes dan deleteAnyNote yang sengaja melewatkan filter kepemilikan sehingga hanya aman di balik withApiPermission requirePermission. Kolom publik dipilih eksplisit dan kepemilikan diambil dari sesi terverifikasi."
+ },
+ "src/services/perkembangan.service.ts": {
+  "summary": "Service server-only catatan perkembangan anak: listCatatanPerkembangan (filter muridId, rentang dari/sampai, cari), getCatatanPerkembangan, createCatatanPerkembangan (guruId dari sesi), updateCatatanPerkembangan (hanya penulisnya), hapusCatatanPerkembangan, serta laporan agregat listRingkasanPerkembangan dan getRiwayatPerkembangan untuk halaman riwayat orang tua. Hasil penulisan dilengkapi nama anak dan guru penulisnya."
+ },
+ "src/validators/jadwal.ts": {
+  "summary": "Validator Zod untuk jadwal: listJadwalSchema (strict) menerima field opsional hari dari enum HARI_DALAM_SEMINGGU, dengan tipe ListJadwalInput yang dipakai route /api/jadwal."
+ },
+ ".agents/skills/build-feature/SKILL.md": {
+  "summary": "Skill panduan membangun atau mengubah fitur pada starter Next.js ini: menyusun halaman di `src/app`, route API terautentikasi lewat `withApiSession`, menyimpan logika ke `src/services/*.service.ts`, validasi skema di `src/validators/`, menambah tabel Drizzle di `src/db/schema/<table>.ts` lalu migrasi, serta memakai ulang komponen `src/components/ui`. Menekankan pemeriksaan izin, kepemilikan baris di SQL, dan pengujian perilaku nyata terhadap PostgreSQL."
+ },
+ ".cursor/mcp.json": {
+  "summary": "Konfigurasi MCP untuk editor Cursor yang mendaftarkan satu server `context7` ber-URL `https://mcp.context7.com/mcp`, dipakai untuk menarik dokumentasi pustaka saat pengembangan."
+ },
+ ".github/copilot-instructions.md": {
+  "summary": "Instruksi singkat untuk GitHub Copilot: agar membaca `AGENTS.md` di akar repo berisi batas stack, alur dokumentasi Context7, peta skill proyek, dan perintah validasi, serta membuka `.agents/skills/*/SKILL.md` bila penemuan skill tidak tersedia dan memakai ulang auth, database, dan UI yang ada."
+ },
+ ".vscode/mcp.json": {
+  "summary": "Konfigurasi MCP untuk VS Code yang mendaftarkan server bertipe `http` bernama `context7` pada URL `https://mcp.context7.com/mcp`, sejenis dengan konfigurasi Cursor."
+ },
+ "docs/derivatives.md": {
+  "summary": "Dokumentasi cara membuat turunan (derivative/variant) aplikasi dari basis PostgreSQL di akar repo memakai `npm run create:variant -- <id> <tujuan>`; menjelaskan berkas yang disalin, berkas rahasia yang tidak disalin, serta resep dashboard dan chatbot. Menegaskan tiap turunan independen tanpa framework plugin, mempertahankan `baseVersion`, dan mencatat perubahan di `docs/variant.md`."
+ },
+ "drizzle/0002_roles.sql": {
+  "summary": "Berkas migrasi Drizzle yang menambahkan kolom `role`, `banned`, `ban_reason`, dan `ban_expires` pada tabel `user`, serta `impersonated_by` pada tabel `session`, untuk mendukung peran dan pemblokiran akun."
+ },
+ "drizzle/meta/0002_snapshot.json": {
+  "summary": "Berkas turunan snapshot skema Drizzle (id, prevId, version 7, dialect postgresql) yang merekam kondisi skema setelah migrasi 0001, berisi tabel `user`, `session`, `account`, `verification`, dan `notes` beserta kolom `role`/`banned` pada `user`. Berkas generated, dibaca hanya sebagai riwayat skema."
+ },
+ "drizzle/meta/0008_snapshot.json": {
+  "summary": "Berkas turunan snapshot skema Drizzle versi 0008 yang merekam 14 tabel: tabel auth (`user`, `session`, `account`, `verification`), `notes`, serta tabel domain bimbel `classes`, `students`, `schedules`, `teaching_journals`, `journal_attendances`, `notifications`, `notification_preferences`, `salary_settings`, dan `salary_recaps`. Berkas generated sebagai riwayat migrasi, tidak dibaca penuh."
+ },
+ "src/app/api/admin/opsi-saring/route.ts": {
+  "summary": "Endpoint `GET /api/admin/opsi-saring` yang mengembalikan pilihan saringan pantauan owner (daftar kelas, guru, dan cabang) lewat `opsiSaringPemantauan()`, dijaga izin `jurnal: read-any` dengan `withApiPermission`."
+ },
+ "src/app/api/kehadiran/route.ts": {
+  "summary": "Endpoint `GET /api/kehadiran` yang memanggil `listKehadiran` dengan filter `muridId`, `kelasId`, atau rentang `dari`/`sampai` yang divalidasi `listKehadiranSchema`; dilindungi izin `perkembangan: read`. Kehadiran sendiri ditulis melalui `POST /api/jurnal`."
+ },
+ "src/app/api/notifikasi/route.ts": {
+  "summary": "Route `GET` dan `PATCH /api/notifikasi`: GET memakai `listNotifikasi` dengan filter `?belumDibaca=true`, PATCH memakai `tandaiNotifikasiDibaca` untuk menandai `{ ids: [...] }` atau `{ semua: true }`. Keduanya diautentikasi `withApiSession` dan divalidasi skema dari `src/validators/notifikasi`."
+ },
+ "src/app/api/pengaturan/gaji/route.ts": {
+  "summary": "Route pengaturan aturan gaji: `GET /api/pengaturan/gaji?tanggal=YYYY-MM-DD` mengembalikan tarif yang berlaku (bawaan hari ini) beserta riwayat, `POST` menambah aturan baru via `tambahAturanGaji`. Akses dibatasi izin `pengaturan: read`/`write` dan mengembalikan error 409 `TANGGAL_SUDAH_ADA` bila tanggal bentrok."
+ },
+ "src/components/app-nav.tsx": {
+  "summary": "Komponen klien `AppNav` yang merender menu utama aplikasi dari prop `MenuApp[]` (daftar sudah disesuaikan peran pemanggil), memakai `usePathname` untuk menandai tautan aktif dan `cn` untuk kelas kondisional."
+ },
+ "src/components/daftar-kelas.tsx": {
+  "summary": "Komponen klien `DaftarKelas` untuk mengelola kelas, jadwal, dan penempatan murid; menerima prop `daftarAwal`, `daftarMurid`, dan `penempatanAwal`, memakai pencarian via `KolomPencarian` serta form `FormTambahKelas`, `FormJadwalKelas`, dan `PanelPenempatan`. Perubahan masih disimpan di state layar sambil menunggu API kelas dan penempatan."
+ },
+ "src/components/daftar-perkembangan.tsx": {
+  "summary": "Komponen klien `DaftarPerkembangan` yang menampilkan catatan perkembangan tiap anak (nilai, sikap, catatan) dari prop `daftarMurid`, `catatanAwal`, `kehadiranAwal`, dan `namaGuru`. Mendukung penambahan catatan baru serta pembaruan catatan terbaru langsung dari kartu murid, dengan tautan ke halaman riwayat `/app/perkembangan/riwayat`."
+ },
+ "src/components/form-atur-ulang-sandi.tsx": {
+  "summary": "Komponen klien `FormAturUlangSandi` yang menukar token dari tautan (`?token=…`) dengan sandi baru melalui `authClient.resetPassword` dari Better Auth. Menangani validasi panjang sandi minimal 8, kecocokan ulangan sandi, token tidak lengkap/kedaluwarsa (`INVALID_TOKEN`), dan status berhasil."
+ },
+ "src/components/lencana-nilai.tsx": {
+  "summary": "Komponen `LencanaNilai` yang menampilkan nilai anak sebagai lencana berwarna: hijau primer untuk nilai ≥85, netral untuk 70–84, dan merah destruktif untuk <70, memakai `cn` dan ikon `GraduationCap`."
+ },
+ "src/db/schema/notifications.ts": {
+  "summary": "Skema Drizzle tabel `notifications` untuk pemberitahuan per akun (mis. \"jurnal baru masuk\", \"kelas belum diisi\"), dengan kolom `userId`, `tipe`, `pesan`, `sudahDibaca`, dan `createdAt`. Mendefinisikan indeks `notifications_user_dibaca_created_idx` dan `notifications_user_created_idx` untuk bacaan \"belum dibaca, terbaru dulu\"."
+ },
+ "src/db/schema/salary-settings.ts": {
+  "summary": "Skema Drizzle tabel `salary_settings` penyimpan tarif gaji guru per jam beserta riwayatnya: kolom `tarifPerJam` (numeric), `skema`, dan `berlakuSejak` dengan `uniqueIndex` pada `berlakuSejak`. Tarif yang berlaku untuk sebuah jurnal adalah baris dengan `berlaku_sejak` terbaru yang tidak melewati tanggal jurnal."
+ },
+ "src/lib/auth-client.ts": {
+  "summary": "Klien autentikasi sisi klien `authClient` dari `better-auth/react` yang dipasangi plugin `adminClient` dengan `ac` dan `roles` dari `@/lib/permissions`, sehingga UI bisa memeriksa izin peran secara lokal sebagai kenyamanan; pemeriksaan otoritatif tetap di server."
+ },
+ "src/lib/mock-gaji.ts": {
+  "summary": "Data contoh untuk halaman rekap gaji selagi tabel `salary_settings`/`salary_recaps` belum tersambung, berisi tipe `BarisRekapGaji`, `RincianJam`, `RekapGaji`, dan fungsi `getRekapGajiBulanan(periode)` serta `getRiwayatGaji()` (enam bulan terakhir). Perhitungan memakai `hitungGaji` dari `@/lib/gaji`."
+ },
+ "src/lib/mock-murid.ts": {
+  "summary": "Data contoh daftar murid dengan tipe `Murid` (id, nama, tanggalLahir, namaOrangTua, kontakOrangTua, statusAktif) dan fungsi `getDaftarMurid()` yang mengurutkan nama. Bentuknya mengikuti kolom tabel `students` sebagai pengganti sementara `GET /api/murid`."
+ },
+ "src/lib/tanggal.ts": {
+  "summary": "Kumpulan pembantu format tanggal berbahasa Indonesia: konstanta `HARI_DALAM_SEMINGGU`/tipe `NamaHari`, serta fungsi `tanggalISO`, `namaHari`, `formatTanggalLengkap`, dan `hitungUsia`. Dipakai bersama halaman jurnal, riwayat, dan fitur lain agar tampilan tanggal seragam."
+ },
+ "src/services/murid.service.ts": {
+  "summary": "Service server-only untuk data murid: `listMurid` (pencarian nama/orang tua/kontak dengan escaping wildcard, paginasi, dan `meta.hasMore`/`total`), `createMurid`, dan `getMurid`. Semua query Drizzle memakai kolom `fields` terpilih dari tabel `students` tanpa membocorkan data akun."
+ },
+ "src/validators/notifikasi.ts": {
+  "summary": "Skema Zod untuk notifikasi: `listNotifikasiSchema` (limit/offset dengan batas dan `belumDibaca` yang diterjemahkan eksplisit dari string) dan `tandaiBacaSchema` berupa union `{ ids: uuid[] }` atau `{ semua: true }`, lengkap dengan tipe `ListNotifikasiInput` dan `TandaiBacaInput`."
+ },
+ "src/validators/tanggal.ts": {
+  "summary": "Skema Zod tanggal: `skemaTanggal` memvalidasi format `YYYY-MM-DD` sekaligus memastikan tanggal benar-benar ada di kalender, dan `skemaPeriodeBulan` memvalidasi bulan `YYYY-MM`. Dipakai bersama validator lain untuk mencegah error database akibat tanggal tak valid."
+ },
+ "tests/database.test.mjs": {
+  "summary": "Uji integrasi (node:test) yang menjalankan `scripts/migrate.mjs` terhadap PostgreSQL sekali pakai dari `STARTER_TEST_DATABASE_URL` untuk memastikan migrasi mengulang aman (baris tidak hilang), nilai bawaan kolom auth benar, batasan unik `user_email_unique` dan foreign key `session`/`notes` ditegakkan, serta `ON DELETE CASCADE` membersihkan baris terkait."
+ },
+ "tests/variant.test.mjs": {
+  "summary": "Uji (node:test) untuk `createVariant` dari `scripts/create-variant.mjs`: memastikan turunan menyalin berkas basis dan mempertahankan provenance (`baseVersion`) sambil mengecualikan rahasia, database, dan setelan lokal, serta menolak tujuan yang sudah ada, bersarang di dalam sumber, atau melewati symlink."
+ },
+ "CLAUDE.md": {
+  "summary": "Berkas instruksi singkat tingkat repo yang mengarahkan agen membaca AGENTS.md untuk konvensi proyek, alur kerja Context7, dan peta skill. Juga menunjuk skill proyek di folder `.agents/skills/` yang dibaca langsung sebelum setup atau pengembangan fitur."
+ },
+ "docs/deployment.md": {
+  "summary": "Panduan deployment starter PostgreSQL: environment produksi (DATABASE_URL, BETTER_AUTH_SECRET, BETTER_AUTH_URL, MIGRATION_DATABASE_URL), langkah `npm run db:migrate`/build/start, target Docker `runner` dan `migrator`, connection pooling node-postgres (maks 5 koneksi), serta perbedaan data Docker lokal vs hosting."
+ },
+ "docs/variant.md": {
+  "summary": "Dokumentasi varian base PostgreSQL yang diturunkan dari base SQLite 0.1.0. Menjelaskan penggantian driver Drizzle ke node-postgres, tabel auth pgTable, migrasi SQL baru, peran DATABASE_URL/MIGRATION_DATABASE_URL, setup Docker lokal, dan prefix cookie agar bisa berjalan berdampingan dengan starter SQLite."
+ },
+ "drizzle/0010_catatan_perkembangan.sql": {
+  "summary": "Migrasi SQL Drizzle yang membuat tabel `student_progress` (kolom student_id, guru_id, tanggal, nilai numeric(5,2), sikap, catatan_perkembangan, timestamps) beserta foreign key ke `students` dan `user` serta indeks `student_progress_student_tanggal_idx` dan `student_progress_guru_idx`."
+ },
+ "drizzle/meta/0007_snapshot.json": {
+  "summary": "Berkas snapshot metadata Drizzle Kit (generated) untuk migrasi versi 7 berbahasa dialect postgresql. Memuat definisi lengkap tabel seperti `public.user` dan tabel lain beserta kolom, tipe, primary key, dan default-nya; dipakai tooling migrasi, bukan kode aplikasi."
+ },
+ "e2e/notes.spec.ts": {
+  "summary": "Suite uji end-to-end Playwright untuk API Notes (origin http://localhost:3101). Menguji setiap operasi wajib sesi dan mengembalikan error JSON, CRUD persisten dengan paginasi `limit`/`offset` dan meta `hasMore`, patch parsial, isolasi antar akun, penolakan body/id/paginasi/origin tidak aman, serta cookie Better Auth yang dicabut."
+ },
+ "eslint.config.mjs": {
+  "summary": "Konfigurasi flat ESLint yang menggabungkan preset `eslint-config-next/core-web-vitals` dan `eslint-config-next/typescript`. Menetapkan `globalIgnores` untuk `.next/**`, `node_modules/**`, `next-env.d.ts`, `playwright-report/**`, dan `test-results/**`."
+ },
+ "scripts/postgres.mjs": {
+  "summary": "Modul utilitas Node untuk operasi PostgreSQL lokal. Mengekspor `databaseUrl` (validasi protokol postgres/postgresql), `localDatabaseUrl`, `managesLocalDatabase`, dan `databaseError` yang memetakan kode error (ECONNREFUSED, 28P01, 3D000, 42501) ke pesan penjelasan ramah pengguna."
+ },
+ "src/app/(protected)/app/pengaturan/profil/page.tsx": {
+  "summary": "Halaman server route `/app/pengaturan/profil` bernama `ProfilBimbelPage` dengan `metadata.title` 'Profil Bimbel'. Memanggil `requirePermission({ pengaturan: ['read'] })`, menampilkan tombol kembali ke pengaturan, dan merender komponen `FormProfilBimbel` dengan data dari `getProfilBimbel()`."
+ },
+ "src/app/(protected)/app/perkembangan/[muridId]/page.tsx": {
+  "summary": "Halaman dinamis `/app/perkembangan/[muridId]` bernama `LaporanPerkembanganPage` untuk laporan perkembangan satu murid. Memverifikasi sesi via `requireSession()`, mencari murid dari `getDaftarMurid()` (404 bila tak ada), memfilter `getCatatanPerkembangan()` dan `getKehadiranAwal()`, lalu merender `LaporanPerkembangan` plus tombol cetak `TombolCetakUnduh`."
+ },
+ "src/app/api/admin/gaji/slip/route.ts": {
+  "summary": "Route API `GET /api/admin/gaji/slip` (runtime nodejs) untuk mengunduh slip gaji guru per bulan sebagai HTML mandiri. Dijaga `withApiPermission({ gaji: ['read-any'] })`, memvalidasi query dengan `slipGajiSchema`, memanggil `rekapGajiAnyGuru` (404 bila guru tak ada), dan menyusun respons lewat `slipGajiHtml`/`namaBerkasSlip` dengan header Content-Disposition attachment."
+ },
+ "src/app/api/akun/route.ts": {
+  "summary": "Route API `POST /api/akun` untuk pendaftaran akun guru tanpa sesi (runtime nodejs). Memeriksa origin lewat `assertSameOrigin`, memvalidasi isian dengan `daftarAkunSchema`, menyerahkan pembuatan akun ke Better Auth, dan menerjemahkan galat auth (email dobel → 409, sandi terlalu pendek/panjang → 422) melalui helper `galatPendaftaran`."
+ },
+ "src/app/api/notes/route.ts": {
+  "summary": "Route API Notes (runtime nodejs) dengan `GET` untuk daftar catatan ber-paginasi via `listNotesSchema` dan `POST` untuk membuat catatan baru lewat `createNoteSchema`. Keduanya dibungkus `withApiSession` sehingga memakai `session.user.id`, dan POST mengembalikan status 201 dengan header `Location: /api/notes/{id}`."
+ },
+ "src/components/form-tambah-murid.tsx": {
+  "summary": "Komponen klien `FormTambahMurid` untuk menambah murid dari antarmuka. Mengelola state nama, tanggal lahir, nama dan kontak orang tua, memvalidasi nama wajib serta tanggal lahir tidak boleh melewati hari ini (`tanggalISO`), lalu memanggil prop `onTambah` dengan objek `Murid`; tombol dibuka lewat mode `terbuka`."
+ },
+ "src/components/jurnal-form.tsx": {
+  "summary": "Komponen klien `JurnalForm` untuk mengisi jurnal mengajar: memilih jadwal (`PemilihJadwal`), kehadiran (`DaftarKehadiran`), materi (`PemilihMateri`), topik, dan catatan. Menghitung `bagianKurang`/`siapKirim`, memakai `hitungJamMengajar` dan `formatJam`, mengirim lewat `kirimJurnalStub`, lalu menampilkan `KonfirmasiJurnal` dengan ringkasan saat berhasil."
+ },
+ "src/components/laporan-perkembangan.tsx": {
+  "summary": "Komponen server `LaporanPerkembangan` yang menyusun laporan satu murid untuk orang tua: ringkasan kehadiran dan rata-rata nilai, catatan terbaru, serta rincian ketidakhadiran. Menerima props `murid`, `catatan`, `kehadiran`, `tanggalCetak`, memakai `hitungUsia`/`formatTanggalLengkap`, dan diberi id `laporan-perkembangan` agar bisa dicetak."
+ },
+ "src/components/preferensi-notifikasi.tsx": {
+  "summary": "Komponen klien `PreferensiNotifikasi` yang menampilkan daftar preferensi notifikasi per akun dengan `Checkbox`. Perubahan hanya berlaku di layar (data tiruan) dan memunculkan pesan status bahwa perubahan belum dikirim ke server; menghitung `jumlahAktif` dari prop `daftarAwal`."
+ },
+ "src/components/ui/button.tsx": {
+  "summary": "Komponen UI dasar `Button` bergaya shadcn/ui memakai `cva` dan `Slot` dari radix-ui. Mengekspor `Button` dan `buttonVariants` dengan varian default/destructive/outline/secondary/ghost/link serta ukuran default/xs/sm/lg/icon, mendukung prop `asChild`."
+ },
+ "src/db/index.ts": {
+  "summary": "Inisialisasi koneksi database server-only yang mengekspor `db`. Membuat `Pool` node-postgres (maks 5 koneksi, timeout 5000 ms) dan membungkusnya dengan `drizzle(pool, { schema })`, serta menyimpan instance di `globalThis` agar hot reload pengembangan tidak membuat pool berlebih."
+ },
+ "src/db/schema/index.ts": {
+  "summary": "Barrel ekspor seluruh tabel skema Drizzle yang menjadi entrypoint bersama untuk Drizzle Kit, pool, dan Better Auth. Mengekspor antara lain `user`, `session`, `account`, `notes`, `classes`, `students`, `student-enrollments`, `student-progress`, `teaching-journals`, dan `salary-recaps`."
+ },
+ "src/db/schema/session.ts": {
+  "summary": "Definisi tabel Drizzle `session` bergaya Better Auth untuk PostgreSQL. Kolomnya meliputi id, expiresAt, token unik, createdAt/updatedAt, ipAddress, userAgent, userId (FK ke `user` dengan onDelete cascade), dan `impersonatedBy` untuk fitur impersonasi admin, plus indeks `session_user_id_idx`."
+ },
+ "src/db/schema/student-enrollments.ts": {
+  "summary": "Definisi enum `status_penempatan` ('aktif'/'selesai') dan tabel `student_enrollments` yang memetakan murid ke kelas dengan riwayat. Berisi studentId, classId (FK cascade), tanggalMulai, dan status; dilengkapi unique index parsial `student_enrollments_student_aktif_idx` (satu penempatan aktif per murid) serta indeks class/status."
+ },
+ "src/lib/db-error.ts": {
+  "summary": "Utilitas penanganan error PostgreSQL. `kodeError` menelusuri properti `code` sampai ke `cause` karena Drizzle membungkus error asli, dan `pelanggaranUnik` mengembalikan true bila kodenya 23505 (pelanggaran indeks unik)."
+ },
+ "src/services/gaji.service.ts": {
+  "summary": "Layanan domain gaji (server-only) yang menghitung rekap dari jurnal mengajar dikali tarif `salary_settings`. Mengekspor `aturanGajiBerlaku`, `rekapGajiAnyBulanan`, `rekapGajiGuru`, `tandaiPembayaranGaji` (tipe `HasilTandaiPembayaran`), `rekapGajiAnyGuru` untuk endpoint berizin `gaji: read-any`, dan `riwayatGajiAny`, dengan tipe `RincianGaji`, `BarisGajiGuru`, `RekapGaji`, dan `PembayaranGaji`."
+ },
+ "src/validators/akun.ts": {
+  "summary": "Skema Zod `daftarAkunSchema` (strict) untuk pendaftaran akun: nama 2–120 karakter, email tervalidasi maks 254, dan sandi `MIN_SANDI`=8 hingga `MAX_SANDI`=128 yang disamakan dengan konfigurasi Better Auth. Peran sengaja tidak ada karena akun baru selalu berperan guru; mengekspor tipe `DaftarAkunInput`."
+ },
+ "src/validators/perkembangan.ts": {
+  "summary": "Kumpulan skema Zod untuk catatan perkembangan murid: `listPerkembanganSchema` (paginasi limit/offset, filter muridId, rentang `dari`/`sampai`, pencarian `cari`), `createPerkembanganSchema` (nilai 0–100, sikap, catatan), `updatePerkembanganSchema` (minimal satu kolom), `catatanIdSchema`, dan `riwayatPerkembanganSchema`."
+ },
+ "starter.config.json": {
+  "summary": "Metadata starter dalam format JSON: id 'postgres', nama 'Base Postgres', deskripsi fondasi ramah AI dengan Drizzle dan PostgreSQL, `baseVersion` 0.1.0, serta penanda `database` postgresql."
+ },
+ ".agents/skills/starter-setup/SKILL.md": {
+  "summary": "Skill agen `starter-setup` yang memandu penyiapan PostgreSQL starter saat prompt pembuatan aplikasi pertama: menjalankan `npm run setup`, `npm run predev`, `npm run doctor`, menyalakan container `compose.dev.yaml`, menjalankan migrasi, dan memverifikasi URL lokal. Menjelaskan penanganan `DATABASE_URL`/`MIGRATION_DATABASE_URL`, larangan menimpa kredensial pengguna, dan rujukan ke `docs/deployment.md` serta skill `dev-database`."
+ },
+ ".nvmrc": {
+  "summary": "Berkas kecil berisi versi Node.js yang dipakai proyek (nilai `22`), dipakai pengelola versi seperti nvm agar lingkungan pengembangan dan CI memakai runtime yang sama."
+ },
+ "drizzle/0004_jurnal_idempoten.sql": {
+  "summary": "Berkas migrasi SQL Drizzle yang membuat unique index `teaching_journals_guru_jadwal_tanggal_idx` pada kolom `guru_id`, `schedule_id`, dan `tanggal` di tabel `teaching_journals`. Index ini menjamin satu guru tidak mencatat dua jurnal untuk jadwal dan tanggal yang sama (sifat idempoten penyimpanan jurnal)."
+ },
+ "drizzle/0006_tarif_gaji.sql": {
+  "summary": "Berkas migrasi SQL Drizzle yang membuat tabel `salary_settings` (kolom `id`, `tarif_per_jam`, `skema`, `berlaku_sejak`, `created_at`) beserta unique index `salary_settings_berlaku_sejak_idx`. Tabel ini menyimpan tarif gaji bertanggal sehingga tarif dapat diresolusi per periode."
+ },
+ "drizzle/meta/0001_snapshot.json": {
+  "summary": "Berkas generated snapshot skema Drizzle (meta migrasi 0001) berisi deskripsi tabel dasar Better Auth dan catatan: `user`, `session`, `account`, `verification`, dan `notes` lengkap dengan kolom, index, relasi, serta PK-nya. Cukup diringkas sebagai berkas turunan; dibaca mesin migrator, bukan diedit tangan."
+ },
+ "drizzle/meta/0006_snapshot.json": {
+  "summary": "Berkas generated snapshot skema Drizzle (meta migrasi 0006) yang menggambarkan seluruh skema terkini: tabel `classes`, `students`, `schedules`, `teaching_journals`, `journal_attendances`, `notifications`, `notification_preferences`, `salary_settings`, serta enum `status_jurnal`, termasuk index seperti `teaching_journals_guru_jadwal_tanggal_idx` dan relasi foreign key. Berkas turunan untuk migrator."
+ },
+ "e2e/atur-ulang-sandi.spec.ts": {
+  "summary": "Uji end-to-end Playwright untuk alur atur ulang sandi: mendaftar lewat `/api/akun`, meminta token lewat `/api/lupa-sandi`, membaca token dari tabel `verification`, lalu memverifikasi `/api/atur-ulang-sandi` menolak token palsu dan sandi pendek, mengganti sandi, mencabut sesi lama, dan menolak pemakaian token kedua kali (sekali pakai)."
+ },
+ "e2e/pemantauan.spec.ts": {
+  "summary": "Berkas uji end-to-end Playwright terbesar yang menguji kontrol akses berbasis peran (RBAC) owner vs guru: endpoint pantauan 401 tanpa sesi, penolakan guru dan penerimaan owner, menu/halaman pemantauan dan rekap gaji, pengalihan setelah masuk, serta penyimpanan pengaturan, aturan gaji, tambah/nonaktifkan guru, dan preferensi notifikasi. Peran diset di luar aplikasi seperti `npm run role:set`."
+ },
+ "next-env.d.ts": {
+  "summary": "Berkas deklarasi tipe Next.js yang di-generate otomatis (referensi tipe `next`, `next/image-types/global`, dan rute bertipe), berisi catatan agar tidak diedit manual. Dipakai agar TypeScript mengenali tipe global Next.js."
+ },
+ "scripts/migrate.mjs": {
+  "summary": "Skrip Node ESM untuk menjalankan migrasi Drizzle ke PostgreSQL melalui `drizzle-orm/node-postgres/migrator`; memuat environment lewat `scripts/lib.mjs`, memakai `MIGRATION_DATABASE_URL` atau `DATABASE_URL`, dan menutup pool di blok `finally`. Dijalankan sebagai bagian dari setup/diagnostik proyek."
+ },
+ "scripts/set-role.mjs": {
+  "summary": "Skrip CLI (`npm run role:set -- <email> <role>`) untuk memberikan peran ke akun yang sudah ada dengan memperbarui kolom `user.role`; memvalidasi nama peran terhadap `src/lib/permissions.ts`, mendukung daftar dipisah koma, dan memperingatkan peran yang tidak dikenal. Dipakai antara lain untuk mempromosikan admin/owner pertama."
+ },
+ "src/app/(protected)/app/gaji/saya/page.tsx": {
+  "summary": "Halaman server `RekapGajiSayaPage` (rute `/app/gaji/saya`) yang menampilkan rekap gaji milik akun yang sedang masuk; memvalidasi parameter `periode` dengan pola `YYYY-MM`, memakai `requireSession`, `periodeBulan`/`formatPeriode` dari `@/lib/gaji`, dan data dari `getRekapGajiSaya`, lalu merender komponen `RekapGajiSaya`."
+ },
+ "src/app/(protected)/app/perkembangan/layout.tsx": {
+  "summary": "Layout server `PerkembanganLayout` yang menjaga seluruh halaman Perkembangan Anak dengan satu pemeriksaan izin `requirePermission({ perkembangan: [\"read\"] })`, sehingga halaman di bawahnya tidak mengulang pemeriksaan dan tidak bisa lupa dijaga."
+ },
+ "src/app/(protected)/app/perkembangan/riwayat/page.tsx": {
+  "summary": "Halaman server `RiwayatPerkembanganPage` (rute `/app/perkembangan/riwayat`) yang memilih murid dari parameter `murid` (divalidasi terhadap `getDaftarMurid`), lalu merender `RiwayatPerkembangan` dengan catatan dari `getCatatanPerkembangan` dan kehadiran dari `getKehadiranAwal` yang tersaring per murid."
+ },
+ "src/app/api/admin/gaji/riwayat/route.ts": {
+  "summary": "Route API `GET /api/admin/gaji/riwayat` yang mengembalikan riwayat gaji per bulan (jumlah guru, jam mengajar, total gaji) untuk owner; dilindungi `withApiPermission` dengan izin `gaji: read-any` dan memvalidasi query `tahun` (wajib) serta `bulan` (opsional) lewat `riwayatGajiSchema`, memanggil `riwayatGajiAny`."
+ },
+ "src/app/api/jurnal/[id]/route.ts": {
+  "summary": "Route API dinamis untuk satu jurnal guru: `GET` mengambil detail via `getJurnalGuru` (404 jika tidak ada) dan `PATCH` mengoreksi materi/catatan/kehadiran via `koreksiJurnal`, memetakan status `tidak_ada` ke 404 dan `murid_tidak_ada` ke 422 dengan detail per murid. Dilindungi `withApiSession` dan divalidasi `jurnalIdSchema`/`koreksiJurnalSchema`."
+ },
+ "src/app/api/jurnal/route.ts": {
+  "summary": "Route API jurnal mengajar guru: `GET` mengembalikan riwayat jurnal (terbaru dulu, saringan kelas dan rentang tanggal diproses di database) via `listJurnalGuru`, dan `POST` menyimpan/mengirim jurnal secara idempoten (kirim ulang untuk jadwal+tanggal sama hanya memperbarui) via `simpanJurnal`, dengan error 404/422 untuk jadwal atau murid tidak valid dan header `Location` ke `/api/jurnal/{id}`."
+ },
+ "src/app/api/kelas/[id]/murid/route.ts": {
+  "summary": "Route API keanggotaan kelas: `GET /api/kelas/[id]/murid` mendaftar murid aktif di kelas via `listMuridKelas`, dan `POST` menempatkan murid via `tempatkanMurid` (tanggal mulai default hari ini), menjawab 404 bila kelas/murid tidak ada dan 409 `SUDAH_TERDAFTAR` bila murid sudah punya kelas aktif lain. Dilindungi `withApiSession`."
+ },
+ "src/components/auth-form.tsx": {
+  "summary": "Komponen klien `AuthForm` yang menangani formulir masuk dan daftar (mode `sign-in`/`sign-up`) memakai `authClient`, lalu mengarahkan pengguna ke halaman sesuai peran lewat `homePathUntukPeran`/`peranDariRole` dari `@/lib/peran`. Menyimpan status `pending` dan pesan `error`, serta tautan ke lupa sandi pada mode masuk."
+ },
+ "src/components/daftar-guru.tsx": {
+  "summary": "Komponen klien `DaftarGuru` untuk halaman pengaturan owner: menampilkan daftar akun guru/owner dengan pencarian (`KolomPencarian`), saringan status (`semua`/`aktif`/`nonaktif`), jumlah akun aktif, dan tombol aktif/nonaktifkan dengan dialog konfirmasi. Datanya masih tiruan sehingga perubahan hanya berlaku di layar (lihat `src/lib/mock-pengaturan.ts`)."
+ },
+ "src/components/konfirmasi-jurnal.tsx": {
+  "summary": "Komponen klien `KonfirmasiJurnal` yang menampilkan ringkasan setelah jurnal dikirim: kelas, jam mulai/selesai, jam mengajar yang ikut dihitung untuk gaji, materi, catatan, waktu kirim, dan daftar murid hadir/tidak hadir (tipe `RingkasanJurnal`/`MuridTerkirim`). Fokus dipindahkan ke kartu konfirmasi lewat `useRef` agar ramah pembaca layar, dengan aksi `onIsiLain`."
+ },
+ "src/components/panel-jurnal.tsx": {
+  "summary": "Komponen klien `PanelJurnal` untuk pantauan owner: menampilkan satu jurnal (`JurnalHarian`) secara ringkas dengan label status (`LabelStatusJurnal`) dan tombol Lihat detail yang membuka materi, catatan, serta kehadiran tiap murid (`KehadiranJurnal`) beserta jumlah hadir. Mengelola state `terbuka` dan memakai `formatJam`."
+ },
+ "src/db/schema/verification.ts": {
+  "summary": "Definisi tabel Drizzle `verification` (dipakai Better Auth untuk token verifikasi/atur ulang sandi) dengan kolom `id` (PK), `identifier`, `value`, `expiresAt`, `createdAt`, `updatedAt`, dan index `verification_identifier_idx` pada `identifier`."
+ },
+ "src/lib/notifikasi.ts": {
+  "summary": "Modul konstanta jenis pemberitahuan aplikasi: array `JENIS_NOTIFIKASI` (mis. `jurnal_baru`, `kelas_kosong`, `gaji_dibayar`, `laporan_bulanan`) beserta judul, keterangan, dan flag `bawaanAktif`, plus tipe `JenisNotifikasi` dan `DAFTAR_JENIS_NOTIFIKASI`. Nilainya dipakai di kolom `notifications.tipe` dan `notification_preferences.jenis_notifikasi`."
+ },
+ "src/lib/peran.ts": {
+  "summary": "Modul fungsi murni peran pengguna: tipe `PeranPengguna` (`guru`/`owner`), `labelPeran`, `peranDariRole` (membaca kolom `user.role` yang boleh berisi beberapa peran dipisah koma; owner dan admin sama-sama diperlakukan sebagai owner), dan `homePathUntukPeran` (guru ke `/app/jurnal`, owner ke `/app/pemantauan`)."
+ },
+ "src/validators/kehadiran.ts": {
+  "summary": "Validator Zod `listKehadiranSchema` untuk query daftar kehadiran: `limit` (1-100, default 50), `offset`, saringan opsional `muridId`, `kelasId`, `dari`, `sampai`, dengan aturan `sampai` tidak boleh lebih awal dari `dari`, dan tipe `ListKehadiranInput`."
+ },
+ "src/validators/notes.ts": {
+  "summary": "Validator Zod bersama untuk catatan (`notes`): `createNoteSchema` (judul wajib 1-160 karakter, konten opsional maks 10.000), `updateNoteSchema` (minimal satu field berubah), `noteIdSchema` (UUID), dan `listNotesSchema` (limit/offset bertipe paginasi), dengan tipe inferensinya."
+ },
+ "src/validators/pengaturan.ts": {
+  "summary": "Validator Zod untuk modul pengaturan: `profilBimbelSchema` (termasuk logo data URL PNG/JPG/WebP maks ~1 MB), `SKEMA_GAJI` (`per jam`, `tetap`), `aturanGajiSchema`, `listAturanGajiSchema`, `STATUS_AKUN`, `listGuruSchema`, `tambahGuruSchema`, `ubahStatusGuruSchema`, `guruIdSchema`, dan `ubahPreferensiNotifikasiSchema`. Menjadi kontrak masukan API pengaturan owner."
+ }
+}
