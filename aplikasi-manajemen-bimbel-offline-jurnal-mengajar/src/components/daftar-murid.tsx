@@ -32,9 +32,12 @@ export function DaftarMurid({ daftarAwal }: DaftarMuridProps) {
   const kataKunci = cari.trim().toLowerCase();
   const cocok = kataKunci
     ? daftar.filter(
+        // Sama seperti `?cari=` di /api/murid: nama anak, nama orang tua,
+        // atau kontak orang tuanya.
         (murid) =>
           murid.nama.toLowerCase().includes(kataKunci) ||
-          murid.namaOrangTua.toLowerCase().includes(kataKunci),
+          murid.namaOrangTua.toLowerCase().includes(kataKunci) ||
+          murid.kontakOrangTua.toLowerCase().includes(kataKunci),
       )
     : daftar;
 
@@ -64,7 +67,7 @@ export function DaftarMurid({ daftarAwal }: DaftarMuridProps) {
           nilai={cari}
           onUbah={setCari}
           label="Cari murid"
-          placeholder="Cari nama murid atau orang tua…"
+          placeholder="Cari nama, orang tua, atau kontak…"
         />
         {kataKunci && (
           <p role="status" className="text-sm text-muted-foreground">
