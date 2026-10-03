@@ -50,6 +50,7 @@ App features follow the same structure as Notes: route → `withApiSession` → 
 | GET    | `/api/jurnal`               | 200, riwayat jurnal guru (saring kelas & rentang tanggal, berhalaman) |
 | GET    | `/api/jurnal/:id`           | 200, detail satu jurnal beserta daftar muridnya                       |
 | GET    | `/api/admin/jurnal`         | 200, owner melihat jurnal semua guru pada satu tanggal                |
+| GET    | `/api/admin/jurnal/:id`     | 200, owner membuka detail satu jurnal guru siapa pun                  |
 | GET    | `/api/admin/ringkasan-guru` | 200, ringkasan harian: jadwal & status jurnal tiap guru               |
 | POST   | `/api/jurnal`               | 200, simpan & kirim jurnal mengajar (idempoten per jadwal + tanggal)  |
 | PATCH  | `/api/jurnal/:id`           | 200, koreksi isi jurnal (materi, catatan, dan/atau kehadiran)         |
@@ -65,6 +66,8 @@ App features follow the same structure as Notes: route → `withApiSession` → 
 `GET /api/admin/jurnal` dipakai owner untuk memantau jurnal harian semua guru. Endpoint ini membaca baris milik akun lain, jadi dijaga `withApiPermission(request, { jurnal: ["read-any"] }, …)`: guru biasa (role `user`) menerima 403 walau punya sesi yang sah, sedangkan role `owner` (atau `admin`) boleh membacanya. Parameter yang diterima: `tanggal` (bawaan hari ini), `classId`, `guruId`, `cabang`, `limit` (bawaan 50), dan `offset`; hasilnya `{ "data": [...], "meta": { "tanggal", "limit", "offset", "hasMore" } }` dengan setiap baris memuat `guruNama`, `guruEmail`, kelas, jam, jam mengajar, status, dan jumlah kehadiran, diurutkan menurut nama guru lalu jam mulai. Id akun (`guruId`) berasal dari Better Auth dan divalidasi sebagai string 1–64 karakter, bukan UUID. Guru yang membuka `/api/jurnal` tetap hanya melihat jurnalnya sendiri — izin tambahan hanya melebarkan endpoint lintas akun.
 
 `GET /api/admin/ringkasan-guru` merangkum satu hari untuk owner: setiap guru yang punya jadwal hari itu (ditambah siapa pun yang sudah mengirim jurnal), jadwal apa saja yang harus dia ajar, dan apakah jurnalnya sudah dikirim. Parameternya `tanggal` (bawaan hari ini, format `YYYY-MM-DD`), `classId`, `guruId`, dan `cabang`; saringan kelas/guru/cabang ikut menyaring jadwal maupun jurnalnya. Hasilnya `{ "data": [{ guruId, guruNama, guruEmail, jadwal: [{ namaKelas, jamMulai, jamSelesai }], jumlahJurnal, totalJam, sudahMengisi }], "meta": { tanggal, hari, jumlahGuru, sudahMengisi, belumMengisi } }`, dengan guru yang belum mengisi tampil lebih dulu. Endpoint ini juga dijaga `jurnal: read-any`, jadi guru biasa menerima 403.
+
+`GET /api/admin/jurnal/:id` membuka detail satu jurnal guru siapa pun untuk owner, lengkap dengan nama/email gurunya dan `kehadiran: [{ muridId, nama, hadir, catatan }]`. Bentuk isinya sama dengan `GET /api/jurnal/:id`, hanya saja tidak dibatasi pemilik, jadi endpoint ini juga dijaga `jurnal: read-any` (guru biasa menerima 403) dan id yang tidak ada dijawab 404.
 
 ## Role-based access
 

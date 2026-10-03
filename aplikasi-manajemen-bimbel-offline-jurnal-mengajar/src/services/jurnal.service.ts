@@ -239,6 +239,9 @@ export async function listJurnalGuru(guruId: string, filter: ListJurnalInput) {
 
 const fieldsDetail = {
   id: teachingJournals.id,
+  guruId: teachingJournals.guruId,
+  guruNama: user.name,
+  guruEmail: user.email,
   classId: teachingJournals.classId,
   namaKelas: classes.namaKelas,
   cabang: classes.cabang,
@@ -258,20 +261,19 @@ const fieldsDetail = {
   updatedAt: teachingJournals.updatedAt,
 };
 
-/**
- * Satu jurnal milik guru ini lengkap dengan daftar muridnya. Mengembalikan
- * `null` untuk jurnal yang tidak ada maupun yang bukan milik guru ini, supaya
- * keduanya tidak bisa dibedakan dari luar.
- */
-export async function getJurnalGuru(guruId: string, id: string) {
+// `guruId` diisi untuk membaca jurnal milik sendiri; dibiarkan kosong oleh
+// pemanggil lintas akun (endpoint owner) yang sudah dijaga izinnya.
+async function ambilDetailJurnal(jurnalId: string, guruId?: string) {
+  const syarat = [eq(teachingJournals.id, jurnalId)];
+  if (guruId) syarat.push(eq(teachingJournals.guruId, guruId));
+
   const [jurnal] = await db
     .select(fieldsDetail)
     .from(teachingJournals)
     .innerJoin(classes, eq(teachingJournals.classId, classes.id))
+    .innerJoin(user, eq(teachingJournals.guruId, user.id))
     .leftJoin(schedules, eq(teachingJournals.scheduleId, schedules.id))
-    .where(
-      and(eq(teachingJournals.id, id), eq(teachingJournals.guruId, guruId)),
-    )
+    .where(and(...syarat))
     .limit(1);
   if (!jurnal) return null;
 
@@ -288,6 +290,23 @@ export async function getJurnalGuru(guruId: string, id: string) {
     .orderBy(asc(students.nama));
 
   return { ...jurnal, kehadiran };
+}
+
+/**
+ * Satu jurnal milik guru ini lengkap dengan daftar muridnya. Mengembalikan
+ * `null` untuk jurnal yang tidak ada maupun yang bukan milik guru ini, supaya
+ * keduanya tidak bisa dibedakan dari luar.
+ */
+export function getJurnalGuru(guruId: string, id: string) {
+  return ambilDetailJurnal(id, guruId);
+}
+
+/**
+ * Satu jurnal siapa pun, untuk owner. Hanya aman dipanggil dari endpoint yang
+ * dijaga `withApiPermission` (atau halaman dengan `requirePermission`).
+ */
+export function getAnyJurnal(id: string) {
+  return ambilDetailJurnal(id);
 }
 
 export type HasilKoreksiJurnal =

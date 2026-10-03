@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "1ba68cb77a13ad4f04b3f21f155c920e465b61b7",
+  "generatedForCommit": "c19a63605927790f67f2fac4bca77e4227aea7c9",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -172,9 +172,9 @@
     },
     {
       "path": "docs/backend.md",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "markdown",
-      "size": 14586
+      "size": 15489
     },
     {
       "path": "docs/deployment.md",
@@ -238,7 +238,7 @@
     },
     {
       "path": "drizzle/0005_notifikasi.sql",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "sql",
       "size": 1468
     },
@@ -274,13 +274,13 @@
     },
     {
       "path": "drizzle/meta/0005_snapshot.json",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "json",
       "size": 32457
     },
     {
       "path": "drizzle/meta/_journal.json",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "json",
       "size": 881
     },
@@ -529,6 +529,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 758
+    },
+    {
+      "path": "src/app/api/admin/ringkasan-guru/route.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1238
     },
     {
       "path": "src/app/api/auth/[...all]/route.ts",
@@ -832,7 +838,7 @@
     },
     {
       "path": "src/db/schema/index.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 467
     },
@@ -850,13 +856,13 @@
     },
     {
       "path": "src/db/schema/notification-preferences.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 962
     },
     {
       "path": "src/db/schema/notifications.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1144
     },
@@ -994,9 +1000,9 @@
     },
     {
       "path": "src/validators/jurnal.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 3700
+      "size": 3972
     },
     {
       "path": "src/validators/notes.ts",
