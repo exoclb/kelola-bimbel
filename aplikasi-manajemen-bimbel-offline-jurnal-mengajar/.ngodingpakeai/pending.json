@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "13c0f9964c09e03253a16422c115f0221da3cd07",
+  "generatedForCommit": "d1579e87ae45891f831aa788758807d47cd7439c",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -172,9 +172,9 @@
     },
     {
       "path": "docs/backend.md",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "markdown",
-      "size": 33995
+      "size": 34775
     },
     {
       "path": "docs/deployment.md",
@@ -273,6 +273,12 @@
       "size": 1068
     },
     {
+      "path": "drizzle/0011_peran_pengguna.sql",
+      "reason": "new",
+      "language": "sql",
+      "size": 465
+    },
+    {
       "path": "drizzle/meta/0000_snapshot.json",
       "reason": "needs_summary",
       "language": "json",
@@ -339,10 +345,16 @@
       "size": 45441
     },
     {
-      "path": "drizzle/meta/_journal.json",
-      "reason": "needs_summary",
+      "path": "drizzle/meta/0011_snapshot.json",
+      "reason": "new",
       "language": "json",
-      "size": 1589
+      "size": 45856
+    },
+    {
+      "path": "drizzle/meta/_journal.json",
+      "reason": "changed",
+      "language": "json",
+      "size": 1732
     },
     {
       "path": "drizzle.config.ts",
@@ -352,13 +364,13 @@
     },
     {
       "path": "e2e/auth.spec.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 4702
     },
     {
       "path": "e2e/gaji.spec.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 7215
     },
@@ -370,13 +382,13 @@
     },
     {
       "path": "e2e/pemantauan.spec.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 5688
     },
     {
       "path": "e2e/roles.spec.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 5395
     },
@@ -394,7 +406,7 @@
     },
     {
       "path": "next-env.d.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 288
     },
@@ -514,7 +526,7 @@
     },
     {
       "path": "src/app/(auth)/layout.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 847
     },
@@ -634,7 +646,7 @@
     },
     {
       "path": "src/app/(protected)/layout.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1771
     },
@@ -856,7 +868,7 @@
     },
     {
       "path": "src/components/auth-form.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 5812
     },
@@ -958,13 +970,13 @@
     },
     {
       "path": "src/components/halaman-daftar.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 8921
     },
     {
       "path": "src/components/halaman-masuk.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 7549
     },
@@ -1048,7 +1060,7 @@
     },
     {
       "path": "src/components/penanda-pengguna.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1168
     },
@@ -1264,9 +1276,9 @@
     },
     {
       "path": "src/db/schema/user.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 856
+      "size": 1408
     },
     {
       "path": "src/db/schema/verification.ts",
@@ -1312,7 +1324,7 @@
     },
     {
       "path": "src/lib/mock-akun.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2130
     },
@@ -1342,7 +1354,7 @@
     },
     {
       "path": "src/lib/mock-menu.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1705
     },
@@ -1366,7 +1378,7 @@
     },
     {
       "path": "src/lib/peran.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1310
     },

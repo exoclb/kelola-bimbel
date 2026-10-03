@@ -20,33 +20,27 @@ export class ApiError extends Error {
 
 type Session = NonNullable<Awaited<ReturnType<typeof auth.api.getSession>>>;
 
-// Shared HTTP concerns only. Domain rules and Drizzle queries live in services.
-export async function withApiSession(
-  request: Request,
-  handler: (session: Session) => Promise<Response>,
-) {
+// Custom cookie-authenticated mutations must come from the app's own origin.
+// Better Auth protects its own endpoints; ours need the same check.
+export function assertSameOrigin(request: Request) {
+  if (["GET", "HEAD", "OPTIONS"].includes(request.method)) return;
+  if (
+    request.headers.get("origin") !== new URL(env.BETTER_AUTH_URL).origin ||
+    request.headers.get("sec-fetch-site") === "cross-site"
+  )
+    throw new ApiError(
+      403,
+      "FORBIDDEN_ORIGIN",
+      "Send this request from the app's configured origin.",
+    );
+}
+
+// Every app endpoint answers through this wrapper so error shapes and caching
+// stay identical whether or not the endpoint needs a session.
+export async function withApiError(handler: () => Promise<Response>) {
   let response: Response;
   try {
-    const session = await auth.api.getSession({
-      headers: request.headers,
-      query: { disableCookieCache: true },
-    });
-    if (!session)
-      throw new ApiError(401, "UNAUTHORIZED", "Sign in to continue.");
-
-    // Better Auth protects its own endpoints. Custom cookie-authenticated mutations need this check too.
-    if (!["GET", "HEAD", "OPTIONS"].includes(request.method)) {
-      if (
-        request.headers.get("origin") !== new URL(env.BETTER_AUTH_URL).origin ||
-        request.headers.get("sec-fetch-site") === "cross-site"
-      )
-        throw new ApiError(
-          403,
-          "FORBIDDEN_ORIGIN",
-          "Send this request from the app's configured origin.",
-        );
-    }
-    response = await handler(session);
+    response = await handler();
   } catch (error) {
     if (error instanceof ApiError) {
       response = Response.json(
@@ -92,6 +86,24 @@ export async function withApiSession(
   }
   response.headers.set("Cache-Control", "private, no-store");
   return response;
+}
+
+// Shared HTTP concerns only. Domain rules and Drizzle queries live in services.
+export async function withApiSession(
+  request: Request,
+  handler: (session: Session) => Promise<Response>,
+) {
+  return withApiError(async () => {
+    const session = await auth.api.getSession({
+      headers: request.headers,
+      query: { disableCookieCache: true },
+    });
+    if (!session)
+      throw new ApiError(401, "UNAUTHORIZED", "Sign in to continue.");
+
+    assertSameOrigin(request);
+    return handler(session);
+  });
 }
 
 // Same contract as withApiSession, plus a role check before the handler runs.
