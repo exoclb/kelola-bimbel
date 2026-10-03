@@ -343,18 +343,6 @@ export const PILIHAN_MATERI = [
   "Ulangan",
 ] as const;
 
-/** Jam mengajar dipakai untuk hitung gaji, jadi angkanya diambil dari jadwal. */
-export function hitungJamMengajar(jamMulai: string, jamSelesai: string) {
-  const [jamAwal, menitAwal] = jamMulai.split(":").map(Number);
-  const [jamAkhir, menitAkhir] = jamSelesai.split(":").map(Number);
-  const selisihMenit = jamAkhir * 60 + menitAkhir - (jamAwal * 60 + menitAwal);
-  return Math.round((selisihMenit / 60) * 10) / 10;
-}
-
-export function formatJam(nilai: number) {
-  return `${nilai.toLocaleString("id-ID", { maximumFractionDigits: 1 })} jam`;
-}
-
 /**
  * Pengganti sementara `POST /api/jurnal`. Mengembalikan hasil yang sama
  * seperti API supaya halaman tidak perlu banyak berubah saat backend siap.

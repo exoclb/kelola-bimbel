@@ -9,7 +9,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { formatJam, hitungJamMengajar, type Jadwal } from "@/lib/mock-jurnal";
+import { formatJam, hitungJamMengajar } from "@/lib/jurnal";
+import type { Jadwal } from "@/lib/mock-jurnal";
 
 type PemilihJadwalProps = {
   jadwal: Jadwal[];

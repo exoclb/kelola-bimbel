@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import {
   ArrowUpRight,
   Check,
+  Eye,
   History,
   NotebookPen,
   Plus,
@@ -19,6 +20,8 @@ export default async function AppPage() {
   const { user } = await requireSession();
   // Hiding the link is presentation only. /admin and its API guard themselves.
   const isAdmin = await hasPermission(user.id, { notes: ["read-any"] });
+  // Hanya menampilkan pintasan; halaman & API pemantauan menjaga dirinya sendiri.
+  const isOwner = await hasPermission(user.id, { jurnal: ["read-any"] });
   const prompt =
     "Read AGENTS.md and use the build-feature skill. Replace the blank app page with [describe your first feature]. Keep authentication working, store any user data with Drizzle and PostgreSQL, and use Context7 to check library APIs.";
 
@@ -74,6 +77,19 @@ export default async function AppPage() {
         </blockquote>
         <CopyPrompt text={prompt} />
       </section>
+      {isOwner && (
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-card px-5 py-4">
+          <p className="text-sm leading-6 text-muted-foreground">
+            Pantau jurnal mengajar semua guru hari ini.
+          </p>
+          <Button variant="outline" asChild size="sm">
+            <Link href="/app/pemantauan">
+              <Eye aria-hidden="true" />
+              Buka pemantauan
+            </Link>
+          </Button>
+        </div>
+      )}
       {isAdmin && (
         <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-card px-5 py-4">
           <p className="text-sm leading-6 text-muted-foreground">

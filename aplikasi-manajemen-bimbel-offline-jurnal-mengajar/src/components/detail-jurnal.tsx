@@ -25,8 +25,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { DaftarKehadiran } from "@/components/daftar-kehadiran";
 import { LabelStatusJurnal } from "@/components/label-status-jurnal";
 import { PemilihMateri } from "@/components/pemilih-materi";
+import { formatJam } from "@/lib/jurnal";
 import {
-  formatJam,
   koreksiJurnalStub,
   pisahMateri,
   type JurnalRiwayat,

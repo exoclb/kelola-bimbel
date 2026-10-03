@@ -423,3 +423,7 @@ export async function listAnyJurnal(
     },
   };
 }
+
+export type JurnalHarian = Awaited<
+  ReturnType<typeof listAnyJurnal>
+>["data"][number];

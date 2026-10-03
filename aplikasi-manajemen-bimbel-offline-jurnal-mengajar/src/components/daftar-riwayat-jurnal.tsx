@@ -12,11 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { LabelStatusJurnal } from "@/components/label-status-jurnal";
-import {
-  formatJam,
-  type FilterRiwayat,
-  type JurnalRiwayat,
-} from "@/lib/mock-jurnal";
+import { formatJam } from "@/lib/jurnal";
+import type { FilterRiwayat, JurnalRiwayat } from "@/lib/mock-jurnal";
 import { formatTanggalLengkap } from "@/lib/tanggal";
 
 type DaftarRiwayatJurnalProps = {

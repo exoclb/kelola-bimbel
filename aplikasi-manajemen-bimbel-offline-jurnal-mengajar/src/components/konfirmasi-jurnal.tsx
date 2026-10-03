@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { formatJam } from "@/lib/mock-jurnal";
+import { formatJam } from "@/lib/jurnal";
 
 export type MuridTerkirim = {
   nama: string;

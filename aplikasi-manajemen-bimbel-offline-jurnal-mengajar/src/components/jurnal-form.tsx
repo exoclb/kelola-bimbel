@@ -20,9 +20,8 @@ import {
 } from "@/components/konfirmasi-jurnal";
 import { PemilihJadwal } from "@/components/pemilih-jadwal";
 import { PemilihMateri } from "@/components/pemilih-materi";
+import { formatJam, hitungJamMengajar } from "@/lib/jurnal";
 import {
-  formatJam,
-  hitungJamMengajar,
   kirimJurnalStub,
   type Jadwal,
   type JurnalInput,
