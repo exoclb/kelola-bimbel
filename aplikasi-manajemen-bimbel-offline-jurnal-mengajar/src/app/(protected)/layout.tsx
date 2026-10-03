@@ -1,8 +1,8 @@
 import { AppNav } from "@/components/app-nav";
 import { Brand } from "@/components/brand";
+import { PenandaPengguna } from "@/components/penanda-pengguna";
 import { SignOutButton } from "@/components/sign-out-button";
 import { hasPermission, requireSession } from "@/lib/session";
-import { labelPeran } from "@/lib/mock-akun";
 import { menuUntukPeran, peranDariRole, type MenuApp } from "@/lib/mock-menu";
 
 export const runtime = "nodejs";
@@ -33,12 +33,11 @@ export default async function ProtectedLayout({
           <Brand />
           <div className="flex flex-wrap items-center gap-4">
             <AppNav menu={menu} />
-            <p className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{user.name}</span>
-              <span className="rounded-full border bg-muted px-2.5 py-0.5 text-xs font-medium">
-                {labelPeran(peran)}
-              </span>
-            </p>
+            <PenandaPengguna
+              nama={user.name}
+              email={user.email}
+              peran={peran}
+            />
             <SignOutButton />
           </div>
         </div>

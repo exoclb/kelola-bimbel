@@ -42,7 +42,12 @@ test("signup, persisted session, signout, rejected password, and signin work", a
   ).toBe(true);
   await page.goto("/sign-in");
   await expect(page).toHaveURL(/\/app$/);
-  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  // Penanda pengguna aktif di kepala halaman menampilkan akun yang sedang masuk.
+  const kepala = page.getByRole("banner");
+  await expect(kepala.getByText("Ada Builder")).toBeVisible();
+  await expect(kepala.getByText(email)).toBeVisible();
+  await expect(kepala.getByText("Guru", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Keluar", exact: true }).click();
   await expect(page).toHaveURL(/\/sign-in$/);
   await page.goto("/app");
   await expect(page).toHaveURL(/\/sign-in$/);

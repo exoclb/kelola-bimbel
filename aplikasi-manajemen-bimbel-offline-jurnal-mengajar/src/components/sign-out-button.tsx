@@ -6,10 +6,12 @@ import { LogOut } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 
+/** Tombol keluar: mengakhiri sesi, lalu kembali ke halaman masuk. */
 export function SignOutButton() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(false);
   const router = useRouter();
+
   async function signOut() {
     setPending(true);
     setError(false);
@@ -24,16 +26,23 @@ export function SignOutButton() {
       setPending(false);
     }
   }
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       {error && (
         <p role="alert" className="text-sm text-destructive">
-          Couldn’t sign out. Try again.
+          Gagal keluar. Coba lagi.
         </p>
       )}
-      <Button onClick={signOut} disabled={pending} variant="outline" size="sm">
+      <Button
+        type="button"
+        onClick={signOut}
+        disabled={pending}
+        variant="outline"
+        size="sm"
+      >
         <LogOut aria-hidden="true" />
-        {pending ? "Signing out…" : "Sign out"}
+        {pending ? "Sedang keluar…" : "Keluar"}
       </Button>
     </div>
   );
