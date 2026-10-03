@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "8be6ee0d96f457dcf7574e3ef448c55fda8b1725",
+  "generatedForCommit": "2ede2a6b5513df9d467c389a8ac5f8dea8957c8a",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -174,7 +174,7 @@
       "path": "docs/backend.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 40440
+      "size": 40614
     },
     {
       "path": "docs/deployment.md",
@@ -376,7 +376,7 @@
     },
     {
       "path": "e2e/atur-ulang-sandi.spec.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 3200
     },
@@ -406,9 +406,9 @@
     },
     {
       "path": "e2e/pemantauan.spec.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 6455
+      "size": 7082
     },
     {
       "path": "e2e/roles.spec.ts",
@@ -657,6 +657,12 @@
       "size": 2708
     },
     {
+      "path": "src/app/(protected)/app/pengaturan/page.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 440
+    },
+    {
       "path": "src/app/(protected)/app/perkembangan/layout.tsx",
       "reason": "needs_summary",
       "language": "typescript",
@@ -754,7 +760,7 @@
     },
     {
       "path": "src/app/api/atur-ulang-sandi/route.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2268
     },
@@ -1131,6 +1137,12 @@
       "size": 1168
     },
     {
+      "path": "src/components/pengaturan-bimbel.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 5185
+    },
+    {
       "path": "src/components/providers.tsx",
       "reason": "needs_summary",
       "language": "typescript",
@@ -1366,7 +1378,7 @@
     },
     {
       "path": "src/lib/auth.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2380
     },
@@ -1390,9 +1402,9 @@
     },
     {
       "path": "src/lib/mock-akun.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 2130
+      "size": 2302
     },
     {
       "path": "src/lib/mock-gaji.ts",
@@ -1420,9 +1432,9 @@
     },
     {
       "path": "src/lib/mock-menu.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 1705
+      "size": 1815
     },
     {
       "path": "src/lib/mock-murid.ts",
@@ -1435,6 +1447,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 1336
+    },
+    {
+      "path": "src/lib/mock-pengaturan.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 2185
     },
     {
       "path": "src/lib/mock-perkembangan.ts",
@@ -1450,9 +1468,9 @@
     },
     {
       "path": "src/lib/permissions.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 2421
+      "size": 2664
     },
     {
       "path": "src/lib/session.ts",
@@ -1600,7 +1618,7 @@
     },
     {
       "path": "src/validators/sandi.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 675
     },
