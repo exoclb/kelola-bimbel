@@ -9,3 +9,5 @@ export * from "./students";
 export * from "./schedules";
 export * from "./teaching-journals";
 export * from "./journal-attendances";
+export * from "./notifications";
+export * from "./notification-preferences";

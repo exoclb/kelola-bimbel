@@ -36,6 +36,13 @@
       "when": 1791020177978,
       "tag": "0004_jurnal_idempoten",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791029343341,
+      "tag": "0005_notifikasi",
+      "breakpoints": true
     }
   ]
 }
