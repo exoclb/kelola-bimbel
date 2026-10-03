@@ -67,6 +67,8 @@ Operasi jurnal milik guru ada di `src/services/jurnal.service.ts` (simpan, riway
 | PATCH  | `/api/notifikasi`              | 200, tandai notifikasi tertentu atau semua sebagai sudah dibaca         |
 | POST   | `/api/jurnal`                  | 200, simpan & kirim jurnal mengajar (idempoten per jadwal + tanggal)    |
 | PATCH  | `/api/jurnal/:id`              | 200, koreksi isi jurnal (materi, catatan, dan/atau kehadiran)           |
+| GET    | `/api/pengaturan/profil`       | 200, profil bimbel (kosong kalau belum diatur)                          |
+| PUT    | `/api/pengaturan/profil`       | 200, menyimpan profil bimbel + logo (owner & admin)                     |
 | POST   | `/api/akun`                    | 201, mendaftarkan akun guru baru (langsung masuk)                       |
 | POST   | `/api/masuk`                   | 200, masuk dengan email & sandi (membuat sesi)                          |
 | GET    | `/api/sesi`                    | 200, akun yang sedang masuk beserta perannya                            |
@@ -133,6 +135,10 @@ Endpoint ini terbuka (belum punya sesi) tetapi tidak melewati jalur auth begitu 
 `POST /api/masuk` menerima `{ email, sandi }` dan menjawab 200 dengan `{ id, nama, email, peran, tujuan }` — `tujuan` adalah halaman utama perannya (`/app/jurnal` untuk guru, `/app/pemantauan` untuk owner), jadi pemanggil tidak perlu menyalin aturan pengalihannya. Email yang tidak terdaftar dan sandi yang salah dijawab **sama**: 401 `EMAIL_ATAU_SANDI_SALAH`, supaya halaman masuk tidak bisa dipakai menebak email mana yang punya akun. Akun yang dinonaktifkan (kolom `banned`) dijawab 403 `AKUN_NONAKTIF`. Sesi yang dibuatnya dikirim sebagai cookie, sama seperti endpoint bawaan Better Auth — termasuk batas lajunya.
 
 `GET /api/sesi` mengembalikan `{ id, nama, email, peran, tujuan, kedaluwarsa }` untuk cookie yang sedang dipakai, dan 401 kalau tidak ada sesi. `DELETE /api/sesi` **mencabut sesinya di server** (baris `session` dihapus, bukan cuma cookie-nya dikosongkan) lalu menjawab 204 dengan cookie sesi yang dibersihkan, sehingga cookie lama tidak bisa dipakai ulang. Akun yang **dinonaktifkan** (kolom `user.banned`) juga berlaku seketika: `getSession` dan `withApiSession` menganggapnya tidak punya sesi, jadi cookie yang masih tersimpan langsung dijawab 401 di API dan dialihkan ke halaman masuk di halaman web — tidak perlu menunggu cookie-nya kedaluwarsa.
+
+`GET /api/pengaturan/profil` mengembalikan profil bimbel `{ nama, alamat, telepon, email, logo, updatedAt }`; kalau owner belum pernah mengisinya, jawabannya tetap bentuk yang sama dengan nilai kosong dan `updatedAt: null` (jadi pemanggil tidak perlu menangani dua bentuk). Semua akun boleh membacanya karena nama bimbel dipakai di laporan dan slip gaji. `PUT /api/pengaturan/profil` menyimpannya dan hanya untuk yang punya izin `pengaturan: write` (owner & admin); akun lain dijawab 403.
+
+Tabelnya sengaja hanya boleh berisi **satu baris** (dijaga indeks unik pada ekspresi tetap), jadi penyimpanannya mencari barisnya dulu lalu memperbarui atau membuat — dua permintaan pertama yang hampir bersamaan tidak menghasilkan dua profil. Logonya dikirim sebagai data URL (`data:image/png;base64,…`, PNG/JPG/WebP, maksimal ±1 MB) dan disimpan apa adanya supaya ikut tersalin saat backup; mengirim `logo: null` menghapus logonya. Nilai yang tidak sah — nama kosong, email bukan alamat email, atau logo bukan data URL gambar — dijawab 422 dengan kolomnya masing-masing.
 
 ## Lupa sandi
 

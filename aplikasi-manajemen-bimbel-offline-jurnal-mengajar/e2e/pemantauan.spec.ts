@@ -284,3 +284,50 @@ test("menyimpan pengaturan minta lengkapi isian lalu menampilkan konfirmasi", as
 
   await setRole("user");
 });
+
+test("profil bimbel boleh dibaca semua akun, hanya owner yang mengubah", async ({
+  request,
+}) => {
+  await setRole("user");
+  await masuk(request);
+
+  const dibaca = await request.get("/api/pengaturan/profil", { headers });
+  expect(dibaca.status()).toBe(200);
+  expect(await dibaca.json()).toHaveProperty("data.nama");
+
+  const ditolak = await request.put("/api/pengaturan/profil", {
+    headers,
+    data: { nama: "Bimbel Diubah Guru" },
+  });
+  expect(ditolak.status()).toBe(403);
+
+  await setRole("owner");
+  const disimpan = await request.put("/api/pengaturan/profil", {
+    headers,
+    data: {
+      nama: "Bimbel Uji E2E",
+      alamat: "Jl. Uji No. 1",
+      telepon: "0812-0000-0000",
+      email: "halo@ujie2e.test",
+      logo: null,
+    },
+  });
+  expect(disimpan.status()).toBe(200);
+  const profil = (await disimpan.json()).data;
+  expect(profil.nama).toBe("Bimbel Uji E2E");
+  expect(profil.logo).toBeNull();
+
+  // Isian yang tidak sah ditolak sebelum menyentuh basis data.
+  const pendek = await request.put("/api/pengaturan/profil", {
+    headers,
+    data: { nama: "X" },
+  });
+  expect(pendek.status()).toBe(422);
+  const logoAneh = await request.put("/api/pengaturan/profil", {
+    headers,
+    data: { nama: "Bimbel Uji E2E", logo: "http://contoh.test/logo.png" },
+  });
+  expect(logoAneh.status()).toBe(422);
+
+  await setRole("user");
+});

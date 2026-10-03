@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "7026da26549e3c615bd10e47403d18f0723dc57b",
+  "generatedForCommit": "4f9b944b9bc9a9208c447969ce6689ea65ca2b80",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -172,9 +172,9 @@
     },
     {
       "path": "docs/backend.md",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "markdown",
-      "size": 41032
+      "size": 41600
     },
     {
       "path": "docs/deployment.md",
@@ -279,6 +279,12 @@
       "size": 465
     },
     {
+      "path": "drizzle/0012_profil_bimbel.sql",
+      "reason": "new",
+      "language": "sql",
+      "size": 510
+    },
+    {
       "path": "drizzle/meta/0000_snapshot.json",
       "reason": "needs_summary",
       "language": "json",
@@ -351,10 +357,16 @@
       "size": 45856
     },
     {
-      "path": "drizzle/meta/_journal.json",
-      "reason": "needs_summary",
+      "path": "drizzle/meta/0012_snapshot.json",
+      "reason": "new",
       "language": "json",
-      "size": 1732
+      "size": 47965
+    },
+    {
+      "path": "drizzle/meta/_journal.json",
+      "reason": "changed",
+      "language": "json",
+      "size": 1874
     },
     {
       "path": "drizzle.config.ts",
@@ -406,7 +418,7 @@
     },
     {
       "path": "e2e/pemantauan.spec.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 9352
     },
@@ -436,9 +448,9 @@
     },
     {
       "path": "next-env.d.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 288
+      "size": 296
     },
     {
       "path": "next.config.ts",
@@ -994,7 +1006,7 @@
     },
     {
       "path": "src/components/daftar-guru.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 7793
     },
@@ -1042,7 +1054,7 @@
     },
     {
       "path": "src/components/form-aturan-gaji.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 8931
     },
@@ -1066,7 +1078,7 @@
     },
     {
       "path": "src/components/form-profil-bimbel.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 9561
     },
@@ -1114,7 +1126,7 @@
     },
     {
       "path": "src/components/konfirmasi-pengaturan.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2291
     },
@@ -1323,6 +1335,12 @@
       "size": 1057
     },
     {
+      "path": "src/db/schema/bimbel-profile.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1280
+    },
+    {
       "path": "src/db/schema/classes.ts",
       "reason": "needs_summary",
       "language": "typescript",
@@ -1330,9 +1348,9 @@
     },
     {
       "path": "src/db/schema/index.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 610
+      "size": 644
     },
     {
       "path": "src/db/schema/journal-attendances.ts",

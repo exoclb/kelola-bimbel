@@ -1,6 +1,7 @@
 import "server-only";
 import { and, asc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { db } from "@/db";
+import { pelanggaranUnik } from "@/lib/db-error";
 import {
   classes,
   schedules,
@@ -40,19 +41,6 @@ const fields = {
   guruNama: user.name,
   createdAt: classes.createdAt,
 };
-
-// Postgres menandai pelanggaran indeks unik dengan kode 23505. Drizzle
-// membungkus error aslinya, jadi kodenya dicari sampai ke `cause`.
-function kodeError(error: unknown): unknown {
-  if (typeof error !== "object" || error === null) return undefined;
-  if ("code" in error) return error.code;
-  if ("cause" in error) return kodeError(error.cause);
-  return undefined;
-}
-
-function pelanggaranUnik(error: unknown) {
-  return kodeError(error) === "23505";
-}
 
 async function jumlahMuridPerKelas(kelasIds: string[]) {
   if (kelasIds.length === 0) return new Map<string, number>();
