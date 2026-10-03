@@ -67,3 +67,12 @@ export function cariAkun(email: string, sandi: string): AkunMasuk | null {
 export function labelPeran(peran: PeranPengguna): string {
   return peran === "owner" ? "Owner" : "Guru";
 }
+
+/**
+ * Memeriksa apakah email sudah dipakai akun contoh, supaya halaman pendaftaran
+ * bisa menolak email yang sama seperti aturan email unik di tabel `user`.
+ */
+export function emailSudahDipakai(email: string): boolean {
+  const dicari = email.trim().toLowerCase();
+  return AKUN.some((akun) => akun.email === dicari);
+}

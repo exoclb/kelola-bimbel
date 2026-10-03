@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "6a4daed5894334c9fe63930d8e70700872ab9fd5",
+  "generatedForCommit": "f6a9c9c5f973ed3f4d22b18e5c3963ee4d7c6358",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -172,7 +172,7 @@
     },
     {
       "path": "docs/backend.md",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "markdown",
       "size": 33335
     },
@@ -507,6 +507,12 @@
       "size": 662
     },
     {
+      "path": "src/app/(auth)/masuk/page.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 298
+    },
+    {
       "path": "src/app/(auth)/sign-in/page.tsx",
       "reason": "needs_summary",
       "language": "typescript",
@@ -706,7 +712,7 @@
     },
     {
       "path": "src/app/api/kehadiran/route.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 703
     },
@@ -766,25 +772,25 @@
     },
     {
       "path": "src/app/api/perkembangan/ringkasan/route.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 759
     },
     {
       "path": "src/app/api/perkembangan/riwayat/route.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 861
     },
     {
       "path": "src/app/api/perkembangan/route.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1508
     },
     {
       "path": "src/app/api/perkembangan/[id]/route.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2048
     },
@@ -919,6 +925,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 5067
+    },
+    {
+      "path": "src/components/halaman-masuk.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 7246
     },
     {
       "path": "src/components/jurnal-form.tsx",
@@ -1257,6 +1269,12 @@
       "size": 773
     },
     {
+      "path": "src/lib/mock-akun.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 2063
+    },
+    {
       "path": "src/lib/mock-gaji.ts",
       "reason": "needs_summary",
       "language": "typescript",
@@ -1300,7 +1318,7 @@
     },
     {
       "path": "src/lib/permissions.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2421
     },
@@ -1360,7 +1378,7 @@
     },
     {
       "path": "src/services/murid.service.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2391
     },
@@ -1384,7 +1402,7 @@
     },
     {
       "path": "src/services/perkembangan.service.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 12169
     },
@@ -1438,7 +1456,7 @@
     },
     {
       "path": "src/validators/perkembangan.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2314
     },
