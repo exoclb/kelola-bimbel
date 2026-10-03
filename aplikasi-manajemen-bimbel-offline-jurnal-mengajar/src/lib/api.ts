@@ -98,7 +98,8 @@ export async function withApiSession(
       headers: request.headers,
       query: { disableCookieCache: true },
     });
-    if (!session)
+    // Akun yang dinonaktifkan kehilangan sesinya seketika, sama seperti halaman.
+    if (!session || session.user.banned)
       throw new ApiError(401, "UNAUTHORIZED", "Sign in to continue.");
 
     assertSameOrigin(request);

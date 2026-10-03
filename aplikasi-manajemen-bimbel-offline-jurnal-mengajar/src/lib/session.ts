@@ -5,8 +5,19 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import type { Permissions } from "@/lib/permissions";
 
+/**
+ * Akun yang dinonaktifkan (kolom `banned`) tidak dianggap punya sesi, walaupun
+ * cookie-nya masih ada: pencabutan langsung berlaku pada permintaan berikutnya,
+ * bukan menunggu cookie-nya kedaluwarsa.
+ */
+function sesiAktif<T extends { user: { banned?: boolean | null } } | null>(
+  session: T,
+): T | null {
+  return session && !session.user.banned ? session : null;
+}
+
 export const getSession = cache(async () =>
-  auth.api.getSession({ headers: await headers() }),
+  sesiAktif(await auth.api.getSession({ headers: await headers() })),
 );
 
 // Use at the data boundary too: a layout alone doesn't protect actions or APIs.

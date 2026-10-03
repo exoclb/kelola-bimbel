@@ -145,7 +145,7 @@ Endpoint ini terbuka (belum punya sesi) tetapi tidak melewati jalur auth begitu 
 
 `POST /api/masuk` menerima `{ email, sandi }` dan menjawab 200 dengan `{ id, nama, email, peran, tujuan }` — `tujuan` adalah halaman utama perannya (`/app/jurnal` untuk guru, `/app/pemantauan` untuk owner), jadi pemanggil tidak perlu menyalin aturan pengalihannya. Email yang tidak terdaftar dan sandi yang salah dijawab **sama**: 401 `EMAIL_ATAU_SANDI_SALAH`, supaya halaman masuk tidak bisa dipakai menebak email mana yang punya akun. Akun yang dinonaktifkan (kolom `banned`) dijawab 403 `AKUN_NONAKTIF`. Sesi yang dibuatnya dikirim sebagai cookie, sama seperti endpoint bawaan Better Auth — termasuk batas lajunya.
 
-`GET /api/sesi` mengembalikan `{ id, nama, email, peran, tujuan, kedaluwarsa }` untuk cookie yang sedang dipakai, dan 401 kalau tidak ada sesi. `DELETE /api/sesi` **mencabut sesinya di server** (baris `session` dihapus, bukan cuma cookie-nya dikosongkan) lalu menjawab 204 dengan cookie sesi yang dibersihkan, sehingga cookie lama tidak bisa dipakai ulang.
+`GET /api/sesi` mengembalikan `{ id, nama, email, peran, tujuan, kedaluwarsa }` untuk cookie yang sedang dipakai, dan 401 kalau tidak ada sesi. `DELETE /api/sesi` **mencabut sesinya di server** (baris `session` dihapus, bukan cuma cookie-nya dikosongkan) lalu menjawab 204 dengan cookie sesi yang dibersihkan, sehingga cookie lama tidak bisa dipakai ulang. Akun yang **dinonaktifkan** (kolom `user.banned`) juga berlaku seketika: `getSession` dan `withApiSession` menganggapnya tidak punya sesi, jadi cookie yang masih tersimpan langsung dijawab 401 di API dan dialihkan ke halaman masuk di halaman web — tidak perlu menunggu cookie-nya kedaluwarsa.
 
 ## Lupa sandi
 
