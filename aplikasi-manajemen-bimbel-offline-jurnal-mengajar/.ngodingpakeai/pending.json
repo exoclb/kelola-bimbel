@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "6f5426a4b69ded966e1decec60319c5813a3d1a7",
+  "generatedForCommit": "cd1e39640e17d790dae42011fa5ec4cba77bc7b4",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -424,13 +424,13 @@
     },
     {
       "path": "src/app/(protected)/app/jurnal/riwayat/page.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 421
+      "size": 1719
     },
     {
       "path": "src/app/(protected)/app/jurnal/riwayat/[id]/page.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 574
     },
@@ -540,11 +540,11 @@
       "path": "src/components/daftar-riwayat-jurnal.tsx",
       "reason": "changed",
       "language": "typescript",
-      "size": 3989
+      "size": 6938
     },
     {
       "path": "src/components/detail-jurnal.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 11805
     },
@@ -562,7 +562,7 @@
     },
     {
       "path": "src/components/label-status-jurnal.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 621
     },
@@ -625,6 +625,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 603
+    },
+    {
+      "path": "src/components/ui/native-select.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 910
     },
     {
       "path": "src/components/ui/textarea.tsx",
@@ -708,7 +714,7 @@
       "path": "src/lib/mock-jurnal.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 9354
+      "size": 10273
     },
     {
       "path": "src/lib/permissions.ts",

@@ -4,3 +4,8 @@ export * from "./session";
 export * from "./account";
 export * from "./verification";
 export * from "./notes";
+export * from "./classes";
+export * from "./students";
+export * from "./schedules";
+export * from "./teaching-journals";
+export * from "./journal-attendances";
