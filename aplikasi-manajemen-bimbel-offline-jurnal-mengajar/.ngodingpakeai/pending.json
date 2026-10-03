@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "1baf1061f9f4b243d592b21169a9e0063c2e9d62",
+  "generatedForCommit": "271c9c598b0fcd4dec73182d6ce69797db573199",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -544,7 +544,7 @@
     },
     {
       "path": "src/app/(protected)/app/page.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 6743
     },
@@ -556,9 +556,9 @@
     },
     {
       "path": "src/app/(protected)/app/perkembangan/page.tsx",
-      "reason": "new",
+      "reason": "changed",
       "language": "typescript",
-      "size": 612
+      "size": 660
     },
     {
       "path": "src/app/(protected)/layout.tsx",
@@ -712,7 +712,7 @@
     },
     {
       "path": "src/components/app-nav.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1971
     },
@@ -760,9 +760,9 @@
     },
     {
       "path": "src/components/daftar-perkembangan.tsx",
-      "reason": "new",
+      "reason": "changed",
       "language": "typescript",
-      "size": 4911
+      "size": 7889
     },
     {
       "path": "src/components/daftar-riwayat-jurnal.tsx",
@@ -775,6 +775,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 11834
+    },
+    {
+      "path": "src/components/form-catatan-anak.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 4913
     },
     {
       "path": "src/components/form-jadwal-kelas.tsx",
@@ -1132,7 +1138,7 @@
     },
     {
       "path": "src/lib/mock-perkembangan.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2909
     },

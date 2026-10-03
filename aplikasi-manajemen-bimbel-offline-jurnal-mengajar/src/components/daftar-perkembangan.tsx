@@ -10,6 +10,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { cn } from "cn";
+import { CatatanSikapKehadiran } from "@/components/catatan-sikap-kehadiran";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,12 +23,14 @@ import {
   type IsiCatatan,
 } from "@/components/form-catatan-anak";
 import type { Murid } from "@/lib/mock-murid";
+import type { KehadiranPertemuan } from "@/lib/mock-kehadiran";
 import type { CatatanPerkembangan } from "@/lib/mock-perkembangan";
 import { formatTanggalLengkap } from "@/lib/tanggal";
 
 type DaftarPerkembanganProps = {
   daftarMurid: Murid[];
   catatanAwal: CatatanPerkembangan[];
+  kehadiranAwal: KehadiranPertemuan[];
   namaGuru: string;
 };
 
@@ -45,6 +48,7 @@ function labelNilai(nilai: number) {
 export function DaftarPerkembangan({
   daftarMurid,
   catatanAwal,
+  kehadiranAwal,
   namaGuru,
 }: DaftarPerkembanganProps) {
   const [catatan, setCatatan] = useState(catatanAwal);
@@ -173,6 +177,13 @@ export function DaftarPerkembangan({
                       </span>
                     )}
                   </p>
+
+                  <CatatanSikapKehadiran
+                    kehadiran={kehadiranAwal.filter(
+                      (baris) => baris.muridId === murid.id,
+                    )}
+                    sikap={terbaru.sikap}
+                  />
 
                   {formIni ? (
                     <FormCatatanAnak

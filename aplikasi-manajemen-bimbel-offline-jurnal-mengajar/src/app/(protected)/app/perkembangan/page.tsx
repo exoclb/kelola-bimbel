@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DaftarPerkembangan } from "@/components/daftar-perkembangan";
 import { getDaftarMurid } from "@/lib/mock-murid";
+import { getKehadiranAwal } from "@/lib/mock-kehadiran";
 import { getCatatanPerkembangan } from "@/lib/mock-perkembangan";
 import { requireSession } from "@/lib/session";
 
@@ -13,6 +14,7 @@ export default async function PerkembanganPage() {
     <DaftarPerkembangan
       daftarMurid={getDaftarMurid()}
       catatanAwal={getCatatanPerkembangan()}
+      kehadiranAwal={getKehadiranAwal()}
       namaGuru={user.name}
     />
   );
