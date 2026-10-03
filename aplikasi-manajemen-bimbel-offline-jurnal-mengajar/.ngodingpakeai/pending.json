@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "b94ef78a1c3cf9149ee651e43da34ad215d4fb61",
+  "generatedForCommit": "31b48500c19cd06d387cf1de359c10ad4b520953",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -658,9 +658,15 @@
     },
     {
       "path": "src/app/(protected)/app/pengaturan/gaji/page.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1101
+    },
+    {
+      "path": "src/app/(protected)/app/pengaturan/guru/page.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1063
     },
     {
       "path": "src/app/(protected)/app/pengaturan/page.tsx",
@@ -981,6 +987,12 @@
       "size": 5477
     },
     {
+      "path": "src/components/daftar-guru.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 5969
+    },
+    {
       "path": "src/components/daftar-kehadiran.tsx",
       "reason": "needs_summary",
       "language": "typescript",
@@ -1024,7 +1036,7 @@
     },
     {
       "path": "src/components/form-aturan-gaji.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 7574
     },
@@ -1426,9 +1438,9 @@
     },
     {
       "path": "src/lib/mock-akun.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 2302
+      "size": 2488
     },
     {
       "path": "src/lib/mock-gaji.ts",
@@ -1474,7 +1486,7 @@
     },
     {
       "path": "src/lib/mock-pengaturan.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2678
     },

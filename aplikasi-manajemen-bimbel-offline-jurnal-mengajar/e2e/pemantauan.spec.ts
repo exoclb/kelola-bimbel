@@ -208,21 +208,38 @@ test("kontrol akses peran berlaku di halaman, bukan cuma di API", async ({
   await setRole("user");
 });
 
-test("pengaturan bimbel hanya untuk owner, termasuk menunya", async ({
-  page,
-}) => {
+test("pengaturan menampilkan bagian sesuai izin akunnya", async ({ page }) => {
   await setRole("user");
   await masuk(page.request);
 
-  await expect(page.getByRole("link", { name: "Pengaturan" })).toHaveCount(0);
-  await page.goto("/app/pengaturan");
-  await expect(page.getByText(/This page isn.t here/)).toBeVisible();
-
-  await setRole("owner");
+  // Guru tetap bisa membuka halamannya (untuk preferensi notifikasi sendiri),
+  // tetapi bagian yang menyangkut seluruh bimbel tidak muncul.
   await page.goto("/app");
+  await expect(page.getByRole("link", { name: "Pengaturan" })).toBeVisible();
   await page.getByRole("link", { name: "Pengaturan" }).click();
   await expect(
     page.getByRole("heading", { name: "Pengaturan Bimbel" }),
   ).toBeVisible();
-  await expect(page.getByRole("link", { name: /Atur tarif/ })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: /Atur notifikasi/ }),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: /Atur tarif/ })).toHaveCount(0);
+
+  // Halaman khusus owner tetap tidak bisa dibuka walaupun alamatnya diketik.
+  await page.goto("/app/pengaturan/guru");
+  await expect(page.getByText(/This page isn.t here/)).toBeVisible();
+
+  // Owner melihat semua bagian.
+  await setRole("owner");
+  await page.goto("/app/pengaturan");
+  for (const nama of [
+    /Atur profil/,
+    /Atur tarif/,
+    /Kelola guru/,
+    /Atur notifikasi/,
+  ]) {
+    await expect(page.getByRole("link", { name: nama })).toBeVisible();
+  }
+
+  await setRole("user");
 });

@@ -18,11 +18,16 @@ import { labelPeran } from "@/lib/peran";
 import { formatRupiah } from "@/lib/gaji";
 import { formatTanggalLengkap } from "@/lib/tanggal";
 
+type PengaturanBimbelProps = {
+  /** Guru hanya melihat bagian yang memang boleh dibukanya. */
+  bolehKelola: boolean;
+};
+
 /**
  * Halaman utama Pengaturan Bimbel: ringkasan tiap bagian plus menu ke
  * halamannya. Nilainya masih data tiruan (lihat src/lib/mock-pengaturan.ts).
  */
-export function PengaturanBimbel() {
+export function PengaturanBimbel({ bolehKelola }: PengaturanBimbelProps) {
   const profil = getProfilBimbel();
   const aturanGaji = getAturanGaji();
   const guru = getDaftarGuru();
@@ -31,7 +36,9 @@ export function PengaturanBimbel() {
   const guruAktif = guru.filter((akun) => akun.statusAktif).length;
   const preferensiAktif = preferensi.filter((item) => item.aktif).length;
 
-  const bagian = [
+  // Kartu yang menyangkut seluruh bimbel hanya muncul untuk yang boleh
+  // mengelolanya; preferensi notifikasi selalu ada karena milik akun sendiri.
+  const bagianPemilik = [
     {
       href: "/app/pengaturan/profil",
       ikon: Building2,
@@ -58,6 +65,10 @@ export function PengaturanBimbel() {
         "Tambah akun guru atau nonaktifkan yang sudah tidak mengajar.",
       tombol: "Kelola guru",
     },
+  ];
+
+  const bagian = [
+    ...(bolehKelola ? bagianPemilik : []),
     {
       href: "/app/pengaturan/notifikasi",
       ikon: BellRing,

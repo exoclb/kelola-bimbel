@@ -23,6 +23,7 @@ const MENU_DASAR: MenuApp[] = [
   { href: "/app/murid", label: "Murid" },
   { href: "/app/kelas", label: "Kelas" },
   { href: "/app/perkembangan", label: "Perkembangan" },
+  { href: "/app/pengaturan", label: "Pengaturan" },
 ];
 
 export const MENU_PER_PERAN: Record<PeranPengguna, MenuApp[]> = {
@@ -37,11 +38,6 @@ export const MENU_PER_PERAN: Record<PeranPengguna, MenuApp[]> = {
       perlu: { jurnal: ["read-any"] },
     },
     { href: "/app/gaji", label: "Gaji", perlu: { gaji: ["read-any"] } },
-    {
-      href: "/app/pengaturan",
-      label: "Pengaturan",
-      perlu: { pengaturan: ["read"] },
-    },
   ],
 };
 

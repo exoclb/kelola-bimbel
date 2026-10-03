@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
 import { PengaturanBimbel } from "@/components/pengaturan-bimbel";
-import { requirePermission } from "@/lib/session";
+import { hasPermission, requireSession } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Pengaturan Bimbel" };
 
 export default async function PengaturanPage() {
-  // Pengaturan bimbel menyangkut data seluruh guru, jadi hanya owner dan admin.
-  await requirePermission({ pengaturan: ["read"] });
-  return <PengaturanBimbel />;
+  // Semua akun boleh membuka halamannya (di dalamnya ada preferensi
+  // notifikasi milik sendiri); kartu yang menyangkut seluruh bimbel hanya
+  // muncul untuk yang punya izin `pengaturan`, dan halamannya menjaga diri
+  // masing-masing.
+  const { user } = await requireSession();
+  const bolehKelola = await hasPermission(user.id, { pengaturan: ["read"] });
+  return <PengaturanBimbel bolehKelola={bolehKelola} />;
 }
