@@ -4,15 +4,15 @@ import { useState } from "react";
 import {
   CalendarDays,
   ClipboardList,
-  GraduationCap,
   FileText,
+  History,
   Pencil,
   Plus,
   UserRound,
 } from "lucide-react";
-import { cn } from "cn";
 import Link from "next/link";
 import { CatatanSikapKehadiran } from "@/components/catatan-sikap-kehadiran";
+import { LencanaNilai } from "@/components/lencana-nilai";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -35,12 +35,6 @@ type DaftarPerkembanganProps = {
   kehadiranAwal: KehadiranPertemuan[];
   namaGuru: string;
 };
-
-function labelNilai(nilai: number) {
-  if (nilai >= 85) return "border-primary/30 bg-primary/10 text-primary";
-  if (nilai >= 70) return "border-input bg-muted text-foreground";
-  return "border-destructive/30 bg-destructive/5 text-destructive";
-}
 
 /**
  * Perkembangan tiap anak: catatan terbaru dari guru — nilai, sikap, dan
@@ -98,11 +92,19 @@ export function DaftarPerkembangan({
       <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
         Perkembangan Anak
       </h1>
-      <p className="mt-3 text-base leading-7 text-muted-foreground">
-        {muridDenganCatatan.length === 0
-          ? "Belum ada catatan perkembangan."
-          : `${muridDenganCatatan.length} dari ${daftarMurid.length} murid punya catatan · ${catatan.length} catatan terkumpul.`}
-      </p>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-base leading-7 text-muted-foreground">
+          {muridDenganCatatan.length === 0
+            ? "Belum ada catatan perkembangan."
+            : `${muridDenganCatatan.length} dari ${daftarMurid.length} murid punya catatan · ${catatan.length} catatan terkumpul.`}
+        </p>
+        <Button asChild variant="outline" size="sm">
+          <Link href="/app/perkembangan/riwayat">
+            <History aria-hidden="true" />
+            Riwayat perkembangan
+          </Link>
+        </Button>
+      </div>
 
       <p role="status" className="mt-4 text-sm text-muted-foreground">
         {pesan}
@@ -154,18 +156,7 @@ export function DaftarPerkembangan({
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className={cn(
-                          "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
-                          labelNilai(terbaru.nilai),
-                        )}
-                      >
-                        <GraduationCap
-                          className="size-3.5"
-                          aria-hidden="true"
-                        />
-                        Nilai {terbaru.nilai}
-                      </span>
+                      <LencanaNilai nilai={terbaru.nilai} />
                       <span className="rounded-full border bg-muted px-2.5 py-0.5 text-xs font-medium whitespace-nowrap">
                         {terbaru.sikap}
                       </span>

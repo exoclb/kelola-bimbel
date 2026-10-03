@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "d69aadbe822a3ebb189c5ef0dedd3903c3cdbfbd",
+  "generatedForCommit": "c8ebf07b854ad118af5a28bacb5a4e1c93389ae6",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -508,9 +508,9 @@
     },
     {
       "path": "src/app/(protected)/app/gaji/slip/[guruId]/page.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 1760
+      "size": 1787
     },
     {
       "path": "src/app/(protected)/app/jurnal/page.tsx",
@@ -556,9 +556,15 @@
     },
     {
       "path": "src/app/(protected)/app/perkembangan/page.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 758
+    },
+    {
+      "path": "src/app/(protected)/app/perkembangan/[muridId]/page.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1963
     },
     {
       "path": "src/app/(protected)/layout.tsx",
@@ -730,7 +736,7 @@
     },
     {
       "path": "src/components/catatan-sikap-kehadiran.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2186
     },
@@ -768,7 +774,7 @@
       "path": "src/components/daftar-perkembangan.tsx",
       "reason": "changed",
       "language": "typescript",
-      "size": 8329
+      "size": 8674
     },
     {
       "path": "src/components/daftar-riwayat-jurnal.tsx",
@@ -831,6 +837,12 @@
       "size": 621
     },
     {
+      "path": "src/components/laporan-perkembangan.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 5815
+    },
+    {
       "path": "src/components/panel-jurnal.tsx",
       "reason": "needs_summary",
       "language": "typescript",
@@ -886,9 +898,9 @@
     },
     {
       "path": "src/components/rekap-gaji-saya.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 3279
+      "size": 3306
     },
     {
       "path": "src/components/riwayat-gaji.tsx",
@@ -927,10 +939,10 @@
       "size": 5213
     },
     {
-      "path": "src/components/tombol-slip-gaji.tsx",
-      "reason": "needs_summary",
+      "path": "src/components/tombol-cetak-unduh.tsx",
+      "reason": "new",
       "language": "typescript",
-      "size": 2138
+      "size": 2270
     },
     {
       "path": "src/components/ui/button.tsx",
@@ -1126,7 +1138,7 @@
     },
     {
       "path": "src/lib/mock-kehadiran.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2494
     },
