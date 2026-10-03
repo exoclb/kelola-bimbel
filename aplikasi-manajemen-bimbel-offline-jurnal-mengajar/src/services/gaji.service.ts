@@ -55,20 +55,28 @@ function rentangBulan(periode: string) {
 }
 
 /**
- * Tarif yang berlaku untuk sebuah periode: baris `salary_settings` terbaru
- * yang `berlaku_sejak`-nya tidak melewati akhir bulan itu. Rekap menyimpan
- * tarif ini sebagai salinan supaya angka lama tidak ikut berubah saat tarif
- * dinaikkan.
+ * Aturan gaji yang berlaku pada satu tanggal: baris `salary_settings` terbaru
+ * yang `berlaku_sejak`-nya tidak melewati tanggal itu. Dipakai rekap gaji
+ * (per bulan) dan halaman pengaturan (per tanggal).
  */
-async function tarifBerlaku(periode: string) {
-  const { akhir } = rentangBulan(periode);
+export async function aturanGajiBerlaku(tanggal: string) {
   const [baris] = await db
-    .select({ tarifPerJam: salarySettings.tarifPerJam })
+    .select({
+      tarifPerJam: salarySettings.tarifPerJam,
+      skema: salarySettings.skema,
+      berlakuSejak: salarySettings.berlakuSejak,
+    })
     .from(salarySettings)
-    .where(lte(salarySettings.berlakuSejak, akhir))
+    .where(lte(salarySettings.berlakuSejak, tanggal))
     .orderBy(desc(salarySettings.berlakuSejak))
     .limit(1);
-  return baris?.tarifPerJam;
+  return baris ?? null;
+}
+
+/** Tarif per jam untuk sebuah periode; rekap menyimpan salinannya. */
+async function tarifBerlaku(periode: string) {
+  const { akhir } = rentangBulan(periode);
+  return (await aturanGajiBerlaku(akhir))?.tarifPerJam;
 }
 
 async function rincianPeriode(awal: string, akhir: string, guruId?: string) {

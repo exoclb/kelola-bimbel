@@ -331,3 +331,57 @@ test("profil bimbel boleh dibaca semua akun, hanya owner yang mengubah", async (
 
   await setRole("user");
 });
+
+test("aturan gaji disimpan bertanggal dan tarifnya diresolusi per tanggal", async ({
+  request,
+}) => {
+  const aturan = (tarifPerJam: number, berlakuSejak: string) => ({
+    headers,
+    data: { tarifPerJam, skema: "per jam", berlakuSejak },
+  });
+
+  await setRole("user");
+  await masuk(request);
+  const ditolak = await request.post(
+    "/api/pengaturan/gaji",
+    aturan(50000, "2026-01-01"),
+  );
+  expect(ditolak.status()).toBe(403);
+
+  await setRole("owner");
+  expect(
+    (
+      await request.post("/api/pengaturan/gaji", aturan(50000, "2026-01-01"))
+    ).status(),
+  ).toBe(201);
+  expect(
+    (
+      await request.post("/api/pengaturan/gaji", aturan(60000, "2026-07-01"))
+    ).status(),
+  ).toBe(201);
+
+  // Satu tanggal hanya boleh punya satu aturan.
+  const dobel = await request.post(
+    "/api/pengaturan/gaji",
+    aturan(70000, "2026-07-01"),
+  );
+  expect(dobel.status()).toBe(409);
+  expect((await dobel.json()).error.code).toBe("TANGGAL_SUDAH_ADA");
+
+  // Tarif yang berlaku dihitung per tanggal, bukan selalu yang terbaru.
+  const maret = await request.get("/api/pengaturan/gaji?tanggal=2026-03-15", {
+    headers,
+  });
+  expect((await maret.json()).data.berlaku.tarifPerJam).toBe(50000);
+  const september = await request.get(
+    "/api/pengaturan/gaji?tanggal=2026-09-30",
+    { headers },
+  );
+  expect((await september.json()).data.berlaku.tarifPerJam).toBe(60000);
+  const sebelum = await request.get("/api/pengaturan/gaji?tanggal=2025-12-31", {
+    headers,
+  });
+  expect((await sebelum.json()).data.berlaku).toBeNull();
+
+  await setRole("user");
+});

@@ -1,9 +1,13 @@
 import "server-only";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { bimbelProfile } from "@/db/schema";
+import { bimbelProfile, salarySettings } from "@/db/schema";
 import { pelanggaranUnik } from "@/lib/db-error";
-import type { ProfilBimbelInput } from "@/validators/pengaturan";
+import { aturanGajiBerlaku } from "@/services/gaji.service";
+import type {
+  AturanGajiInput,
+  ProfilBimbelInput,
+} from "@/validators/pengaturan";
 
 /** Profil bimbel seperti yang dikirim ke klien. */
 export type ProfilBimbelTersimpan = {
@@ -91,4 +95,76 @@ export async function simpanProfilBimbel(
   }
 
   return simpan().then((baris) => baris ?? ambilProfilBimbel());
+}
+
+/** Satu baris aturan gaji seperti yang dikirim ke klien. */
+export type AturanGajiTersimpan = {
+  id: string;
+  tarifPerJam: number;
+  skema: string;
+  berlakuSejak: string;
+};
+
+export type DaftarAturanGaji = {
+  /** Aturan yang berlaku pada tanggal yang ditanyakan, atau null kalau belum ada. */
+  berlaku: Omit<AturanGajiTersimpan, "id"> | null;
+  /** Semua aturan, yang terbaru lebih dulu. */
+  riwayat: AturanGajiTersimpan[];
+};
+
+const fieldsTarif = {
+  id: salarySettings.id,
+  tarifPerJam: salarySettings.tarifPerJam,
+  skema: salarySettings.skema,
+  berlakuSejak: salarySettings.berlakuSejak,
+};
+
+/**
+ * Aturan gaji beserta riwayatnya. `berlaku` dihitung untuk tanggal yang
+ * diminta (bawaan: hari ini), memakai resolver yang sama dengan rekap gaji —
+ * jadi angka yang ditampilkan pengaturan dan angka yang dipakai menghitung gaji
+ * tidak bisa berbeda.
+ */
+export async function ambilAturanGaji(
+  tanggal: string,
+): Promise<DaftarAturanGaji> {
+  const [berlaku, riwayat] = await Promise.all([
+    aturanGajiBerlaku(tanggal),
+    db
+      .select(fieldsTarif)
+      .from(salarySettings)
+      .orderBy(desc(salarySettings.berlakuSejak)),
+  ]);
+
+  return { berlaku, riwayat };
+}
+
+export type HasilTambahAturanGaji =
+  | { status: "tersimpan"; aturan: AturanGajiTersimpan }
+  | { status: "tanggal_sudah_ada" };
+
+/**
+ * Menambah satu aturan gaji baru. Satu tanggal hanya boleh punya satu aturan
+ * (dijaga indeks unik), jadi tanggal yang sudah dipakai dijawab sebagai
+ * `tanggal_sudah_ada` alih-alih menimpa aturan lama — riwayat tarifnya tetap
+ * utuh.
+ */
+export async function tambahAturanGaji(
+  input: AturanGajiInput,
+): Promise<HasilTambahAturanGaji> {
+  try {
+    const [baris] = await db
+      .insert(salarySettings)
+      .values({
+        tarifPerJam: input.tarifPerJam,
+        skema: input.skema,
+        berlakuSejak: input.berlakuSejak,
+      })
+      .returning(fieldsTarif);
+    if (!baris) throw new Error("Aturan gaji gagal disimpan.");
+    return { status: "tersimpan", aturan: baris };
+  } catch (error) {
+    if (pelanggaranUnik(error)) return { status: "tanggal_sudah_ada" };
+    throw error;
+  }
 }

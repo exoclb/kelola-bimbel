@@ -67,6 +67,8 @@ Operasi jurnal milik guru ada di `src/services/jurnal.service.ts` (simpan, riway
 | PATCH  | `/api/notifikasi`              | 200, tandai notifikasi tertentu atau semua sebagai sudah dibaca         |
 | POST   | `/api/jurnal`                  | 200, simpan & kirim jurnal mengajar (idempoten per jadwal + tanggal)    |
 | PATCH  | `/api/jurnal/:id`              | 200, koreksi isi jurnal (materi, catatan, dan/atau kehadiran)           |
+| GET    | `/api/pengaturan/gaji`         | 200, aturan gaji yang berlaku pada satu tanggal + riwayatnya            |
+| POST   | `/api/pengaturan/gaji`         | 201, menambah aturan gaji bertanggal berlaku (owner & admin)            |
 | GET    | `/api/pengaturan/profil`       | 200, profil bimbel (kosong kalau belum diatur)                          |
 | PUT    | `/api/pengaturan/profil`       | 200, menyimpan profil bimbel + logo (owner & admin)                     |
 | POST   | `/api/akun`                    | 201, mendaftarkan akun guru baru (langsung masuk)                       |
@@ -139,6 +141,10 @@ Endpoint ini terbuka (belum punya sesi) tetapi tidak melewati jalur auth begitu 
 `GET /api/pengaturan/profil` mengembalikan profil bimbel `{ nama, alamat, telepon, email, logo, updatedAt }`; kalau owner belum pernah mengisinya, jawabannya tetap bentuk yang sama dengan nilai kosong dan `updatedAt: null` (jadi pemanggil tidak perlu menangani dua bentuk). Semua akun boleh membacanya karena nama bimbel dipakai di laporan dan slip gaji. `PUT /api/pengaturan/profil` menyimpannya dan hanya untuk yang punya izin `pengaturan: write` (owner & admin); akun lain dijawab 403.
 
 Tabelnya sengaja hanya boleh berisi **satu baris** (dijaga indeks unik pada ekspresi tetap), jadi penyimpanannya mencari barisnya dulu lalu memperbarui atau membuat — dua permintaan pertama yang hampir bersamaan tidak menghasilkan dua profil. Logonya dikirim sebagai data URL (`data:image/png;base64,…`, PNG/JPG/WebP, maksimal ±1 MB) dan disimpan apa adanya supaya ikut tersalin saat backup; mengirim `logo: null` menghapus logonya. Nilai yang tidak sah — nama kosong, email bukan alamat email, atau logo bukan data URL gambar — dijawab 422 dengan kolomnya masing-masing.
+
+`GET /api/pengaturan/gaji` mengembalikan `{ berlaku, riwayat }`. `berlaku` adalah aturan gaji yang dipakai pada tanggal yang diminta (`?tanggal=YYYY-MM-DD`, kalau kosong berarti hari ini) — baris dengan `berlaku_sejak` terbaru yang tidak melewati tanggal itu — atau `null` kalau belum ada aturan yang berlaku. Angka ini dihitung memakai resolver yang sama dengan rekap gaji (`aturanGajiBerlaku`), jadi tarif yang terlihat di pengaturan dan yang dipakai menghitung gaji tidak bisa berbeda. `riwayat` memuat semua aturan, yang terbaru lebih dulu, sehingga halaman pengaturan bisa menampilkan kapan tarif berubah. Semua akun boleh membacanya (tarif juga muncul di rekap gaji guru sendiri).
+
+`POST /api/pengaturan/gaji` menerima `{ tarifPerJam, skema, berlakuSejak }` — tarif wajib angka positif, `skema` hanya `"per jam"` atau `"tetap"`, dan tanggalnya harus tanggal yang benar-benar ada — lalu menjawab 201 dengan aturan yang tersimpan. Endpoint ini hanya untuk pemilik izin `pengaturan: write` (owner & admin); akun lain dijawab 403. Karena satu tanggal hanya boleh punya satu aturan (indeks unik `salary_settings_berlaku_sejak_idx`), tanggal yang sudah dipakai dijawab 409 `TANGGAL_SUDAH_ADA` — aturan lama tidak ditimpa supaya riwayat tarifnya tetap utuh.
 
 ## Lupa sandi
 

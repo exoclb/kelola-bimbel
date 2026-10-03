@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { skemaTanggal } from "@/validators/tanggal";
 
 // Logo dikirim sebagai data URL (base64) dan disimpan apa adanya di basis data.
 // Batasnya mengikuti pratinjau di layar: berkas sampai 1 MB.
@@ -24,3 +25,30 @@ export const profilBimbelSchema = z
   .strict();
 
 export type ProfilBimbelInput = z.infer<typeof profilBimbelSchema>;
+
+// Skema yang dikenal aplikasi; kolomnya varchar supaya bisa ditambah tanpa
+// migrasi, tetapi yang boleh masuk lewat API hanya yang benar-benar dipakai
+// perhitungan gaji.
+export const SKEMA_GAJI = ["per jam", "tetap"] as const;
+
+export const aturanGajiSchema = z
+  .object({
+    tarifPerJam: z
+      .number()
+      .positive("Tarif harus lebih besar dari nol.")
+      .max(1_000_000_000, "Tarif terlalu besar."),
+    skema: z.enum(SKEMA_GAJI),
+    berlakuSejak: skemaTanggal,
+  })
+  .strict();
+
+export type AturanGajiInput = z.infer<typeof aturanGajiSchema>;
+
+export const listAturanGajiSchema = z
+  .object({
+    // Tanggal yang dicari aturannya; kosong berarti hari ini.
+    tanggal: skemaTanggal.optional(),
+  })
+  .strict();
+
+export type ListAturanGajiInput = z.infer<typeof listAturanGajiSchema>;

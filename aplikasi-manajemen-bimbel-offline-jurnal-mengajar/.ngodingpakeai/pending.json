@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "7e76918a774f323b1bce53de017ae65ec1b76a02",
+  "generatedForCommit": "6105fb0c09c08a23411a21cd69a362273dbe1875",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -174,7 +174,7 @@
       "path": "docs/backend.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 42908
+      "size": 43124
     },
     {
       "path": "docs/deployment.md",
@@ -418,7 +418,7 @@
     },
     {
       "path": "e2e/pemantauan.spec.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 10717
     },
@@ -448,7 +448,7 @@
     },
     {
       "path": "next-env.d.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 288
     },
@@ -904,7 +904,7 @@
     },
     {
       "path": "src/app/api/pengaturan/profil/route.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 927
     },
@@ -1462,7 +1462,7 @@
     },
     {
       "path": "src/lib/db-error.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 559
     },
@@ -1606,7 +1606,7 @@
     },
     {
       "path": "src/services/kelas.service.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 9441
     },
@@ -1636,7 +1636,7 @@
     },
     {
       "path": "src/services/pengaturan.service.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2677
     },
@@ -1702,7 +1702,7 @@
     },
     {
       "path": "src/validators/pengaturan.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 866
     },
