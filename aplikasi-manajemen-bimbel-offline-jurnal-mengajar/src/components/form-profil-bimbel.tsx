@@ -8,7 +8,7 @@ import {
   type ChangeEvent,
   type FormEvent,
 } from "react";
-import { CheckCircle2, ImagePlus, Save, Trash2 } from "lucide-react";
+import { AlertTriangle, ImagePlus, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -17,6 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { KonfirmasiPengaturan } from "@/components/konfirmasi-pengaturan";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { ProfilBimbel } from "@/lib/mock-pengaturan";
@@ -26,6 +27,8 @@ const MAX_LOGO_BYTE = 1_000_000;
 type FormProfilBimbelProps = {
   profilAwal: ProfilBimbel;
 };
+
+type Masalah = { field: string; pesan: string };
 
 /**
  * Formulir profil bimbel: nama, alamat, kontak, dan logo. Logonya masih
@@ -39,8 +42,8 @@ export function FormProfilBimbel({ profilAwal }: FormProfilBimbelProps) {
   const [telepon, setTelepon] = useState(profilAwal.telepon);
   const [email, setEmail] = useState(profilAwal.email);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const [galat, setGalat] = useState("");
-  const [tersimpan, setTersimpan] = useState(false);
+  const [masalah, setMasalah] = useState<Masalah[]>([]);
+  const [tersimpan, setTersimpan] = useState<ProfilBimbel | null>(null);
   const berkas = useRef<HTMLInputElement>(null);
 
   // Pratinjau memakai URL objek; yang lama dilepas supaya tidak menumpuk.
@@ -55,18 +58,28 @@ export function FormProfilBimbel({ profilAwal }: FormProfilBimbelProps) {
     if (!berkasDipilih) return;
 
     if (!berkasDipilih.type.startsWith("image/")) {
-      setGalat("Logo harus berupa berkas gambar (PNG atau JPG).");
+      setMasalah([
+        {
+          field: "logo",
+          pesan: "Logo harus berupa berkas gambar (PNG atau JPG).",
+        },
+      ]);
       event.target.value = "";
       return;
     }
     if (berkasDipilih.size > MAX_LOGO_BYTE) {
-      setGalat("Ukuran logo terlalu besar. Pakai gambar di bawah 1 MB.");
+      setMasalah([
+        {
+          field: "logo",
+          pesan: "Ukuran logo terlalu besar. Pakai gambar di bawah 1 MB.",
+        },
+      ]);
       event.target.value = "";
       return;
     }
 
-    setGalat("");
-    setTersimpan(false);
+    setMasalah([]);
+    setTersimpan(null);
     if (logoUrl) URL.revokeObjectURL(logoUrl);
     setLogoUrl(URL.createObjectURL(berkasDipilih));
   }
@@ -80,24 +93,61 @@ export function FormProfilBimbel({ profilAwal }: FormProfilBimbelProps) {
   function simpan(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (nama.trim().length < 2) {
-      setGalat("Nama bimbel wajib diisi, minimal 2 huruf.");
-      return;
-    }
-    if (alamat.trim().length < 3) {
-      setGalat("Alamat bimbel wajib diisi.");
-      return;
-    }
-    if (email.trim() && !email.includes("@")) {
-      setGalat("Email belum berbentuk alamat email yang benar.");
+    // Semua isian yang belum lengkap ditampilkan sekaligus, supaya tidak perlu
+    // memperbaiki satu per satu.
+    const ditemukan: Masalah[] = [];
+    if (nama.trim().length < 2)
+      ditemukan.push({
+        field: "nama",
+        pesan: "Nama bimbel wajib diisi, minimal 2 huruf.",
+      });
+    if (alamat.trim().length < 3)
+      ditemukan.push({ field: "alamat", pesan: "Alamat bimbel wajib diisi." });
+    if (email.trim() && !email.includes("@"))
+      ditemukan.push({
+        field: "email",
+        pesan: "Email belum berbentuk alamat email yang benar.",
+      });
+
+    if (ditemukan.length > 0) {
+      setMasalah(ditemukan);
+      setTersimpan(null);
       return;
     }
 
-    setGalat("");
-    setTersimpan(true);
+    setMasalah([]);
+    setTersimpan({
+      nama: nama.trim(),
+      alamat: alamat.trim(),
+      telepon: telepon.trim(),
+      email: email.trim(),
+    });
   }
 
   const inisial = nama.trim().charAt(0).toUpperCase() || "B";
+  const salah = (field: string) =>
+    masalah.some((item) => item.field === field) || undefined;
+
+  if (tersimpan) {
+    return (
+      <KonfirmasiPengaturan
+        judul="Profil bimbel tersimpan"
+        keterangan="Nama, alamat, dan kontak di bawah ini yang akan dipakai di laporan dan slip gaji."
+        baris={[
+          { label: "Nama bimbel", nilai: tersimpan.nama },
+          { label: "Alamat", nilai: tersimpan.alamat },
+          { label: "Telepon", nilai: tersimpan.telepon || "—" },
+          { label: "Email", nilai: tersimpan.email || "—" },
+          {
+            label: "Logo",
+            nilai: logoUrl ? "Logo baru dipakai" : "Belum ada logo",
+          },
+        ]}
+        catatan="Perubahannya belum dikirim ke server — halaman ini masih memakai data tiruan."
+        onUbahLagi={() => setTersimpan(null)}
+      />
+    );
+  }
 
   return (
     <Card>
@@ -160,7 +210,7 @@ export function FormProfilBimbel({ profilAwal }: FormProfilBimbelProps) {
                 name="nama"
                 value={nama}
                 onChange={(event) => setNama(event.target.value)}
-                aria-invalid={galat.includes("Nama") || undefined}
+                aria-invalid={salah("nama")}
               />
             </div>
             <div className="space-y-2">
@@ -181,7 +231,7 @@ export function FormProfilBimbel({ profilAwal }: FormProfilBimbelProps) {
               name="alamat"
               value={alamat}
               onChange={(event) => setAlamat(event.target.value)}
-              aria-invalid={galat.includes("Alamat") || undefined}
+              aria-invalid={salah("alamat")}
             />
           </div>
 
@@ -193,17 +243,25 @@ export function FormProfilBimbel({ profilAwal }: FormProfilBimbelProps) {
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              aria-invalid={galat.includes("Email") || undefined}
+              aria-invalid={salah("email")}
             />
           </div>
 
-          {galat && (
-            <p
+          {masalah.length > 0 && (
+            <div
               role="alert"
-              className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm leading-6 text-destructive"
+              className="space-y-1 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm leading-6 text-destructive"
             >
-              {galat}
-            </p>
+              <p className="flex items-center gap-2 font-medium">
+                <AlertTriangle aria-hidden="true" className="size-4" />
+                Masih ada isian yang perlu dilengkapi
+              </p>
+              <ul className="list-disc space-y-1 pl-5">
+                {masalah.map((item) => (
+                  <li key={item.field}>{item.pesan}</li>
+                ))}
+              </ul>
+            </div>
           )}
 
           <div className="flex flex-wrap items-center gap-3">
@@ -219,8 +277,8 @@ export function FormProfilBimbel({ profilAwal }: FormProfilBimbelProps) {
                 setAlamat(profilAwal.alamat);
                 setTelepon(profilAwal.telepon);
                 setEmail(profilAwal.email);
-                setGalat("");
-                setTersimpan(false);
+                setMasalah([]);
+                setTersimpan(null);
                 hapusLogo();
               }}
             >
@@ -229,20 +287,6 @@ export function FormProfilBimbel({ profilAwal }: FormProfilBimbelProps) {
             </Button>
           </div>
         </form>
-
-        {tersimpan && (
-          <p
-            role="status"
-            className="mt-5 inline-flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm leading-6"
-          >
-            <CheckCircle2
-              aria-hidden="true"
-              className="mt-0.5 size-4 shrink-0 text-primary"
-            />
-            Profil tampil seperti di atas. Perubahannya belum dikirim ke server
-            — halaman ini masih memakai data tiruan.
-          </p>
-        )}
       </CardContent>
     </Card>
   );

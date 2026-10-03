@@ -33,6 +33,8 @@ export function DaftarGuru({ daftarAwal }: DaftarGuruProps) {
   const [cari, setCari] = useState("");
   const [saringan, setSaringan] = useState<SaringanStatus>("semua");
   const [pesan, setPesan] = useState("");
+  // Menonaktifkan akun itu tindakan yang terasa berat, jadi ditanya dulu.
+  const [konfirmasi, setKonfirmasi] = useState<AkunMasuk | null>(null);
 
   const kataKunci = cari.trim().toLowerCase();
   const hasil = daftar.filter((akun) => {
@@ -48,6 +50,11 @@ export function DaftarGuru({ daftarAwal }: DaftarGuruProps) {
   });
 
   const jumlahAktif = daftar.filter((akun) => akun.statusAktif).length;
+
+  function jalankanUbahStatus(akun: AkunMasuk) {
+    setKonfirmasi(null);
+    ubahStatus(akun);
+  }
 
   function ubahStatus(akun: AkunMasuk) {
     const jadiAktif = !akun.statusAktif;
@@ -143,7 +150,12 @@ export function DaftarGuru({ daftarAwal }: DaftarGuruProps) {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => ubahStatus(akun)}
+                    disabled={konfirmasi !== null}
+                    onClick={() =>
+                      akun.statusAktif
+                        ? setKonfirmasi(akun)
+                        : jalankanUbahStatus(akun)
+                    }
                   >
                     {akun.statusAktif ? (
                       <>
@@ -158,6 +170,37 @@ export function DaftarGuru({ daftarAwal }: DaftarGuruProps) {
                     )}
                   </Button>
                 </div>
+                {konfirmasi?.id === akun.id && (
+                  <div
+                    role="alertdialog"
+                    aria-label={`Konfirmasi menonaktifkan ${akun.nama}`}
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-3 text-sm sm:w-full"
+                  >
+                    <p className="text-destructive">
+                      Nonaktifkan {akun.nama}? Akun ini tidak bisa masuk lagi,
+                      tetapi jurnal dan catatannya tetap tersimpan.
+                    </p>
+                    <span className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => jalankanUbahStatus(akun)}
+                      >
+                        <UserRoundX aria-hidden="true" />
+                        Ya, nonaktifkan
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setKonfirmasi(null)}
+                      >
+                        Batal
+                      </Button>
+                    </span>
+                  </div>
+                )}
               </li>
             ))}
           </ul>

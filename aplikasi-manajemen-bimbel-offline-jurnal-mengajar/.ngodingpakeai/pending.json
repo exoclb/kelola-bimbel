@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "31b48500c19cd06d387cf1de359c10ad4b520953",
+  "generatedForCommit": "07e59a698c93ba498d83e5c51022adf0aa3126b7",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -172,9 +172,9 @@
     },
     {
       "path": "docs/backend.md",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "markdown",
-      "size": 40614
+      "size": 41032
     },
     {
       "path": "docs/deployment.md",
@@ -406,9 +406,9 @@
     },
     {
       "path": "e2e/pemantauan.spec.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 7082
+      "size": 7676
     },
     {
       "path": "e2e/roles.spec.ts",
@@ -664,15 +664,21 @@
     },
     {
       "path": "src/app/(protected)/app/pengaturan/guru/page.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1063
     },
     {
-      "path": "src/app/(protected)/app/pengaturan/page.tsx",
-      "reason": "needs_summary",
+      "path": "src/app/(protected)/app/pengaturan/notifikasi/page.tsx",
+      "reason": "new",
       "language": "typescript",
-      "size": 440
+      "size": 1188
+    },
+    {
+      "path": "src/app/(protected)/app/pengaturan/page.tsx",
+      "reason": "changed",
+      "language": "typescript",
+      "size": 705
     },
     {
       "path": "src/app/(protected)/app/pengaturan/profil/page.tsx",
@@ -988,7 +994,7 @@
     },
     {
       "path": "src/components/daftar-guru.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 5969
     },
@@ -1174,9 +1180,15 @@
     },
     {
       "path": "src/components/pengaturan-bimbel.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 5185
+      "size": 5572
+    },
+    {
+      "path": "src/components/preferensi-notifikasi.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 2921
     },
     {
       "path": "src/components/providers.tsx",
@@ -1438,7 +1450,7 @@
     },
     {
       "path": "src/lib/mock-akun.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2488
     },
@@ -1468,9 +1480,9 @@
     },
     {
       "path": "src/lib/mock-menu.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 1815
+      "size": 1757
     },
     {
       "path": "src/lib/mock-murid.ts",

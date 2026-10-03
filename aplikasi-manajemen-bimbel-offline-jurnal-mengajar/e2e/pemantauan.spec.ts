@@ -243,3 +243,44 @@ test("pengaturan menampilkan bagian sesuai izin akunnya", async ({ page }) => {
 
   await setRole("user");
 });
+
+test("menyimpan pengaturan minta lengkapi isian lalu menampilkan konfirmasi", async ({
+  page,
+}) => {
+  await setRole("owner");
+  await masuk(page.request);
+
+  await page.goto("/app/pengaturan/profil");
+  // Isian yang belum lengkap diberitahukan sekaligus, bukan satu per satu.
+  const nama = page.getByLabel("Nama bimbel");
+  await nama.fill("");
+  await page.getByLabel("Alamat").fill("");
+  await page.getByRole("button", { name: /Simpan profil/ }).click();
+  // Next.js punya elemen `role=alert` sendiri untuk pengumuman rute, jadi
+  // peringatannya diseleksi dari isinya.
+  const peringatan = page
+    .getByRole("alert")
+    .filter({ hasText: "Masih ada isian" });
+  await expect(peringatan).toContainText(
+    "Masih ada isian yang perlu dilengkapi",
+  );
+  await expect(peringatan).toContainText("Nama bimbel wajib diisi");
+  await expect(peringatan).toContainText("Alamat bimbel wajib diisi");
+
+  // Setelah lengkap, muncul konfirmasi berisi nilai yang tersimpan.
+  await nama.fill("Bimbel Cerdas Nusantara");
+  await page.getByLabel("Alamat").fill("Jl. Melati No. 12, Bandung");
+  await page.getByRole("button", { name: /Simpan profil/ }).click();
+  const konfirmasi = page
+    .getByRole("status")
+    .filter({ hasText: "Profil bimbel tersimpan" });
+  await expect(konfirmasi).toContainText("Profil bimbel tersimpan");
+  await expect(konfirmasi).toContainText("Bimbel Cerdas Nusantara");
+  await expect(konfirmasi).toContainText("belum dikirim ke server");
+
+  // "Ubah lagi" mengembalikan formulirnya.
+  await page.getByRole("button", { name: /Ubah lagi/ }).click();
+  await expect(page.getByLabel("Nama bimbel")).toBeVisible();
+
+  await setRole("user");
+});
