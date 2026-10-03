@@ -1,12 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import {
-  CalendarDays,
-  CheckCircle2,
-  LoaderCircle,
-  Send,
-} from "lucide-react";
+import { CalendarDays, CheckCircle2, LoaderCircle, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,13 +10,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { DaftarKehadiran } from "@/components/daftar-kehadiran";
 import { PemilihJadwal } from "@/components/pemilih-jadwal";
+import { PemilihMateri } from "@/components/pemilih-materi";
 import {
-  PILIHAN_MATERI,
   formatJam,
   hitungJamMengajar,
   kirimJurnalStub,
@@ -69,6 +63,10 @@ export function JurnalForm({
 
   function ubahKehadiran(muridId: string, hadir: boolean) {
     setKehadiran((sebelumnya) => ({ ...sebelumnya, [muridId]: hadir }));
+  }
+
+  function ubahKeterangan(muridId: string, nilai: string) {
+    setKeterangan((sebelumnya) => ({ ...sebelumnya, [muridId]: nilai }));
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -208,147 +206,58 @@ export function JurnalForm({
 
           {jadwal.length > 0 && (
             <>
+              {jadwalTerpilih ? (
+                <DaftarKehadiran
+                  murid={jadwalTerpilih.murid}
+                  kehadiran={kehadiran}
+                  keterangan={keterangan}
+                  onHadir={ubahKehadiran}
+                  onKeterangan={ubahKeterangan}
+                  disabled={pending}
+                />
+              ) : (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Kehadiran murid</CardTitle>
+                    <CardDescription>
+                      Pilih kelas dulu untuk melihat daftar murid.
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+              )}
+
+              <PemilihMateri
+                nilai={materi}
+                topik={topik}
+                onPilih={(pilihan) => {
+                  setMateri(pilihan);
+                  setErrorMateri("");
+                }}
+                onTopik={setTopik}
+                disabled={pending}
+                error={errorMateri}
+              />
+
               <Card>
                 <CardHeader>
-                  <CardTitle>Kehadiran murid</CardTitle>
+                  <CardTitle>Catatan tambahan</CardTitle>
                   <CardDescription>
-                    {jadwalTerpilih
-                      ? "Semua murid dianggap hadir. Hilangkan centang kalau ada yang tidak masuk."
-                      : "Pilih kelas dulu untuk melihat daftar murid."}
+                    Opsional. Misalnya kondisi kelas atau PR untuk pertemuan
+                    berikutnya.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {!jadwalTerpilih ? (
-                    <p className="text-sm text-muted-foreground">
-                      Belum ada kelas yang dipilih.
-                    </p>
-                  ) : (
-                    <ul className="divide-y">
-                      {jadwalTerpilih.murid.map((murid) => {
-                        const hadir = kehadiran[murid.id] ?? false;
-                        return (
-                          <li
-                            key={murid.id}
-                            className="flex flex-col gap-3 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
-                          >
-                            <div className="flex items-center gap-3">
-                              <Checkbox
-                                id={`hadir-${murid.id}`}
-                                checked={hadir}
-                                disabled={pending}
-                                onCheckedChange={(nilai) =>
-                                  ubahKehadiran(murid.id, nilai === true)
-                                }
-                              />
-                              <Label
-                                htmlFor={`hadir-${murid.id}`}
-                                className="cursor-pointer font-normal"
-                              >
-                                {murid.nama}
-                              </Label>
-                            </div>
-                            {hadir ? (
-                              <span className="pl-7 text-sm text-muted-foreground sm:pl-0">
-                                Hadir
-                              </span>
-                            ) : (
-                              <div className="pl-7 sm:w-64 sm:pl-0">
-                                <Label
-                                  htmlFor={`keterangan-${murid.id}`}
-                                  className="sr-only"
-                                >
-                                  Keterangan {murid.nama}
-                                </Label>
-                                <Input
-                                  id={`keterangan-${murid.id}`}
-                                  value={keterangan[murid.id] ?? ""}
-                                  maxLength={200}
-                                  disabled={pending}
-                                  placeholder="Keterangan (opsional)"
-                                  onChange={(event) =>
-                                    setKeterangan((sebelumnya) => ({
-                                      ...sebelumnya,
-                                      [murid.id]: event.target.value,
-                                    }))
-                                  }
-                                />
-                              </div>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Materi &amp; catatan</CardTitle>
-                  <CardDescription>
-                    Pilih lewat tombol cepat, tidak perlu menulis panjang.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-5">
-                  <div
-                    role="group"
-                    aria-label="Pilihan cepat jenis materi"
-                    className="flex flex-wrap gap-2"
-                    aria-describedby={errorMateri ? "materi-error" : undefined}
-                  >
-                    {PILIHAN_MATERI.map((pilihan) => {
-                      const terpilih = pilihan === materi;
-                      return (
-                        <Button
-                          key={pilihan}
-                          type="button"
-                          size="sm"
-                          variant={terpilih ? "default" : "outline"}
-                          aria-pressed={terpilih}
-                          disabled={pending}
-                          onClick={() => {
-                            setMateri(pilihan);
-                            setErrorMateri("");
-                          }}
-                        >
-                          {pilihan}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                  {errorMateri && (
-                    <p
-                      id="materi-error"
-                      role="alert"
-                      className="text-sm text-destructive"
-                    >
-                      {errorMateri}
-                    </p>
-                  )}
-
-                  <div className="space-y-2">
-                    <Label htmlFor="topik">Topik spesifik (opsional)</Label>
-                    <Input
-                      id="topik"
-                      value={topik}
-                      maxLength={120}
-                      disabled={pending}
-                      placeholder="Misalnya: pecahan campuran"
-                      onChange={(event) => setTopik(event.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="catatan">Catatan tambahan (opsional)</Label>
-                    <Textarea
-                      id="catatan"
-                      value={catatan}
-                      maxLength={1000}
-                      disabled={pending}
-                      placeholder="Misalnya: dua murid perlu diulang materinya minggu depan."
-                      onChange={(event) => setCatatan(event.target.value)}
-                    />
-                  </div>
+                  <Label htmlFor="catatan" className="sr-only">
+                    Catatan tambahan
+                  </Label>
+                  <Textarea
+                    id="catatan"
+                    value={catatan}
+                    maxLength={1000}
+                    disabled={pending}
+                    placeholder="Tulis catatan singkat kalau perlu."
+                    onChange={(event) => setCatatan(event.target.value)}
+                  />
                 </CardContent>
               </Card>
 

@@ -1,724 +1,730 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "8bc21375edeb37f388459148b49eae2378e7bb06",
+  "generatedForCommit": "421071207d4c89e4d0de4ae0129c8e7a6940a99d",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "markdown",
       "size": 3488
     },
     {
       "path": ".agents/skills/create-variant/SKILL.md",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "markdown",
       "size": 1884
     },
     {
       "path": ".agents/skills/dev-database/SKILL.md",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "markdown",
       "size": 2476
     },
     {
       "path": ".agents/skills/starter-setup/SKILL.md",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "markdown",
       "size": 2376
     },
     {
       "path": ".claude/skills/ngodingpakeai/SKILL.md",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "markdown",
       "size": 19096
     },
     {
       "path": ".codex/config.toml",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "toml",
       "size": 273
     },
     {
       "path": ".codex/skills/ngodingpakeai/SKILL.md",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "markdown",
       "size": 19096
     },
     {
       "path": ".cursor/mcp.json",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "json",
       "size": 84
     },
     {
       "path": ".cursor/rules/starter.mdc",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": null,
       "size": 342
     },
     {
       "path": ".dockerignore",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": null,
       "size": 610
     },
     {
       "path": ".github/copilot-instructions.md",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "markdown",
       "size": 307
     },
     {
       "path": ".github/workflows/ci.yml",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "yaml",
       "size": 661
     },
     {
       "path": ".gitignore",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": null,
       "size": 252
     },
     {
       "path": ".mcp.json",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "json",
       "size": 100
     },
     {
       "path": ".ngodingpakeaiignore",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": null,
       "size": 269
     },
     {
       "path": ".nvmrc",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": null,
       "size": 3
     },
     {
       "path": ".prettierignore",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": null,
       "size": 121
     },
     {
       "path": ".prettierrc.json",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "json",
       "size": 63
     },
     {
       "path": ".vscode/mcp.json",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "json",
       "size": 97
     },
     {
       "path": "agent.md",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "markdown",
       "size": 787
     },
     {
       "path": "AGENTS.md",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "markdown",
       "size": 28183
     },
     {
       "path": "CLAUDE.md",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "markdown",
       "size": 260
     },
     {
       "path": "components.json",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "json",
       "size": 451
     },
     {
       "path": "compose.dev.yaml",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "yaml",
       "size": 744
     },
     {
       "path": "compose.test.yaml",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "yaml",
       "size": 521
     },
     {
       "path": "Dockerfile",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": null,
       "size": 2619
     },
     {
       "path": "docs/ai-workflow.md",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "markdown",
       "size": 4637
     },
     {
       "path": "docs/architecture.md",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "markdown",
       "size": 5790
     },
     {
       "path": "docs/backend.md",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "markdown",
       "size": 9789
     },
     {
       "path": "docs/deployment.md",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "markdown",
       "size": 4205
     },
     {
       "path": "docs/derivatives.md",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "markdown",
       "size": 2270
     },
     {
       "path": "docs/local-development.md",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "markdown",
       "size": 3648
     },
     {
       "path": "docs/prompts.md",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "markdown",
       "size": 1691
     },
     {
       "path": "docs/variant.md",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "markdown",
       "size": 1220
     },
     {
       "path": "drizzle/0000_auth.sql",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "sql",
       "size": 2242
     },
     {
       "path": "drizzle/0001_notes.sql",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "sql",
       "size": 638
     },
     {
       "path": "drizzle/0002_roles.sql",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "sql",
       "size": 376
     },
     {
       "path": "drizzle/meta/0000_snapshot.json",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "json",
       "size": 9349
     },
     {
       "path": "drizzle/meta/0001_snapshot.json",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "json",
       "size": 11759
     },
     {
       "path": "drizzle/meta/0002_snapshot.json",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "json",
       "size": 12557
     },
     {
       "path": "drizzle/meta/_journal.json",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "json",
       "size": 465
     },
     {
       "path": "drizzle.config.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 378
     },
     {
       "path": "e2e/auth.spec.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 4137
     },
     {
       "path": "e2e/notes.spec.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 7835
     },
     {
       "path": "e2e/roles.spec.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 5318
     },
     {
       "path": "eslint.config.mjs",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 374
     },
     {
       "path": "LICENSE",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": null,
       "size": 1083
     },
     {
       "path": "next-env.d.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 296
     },
     {
       "path": "next.config.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 352
     },
     {
       "path": "package-lock.json",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "json",
       "size": 362957
     },
     {
       "path": "package.json",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "json",
       "size": 2057
     },
     {
       "path": "playwright.config.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1024
     },
     {
       "path": "postcss.config.mjs",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 83
     },
     {
       "path": "README.md",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "markdown",
       "size": 9627
     },
     {
       "path": "scripts/create-variant.mjs",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 5176
     },
     {
       "path": "scripts/database.mjs",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 2440
     },
     {
       "path": "scripts/doctor.mjs",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 2671
     },
     {
       "path": "scripts/lib.mjs",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 3673
     },
     {
       "path": "scripts/migrate.mjs",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 868
     },
     {
       "path": "scripts/postgres.mjs",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 1796
     },
     {
       "path": "scripts/prepare.mjs",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 286
     },
     {
       "path": "scripts/set-role.mjs",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 2210
     },
     {
       "path": "scripts/setup.mjs",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 591
     },
     {
       "path": "scripts/test-setup.mjs",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 4396
     },
     {
       "path": "scripts/test.mjs",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 3439
     },
     {
       "path": "src/app/(auth)/layout.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 662
     },
     {
       "path": "src/app/(auth)/sign-in/page.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 225
     },
     {
       "path": "src/app/(auth)/sign-up/page.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 235
     },
     {
       "path": "src/app/(protected)/admin/page.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2616
     },
     {
       "path": "src/app/(protected)/app/jurnal/page.tsx",
-      "reason": "new",
+      "reason": "changed",
       "language": "typescript",
-      "size": 916
+      "size": 1038
     },
     {
       "path": "src/app/(protected)/app/page.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 3763
     },
     {
       "path": "src/app/(protected)/layout.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 729
     },
     {
       "path": "src/app/api/admin/notes/route.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 627
     },
     {
       "path": "src/app/api/admin/notes/[id]/route.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 758
     },
     {
       "path": "src/app/api/auth/[...all]/route.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 176
     },
     {
       "path": "src/app/api/notes/route.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 861
     },
     {
       "path": "src/app/api/notes/[id]/route.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1421
     },
     {
       "path": "src/app/error.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 585
     },
     {
       "path": "src/app/globals.css",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "css",
       "size": 2039
     },
     {
       "path": "src/app/layout.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 827
     },
     {
       "path": "src/app/loading.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 203
     },
     {
       "path": "src/app/not-found.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 564
     },
     {
       "path": "src/app/page.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 823
     },
     {
       "path": "src/components/auth-form.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 5349
     },
     {
       "path": "src/components/brand.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 753
     },
     {
       "path": "src/components/copy-prompt.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1059
     },
     {
       "path": "src/components/jurnal-form.tsx",
+      "reason": "changed",
+      "language": "typescript",
+      "size": 14364
+    },
+    {
+      "path": "src/components/pemilih-jadwal.tsx",
       "reason": "new",
       "language": "typescript",
-      "size": 16976
+      "size": 4312
     },
     {
       "path": "src/components/providers.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 207
     },
     {
       "path": "src/components/sign-out-button.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1138
     },
     {
       "path": "src/components/starter-intro.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 6780
     },
     {
       "path": "src/components/ui/button.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2392
     },
     {
       "path": "src/components/ui/card.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1990
     },
     {
       "path": "src/components/ui/checkbox.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1204
     },
     {
       "path": "src/components/ui/input.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 957
     },
     {
       "path": "src/components/ui/label.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 603
     },
     {
       "path": "src/components/ui/textarea.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 749
     },
     {
       "path": "src/config/site.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 261
     },
     {
       "path": "src/db/index.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 816
     },
     {
       "path": "src/db/schema/account.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1057
     },
     {
       "path": "src/db/schema/index.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 230
     },
     {
       "path": "src/db/schema/notes.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 825
     },
     {
       "path": "src/db/schema/session.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 904
     },
     {
       "path": "src/db/schema/user.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 856
     },
     {
       "path": "src/db/schema/verification.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 639
     },
     {
       "path": "src/lib/api.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 3636
     },
     {
       "path": "src/lib/auth-client.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 523
     },
     {
       "path": "src/lib/auth.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1365
     },
     {
       "path": "src/lib/env.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1059
     },
     {
       "path": "src/lib/mock-jurnal.ts",
-      "reason": "new",
+      "reason": "changed",
       "language": "typescript",
-      "size": 3576
+      "size": 4704
     },
     {
       "path": "src/lib/permissions.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1499
     },
     {
       "path": "src/lib/session.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1229
     },
     {
       "path": "src/lib/utils.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 91
     },
     {
       "path": "src/services/notes.service.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2846
     },
     {
       "path": "src/validators/notes.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 897
     },
     {
       "path": "starter.config.json",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "json",
       "size": 179
     },
     {
       "path": "tests/database.test.mjs",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 2921
     },
     {
       "path": "tests/setup.test.mjs",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 4487
     },
     {
       "path": "tests/variant.test.mjs",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 4242
     },
     {
       "path": "THIRD_PARTY_NOTICES.md",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "markdown",
       "size": 461
     },
     {
       "path": "tsconfig.json",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "json",
       "size": 618
     }
