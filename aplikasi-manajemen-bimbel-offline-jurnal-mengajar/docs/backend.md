@@ -143,6 +143,8 @@ Seluruh endpoint perkembangan (`/api/perkembangan`, `/api/perkembangan/:id`, `/a
 
 `POST /api/auth/request-password-reset` dan `POST /api/auth/reset-password` milik Better Auth dipakai apa adanya; aplikasi hanya menyiapkan halamannya di `/lupa-password` dan `/atur-ulang-password?token=…`. `sendResetPassword` di `src/lib/auth.ts` mencatat tautan atur ulang ke log server (`[lupa-sandi] …`) karena bimbel belum memakai penyedia email — ganti isi fungsi itu dengan pengiriman email begitu penyedianya ada. Tautannya berlaku satu jam dan hanya bisa dipakai sekali; permintaan untuk email yang tidak terdaftar dijawab sama seperti email yang terdaftar supaya halaman ini tidak bisa dipakai menebak akun siapa saja yang ada.
 
+Tabel akun memakai milik Better Auth (`user`, `account`, `session`, `verification`) dan tidak diganti: id-nya string acak dari Better Auth (bukan UUID), sandi tersimpan di `account.password`, dan peran di `user.role`. Kolom itu kini **wajib diisi** dengan bawaan `user` — nilai itu yang di aplikasi ini berarti **guru**; peran `owner` dan `admin` menyusul di `src/lib/permissions.ts` (`peranDariRole` di `src/lib/peran.ts` memetakan keduanya ke "owner" untuk tampilan). Kolomnya sengaja `text`, bukan enum, karena Better Auth merangkai beberapa peran sekaligus ("admin,support") di kolom yang sama. Status aktif akun memakai kolom `banned` bawaan plugin admin — akun yang di-ban tidak bisa masuk, jadi tidak ada kolom "status_aktif" terpisah yang harus dijaga tetap sinkron.
+
 ## Role-based access
 
 Ownership answers "is this row mine?". Roles answer "may this account reach past its own rows?". The starter ships a worked example of the second question using the Better Auth admin plugin.

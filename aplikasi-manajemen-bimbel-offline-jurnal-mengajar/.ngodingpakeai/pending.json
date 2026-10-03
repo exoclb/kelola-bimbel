@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "45f070430d2553738d6bf38ddadbc1ae01cd96a5",
+  "generatedForCommit": "13c0f9964c09e03253a16422c115f0221da3cd07",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -172,7 +172,7 @@
     },
     {
       "path": "docs/backend.md",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "markdown",
       "size": 33995
     },
@@ -352,15 +352,15 @@
     },
     {
       "path": "e2e/auth.spec.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 4451
+      "size": 4702
     },
     {
       "path": "e2e/gaji.spec.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 7186
+      "size": 7215
     },
     {
       "path": "e2e/notes.spec.ts",
@@ -370,15 +370,15 @@
     },
     {
       "path": "e2e/pemantauan.spec.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 4869
+      "size": 5688
     },
     {
       "path": "e2e/roles.spec.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 5318
+      "size": 5395
     },
     {
       "path": "eslint.config.mjs",
@@ -396,7 +396,7 @@
       "path": "next-env.d.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 296
+      "size": 288
     },
     {
       "path": "next.config.ts",
@@ -502,7 +502,7 @@
     },
     {
       "path": "src/app/(auth)/atur-ulang-password/page.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 405
     },
@@ -514,13 +514,13 @@
     },
     {
       "path": "src/app/(auth)/layout.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 662
+      "size": 847
     },
     {
       "path": "src/app/(auth)/lupa-password/page.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 233
     },
@@ -634,9 +634,9 @@
     },
     {
       "path": "src/app/(protected)/layout.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 1741
+      "size": 1771
     },
     {
       "path": "src/app/api/admin/gaji/riwayat/route.ts",
@@ -858,7 +858,7 @@
       "path": "src/components/auth-form.tsx",
       "reason": "changed",
       "language": "typescript",
-      "size": 5612
+      "size": 5812
     },
     {
       "path": "src/components/brand.tsx",
@@ -922,7 +922,7 @@
     },
     {
       "path": "src/components/form-atur-ulang-sandi.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 6061
     },
@@ -940,7 +940,7 @@
     },
     {
       "path": "src/components/form-lupa-sandi.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 4532
     },
@@ -958,15 +958,15 @@
     },
     {
       "path": "src/components/halaman-daftar.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 8900
+      "size": 8921
     },
     {
       "path": "src/components/halaman-masuk.tsx",
       "reason": "changed",
       "language": "typescript",
-      "size": 7519
+      "size": 7549
     },
     {
       "path": "src/components/jurnal-form.tsx",
@@ -1048,9 +1048,9 @@
     },
     {
       "path": "src/components/penanda-pengguna.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 1172
+      "size": 1168
     },
     {
       "path": "src/components/providers.tsx",
@@ -1288,7 +1288,7 @@
     },
     {
       "path": "src/lib/auth.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2187
     },
@@ -1312,9 +1312,9 @@
     },
     {
       "path": "src/lib/mock-akun.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 2387
+      "size": 2130
     },
     {
       "path": "src/lib/mock-gaji.ts",
@@ -1342,9 +1342,9 @@
     },
     {
       "path": "src/lib/mock-menu.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 2211
+      "size": 1705
     },
     {
       "path": "src/lib/mock-murid.ts",
@@ -1363,6 +1363,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 2909
+    },
+    {
+      "path": "src/lib/peran.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1310
     },
     {
       "path": "src/lib/permissions.ts",
