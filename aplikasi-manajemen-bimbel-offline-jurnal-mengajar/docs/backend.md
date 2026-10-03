@@ -56,6 +56,7 @@ Operasi jurnal milik guru ada di `src/services/jurnal.service.ts` (simpan, riway
 | GET    | `/api/admin/ringkasan-guru`    | 200, ringkasan harian: jadwal & status jurnal tiap guru                 |
 | GET    | `/api/admin/opsi-saring`       | 200, pilihan saringan pantauan: kelas, guru, dan cabang                 |
 | GET    | `/api/admin/status-pemantauan` | 200, angka ringkas pantauan untuk pembaruan berkala                     |
+| GET    | `/api/admin/gaji`              | 200, rekap gaji semua guru pada satu bulan (owner)                      |
 | GET    | `/api/notifikasi`              | 200, notifikasi milik akun yang sedang masuk (bisa saring belum dibaca) |
 | PATCH  | `/api/notifikasi`              | 200, tandai notifikasi tertentu atau semua sebagai sudah dibaca         |
 | POST   | `/api/jurnal`                  | 200, simpan & kirim jurnal mengajar (idempoten per jadwal + tanggal)    |
@@ -80,6 +81,8 @@ Operasi jurnal milik guru ada di `src/services/jurnal.service.ts` (simpan, riway
 `GET /api/admin/opsi-saring` mengembalikan pilihan yang dipakai tampilan pantauan: `{ "data": { "kelas": [{ classId, namaKelas, cabang }], "guru": [{ guruId, guruNama }], "cabang": ["..."] } }`. Kelas dan cabang berasal dari tabel `classes`, sedangkan `guru` adalah akun yang perannya memuat `user` (akun owner/admin tidak ikut). Dijaga `jurnal: read-any`, jadi hanya owner yang bisa membacanya.
 
 `GET /api/admin/status-pemantauan` mengembalikan angka ringkas untuk pembaruan berkala halaman owner — cukup kecil untuk dipanggil berulang: `{ "data": { "tanggal", "hari", "jumlahGuru", "sudahMengisi", "belumMengisi", "jumlahJurnal", "totalJam", "kelasKosong", "terakhirDiperbarui" } }`. Parameternya sama seperti `/api/admin/ringkasan-guru` (`tanggal`, `classId`, `guruId`, `cabang`), angkanya dihitung dari layanan pantauan yang sama sehingga selalu cocok dengan halaman, dan jawabannya `private, no-store` supaya klien selalu mengambil kondisi terbaru.
+
+`GET /api/admin/gaji` menghitung gaji semua guru pada satu bulan: jam mengajar diambil dari jurnal bulan itu, dikalikan tarif yang berlaku (baris `salary_settings` terbaru yang `berlaku_sejak`-nya tidak melewati akhir bulan tersebut). Parameter `periode` berbentuk `YYYY-MM` dan boleh dikosongkan (bawaan: bulan berjalan); bentuk lain ditolak 422. Hasilnya `{ "data": { "periode", "tarifPerJam", "tarifDiatur", "daftar": [{ guruId, guruNama, guruEmail, jumlahJurnal, totalJam, tarifPerJam, totalGaji, statusPembayaran, tanggalDibayar, rincian: [{ tanggal, namaKelas, jamMengajar, jumlahHadir, jumlahMurid }] }] } }`. Kalau tarif belum pernah diatur, `tarifDiatur` bernilai `false` dan semua total bernilai 0 — tampilan bisa mengingatkan owner untuk mengisi tarif dulu. Status pembayaran masih `belum_dibayar` sampai tabel `salary_recaps` ada. Endpoint ini dijaga `gaji: read-any`, jadi guru biasa menerima 403.
 
 ## Role-based access
 

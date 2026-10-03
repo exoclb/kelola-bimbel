@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "57ac6891ae7e132b14201b7dae2b34b2535c4ec4",
+  "generatedForCommit": "56623c113c59865ba5f8f905a1ee738c0625a570",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -172,9 +172,9 @@
     },
     {
       "path": "docs/backend.md",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "markdown",
-      "size": 18602
+      "size": 18689
     },
     {
       "path": "docs/deployment.md",
@@ -244,7 +244,7 @@
     },
     {
       "path": "drizzle/0006_tarif_gaji.sql",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "sql",
       "size": 412
     },
@@ -286,13 +286,13 @@
     },
     {
       "path": "drizzle/meta/0006_snapshot.json",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "json",
       "size": 34078
     },
     {
       "path": "drizzle/meta/_journal.json",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "json",
       "size": 1019
     },
@@ -880,7 +880,7 @@
     },
     {
       "path": "src/db/schema/index.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 502
     },
@@ -910,7 +910,7 @@
     },
     {
       "path": "src/db/schema/salary-settings.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1199
     },
@@ -1021,6 +1021,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 91
+    },
+    {
+      "path": "src/services/gaji.service.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 6440
     },
     {
       "path": "src/services/jadwal.service.ts",
