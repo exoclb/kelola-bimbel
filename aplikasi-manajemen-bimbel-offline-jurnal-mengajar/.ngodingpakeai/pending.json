@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "06f80264efc7492c6f8419a20efa51a79184493e",
+  "generatedForCommit": "5197bdd7f88fd2bc7779c9d3bb6cd2db3e55e534",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -172,7 +172,7 @@
     },
     {
       "path": "docs/backend.md",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "markdown",
       "size": 14586
     },
@@ -468,7 +468,7 @@
       "path": "src/app/(protected)/app/pemantauan/page.tsx",
       "reason": "changed",
       "language": "typescript",
-      "size": 2578
+      "size": 2704
     },
     {
       "path": "src/app/(protected)/layout.tsx",
@@ -627,10 +627,16 @@
       "size": 4187
     },
     {
+      "path": "src/components/panel-notifikasi.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 3447
+    },
+    {
       "path": "src/components/pemantauan-harian.tsx",
       "reason": "changed",
       "language": "typescript",
-      "size": 5739
+      "size": 5937
     },
     {
       "path": "src/components/pemilih-jadwal.tsx",
@@ -652,7 +658,7 @@
     },
     {
       "path": "src/components/saring-pemantauan.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 3303
     },
@@ -864,7 +870,7 @@
       "path": "src/services/jurnal.service.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 19244
+      "size": 20935
     },
     {
       "path": "src/services/notes.service.ts",
@@ -880,7 +886,7 @@
     },
     {
       "path": "src/validators/jurnal.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 3700
     },
