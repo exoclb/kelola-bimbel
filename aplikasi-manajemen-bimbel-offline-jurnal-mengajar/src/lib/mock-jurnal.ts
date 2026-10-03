@@ -11,7 +11,7 @@ export type MuridKelas = {
   nama: string;
 };
 
-export type JadwalHariIni = {
+export type Jadwal = {
   id: string;
   kelasId: string;
   namaKelas: string;
@@ -36,6 +36,106 @@ export type JurnalInput = {
   kehadiran: KehadiranMurid[];
 };
 
+const MURID_SD4: MuridKelas[] = [
+  { id: "mrd-1", nama: "Aisyah Putri" },
+  { id: "mrd-2", nama: "Bima Saputra" },
+  { id: "mrd-3", nama: "Citra Ayu" },
+  { id: "mrd-4", nama: "Dimas Pratama" },
+];
+
+const MURID_SMP7: MuridKelas[] = [
+  { id: "mrd-5", nama: "Eka Lestari" },
+  { id: "mrd-6", nama: "Fajar Nugroho" },
+  { id: "mrd-7", nama: "Gita Permata" },
+];
+
+const MURID_SD6: MuridKelas[] = [
+  { id: "mrd-8", nama: "Hana Salsabila" },
+  { id: "mrd-9", nama: "Irfan Maulana" },
+  { id: "mrd-10", nama: "Jihan Aulia" },
+  { id: "mrd-11", nama: "Kevin Ardian" },
+  { id: "mrd-12", nama: "Laras Widya" },
+];
+
+const MURID_SMP8: MuridKelas[] = [
+  { id: "mrd-13", nama: "Made Surya" },
+  { id: "mrd-14", nama: "Nadia Rahma" },
+  { id: "mrd-15", nama: "Oskar Pratama" },
+];
+
+type JadwalMingguan = Omit<Jadwal, "id"> & { id: string; hari: string[] };
+
+const JADWAL_MINGGUAN: JadwalMingguan[] = [
+  {
+    id: "jdw-1",
+    kelasId: "kls-1",
+    namaKelas: "Matematika SD Kelas 4",
+    cabang: "Cabang Pusat",
+    hari: ["Senin", "Rabu", "Sabtu"],
+    jamMulai: "07:00",
+    jamSelesai: "08:30",
+    murid: MURID_SD4,
+  },
+  {
+    id: "jdw-2",
+    kelasId: "kls-2",
+    namaKelas: "Bahasa Inggris SMP Kelas 7",
+    cabang: "Cabang Pusat",
+    hari: ["Selasa", "Kamis", "Sabtu"],
+    jamMulai: "09:00",
+    jamSelesai: "10:00",
+    murid: MURID_SMP7,
+  },
+  {
+    id: "jdw-3",
+    kelasId: "kls-3",
+    namaKelas: "IPA SD Kelas 6",
+    cabang: "Cabang Utara",
+    hari: ["Senin", "Rabu", "Jumat"],
+    jamMulai: "10:30",
+    jamSelesai: "12:00",
+    murid: MURID_SD6,
+  },
+  {
+    id: "jdw-4",
+    kelasId: "kls-4",
+    namaKelas: "Matematika SMP Kelas 8",
+    cabang: "Cabang Utara",
+    hari: ["Selasa", "Kamis", "Sabtu"],
+    jamMulai: "13:00",
+    jamSelesai: "14:30",
+    murid: MURID_SMP8,
+  },
+  {
+    id: "jdw-5",
+    kelasId: "kls-5",
+    namaKelas: "Calistung TK",
+    cabang: "Cabang Pusat",
+    hari: ["Senin", "Jumat"],
+    jamMulai: "15:00",
+    jamSelesai: "16:00",
+    murid: MURID_SMP7.slice(0, 2),
+  },
+];
+
+/**
+ * Jadwal yang harus diisi guru pada satu hari. Di backend nanti fungsi ini
+ * menjadi query ke tabel `schedules` yang difilter `hari` + `guru_id`.
+ */
+export function getJadwalHariIni(hari: string): Jadwal[] {
+  return JADWAL_MINGGUAN.filter((item) => item.hari.includes(hari))
+    .map((item) => ({
+      id: item.id,
+      kelasId: item.kelasId,
+      namaKelas: item.namaKelas,
+      cabang: item.cabang,
+      jamMulai: item.jamMulai,
+      jamSelesai: item.jamSelesai,
+      murid: item.murid,
+    }))
+    .sort((a, b) => a.jamMulai.localeCompare(b.jamMulai));
+}
+
 /** Pilihan cepat materi supaya guru tidak perlu menulis panjang. */
 export const PILIHAN_MATERI = [
   "Materi baru",
@@ -45,64 +145,6 @@ export const PILIHAN_MATERI = [
   "Kuis / evaluasi",
   "Ulangan",
 ] as const;
-
-export const JADWAL_HARI_INI: JadwalHariIni[] = [
-  {
-    id: "jdw-1",
-    kelasId: "kls-1",
-    namaKelas: "Matematika SD Kelas 4",
-    cabang: "Cabang Pusat",
-    jamMulai: "07:00",
-    jamSelesai: "08:30",
-    murid: [
-      { id: "mrd-1", nama: "Aisyah Putri" },
-      { id: "mrd-2", nama: "Bima Saputra" },
-      { id: "mrd-3", nama: "Citra Ayu" },
-      { id: "mrd-4", nama: "Dimas Pratama" },
-    ],
-  },
-  {
-    id: "jdw-2",
-    kelasId: "kls-2",
-    namaKelas: "Bahasa Inggris SMP Kelas 7",
-    cabang: "Cabang Pusat",
-    jamMulai: "09:00",
-    jamSelesai: "10:00",
-    murid: [
-      { id: "mrd-5", nama: "Eka Lestari" },
-      { id: "mrd-6", nama: "Fajar Nugroho" },
-      { id: "mrd-7", nama: "Gita Permata" },
-    ],
-  },
-  {
-    id: "jdw-3",
-    kelasId: "kls-3",
-    namaKelas: "IPA SD Kelas 6",
-    cabang: "Cabang Utara",
-    jamMulai: "10:30",
-    jamSelesai: "12:00",
-    murid: [
-      { id: "mrd-8", nama: "Hana Salsabila" },
-      { id: "mrd-9", nama: "Irfan Maulana" },
-      { id: "mrd-10", nama: "Jihan Aulia" },
-      { id: "mrd-11", nama: "Kevin Ardian" },
-      { id: "mrd-12", nama: "Laras Widya" },
-    ],
-  },
-  {
-    id: "jdw-4",
-    kelasId: "kls-4",
-    namaKelas: "Matematika SMP Kelas 8",
-    cabang: "Cabang Utara",
-    jamMulai: "13:00",
-    jamSelesai: "14:30",
-    murid: [
-      { id: "mrd-13", nama: "Made Surya" },
-      { id: "mrd-14", nama: "Nadia Rahma" },
-      { id: "mrd-15", nama: "Oskar Pratama" },
-    ],
-  },
-];
 
 /** Jam mengajar dipakai untuk hitung gaji, jadi angkanya diambil dari jadwal. */
 export function hitungJamMengajar(jamMulai: string, jamSelesai: string) {
@@ -124,5 +166,8 @@ export async function kirimJurnalStub(jurnal: JurnalInput) {
   const { promise, resolve } = Promise.withResolvers<void>();
   setTimeout(resolve, 500);
   await promise;
-  return { ok: true as const, jumlahHadir: jurnal.kehadiran.filter((baris) => baris.hadir).length };
+  return {
+    ok: true as const,
+    jumlahHadir: jurnal.kehadiran.filter((baris) => baris.hadir).length,
+  };
 }

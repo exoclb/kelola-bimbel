@@ -6,9 +6,7 @@ import {
   CheckCircle2,
   LoaderCircle,
   Send,
-  Users,
 } from "lucide-react";
-import { cn } from "cn";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -21,17 +19,19 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { PemilihJadwal } from "@/components/pemilih-jadwal";
 import {
   PILIHAN_MATERI,
   formatJam,
   hitungJamMengajar,
   kirimJurnalStub,
-  type JadwalHariIni,
+  type Jadwal,
   type JurnalInput,
 } from "@/lib/mock-jurnal";
 
 type JurnalFormProps = {
-  jadwal: JadwalHariIni[];
+  jadwal: Jadwal[];
+  hari: string;
   namaGuru: string;
   tanggal: string;
   tanggalTampil: string;
@@ -39,6 +39,7 @@ type JurnalFormProps = {
 
 export function JurnalForm({
   jadwal,
+  hari,
   namaGuru,
   tanggal,
   tanggalTampil,
@@ -57,12 +58,11 @@ export function JurnalForm({
 
   const jadwalTerpilih = jadwal.find((item) => item.id === jadwalId);
 
-  function pilihJadwal(id: string) {
-    setJadwalId(id);
+  function pilihJadwal(item: Jadwal) {
+    setJadwalId(item.id);
     setErrorJadwal("");
-    const dipilih = jadwal.find((item) => item.id === id);
     setKehadiran(
-      Object.fromEntries((dipilih?.murid ?? []).map((murid) => [murid.id, true])),
+      Object.fromEntries(item.murid.map((murid) => [murid.id, true])),
     );
     setKeterangan({});
   }
@@ -188,274 +188,211 @@ export function JurnalForm({
         <span>Guru: {namaGuru}</span>
       </p>
 
-      {jadwal.length === 0 ? (
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle>Tidak ada jadwal hari ini</CardTitle>
-            <CardDescription>
-              Besok jadwalmu akan muncul di sini lagi.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      ) : (
-        <form
-          onSubmit={onSubmit}
-          className="mt-8 space-y-6"
-          aria-busy={pending}
-          noValidate
-        >
-          <fieldset disabled={pending} className="space-y-6">
-            <legend className="sr-only">Formulir jurnal mengajar</legend>
+      <form
+        onSubmit={onSubmit}
+        className="mt-8 space-y-6"
+        aria-busy={pending}
+        noValidate
+      >
+        <fieldset disabled={pending} className="space-y-6">
+          <legend className="sr-only">Formulir jurnal mengajar</legend>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>1. Pilih kelas &amp; jam mengajar</CardTitle>
-                <CardDescription>
-                  Pilih satu kelas dari jadwalmu hari ini.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div
-                  className="space-y-3"
-                  aria-describedby={errorJadwal ? "jadwal-error" : undefined}
-                >
-                  {jadwal.map((item) => {
-                    const terpilih = item.id === jadwalId;
-                    return (
-                      <label
-                        key={item.id}
-                        htmlFor={`jadwal-${item.id}`}
-                        className={cn(
-                          "flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors",
-                          "hover:bg-accent/60 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ring",
-                          terpilih && "border-primary bg-primary/5",
-                        )}
-                      >
-                        <input
-                          id={`jadwal-${item.id}`}
-                          type="radio"
-                          name="jadwal"
-                          value={item.id}
-                          checked={terpilih}
-                          onChange={() => pilihJadwal(item.id)}
-                          className="mt-1 size-4 shrink-0 accent-primary"
-                        />
-                        <span className="min-w-0 space-y-1">
-                          <span className="block font-medium">
-                            {item.namaKelas}
-                          </span>
-                          <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-                            <span>
-                              {item.jamMulai}–{item.jamSelesai}
-                            </span>
-                            <span>
-                              {formatJam(
-                                hitungJamMengajar(item.jamMulai, item.jamSelesai),
-                              )}
-                            </span>
-                            <span className="inline-flex items-center gap-1">
-                              <Users className="size-3.5" aria-hidden="true" />
-                              {item.murid.length} murid
-                            </span>
-                            <span>{item.cabang}</span>
-                          </span>
-                        </span>
-                      </label>
-                    );
-                  })}
-                </div>
-                {errorJadwal && (
-                  <p
-                    id="jadwal-error"
-                    role="alert"
-                    className="mt-3 text-sm text-destructive"
-                  >
-                    {errorJadwal}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+          <PemilihJadwal
+            jadwal={jadwal}
+            hari={hari}
+            nilai={jadwalId}
+            onPilih={pilihJadwal}
+            disabled={pending}
+            error={errorJadwal}
+          />
 
-            <Card>
-              <CardHeader>
-                <CardTitle>2. Kehadiran murid</CardTitle>
-                <CardDescription>
-                  {jadwalTerpilih
-                    ? "Semua murid dianggap hadir. Hilangkan centang kalau ada yang tidak masuk."
-                    : "Pilih kelas dulu untuk melihat daftar murid."}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {!jadwalTerpilih ? (
-                  <p className="text-sm text-muted-foreground">
-                    Belum ada kelas yang dipilih.
-                  </p>
-                ) : (
-                  <ul className="divide-y">
-                    {jadwalTerpilih.murid.map((murid) => {
-                      const hadir = kehadiran[murid.id] ?? false;
-                      return (
-                        <li
-                          key={murid.id}
-                          className="flex flex-col gap-3 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
-                        >
-                          <div className="flex items-center gap-3">
-                            <Checkbox
-                              id={`hadir-${murid.id}`}
-                              checked={hadir}
-                              disabled={pending}
-                              onCheckedChange={(nilai) =>
-                                ubahKehadiran(murid.id, nilai === true)
-                              }
-                            />
-                            <Label
-                              htmlFor={`hadir-${murid.id}`}
-                              className="cursor-pointer font-normal"
-                            >
-                              {murid.nama}
-                            </Label>
-                          </div>
-                          {hadir ? (
-                            <span className="pl-7 text-sm text-muted-foreground sm:pl-0">
-                              Hadir
-                            </span>
-                          ) : (
-                            <div className="pl-7 sm:pl-0 sm:w-64">
-                              <Label
-                                htmlFor={`keterangan-${murid.id}`}
-                                className="sr-only"
-                              >
-                                Keterangan {murid.nama}
-                              </Label>
-                              <Input
-                                id={`keterangan-${murid.id}`}
-                                value={keterangan[murid.id] ?? ""}
-                                maxLength={200}
+          {jadwal.length > 0 && (
+            <>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Kehadiran murid</CardTitle>
+                  <CardDescription>
+                    {jadwalTerpilih
+                      ? "Semua murid dianggap hadir. Hilangkan centang kalau ada yang tidak masuk."
+                      : "Pilih kelas dulu untuk melihat daftar murid."}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {!jadwalTerpilih ? (
+                    <p className="text-sm text-muted-foreground">
+                      Belum ada kelas yang dipilih.
+                    </p>
+                  ) : (
+                    <ul className="divide-y">
+                      {jadwalTerpilih.murid.map((murid) => {
+                        const hadir = kehadiran[murid.id] ?? false;
+                        return (
+                          <li
+                            key={murid.id}
+                            className="flex flex-col gap-3 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
+                          >
+                            <div className="flex items-center gap-3">
+                              <Checkbox
+                                id={`hadir-${murid.id}`}
+                                checked={hadir}
                                 disabled={pending}
-                                placeholder="Keterangan (opsional)"
-                                onChange={(event) =>
-                                  setKeterangan((sebelumnya) => ({
-                                    ...sebelumnya,
-                                    [murid.id]: event.target.value,
-                                  }))
+                                onCheckedChange={(nilai) =>
+                                  ubahKehadiran(murid.id, nilai === true)
                                 }
                               />
+                              <Label
+                                htmlFor={`hadir-${murid.id}`}
+                                className="cursor-pointer font-normal"
+                              >
+                                {murid.nama}
+                              </Label>
                             </div>
-                          )}
-                        </li>
+                            {hadir ? (
+                              <span className="pl-7 text-sm text-muted-foreground sm:pl-0">
+                                Hadir
+                              </span>
+                            ) : (
+                              <div className="pl-7 sm:w-64 sm:pl-0">
+                                <Label
+                                  htmlFor={`keterangan-${murid.id}`}
+                                  className="sr-only"
+                                >
+                                  Keterangan {murid.nama}
+                                </Label>
+                                <Input
+                                  id={`keterangan-${murid.id}`}
+                                  value={keterangan[murid.id] ?? ""}
+                                  maxLength={200}
+                                  disabled={pending}
+                                  placeholder="Keterangan (opsional)"
+                                  onChange={(event) =>
+                                    setKeterangan((sebelumnya) => ({
+                                      ...sebelumnya,
+                                      [murid.id]: event.target.value,
+                                    }))
+                                  }
+                                />
+                              </div>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Materi &amp; catatan</CardTitle>
+                  <CardDescription>
+                    Pilih lewat tombol cepat, tidak perlu menulis panjang.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  <div
+                    role="group"
+                    aria-label="Pilihan cepat jenis materi"
+                    className="flex flex-wrap gap-2"
+                    aria-describedby={errorMateri ? "materi-error" : undefined}
+                  >
+                    {PILIHAN_MATERI.map((pilihan) => {
+                      const terpilih = pilihan === materi;
+                      return (
+                        <Button
+                          key={pilihan}
+                          type="button"
+                          size="sm"
+                          variant={terpilih ? "default" : "outline"}
+                          aria-pressed={terpilih}
+                          disabled={pending}
+                          onClick={() => {
+                            setMateri(pilihan);
+                            setErrorMateri("");
+                          }}
+                        >
+                          {pilihan}
+                        </Button>
                       );
                     })}
-                  </ul>
-                )}
-              </CardContent>
-            </Card>
+                  </div>
+                  {errorMateri && (
+                    <p
+                      id="materi-error"
+                      role="alert"
+                      className="text-sm text-destructive"
+                    >
+                      {errorMateri}
+                    </p>
+                  )}
 
-            <Card>
-              <CardHeader>
-                <CardTitle>3. Materi &amp; catatan</CardTitle>
-                <CardDescription>
-                  Pilih lewat tombol cepat, tidak perlu menulis panjang.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-5">
-                <div
-                  role="group"
-                  aria-label="Pilihan cepat jenis materi"
-                  className="flex flex-wrap gap-2"
-                  aria-describedby={errorMateri ? "materi-error" : undefined}
+                  <div className="space-y-2">
+                    <Label htmlFor="topik">Topik spesifik (opsional)</Label>
+                    <Input
+                      id="topik"
+                      value={topik}
+                      maxLength={120}
+                      disabled={pending}
+                      placeholder="Misalnya: pecahan campuran"
+                      onChange={(event) => setTopik(event.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="catatan">Catatan tambahan (opsional)</Label>
+                    <Textarea
+                      id="catatan"
+                      value={catatan}
+                      maxLength={1000}
+                      disabled={pending}
+                      placeholder="Misalnya: dua murid perlu diulang materinya minggu depan."
+                      onChange={(event) => setCatatan(event.target.value)}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm text-muted-foreground">
+                  {jadwalTerpilih
+                    ? `Jam mengajar yang dicatat: ${formatJam(
+                        hitungJamMengajar(
+                          jadwalTerpilih.jamMulai,
+                          jadwalTerpilih.jamSelesai,
+                        ),
+                      )} — dipakai untuk rekap gaji.`
+                    : "Jam mengajar dihitung otomatis dari jadwal."}
+                </p>
+                <Button
+                  type="submit"
+                  size="lg"
+                  disabled={pending}
+                  className="w-full sm:w-auto"
                 >
-                  {PILIHAN_MATERI.map((pilihan) => {
-                    const terpilih = pilihan === materi;
-                    return (
-                      <Button
-                        key={pilihan}
-                        type="button"
-                        size="sm"
-                        variant={terpilih ? "default" : "outline"}
-                        aria-pressed={terpilih}
-                        disabled={pending}
-                        onClick={() => {
-                          setMateri(pilihan);
-                          setErrorMateri("");
-                        }}
-                      >
-                        {pilihan}
-                      </Button>
-                    );
-                  })}
-                </div>
-                {errorMateri && (
-                  <p id="materi-error" role="alert" className="text-sm text-destructive">
-                    {errorMateri}
-                  </p>
-                )}
+                  {pending ? (
+                    <LoaderCircle
+                      className="animate-spin motion-reduce:animate-none"
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <Send aria-hidden="true" />
+                  )}
+                  {pending ? "Mengirim…" : "Kirim Jurnal"}
+                </Button>
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="topik">Topik spesifik (opsional)</Label>
-                  <Input
-                    id="topik"
-                    value={topik}
-                    maxLength={120}
-                    disabled={pending}
-                    placeholder="Misalnya: pecahan campuran"
-                    onChange={(event) => setTopik(event.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="catatan">Catatan tambahan (opsional)</Label>
-                  <Textarea
-                    id="catatan"
-                    value={catatan}
-                    maxLength={1000}
-                    disabled={pending}
-                    placeholder="Misalnya: dua murid perlu diulang materinya minggu depan."
-                    onChange={(event) => setCatatan(event.target.value)}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </fieldset>
-
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-muted-foreground">
-              {jadwalTerpilih
-                ? `Jam mengajar yang dicatat: ${formatJam(
-                    hitungJamMengajar(
-                      jadwalTerpilih.jamMulai,
-                      jadwalTerpilih.jamSelesai,
-                    ),
-                  )} — dipakai untuk rekap gaji.`
-                : "Jam mengajar dihitung otomatis dari jadwal."}
-            </p>
-            <Button
-              type="submit"
-              size="lg"
-              disabled={pending}
-              className="w-full sm:w-auto"
-            >
-              {pending ? (
-                <LoaderCircle
-                  className="animate-spin motion-reduce:animate-none"
-                  aria-hidden="true"
-                />
-              ) : (
-                <Send aria-hidden="true" />
+              {error && (
+                <p
+                  role="alert"
+                  className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm leading-6 text-destructive"
+                >
+                  {error}
+                </p>
               )}
-              {pending ? "Mengirim…" : "Kirim Jurnal"}
-            </Button>
-          </div>
-
-          {error && (
-            <p
-              role="alert"
-              className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm leading-6 text-destructive"
-            >
-              {error}
-            </p>
+            </>
           )}
-        </form>
-      )}
+        </fieldset>
+      </form>
     </div>
   );
 }

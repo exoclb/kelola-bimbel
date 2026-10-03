@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { JurnalForm } from "@/components/jurnal-form";
-import { JADWAL_HARI_INI } from "@/lib/mock-jurnal";
+import { getJadwalHariIni } from "@/lib/mock-jurnal";
 import { requireSession } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Jurnal Ngajar" };
@@ -21,10 +21,14 @@ export default async function JurnalPage() {
     month: "long",
     year: "numeric",
   }).format(sekarang);
+  const hari = new Intl.DateTimeFormat("id-ID", { weekday: "long" }).format(
+    sekarang,
+  );
 
   return (
     <JurnalForm
-      jadwal={JADWAL_HARI_INI}
+      jadwal={getJadwalHariIni(hari)}
+      hari={hari}
       namaGuru={user.name}
       tanggal={tanggal}
       tanggalTampil={tanggalTampil}
