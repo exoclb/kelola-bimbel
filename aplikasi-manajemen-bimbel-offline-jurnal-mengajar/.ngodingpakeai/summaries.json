@@ -636,7 +636,7 @@
         "summary": "Skema Drizzle tabel students untuk data murid bimbel: kolom id (uuid default random), nama, tanggalLahir, namaOrangTua, kontakOrangTua, statusAktif (default true), dan createdAt. Menambahkan indeks students_nama_idx dan menggunakan penonaktifan statusAktif alih-alih penghapusan agar riwayat jurnal tetap utuh."
     },
     "src/services/kelas.service.ts": {
-        "summary": "Service server-only untuk kelas dan penempatan murid: getKelasById, listKelas (filter cari nama kelas/cabang/guru), createKelas (kelas dan jadwal dalam satu transaksi), tambahJadwal, hapusJadwal, listMuridKelas (hanya penempatan aktif), tempatkanMurid (menolak penempatan aktif ganda), serta keluarkanMurid (menandai 'selesai', bukan menghapus)."
+        "summary": "Layanan kelas: daftar kelas beserta jadwal & jumlah murid, satu kelas, membuat/mengubah kelas (termasuk memindahkan guru ke seluruh jadwalnya dan penjagaan bentrok), menambah/menghapus jadwal, serta penempatan murid. `tempatkanMurid` kini mengikuti aturan multi-kelas: murid boleh aktif di beberapa kelas, dan yang ditolak hanya penempatan kedua di kelas yang sama (dijaga indeks unik parsial, hasilnya status `sudah_terdaftar`)."
     },
     "src/services/notes.service.ts": {
         "summary": "Service server-only untuk catatan (notes): fungsi terikat pemilik listNotes, getNote, createNote, updateNote, deleteNote, plus fungsi lintas akun listAnyNotes dan deleteAnyNote yang sengaja melewatkan filter kepemilikan sehingga hanya aman di balik withApiPermission requirePermission. Kolom publik dipilih eksplisit dan kepemilikan diambil dari sesi terverifikasi."
@@ -687,7 +687,7 @@
         "summary": "Komponen klien `AppNav` yang merender menu utama aplikasi dari prop `MenuApp[]` (daftar sudah disesuaikan peran pemanggil), memakai `usePathname` untuk menandai tautan aktif dan `cn` untuk kelas kondisional."
     },
     "src/components/daftar-kelas.tsx": {
-        "summary": "Komponen klien `DaftarKelas` untuk mengelola kelas, jadwal, dan penempatan murid; menerima prop `daftarAwal`, `daftarMurid`, dan `penempatanAwal`, memakai pencarian via `KolomPencarian` serta form `FormTambahKelas`, `FormJadwalKelas`, dan `PanelPenempatan`. Perubahan masih disimpan di state layar sambil menunggu API kelas dan penempatan."
+        "summary": "Halaman kelola kelas & jadwal (data tiruan): daftar kelas dengan pencarian, form tambah kelas, form ubah kelas, tambah/hapus jadwal dengan penjagaan bentrok guru, serta panel penempatan murid per kelas. Mengikuti aturan multi-kelas: murid yang boleh dipilih adalah yang belum aktif di kelas itu (murid yang sama boleh masuk kelas lain atau kembali ke kelas yang pernah diikutinya), dan penempatan kedua di kelas yang sama ditolak dengan pesan \"… sudah terdaftar di kelas ini.\""
     },
     "src/components/daftar-perkembangan.tsx": {
         "summary": "Komponen klien `DaftarPerkembangan` yang menampilkan catatan perkembangan tiap anak (nilai, sikap, catatan) dari prop `daftarMurid`, `catatanAwal`, `kehadiranAwal`, dan `namaGuru`. Mendukung penambahan catatan baru serta pembaruan catatan terbaru langsung dari kartu murid, dengan tautan ke halaman riwayat `/app/perkembangan/riwayat`."
@@ -795,7 +795,7 @@
         "summary": "Definisi tabel Drizzle `session` bergaya Better Auth untuk PostgreSQL. Kolomnya meliputi id, expiresAt, token unik, createdAt/updatedAt, ipAddress, userAgent, userId (FK ke `user` dengan onDelete cascade), dan `impersonatedBy` untuk fitur impersonasi admin, plus indeks `session_user_id_idx`."
     },
     "src/db/schema/student-enrollments.ts": {
-        "summary": "Definisi enum `status_penempatan` ('aktif'/'selesai') dan tabel `student_enrollments` yang memetakan murid ke kelas dengan riwayat. Berisi studentId, classId (FK cascade), tanggalMulai, dan status; dilengkapi unique index parsial `student_enrollments_student_aktif_idx` (satu penempatan aktif per murid) serta indeks class/status."
+        "summary": "Skema tabel `student_enrollments` (penempatan murid ke kelas): murid, kelas, tanggal mulai, status enum `aktif`/`selesai`, plus indeks unik parsial `student_enrollments_student_kelas_aktif_idx` pada pasangan (student_id, class_id) untuk status aktif dan indeks (class_id, status). Aturan multi-kelas: seorang murid boleh aktif di beberapa kelas sekaligus, tetapi hanya satu penempatan aktif per kelas."
     },
     "src/lib/db-error.ts": {
         "summary": "Utilitas penanganan error PostgreSQL. `kodeError` menelusuri properti `code` sampai ke `cause` karena Drizzle membungkus error asli, dan `pelanggaranUnik` mengembalikan true bila kodenya 23505 (pelanggaran indeks unik)."
@@ -988,5 +988,11 @@
     },
     "src/app/(protected)/app/penempatan/page.tsx": {
         "summary": "Halaman `/app/penempatan` (cukup sesi): menampilkan daftar penempatan murid dari data tiruan dengan menggabungkan `getPenempatanAwal()`, `getDaftarMurid()`, dan `getDaftarKelas()`."
+    },
+    "drizzle/0014_penempatan_multi_kelas.sql": {
+        "summary": "Migrasi aturan penempatan multi-kelas: menghapus indeks unik lama `student_enrollments_student_aktif_idx` (satu penempatan aktif per murid) dan menggantinya dengan indeks unik parsial `student_enrollments_student_kelas_aktif_idx` pada (student_id, class_id) WHERE status = 'aktif'. Tidak ada baris penempatan yang diubah, jadi seluruh riwayat lama tetap utuh."
+    },
+    "e2e/penempatan.spec.ts": {
+        "summary": "Tes e2e Playwright untuk aturan penempatan multi-kelas: membuat satu murid dan dua kelas, menempatkan murid di kelas A (201) lalu di kelas B (201, tanpa perlu keluar dari kelas lama), menolak penempatan kedua di kelas A (409 `SUDAH_TERDAFTAR` dengan pesan \"sudah terdaftar di kelas ini\"), mengeluarkan murid dari kelas A saja (kelas B tetap berisi murid itu), dan menempatkannya kembali di kelas A setelah keluar."
     }
 }

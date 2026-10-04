@@ -18,9 +18,11 @@ export const statusPenempatan = pgEnum("status_penempatan", [
   "selesai",
 ]);
 
-// Penempatan murid ke kelas. Murid boleh punya banyak baris (riwayat), tetapi
-// hanya satu yang berstatus 'aktif' supaya kehadirannya tidak terhitung di dua
-// kelas sekaligus.
+// Penempatan murid ke kelas. Murid boleh punya banyak baris (riwayat), dan
+// boleh aktif di beberapa kelas sekaligus (mis. kelas matematika dan kelas
+// bahasa). Yang dijaga adalah pasangannya: satu murid hanya boleh punya satu
+// penempatan aktif per kelas, supaya kehadirannya tidak terhitung dua kali di
+// kelas yang sama.
 export const studentEnrollments = pgTable(
   "student_enrollments",
   {
@@ -38,8 +40,8 @@ export const studentEnrollments = pgTable(
       .notNull(),
   },
   (table) => [
-    uniqueIndex("student_enrollments_student_aktif_idx")
-      .on(table.studentId)
+    uniqueIndex("student_enrollments_student_kelas_aktif_idx")
+      .on(table.studentId, table.classId)
       .where(sql`${table.status} = 'aktif'`),
     index("student_enrollments_class_status_idx").on(
       table.classId,

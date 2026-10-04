@@ -481,12 +481,16 @@ export type HasilTempatkanMurid =
   | { status: "tersimpan" }
   | { status: "kelas_tidak_ada" }
   | { status: "murid_tidak_ada" }
-  | { status: "sudah_terdaftar"; kelasId: string | null };
+  | { status: "sudah_terdaftar" };
 
 /**
- * Menempatkan murid ke kelas. Satu murid hanya boleh punya satu penempatan
- * aktif, jadi murid yang sudah punya kelas lain ditolak — kehadirannya tidak
- * boleh terhitung di dua kelas sekaligus.
+ * Menempatkan murid ke kelas. Sejak aturan multi-kelas berlaku, satu murid
+ * boleh aktif di beberapa kelas sekaligus (mis. kelas matematika dan kelas
+ * bahasa); yang ditolak hanya pasangan yang sama, yaitu murid yang sudah aktif
+ * di kelas itu — kalau tidak, kehadirannya terhitung dua kali di kelas yang
+ * sama. Penjagaannya ada di indeks unik parsial
+ * `student_enrollments_student_kelas_aktif_idx`, bukan di pemeriksaan awal,
+ * supaya dua permintaan bersamaan pun tidak bisa menyisipkan dobel.
  */
 export async function tempatkanMurid(
   kelasId: string,
@@ -507,20 +511,6 @@ export async function tempatkanMurid(
     .limit(1);
   if (!murid) return { status: "murid_tidak_ada" };
 
-  // Kelas tempat murid ini sedang aktif, kalau ada. Dipakai untuk memilih
-  // pesan yang tepat: menempatkan ulang di kelas yang sama bukan "kelas lain".
-  const [aktif] = await db
-    .select({ kelasId: studentEnrollments.classId })
-    .from(studentEnrollments)
-    .where(
-      and(
-        eq(studentEnrollments.studentId, muridId),
-        eq(studentEnrollments.status, "aktif"),
-      ),
-    )
-    .limit(1);
-  if (aktif) return { status: "sudah_terdaftar", kelasId: aktif.kelasId };
-
   try {
     await db.insert(studentEnrollments).values({
       studentId: muridId,
@@ -528,10 +518,9 @@ export async function tempatkanMurid(
       tanggalMulai,
     });
   } catch (error) {
-    // Balapan dua permintaan sekaligus masih dijaga indeks unik parsial,
-    // jadi hasilnya tetap penolakan yang sama.
-    if (pelanggaranUnik(error))
-      return { status: "sudah_terdaftar", kelasId: null };
+    // Indeks unik parsial menolak penempatan kedua di kelas yang sama, jadi
+    // hasilnya penolakan yang rapi, bukan galat server.
+    if (pelanggaranUnik(error)) return { status: "sudah_terdaftar" };
     throw error;
   }
 

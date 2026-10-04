@@ -25,7 +25,7 @@ export type MuridDiKelas = {
 type PanelPenempatanProps = {
   /** Murid yang sudah berada di kelas ini, lengkap dengan detailnya. */
   terdaftar: MuridDiKelas[];
-  /** Murid yang belum ditempatkan di kelas mana pun. */
+  /** Murid yang belum aktif di kelas yang sedang dibuka. */
   tersedia: Murid[];
   onTambah: (muridId: string) => void;
   onKeluarkan: (muridId: string) => void;

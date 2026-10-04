@@ -21,7 +21,7 @@ export function GET(request: Request, context: Context) {
 }
 
 // Menempatkan murid ke kelas ini. Satu murid hanya boleh punya satu kelas
-// aktif, jadi murid yang sudah terdaftar di kelas lain dijawab 409.
+// aktif di kelas yang sama, jadi penempatan kedua di kelas itu dijawab 409.
 export function POST(request: Request, context: Context) {
   return withApiSession(request, async () => {
     const id = kelasIdSchema.parse((await context.params).id);
@@ -36,13 +36,13 @@ export function POST(request: Request, context: Context) {
       throw new ApiError(404, "NOT_FOUND", "Kelas tidak ditemukan.");
     if (hasil.status === "murid_tidak_ada")
       throw new ApiError(404, "NOT_FOUND", "Murid tidak ditemukan.");
+    // Sejak aturan multi-kelas, murid boleh aktif di beberapa kelas; yang
+    // ditolak hanya penempatan kedua di kelas yang sama.
     if (hasil.status === "sudah_terdaftar")
       throw new ApiError(
         409,
         "SUDAH_TERDAFTAR",
-        hasil.kelasId === id
-          ? "Murid ini sudah terdaftar di kelas ini."
-          : "Murid ini sudah terdaftar di kelas lain. Keluarkan dulu dari kelas sebelumnya.",
+        "Murid ini sudah terdaftar di kelas ini.",
       );
 
     return Response.json({ data: await listMuridKelas(id) }, { status: 201 });

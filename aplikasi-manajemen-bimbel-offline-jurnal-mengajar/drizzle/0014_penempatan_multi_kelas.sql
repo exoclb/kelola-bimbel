@@ -1,0 +1,2 @@
+DROP INDEX "student_enrollments_student_aktif_idx";--> statement-breakpoint
+CREATE UNIQUE INDEX "student_enrollments_student_kelas_aktif_idx" ON "student_enrollments" USING btree ("student_id","class_id") WHERE "student_enrollments"."status" = 'aktif';

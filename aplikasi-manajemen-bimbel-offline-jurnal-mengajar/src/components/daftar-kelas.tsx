@@ -103,14 +103,15 @@ export function DaftarKelas({
       .sort((a, b) => a.murid.nama.localeCompare(b.murid.nama, "id"));
   }
 
-  const muridTerdaftar = new Set(
+  // Murid yang boleh dipilih adalah yang belum aktif di kelas yang sedang
+  // dibuka; murid yang sama boleh masuk ke kelas lain.
+  const muridDiKelas = new Set(
     penempatan
       .filter((baris) => baris.status === "aktif")
-      .map((baris) => baris.muridId),
+      .map((baris) => `${baris.kelasId}:${baris.muridId}`),
   );
-  const muridTersedia = daftarMurid.filter(
-    (murid) => !muridTerdaftar.has(murid.id),
-  );
+  const muridTersedia = (kelasId: string) =>
+    daftarMurid.filter((murid) => !muridDiKelas.has(`${kelasId}:${murid.id}`));
 
   function ubahJadwal(
     kelasId: string,
@@ -182,16 +183,16 @@ export function DaftarKelas({
   }
 
   function tempatkanMurid(kelasId: string, muridId: string) {
-    // Satu murid hanya boleh punya satu penempatan aktif, jadi penempatan
-    // kedua ditolak dengan pesan yang menyebut kelasnya.
+    // Sejak aturan multi-kelas, murid boleh aktif di beberapa kelas; yang
+    // ditolak hanya penempatan kedua di kelas yang sama.
     const sudahAda = penempatanTerkini.current.find(
-      (baris) => baris.muridId === muridId && baris.status === "aktif",
+      (baris) =>
+        baris.muridId === muridId &&
+        baris.kelasId === kelasId &&
+        baris.status === "aktif",
     );
     if (sudahAda) {
-      const kelasLama = daftar.find((baris) => baris.id === sudahAda.kelasId);
-      tampilkanGalat(
-        `${namaMurid(muridId)} sudah terdaftar di ${kelasLama?.namaKelas ?? "kelas lain"}. Satu murid hanya boleh punya satu kelas.`,
-      );
+      tampilkanGalat(`${namaMurid(muridId)} sudah terdaftar di kelas ini.`);
       return;
     }
 
@@ -346,7 +347,7 @@ export function DaftarKelas({
                     />
                     <PanelPenempatan
                       terdaftar={terdaftar}
-                      tersedia={muridTersedia}
+                      tersedia={muridTersedia(kelas.id)}
                       onTambah={(muridId) => tempatkanMurid(kelas.id, muridId)}
                       onKeluarkan={(muridId) =>
                         keluarkanMurid(kelas.id, muridId)
