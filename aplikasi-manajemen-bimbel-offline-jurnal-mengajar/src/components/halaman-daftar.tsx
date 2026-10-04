@@ -13,9 +13,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { NativeSelect } from "@/components/ui/native-select";
 import { emailSudahDipakai, type AkunMasuk } from "@/lib/mock-akun";
-import { labelPeran, type PeranPengguna } from "@/lib/peran";
+import { labelPeran } from "@/lib/peran";
 
 const MIN_SANDI = 8;
 
@@ -35,12 +34,10 @@ export function HalamanDaftar({ daftarAkun }: HalamanDaftarProps) {
   const [email, setEmail] = useState("");
   const [sandi, setSandi] = useState("");
   const [ulangiSandi, setUlangiSandi] = useState("");
-  const [peran, setPeran] = useState<PeranPengguna>("guru");
   const [galat, setGalat] = useState("");
   const [terdaftar, setTerdaftar] = useState<{
     nama: string;
     email: string;
-    peran: PeranPengguna;
   } | null>(null);
 
   function kirim(event: FormEvent<HTMLFormElement>) {
@@ -53,7 +50,7 @@ export function HalamanDaftar({ daftarAkun }: HalamanDaftarProps) {
       setGalat("Nama lengkap wajib diisi, minimal 2 huruf.");
       return;
     }
-    if (!emailBersih.includes("@") || emailBersih.startsWith("@")) {
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailBersih)) {
       setGalat("Email belum berbentuk alamat email yang benar.");
       return;
     }
@@ -71,7 +68,7 @@ export function HalamanDaftar({ daftarAkun }: HalamanDaftarProps) {
     }
 
     setGalat("");
-    setTerdaftar({ nama: namaBersih, email: emailBersih, peran });
+    setTerdaftar({ nama: namaBersih, email: emailBersih });
   }
 
   function daftarLagi() {
@@ -80,7 +77,6 @@ export function HalamanDaftar({ daftarAkun }: HalamanDaftarProps) {
     setEmail("");
     setSandi("");
     setUlangiSandi("");
-    setPeran("guru");
   }
 
   return (
@@ -91,8 +87,8 @@ export function HalamanDaftar({ daftarAkun }: HalamanDaftarProps) {
           Daftarkan akun Kelola Bimbel
         </h1>
         <p className="mt-3 text-base leading-7 text-muted-foreground">
-          Guru dan owner punya akunnya masing-masing. Isi data di bawah, lalu
-          masuk dengan akun itu untuk mengisi jurnal atau memantau bimbel.
+          Isi data di bawah untuk membuat akun guru, lalu masuk dengan akun itu
+          untuk mulai mengisi jurnal mengajar.
         </p>
 
         <form onSubmit={kirim} className="mt-6 space-y-4" noValidate>
@@ -102,6 +98,7 @@ export function HalamanDaftar({ daftarAkun }: HalamanDaftarProps) {
               id={`${idForm}-nama`}
               name="nama"
               autoComplete="name"
+              maxLength={120}
               placeholder="mis. Bu Sari"
               value={nama}
               onChange={(event) => setNama(event.target.value)}
@@ -116,6 +113,7 @@ export function HalamanDaftar({ daftarAkun }: HalamanDaftarProps) {
               name="email"
               type="email"
               autoComplete="email"
+              maxLength={254}
               placeholder="nama@kelolabimbel.test"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
@@ -133,6 +131,7 @@ export function HalamanDaftar({ daftarAkun }: HalamanDaftarProps) {
                 name="sandi"
                 type="password"
                 autoComplete="new-password"
+                maxLength={128}
                 placeholder={`minimal ${MIN_SANDI} huruf`}
                 value={sandi}
                 onChange={(event) => setSandi(event.target.value)}
@@ -144,6 +143,7 @@ export function HalamanDaftar({ daftarAkun }: HalamanDaftarProps) {
               <Input
                 id={`${idForm}-ulangi`}
                 name="ulangiSandi"
+                maxLength={128}
                 type="password"
                 autoComplete="new-password"
                 placeholder="tulis ulang sandi"
@@ -154,24 +154,10 @@ export function HalamanDaftar({ daftarAkun }: HalamanDaftarProps) {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor={`${idForm}-peran`}>Peran</Label>
-            <NativeSelect
-              id={`${idForm}-peran`}
-              name="peran"
-              value={peran}
-              onChange={(event) =>
-                setPeran(event.target.value as PeranPengguna)
-              }
-            >
-              <option value="guru">Guru — mengisi jurnal mengajar</option>
-              <option value="owner">Owner — memantau jurnal dan gaji</option>
-            </NativeSelect>
-            <p className="text-sm text-muted-foreground">
-              Akun owner biasanya dibuat sekali saja saat bimbel mulai memakai
-              aplikasi ini.
-            </p>
-          </div>
+          <p className="rounded-lg border bg-muted/40 px-3 py-3 text-sm leading-6 text-muted-foreground">
+            Akun baru selalu berperan <strong>guru</strong>. Peran owner
+            diberikan lewat halaman Pengaturan, bukan lewat pendaftaran sendiri.
+          </p>
 
           {galat && (
             <p
@@ -199,7 +185,7 @@ export function HalamanDaftar({ daftarAkun }: HalamanDaftarProps) {
             </p>
             <p className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted-foreground">
               <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                {labelPeran(terdaftar.peran)}
+                {labelPeran("guru")}
               </span>
               <span>{terdaftar.email}</span>
             </p>
