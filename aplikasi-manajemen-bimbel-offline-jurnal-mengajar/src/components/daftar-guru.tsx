@@ -10,6 +10,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  FormTambahGuru,
+  type AkunGuruBaru,
+} from "@/components/form-tambah-guru";
 import { KolomPencarian } from "@/components/kolom-pencarian";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { Label } from "@/components/ui/label";
@@ -25,8 +29,9 @@ type DaftarGuruProps = {
 
 /**
  * Daftar akun guru dan owner: pencarian, saringan status, dan tombol untuk
- * menonaktifkan atau mengaktifkan kembali. Datanya masih tiruan — perubahannya
- * baru berlaku di layar (lihat src/lib/mock-pengaturan.ts).
+ * menonaktifkan atau mengaktifkan kembali. Datanya masih tiruan — penambahan
+ * dan perubahan statusnya baru berlaku di layar (lihat
+ * src/lib/mock-pengaturan.ts).
  */
 export function DaftarGuru({ daftarAwal }: DaftarGuruProps) {
   const idSaring = useId();
@@ -51,6 +56,24 @@ export function DaftarGuru({ daftarAwal }: DaftarGuruProps) {
   });
 
   const jumlahAktif = daftar.filter((akun) => akun.statusAktif).length;
+
+  function tambahGuru(akun: AkunGuruBaru) {
+    // Akun sungguhan dibuat lewat API; di layar ini datanya masih tiruan, jadi
+    // barisnya ditambahkan ke daftar saja.
+    setDaftar((sebelumnya) => [
+      {
+        id: crypto.randomUUID(),
+        nama: akun.nama,
+        email: akun.email,
+        sandi: akun.sandi,
+        peran: "guru",
+        cabang: "",
+        statusAktif: true,
+      },
+      ...sebelumnya,
+    ]);
+    setPesan(`Akun guru ${akun.nama} ditambahkan.`);
+  }
 
   function jalankanUbahStatus(akun: AkunMasuk) {
     setKonfirmasi(null);
@@ -104,6 +127,8 @@ export function DaftarGuru({ daftarAwal }: DaftarGuruProps) {
           </div>
         </div>
 
+        <FormTambahGuru onTambah={tambahGuru} />
+
         {pesan && (
           <p
             role="status"
@@ -132,7 +157,8 @@ export function DaftarGuru({ daftarAwal }: DaftarGuruProps) {
                 <div className="min-w-0">
                   <p className="truncate font-medium">{akun.nama}</p>
                   <p className="truncate text-sm text-muted-foreground">
-                    {akun.email} · {akun.cabang}
+                    {akun.email}
+                    {akun.cabang ? ` · ${akun.cabang}` : ""}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
