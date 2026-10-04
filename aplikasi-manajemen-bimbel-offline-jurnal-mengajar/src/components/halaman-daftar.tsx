@@ -210,13 +210,17 @@ export function HalamanDaftar({ daftarAkun }: HalamanDaftarProps) {
               <span>{terdaftar.email}</span>
             </p>
             <p className="text-sm leading-6 text-muted-foreground">
+              Setelah masuk, guru langsung dibawa ke halaman Isi Jurnal untuk
+              mencatat pertemuan hari ini.
+            </p>
+            <p className="text-sm leading-6 text-muted-foreground">
               Pendaftaran ini masih memakai data tiruan: akunnya belum tersimpan
               di server, jadi belum bisa dipakai untuk masuk sungguhan.
             </p>
             <div className="flex flex-wrap gap-2">
               <Button asChild size="sm">
                 <Link href="/masuk">
-                  Coba halaman masuk
+                  Masuk sebagai guru
                   <ArrowRight aria-hidden="true" />
                 </Link>
               </Button>
