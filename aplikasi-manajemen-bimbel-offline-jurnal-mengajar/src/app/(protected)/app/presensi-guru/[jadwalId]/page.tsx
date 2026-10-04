@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PresensiSesi } from "@/components/presensi-sesi";
-import { getJadwalHariIni } from "@/lib/mock-jurnal";
-import { getPresensiGuruAwal } from "@/lib/mock-presensi-guru";
+import {
+  FILTER_RIWAYAT_KOSONG,
+  getJadwalHariIni,
+  getRiwayatJurnal,
+} from "@/lib/mock-jurnal";
 import { requireSession } from "@/lib/session";
-import { formatTanggalLengkap, namaHari } from "@/lib/tanggal";
+import { formatTanggalLengkap, namaHari, tanggalISO } from "@/lib/tanggal";
 
 export const metadata: Metadata = { title: "Presensi Sesi" };
 
@@ -19,18 +22,30 @@ export default async function PresensiSesiPage({
   // Hanya sesi hari ini yang bisa dibuka, memakai sumber jadwal yang sama
   // dengan halaman presensi hari ini.
   const sekarang = new Date();
+  const hariIni = tanggalISO(sekarang);
   const jadwal = getJadwalHariIni(namaHari(sekarang)).find(
     (sesi) => sesi.id === jadwalId,
   );
   if (!jadwal) notFound();
 
-  const presensi =
-    getPresensiGuruAwal().find((baris) => baris.jadwalId === jadwal.id) ?? null;
+  // Jurnal sesi ini (kalau sudah diisi) dipakai untuk tautan silang, supaya
+  // presensi guru dan jurnal mengajar bisa ditelusuri dari dua arah.
+  const jurnal =
+    getRiwayatJurnal({
+      ...FILTER_RIWAYAT_KOSONG,
+      kelas: jadwal.namaKelas,
+      dari: hariIni,
+      sampai: hariIni,
+    }).find(
+      (catatan) =>
+        catatan.jamMulai === jadwal.jamMulai &&
+        catatan.jamSelesai === jadwal.jamSelesai,
+    ) ?? null;
 
   return (
     <PresensiSesi
       jadwal={jadwal}
-      presensiAwal={presensi}
+      jurnalId={jurnal?.id ?? null}
       namaGuru={user.name}
       tanggalTampil={formatTanggalLengkap(sekarang)}
     />

@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
+  ArrowRight,
   CalendarClock,
   Check,
   Clock,
-  LoaderCircle,
+  History,
   MapPin,
   Save,
   Users,
@@ -26,13 +27,20 @@ import type { Jadwal } from "@/lib/mock-jurnal";
 import {
   keteranganStatusPresensi,
   labelStatusPresensi,
-  type PresensiGuru,
   type StatusPresensiGuru,
 } from "@/lib/mock-presensi-guru";
+import {
+  langgananPresensiGuru,
+  siapkanPresensiGuru,
+  simpanStatusPresensiGuru,
+  snapshotPresensiGuru,
+  snapshotRiwayatPresensiGuru,
+} from "@/lib/presensi-guru-store";
 
 type PresensiSesiProps = {
   jadwal: Jadwal;
-  presensiAwal: PresensiGuru | null;
+  /** Id jurnal sesi ini kalau jurnalnya sudah ada, untuk tautan silang. */
+  jurnalId: string | null;
   namaGuru: string;
   tanggalTampil: string;
 };
@@ -45,28 +53,53 @@ const jamTampil = new Intl.DateTimeFormat("id-ID", {
   minute: "2-digit",
 });
 
+const tanggalJamTampil = new Intl.DateTimeFormat("id-ID", {
+  day: "2-digit",
+  month: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
 /**
  * Halaman satu sesi mengajar: guru melihat rincian sesinya dan menetapkan
- * status kehadirannya (hadir, izin, atau tidak hadir). Statusnya masih data
- * tiruan dan hanya berlaku selama halaman terbuka.
+ * status kehadirannya (hadir, izin, atau tidak hadir). Perubahan disimpan di
+ * penyimpanan sementara aplikasi, jadi statusnya tetap ada saat guru kembali
+ * ke halaman ini atau ke daftar sesi hari ini.
  */
 export function PresensiSesi({
   jadwal,
-  presensiAwal,
+  jurnalId,
   namaGuru,
   tanggalTampil,
 }: PresensiSesiProps) {
-  const [presensi, setPresensi] = useState(presensiAwal);
-  const [pilihan, setPilihan] = useState<StatusPresensiGuru | null>(
-    presensiAwal?.status ?? null,
+  const presensi = useSyncExternalStore(
+    langgananPresensiGuru,
+    snapshotPresensiGuru,
+    snapshotPresensiGuru,
   );
-  const [pending, setPending] = useState(false);
+  const riwayat = useSyncExternalStore(
+    langgananPresensiGuru,
+    snapshotRiwayatPresensiGuru,
+    snapshotRiwayatPresensiGuru,
+  );
+
+  // Salinan dari penyimpanan peramban baru dibaca setelah halaman tampil,
+  // supaya hasil render pertama tetap sama dengan hasil server.
+  useEffect(() => {
+    siapkanPresensiGuru();
+  }, []);
+
+  const baris = presensi.find((item) => item.jadwalId === jadwal.id) ?? null;
+  const jejak = riwayat.filter((item) => item.jadwalId === jadwal.id);
+
+  const [pilihan, setPilihan] = useState<StatusPresensiGuru | null>(
+    baris?.status ?? null,
+  );
   const [pesan, setPesan] = useState("");
 
   function simpan() {
     if (!pilihan) return;
-    setPending(true);
-    setPresensi({
+    simpanStatusPresensiGuru({
       jadwalId: jadwal.id,
       status: pilihan,
       guruPenggantiNama: null,
@@ -77,7 +110,6 @@ export function PresensiSesi({
     setPesan(
       `Status sesi ${jadwal.namaKelas} disimpan: ${labelStatusPresensi(pilihan)}.`,
     );
-    setPending(false);
   }
 
   return (
@@ -90,11 +122,19 @@ export function PresensiSesi({
         {tanggalTampil} · {jadwal.jamMulai}–{jadwal.jamSelesai} · {namaGuru}
       </p>
 
-      <div className="mt-6">
+      <div className="mt-6 flex flex-wrap items-center gap-2">
         <Button asChild variant="outline" size="sm">
           <Link href="/app/presensi-guru">
             <ArrowLeft aria-hidden="true" />
             Kembali ke presensi hari ini
+          </Link>
+        </Button>
+        <Button asChild variant="ghost" size="sm">
+          <Link
+            href={jurnalId ? `/app/jurnal/riwayat/${jurnalId}` : "/app/jurnal"}
+          >
+            {jurnalId ? "Lihat jurnal sesi ini" : "Isi jurnal sesi ini"}
+            <ArrowRight aria-hidden="true" />
           </Link>
         </Button>
       </div>
@@ -103,7 +143,8 @@ export function PresensiSesi({
         <CardHeader>
           <CardTitle>Rincian Sesi</CardTitle>
           <CardDescription>
-            Sesi ini mengikuti jadwal mingguan kelas {jadwal.namaKelas}.
+            Sesi ini mengikuti jadwal mingguan kelas {jadwal.namaKelas}
+            {jurnalId ? " dan jurnalnya sudah terkirim." : "."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
@@ -144,11 +185,11 @@ export function PresensiSesi({
         <CardHeader>
           <CardTitle>Status Kehadiran Saya</CardTitle>
           <CardDescription className="flex flex-wrap items-center gap-2">
-            <LabelStatusPresensi status={presensi?.status ?? null} />
-            {presensi && (
+            <LabelStatusPresensi status={baris?.status ?? null} />
+            {baris && (
               <span>
-                Diubah {presensi.diubahOleh} ·{" "}
-                {jamTampil.format(new Date(presensi.diubahPada))}
+                Diubah {baris.diubahOleh} ·{" "}
+                {jamTampil.format(new Date(baris.diubahPada))}
               </span>
             )}
           </CardDescription>
@@ -195,23 +236,58 @@ export function PresensiSesi({
             <Button
               type="button"
               size="sm"
-              disabled={!pilihan || pending}
+              disabled={!pilihan || pilihan === baris?.status}
               onClick={simpan}
             >
-              {pending ? (
-                <LoaderCircle className="animate-spin" aria-hidden="true" />
-              ) : (
-                <Save aria-hidden="true" />
-              )}
+              <Save aria-hidden="true" />
               Simpan status
             </Button>
           </div>
         </CardContent>
       </Card>
 
+      <Card className="mt-4">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <History className="size-4" aria-hidden="true" />
+            Riwayat Perubahan
+          </CardTitle>
+          <CardDescription>
+            Catatan siapa dan kapan terakhir mengubah status sesi ini.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {jejak.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Belum ada perubahan untuk sesi ini.
+            </p>
+          ) : (
+            <ul className="space-y-2 text-sm">
+              {jejak.map((item, urutan) => (
+                <li
+                  key={`${item.pada}-${urutan}`}
+                  className="flex flex-wrap items-center gap-x-2 gap-y-1"
+                >
+                  {item.status ? (
+                    <LabelStatusPresensi status={item.status} />
+                  ) : (
+                    <span className="rounded-full border border-dashed px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                      Tanda dihapus
+                    </span>
+                  )}
+                  <span className="text-muted-foreground">
+                    {item.oleh} · {tanggalJamTampil.format(new Date(item.pada))}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
       <p className="mt-6 text-xs leading-5 text-muted-foreground">
-        Catatan: status kehadiran di halaman ini masih data tiruan — berlaku
-        selama halaman terbuka sampai penyimpanannya tersambung ke database.
+        Catatan: status kehadiran di halaman ini masih data tiruan — bertahan
+        selama aplikasi terbuka, lalu diganti penyimpanan ke database.
       </p>
     </div>
   );

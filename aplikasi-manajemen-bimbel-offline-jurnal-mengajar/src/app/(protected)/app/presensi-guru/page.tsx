@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { PresensiGuruHariIni } from "@/components/presensi-guru-hari-ini";
-import { getPresensiGuruAwal } from "@/lib/mock-presensi-guru";
 import { getJadwalHariIni } from "@/lib/mock-jurnal";
 import { requireSession } from "@/lib/session";
 import { formatTanggalLengkap, namaHari } from "@/lib/tanggal";
@@ -18,7 +17,6 @@ export default async function PresensiGuruPage() {
   return (
     <PresensiGuruHariIni
       jadwal={jadwal}
-      presensiAwal={getPresensiGuruAwal()}
       namaGuru={user.name}
       tanggalTampil={formatTanggalLengkap(sekarang)}
     />

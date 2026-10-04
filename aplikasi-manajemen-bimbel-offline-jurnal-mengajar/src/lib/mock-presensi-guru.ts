@@ -74,3 +74,32 @@ const PRESENSI: PresensiGuru[] = [
 export function getPresensiGuruAwal(): PresensiGuru[] {
   return PRESENSI.map((baris) => ({ ...baris }));
 }
+
+export type RiwayatPresensiGuru = {
+  jadwalId: string;
+  /** `null` berarti tanda kehadiran sesi itu dibatalkan. */
+  status: StatusPresensiGuru | null;
+  oleh: string;
+  pada: string;
+};
+
+// Jejak perubahan contoh, sejalan dengan baris presensi di atas.
+const RIWAYAT: RiwayatPresensiGuru[] = [
+  {
+    jadwalId: "jdw-1",
+    status: "hadir",
+    oleh: "Bu Sari",
+    pada: "2026-10-01T07:05:00",
+  },
+  {
+    jadwalId: "jdw-2",
+    status: "hadir",
+    oleh: "Bu Sari",
+    pada: "2026-10-04T08:55:00",
+  },
+];
+
+/** Pengganti sementara `GET /api/presensi-guru/riwayat`. */
+export function getRiwayatPresensiAwal(): RiwayatPresensiGuru[] {
+  return RIWAYAT.map((baris) => ({ ...baris }));
+}

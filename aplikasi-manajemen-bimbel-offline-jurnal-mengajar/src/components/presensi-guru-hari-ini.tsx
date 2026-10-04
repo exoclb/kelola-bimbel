@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -16,11 +16,16 @@ import { Card } from "@/components/ui/card";
 import { LabelStatusPresensi } from "@/components/label-status-presensi";
 import { PesanKosong } from "@/components/status-antarmuka";
 import type { Jadwal } from "@/lib/mock-jurnal";
-import type { PresensiGuru } from "@/lib/mock-presensi-guru";
+import {
+  batalkanStatusPresensiGuru,
+  langgananPresensiGuru,
+  siapkanPresensiGuru,
+  simpanStatusPresensiGuru,
+  snapshotPresensiGuru,
+} from "@/lib/presensi-guru-store";
 
 type PresensiGuruHariIniProps = {
   jadwal: Jadwal[];
-  presensiAwal: PresensiGuru[];
   namaGuru: string;
   tanggalTampil: string;
 };
@@ -37,12 +42,21 @@ const jamTampil = new Intl.DateTimeFormat("id-ID", {
  */
 export function PresensiGuruHariIni({
   jadwal,
-  presensiAwal,
   namaGuru,
   tanggalTampil,
 }: PresensiGuruHariIniProps) {
-  const [presensi, setPresensi] = useState<PresensiGuru[]>(presensiAwal);
+  // Status dibaca dari penyimpanan sementara bersama, supaya sama dengan yang
+  // terlihat di halaman satu sesi.
+  const presensi = useSyncExternalStore(
+    langgananPresensiGuru,
+    snapshotPresensiGuru,
+    snapshotPresensiGuru,
+  );
   const [pesan, setPesan] = useState("");
+
+  useEffect(() => {
+    siapkanPresensiGuru();
+  }, []);
 
   const presensiUntuk = (jadwalId: string) =>
     presensi.find((baris) => baris.jadwalId === jadwalId);
@@ -51,24 +65,19 @@ export function PresensiGuruHariIni({
   const belumDitandai = jadwal.length - sudahDitandai;
 
   function tandaiHadir(sesi: Jadwal) {
-    setPresensi((sebelumnya) => [
-      ...sebelumnya.filter((baris) => baris.jadwalId !== sesi.id),
-      {
-        jadwalId: sesi.id,
-        status: "hadir",
-        guruPenggantiNama: null,
-        catatan: "",
-        diubahOleh: namaGuru,
-        diubahPada: new Date().toISOString(),
-      },
-    ]);
+    simpanStatusPresensiGuru({
+      jadwalId: sesi.id,
+      status: "hadir",
+      guruPenggantiNama: null,
+      catatan: "",
+      diubahOleh: namaGuru,
+      diubahPada: new Date().toISOString(),
+    });
     setPesan(`Kehadiran ${namaGuru} di ${sesi.namaKelas} ditandai hadir.`);
   }
 
   function batalkan(sesi: Jadwal) {
-    setPresensi((sebelumnya) =>
-      sebelumnya.filter((baris) => baris.jadwalId !== sesi.id),
-    );
+    batalkanStatusPresensiGuru(sesi.id, namaGuru);
     setPesan(`Tanda kehadiran ${sesi.namaKelas} dibatalkan.`);
   }
 

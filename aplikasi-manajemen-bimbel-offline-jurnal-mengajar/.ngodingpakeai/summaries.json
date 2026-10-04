@@ -1008,9 +1008,18 @@
         "summary": "Halaman Presensi Guru (`/app/presensi-guru`) untuk guru: memanggil `requireSession()`, mengambil sesi mengajar hari ini dari jadwal mingguan yang sama dengan halaman jurnal (`getJadwalHariIni(namaHari(sekarang))`), lalu merender `PresensiGuruHariIni` dengan data contoh presensi dari `getPresensiGuruAwal()`. Metadata judul \"Presensi Guru\"."
     },
     "src/components/presensi-guru-hari-ini.tsx": {
-        "summary": "Komponen klien daftar presensi guru hari ini: menampilkan ringkasan (jumlah sesi, sudah/belum ditandai) dan satu kartu per sesi berisi kelas, jam, cabang, jumlah murid, lencana status (Hadir/Izin/Tidak hadir/Digantikan atau \"Belum ditandai\"), jejak siapa & kapan ditandai, serta tombol satu ketukan \"Tandai hadir\" dan \"Batalkan tanda kehadiran\". Menyimpan status hanya di state (data tiruan), menampilkan pesan aksi lewat `role=\"status\"`, memakai `PesanKosong` saat tidak ada jadwal, dan tautan ke halaman jurnal."
+        "summary": "Komponen klien daftar presensi guru hari ini: ringkasan (jumlah sesi, sudah/belum ditandai) dan satu kartu per sesi berisi kelas, jam, cabang, jumlah murid, lencana status `LabelStatusPresensi`, jejak siapa & kapan ditandai, tombol satu ketukan 'Tandai hadir' / 'Batalkan tanda kehadiran', dan tautan 'Buka sesi' ke halaman sesi (`/app/presensi-guru/<id>`) untuk mengoreksi status. Menyimpan status hanya di state (data tiruan), memakai `PesanKosong` saat tidak ada jadwal, dan menyediakan tautan ke halaman jurnal."
     },
     "src/lib/mock-presensi-guru.ts": {
-        "summary": "Data contoh presensi kehadiran guru per sesi: tipe `StatusPresensiGuru` (`hadir` | `izin` | `tidak_hadir` | `digantikan`) dan `PresensiGuru` (jadwalId, status, guruPenggantiNama, catatan, diubahOleh, diubahPada) yang mengikuti rencana kolom tabelnya, helper `labelStatusPresensi` untuk lencana, dan `getPresensiGuruAwal()` yang mengembalikan salinan dua baris contoh (sesi `jdw-1` dan `jdw-2` sudah ditandai hadir)."
+        "summary": "Data contoh presensi kehadiran guru per sesi: tipe `StatusPresensiGuru` (`hadir` | `izin` | `tidak_hadir` | `digantikan`) dan `PresensiGuru` (jadwalId, status, guruPenggantiNama, catatan, diubahOleh, diubahPada) yang mengikuti rencana kolom tabelnya, helper `labelStatusPresensi` untuk lencana dan `keteranganStatusPresensi` untuk keterangan pilihan status, serta `getPresensiGuruAwal()` yang mengembalikan salinan dua baris contoh (sesi `jdw-1` dan `jdw-2` sudah ditandai hadir)."
+    },
+    "src/app/(protected)/app/presensi-guru/[jadwalId]/page.tsx": {
+        "summary": "Halaman satu sesi mengajar (`/app/presensi-guru/[jadwalId]`): memanggil `requireSession()`, mencari sesi **hari ini** dari `getJadwalHariIni(namaHari(sekarang))` yang sama dengan halaman presensi harian, memanggil `notFound()` bila id bukan sesi hari ini (guru tidak bisa menandai sesi hari lain), lalu merender `PresensiSesi` dengan status contoh dari `getPresensiGuruAwal()`."
+    },
+    "src/components/label-status-presensi.tsx": {
+        "summary": "Lencana status kehadiran guru: 'Hadir' (tinta primary), 'Izin' (muted), 'Tidak hadir' (tinta destructive), 'Digantikan' (garis primary), dan 'Belum ditandai' (garis putus-putus). Menerima `StatusPresensiGuru | null` sehingga kartu sesi yang belum ditandai pun tampil konsisten."
+    },
+    "src/components/presensi-sesi.tsx": {
+        "summary": "Halaman klien satu sesi mengajar: rincian sesi (kelas, jam, cabang, tanggal, daftar murid) plus kartu 'Status Kehadiran Saya' berisi lencana status, jejak 'Diubah <nama> · <jam>', tiga pilihan status (hadir/izin/tidak hadir) sebagai tombol `aria-pressed` berisi keterangan singkat, dan tombol 'Simpan status' (nonaktif sebelum ada pilihan, ikon pemuatan saat menyimpan). Status disimpan di state saja (data tiruan) dengan pesan konfirmasi lewat `role=\"status\"`; memakai `LabelStatusPresensi` bersama halaman daftar sesi."
     }
 }
