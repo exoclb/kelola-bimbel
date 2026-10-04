@@ -46,6 +46,23 @@ export const aturanGajiSchema = z
 
 export type AturanGajiInput = z.infer<typeof aturanGajiSchema>;
 
+// Perbaikan satu aturan gaji: minimal satu kolom. Kolom yang tidak dikirim
+// dibiarkan seperti semula, dan tidak ada field lain yang diterima.
+export const updateAturanGajiSchema = z
+  .object({
+    tarifPerJam: aturanGajiSchema.shape.tarifPerJam.optional(),
+    skema: aturanGajiSchema.shape.skema.optional(),
+    berlakuSejak: aturanGajiSchema.shape.berlakuSejak.optional(),
+  })
+  .strict()
+  .refine((nilai) => Object.keys(nilai).length > 0, {
+    message: "Kirim minimal satu kolom yang ingin diubah.",
+  });
+
+export type UpdateAturanGajiInput = z.infer<typeof updateAturanGajiSchema>;
+
+export const aturanGajiIdSchema = z.string().uuid();
+
 export const listAturanGajiSchema = z
   .object({
     // Tanggal yang dicari aturannya; kosong berarti hari ini.

@@ -413,6 +413,47 @@ test("aturan gaji disimpan bertanggal dan tarifnya diresolusi per tanggal", asyn
   });
   expect((await sebelum.json()).data.berlaku).toBeNull();
 
+  // Perbaikan tarif: hanya kolom yang dikirim yang berubah, tanggal bentrok
+  // tetap ditolak, dan barisnya bisa dihapus.
+  const riwayat = await request.get("/api/pengaturan/gaji", { headers });
+  const daftar = (await riwayat.json()).data.riwayat as {
+    id: string;
+    berlakuSejak: string;
+  }[];
+  const januari = daftar.find((baris) => baris.berlakuSejak === "2026-01-01")!;
+  const juli = daftar.find((baris) => baris.berlakuSejak === "2026-07-01")!;
+
+  const perbaiki = await request.patch(`/api/pengaturan/gaji/${januari.id}`, {
+    headers: { ...headers, "Content-Type": "application/json" },
+    data: { tarifPerJam: 55000 },
+  });
+  expect(perbaiki.status()).toBe(200);
+  const diperbaiki = (await perbaiki.json()).data;
+  expect(diperbaiki.tarifPerJam).toBe(55000);
+  expect(diperbaiki.berlakuSejak).toBe("2026-01-01");
+
+  const bentrok = await request.patch(`/api/pengaturan/gaji/${januari.id}`, {
+    headers: { ...headers, "Content-Type": "application/json" },
+    data: { berlakuSejak: "2026-07-01" },
+  });
+  expect(bentrok.status()).toBe(409);
+  expect((await bentrok.json()).error.code).toBe("TANGGAL_SUDAH_ADA");
+
+  const hapus = await request.delete(`/api/pengaturan/gaji/${juli.id}`, {
+    headers,
+  });
+  expect(hapus.status()).toBe(204);
+  const hapusLagi = await request.delete(`/api/pengaturan/gaji/${juli.id}`, {
+    headers,
+  });
+  expect(hapusLagi.status()).toBe(404);
+
+  const setelahHapus = await request.get(
+    "/api/pengaturan/gaji?tanggal=2026-09-30",
+    { headers },
+  );
+  expect((await setelahHapus.json()).data.berlaku.tarifPerJam).toBe(55000);
+
   await setRole("user");
 });
 

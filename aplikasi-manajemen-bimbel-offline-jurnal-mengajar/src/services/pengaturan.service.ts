@@ -15,6 +15,7 @@ import { peranDariRole, type PeranPengguna } from "@/lib/peran";
 import { aturanGajiBerlaku } from "@/services/gaji.service";
 import type {
   AturanGajiInput,
+  UpdateAturanGajiInput,
   ListGuruInput,
   ProfilBimbelInput,
   TambahGuruInput,
@@ -178,6 +179,57 @@ export async function tambahAturanGaji(
     if (pelanggaranUnik(error)) return { status: "tanggal_sudah_ada" };
     throw error;
   }
+}
+
+export type HasilUbahAturanGaji =
+  | { status: "tersimpan"; aturan: AturanGajiTersimpan }
+  | { status: "tidak_ada" }
+  | { status: "tanggal_sudah_ada" };
+
+/**
+ * Memperbaiki satu aturan gaji, misalnya karena tarifnya salah ketik. Tanggal
+ * berlaku boleh ikut diubah selama belum dipakai aturan lain (dijaga indeks
+ * unik). Perlu diingat: mengubah tarif lama ikut mengubah perhitungan bulan
+ * yang memakainya, sedangkan rekap yang sudah ditandai dibayar tetap memakai
+ * salinan angkanya sendiri.
+ */
+export async function updateAturanGaji(
+  id: string,
+  input: UpdateAturanGajiInput,
+): Promise<HasilUbahAturanGaji> {
+  try {
+    const [baris] = await db
+      .update(salarySettings)
+      .set({
+        ...(input.tarifPerJam !== undefined
+          ? { tarifPerJam: input.tarifPerJam }
+          : {}),
+        ...(input.skema !== undefined ? { skema: input.skema } : {}),
+        ...(input.berlakuSejak !== undefined
+          ? { berlakuSejak: input.berlakuSejak }
+          : {}),
+      })
+      .where(eq(salarySettings.id, id))
+      .returning(fieldsTarif);
+    if (!baris) return { status: "tidak_ada" };
+    return { status: "tersimpan", aturan: baris };
+  } catch (error) {
+    if (pelanggaranUnik(error)) return { status: "tanggal_sudah_ada" };
+    throw error;
+  }
+}
+
+/**
+ * Menghapus satu aturan gaji, misalnya baris yang salah tanggal. Kalau tidak
+ * ada aturan lain yang lebih lama, rekap bulan setelahnya menjadi "tarif belum
+ * diatur" sampai tarif baru diisi.
+ */
+export async function hapusAturanGaji(id: string) {
+  const dihapus = await db
+    .delete(salarySettings)
+    .where(eq(salarySettings.id, id))
+    .returning({ id: salarySettings.id });
+  return dihapus.length > 0;
 }
 
 /** Satu akun guru/owner seperti yang dikirim ke klien. */
