@@ -101,9 +101,9 @@ export function FormProfilBimbel({ profilAwal }: FormProfilBimbelProps) {
         field: "nama",
         pesan: "Nama bimbel wajib diisi, minimal 2 huruf.",
       });
-    if (alamat.trim().length < 3)
-      ditemukan.push({ field: "alamat", pesan: "Alamat bimbel wajib diisi." });
-    if (email.trim() && !email.includes("@"))
+    // Alamat boleh kosong — API menyimpannya sebagai teks kosong — jadi yang
+    // diperiksa hanya batas panjangnya lewat maxLength di isiannya.
+    if (email.trim() && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim()))
       ditemukan.push({
         field: "email",
         pesan: "Email belum berbentuk alamat email yang benar.",
@@ -208,6 +208,7 @@ export function FormProfilBimbel({ profilAwal }: FormProfilBimbelProps) {
               <Input
                 id={`${idForm}-nama`}
                 name="nama"
+                maxLength={120}
                 value={nama}
                 onChange={(event) => setNama(event.target.value)}
                 aria-invalid={salah("nama")}
@@ -218,6 +219,7 @@ export function FormProfilBimbel({ profilAwal }: FormProfilBimbelProps) {
               <Input
                 id={`${idForm}-telepon`}
                 name="telepon"
+                maxLength={40}
                 value={telepon}
                 onChange={(event) => setTelepon(event.target.value)}
               />
@@ -229,6 +231,7 @@ export function FormProfilBimbel({ profilAwal }: FormProfilBimbelProps) {
             <Input
               id={`${idForm}-alamat`}
               name="alamat"
+              maxLength={240}
               value={alamat}
               onChange={(event) => setAlamat(event.target.value)}
               aria-invalid={salah("alamat")}
@@ -241,6 +244,7 @@ export function FormProfilBimbel({ profilAwal }: FormProfilBimbelProps) {
               id={`${idForm}-email`}
               name="email"
               type="email"
+              maxLength={254}
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               aria-invalid={salah("email")}

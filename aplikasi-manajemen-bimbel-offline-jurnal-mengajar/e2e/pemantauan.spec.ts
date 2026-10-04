@@ -275,7 +275,9 @@ test("menyimpan pengaturan minta lengkapi isian lalu menampilkan konfirmasi", as
   // Isian yang belum lengkap diberitahukan sekaligus, bukan satu per satu.
   const nama = page.getByLabel("Nama bimbel");
   await nama.fill("");
-  await page.getByLabel("Alamat").fill("");
+  // Alamat boleh kosong (sama seperti aturan API), jadi yang tidak lengkap di
+  // sini adalah nama dan bentuk emailnya.
+  await page.getByLabel("Email bimbel").fill("bukan-email");
   await page.getByRole("button", { name: /Simpan profil/ }).click();
   // Next.js punya elemen `role=alert` sendiri untuk pengumuman rute, jadi
   // peringatannya diseleksi dari isinya.
@@ -286,11 +288,14 @@ test("menyimpan pengaturan minta lengkapi isian lalu menampilkan konfirmasi", as
     "Masih ada isian yang perlu dilengkapi",
   );
   await expect(peringatan).toContainText("Nama bimbel wajib diisi");
-  await expect(peringatan).toContainText("Alamat bimbel wajib diisi");
+  await expect(peringatan).toContainText(
+    "Email belum berbentuk alamat email yang benar",
+  );
 
   // Setelah lengkap, muncul konfirmasi berisi nilai yang tersimpan.
   await nama.fill("Bimbel Cerdas Nusantara");
   await page.getByLabel("Alamat").fill("Jl. Melati No. 12, Bandung");
+  await page.getByLabel("Email bimbel").fill("halo@bimbel.test");
   await page.getByRole("button", { name: /Simpan profil/ }).click();
   const konfirmasi = page
     .getByRole("status")
