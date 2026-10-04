@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { KolomPencarian } from "@/components/kolom-pencarian";
+import { PesanKosong } from "@/components/status-antarmuka";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import type { AkunMasuk } from "@/lib/mock-akun";
@@ -117,9 +118,10 @@ export function DaftarGuru({ daftarAwal }: DaftarGuruProps) {
         )}
 
         {hasil.length === 0 ? (
-          <p className="rounded-lg border bg-muted/40 px-4 py-6 text-center text-sm text-muted-foreground">
-            Tidak ada akun yang cocok dengan pencarian atau saringannya.
-          </p>
+          <PesanKosong
+            judul="Tidak ada akun yang cocok"
+            keterangan="Coba kata kunci lain atau ubah saringannya."
+          />
         ) : (
           <ul className="space-y-3">
             {hasil.map((akun) => (

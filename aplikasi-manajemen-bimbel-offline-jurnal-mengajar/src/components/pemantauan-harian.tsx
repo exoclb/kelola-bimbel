@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { PesanKosong } from "@/components/status-antarmuka";
 import { PanelJurnal } from "@/components/panel-jurnal";
 import { DaftarNotifikasi } from "@/components/daftar-notifikasi";
 import { PanelNotifikasi } from "@/components/panel-notifikasi";
@@ -143,20 +144,19 @@ export function PemantauanHarian({
       </div>
 
       {data.length === 0 ? (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>
-              {saring.adaSaringan
-                ? "Tidak ada jurnal yang cocok dengan saringan"
-                : "Belum ada jurnal hari ini"}
-            </CardTitle>
-            <CardDescription>
-              {saring.adaSaringan
-                ? "Coba ganti kelas, guru, atau cabangnya."
-                : "Begitu guru mengirim jurnal, isinya langsung muncul di halaman ini."}
-            </CardDescription>
-          </CardHeader>
-        </Card>
+        <PesanKosong
+          className="mt-6"
+          judul={
+            saring.adaSaringan
+              ? "Tidak ada jurnal yang cocok dengan saringan"
+              : "Belum ada jurnal hari ini"
+          }
+          keterangan={
+            saring.adaSaringan
+              ? "Coba ganti kelas, guru, atau cabangnya."
+              : "Begitu guru mengirim jurnal, isinya langsung muncul di halaman ini."
+          }
+        />
       ) : (
         <div className="mt-8 space-y-6">
           {perGuru.map((guru) => (

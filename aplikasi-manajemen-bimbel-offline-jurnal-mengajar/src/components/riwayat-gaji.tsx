@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { PesanKosong } from "@/components/status-antarmuka";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { formatPeriode, formatRupiah } from "@/lib/gaji";
@@ -118,15 +119,11 @@ export function RiwayatGaji({
       </Card>
 
       {daftar.length === 0 ? (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Belum ada rekap pada periode ini</CardTitle>
-            <CardDescription>
-              Coba pilih tahun atau bulan lain. Rekap muncul setelah ada jurnal
-              guru yang tercatat.
-            </CardDescription>
-          </CardHeader>
-        </Card>
+        <PesanKosong
+          className="mt-6"
+          judul="Belum ada rekap pada periode ini"
+          keterangan="Coba pilih tahun atau bulan lain. Rekap muncul setelah ada jurnal guru yang tercatat."
+        />
       ) : (
         <ul className="mt-6 space-y-3">
           {daftar.map((baris) => {

@@ -1,10 +1,12 @@
+import { StatusMemuat } from "@/components/status-antarmuka";
+
 export default function Loading() {
   return (
-    <div
-      role="status"
-      className="mx-auto max-w-6xl px-6 py-16 text-sm text-muted-foreground"
-    >
-      Loading your app…
+    <div className="mx-auto max-w-3xl px-6 py-16">
+      <StatusMemuat
+        judul="Menyiapkan halaman…"
+        keterangan="Tunggu sebentar, datanya sedang diambil."
+      />
     </div>
   );
 }

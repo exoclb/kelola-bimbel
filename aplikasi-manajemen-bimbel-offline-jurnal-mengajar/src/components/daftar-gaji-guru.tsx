@@ -5,6 +5,7 @@ import { BadgeCheck, Undo2 } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
 import { PanelRincianJam } from "@/components/panel-rincian-jam";
+import { PesanKosong } from "@/components/status-antarmuka";
 import { formatRupiah } from "@/lib/gaji";
 import { formatJam } from "@/lib/jurnal";
 import { tanggalISO } from "@/lib/tanggal";
@@ -76,11 +77,16 @@ export function DaftarGajiGuru({ daftar, periode }: DaftarGajiGuruProps) {
 
   return (
     <>
-      <p className="mb-4 text-sm text-muted-foreground">
-        {daftar.length === 0
-          ? "Belum ada jurnal pada bulan ini."
-          : `${daftar.length} guru · ${belumDibayar} belum dibayar. Buka rincian untuk melihat dasar perhitungannya.`}
-      </p>
+      {daftar.length === 0 ? (
+        <PesanKosong
+          judul="Belum ada jurnal pada bulan ini"
+          keterangan="Rekap gaji muncul setelah guru mengirim jurnal pada bulan yang dipilih."
+        />
+      ) : (
+        <p className="mb-4 text-sm text-muted-foreground">
+          {`${daftar.length} guru · ${belumDibayar} belum dibayar. Buka rincian untuk melihat dasar perhitungannya.`}
+        </p>
+      )}
 
       <ul className="divide-y">
         {daftar.map((baris) => {

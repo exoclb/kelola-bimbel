@@ -12,14 +12,10 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { CatatanSikapKehadiran } from "@/components/catatan-sikap-kehadiran";
+import { PesanKosong } from "@/components/status-antarmuka";
 import { LencanaNilai } from "@/components/lencana-nilai";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import {
   FormCatatanAnak,
   type IsiCatatan,
@@ -111,15 +107,11 @@ export function DaftarPerkembangan({
       </p>
 
       {muridDenganCatatan.length === 0 ? (
-        <Card className="mt-4">
-          <CardHeader>
-            <CardTitle>Belum ada catatan</CardTitle>
-            <CardDescription>
-              Catatan nilai dan sikap anak muncul di sini setelah guru
-              mengisinya.
-            </CardDescription>
-          </CardHeader>
-        </Card>
+        <PesanKosong
+          className="mt-4"
+          judul="Belum ada catatan"
+          keterangan="Catatan nilai dan sikap anak muncul di sini setelah guru mengisinya."
+        />
       ) : (
         <ul className="mt-4 space-y-3">
           {muridDenganCatatan.map((murid) => {

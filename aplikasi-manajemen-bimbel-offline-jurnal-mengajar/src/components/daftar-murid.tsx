@@ -5,12 +5,8 @@ import { CalendarDays, Phone, UserRound } from "lucide-react";
 import { cn } from "cn";
 import { FormTambahMurid } from "@/components/form-tambah-murid";
 import { KolomPencarian } from "@/components/kolom-pencarian";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { PesanKosong } from "@/components/status-antarmuka";
+import { Card } from "@/components/ui/card";
 import type { Murid } from "@/lib/mock-murid";
 import { formatTanggalLengkap, hitungUsia } from "@/lib/tanggal";
 
@@ -82,18 +78,15 @@ export function DaftarMurid({ daftarAwal }: DaftarMuridProps) {
       </div>
 
       {cocok.length === 0 ? (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>
-              {kataKunci ? "Tidak ada murid yang cocok" : "Belum ada murid"}
-            </CardTitle>
-            <CardDescription>
-              {kataKunci
-                ? `Coba kata kunci lain, atau hapus pencarian “${cari.trim()}”.`
-                : "Data murid muncul di sini setelah ditambahkan."}
-            </CardDescription>
-          </CardHeader>
-        </Card>
+        <PesanKosong
+          className="mt-6"
+          judul={kataKunci ? "Tidak ada murid yang cocok" : "Belum ada murid"}
+          keterangan={
+            kataKunci
+              ? `Coba kata kunci lain, atau hapus pencarian “${cari.trim()}”.`
+              : "Data murid muncul di sini setelah ditambahkan."
+          }
+        />
       ) : (
         <ul className="mt-6 space-y-3">
           {cocok.map((murid) => (
