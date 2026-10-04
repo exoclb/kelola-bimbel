@@ -29,7 +29,8 @@
     "db:down": "node scripts/database.mjs down",
     "db:status": "node scripts/database.mjs status",
     "db:logs": "node scripts/database.mjs logs",
-    "test:setup": "node scripts/test-setup.mjs"
+    "test:setup": "node scripts/test-setup.mjs",
+    "coolify:db": "node scripts/coolify-db.mjs"
   },
   "dependencies": {
     "@next/env": "16.3.4",

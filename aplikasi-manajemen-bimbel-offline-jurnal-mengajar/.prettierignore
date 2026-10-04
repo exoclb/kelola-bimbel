@@ -8,3 +8,9 @@ playwright-report
 test-results
 *.tsbuildinfo
 .env*
+
+# Ditulis ulang otomatis oleh ngodingpakeai (init/sync); jangan diformat di sini.
+.ngodingpakeai/
+.claude/
+.codex/
+AGENTS.md
