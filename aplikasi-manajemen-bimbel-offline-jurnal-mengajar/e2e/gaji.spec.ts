@@ -203,6 +203,51 @@ test("owner bisa melihat gaji setiap guru, dan penandaan pembayaran berlaku", as
   expect(await slip.text()).toContain("Guru Gaji");
 });
 
+test("slip gaji meng-escape nilai dari basis data", async ({ request }) => {
+  const emailOwner = await signUp(request, "Owner Slip");
+  await setRole(emailOwner, "owner");
+  await masuk(request, emailOwner);
+
+  // Nama kelas diisi akun mana pun, jadi isinya tidak bisa dipercaya.
+  const namaKelas = '<script>alert("xss")</script> & "uji"';
+  const db = await pool();
+  try {
+    await db.query("UPDATE classes SET nama_kelas = $1 WHERE guru_id = $2", [
+      namaKelas,
+      guruId,
+    ]);
+  } finally {
+    await db.end();
+  }
+
+  try {
+    const slip = await request.get(
+      `/api/admin/gaji/slip?guruId=${guruId}&periode=${bulan}`,
+      { headers },
+    );
+    expect(slip.status()).toBe(200);
+    const dokumen = await slip.text();
+
+    // Yang tampil harus teks, bukan tag yang bisa dijalankan peramban.
+    expect(dokumen).not.toContain("<script>alert");
+    expect(dokumen).toContain(
+      "&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt; &amp; &quot;uji&quot;",
+    );
+    // Angka slip tetap sama seperti sebelumnya.
+    expect(dokumen).toContain("75.000");
+  } finally {
+    const kembalikan = await pool();
+    try {
+      await kembalikan.query(
+        "UPDATE classes SET nama_kelas = $1 WHERE guru_id = $2",
+        ["Kelas Gaji Uji", guruId],
+      );
+    } finally {
+      await kembalikan.end();
+    }
+  }
+});
+
 test("halaman rekap gaji semua guru hanya untuk owner", async ({ page }) => {
   await setRole(emailGuru, "user");
   await page.goto("/sign-in");
