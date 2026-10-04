@@ -4,49 +4,52 @@ import { useId, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, LoaderCircle, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { emailSudahDipakai, type AkunMasuk } from "@/lib/mock-akun";
 import { labelPeran } from "@/lib/peran";
 
 const MIN_SANDI = 8;
-/** Jeda tiruan sebelum pendaftaran dianggap selesai. */
-const JEDA_DAFTAR = 700;
-
-type HalamanDaftarProps = {
-  daftarAkun: AkunMasuk[];
-};
 
 /**
- * Halaman pendaftaran akun guru dan owner. Datanya masih tiruan: pendaftaran
- * belum menyimpan apa pun ke server, tetapi aturan isian dan pesan kesalahannya
- * sudah sama seperti yang akan dipakai nanti (email tidak boleh dobel, sandi
- * minimal 8 huruf, konfirmasi sandi harus sama).
+ * Pesan kesalahan dari `POST /api/akun`: kalau ada rincian per isian, pesan
+ * itu yang paling berguna; kalau tidak, pakai pesan umumnya.
  */
-export function HalamanDaftar({ daftarAkun }: HalamanDaftarProps) {
+async function pesanGalat(jawaban: Response) {
+  const isi = (await jawaban.json().catch(() => null)) as {
+    error?: { message?: string; details?: { message?: string }[] };
+  } | null;
+  const rincian = isi?.error?.details?.[0]?.message;
+  return (
+    rincian ??
+    isi?.error?.message ??
+    "Pendaftaran belum bisa diproses. Coba lagi sebentar lagi."
+  );
+}
+
+/**
+ * Halaman pendaftaran akun guru. Isian diperiksa dulu di layar dengan aturan
+ * yang sama seperti validator API, lalu dikirim ke `POST /api/akun`; endpoint
+ * itu membuat akun berperan guru sekaligus masuk, jadi setelah berhasil
+ * pengguna tinggal dibawa ke halaman Isi Jurnal.
+ */
+export function HalamanDaftar() {
   const idForm = useId();
   const [nama, setNama] = useState("");
   const [email, setEmail] = useState("");
   const [sandi, setSandi] = useState("");
   const [ulangiSandi, setUlangiSandi] = useState("");
   const [galat, setGalat] = useState("");
-  // Pendaftaran sungguhan butuh perjalanan ke server; di layar tiruan ini
-  // jedanya dipura-purakan supaya keadaan tombolnya sudah benar.
+  // Pendaftaran butuh perjalanan ke server; keadaan ini yang membuat tombol
+  // tidak bisa dikirim dua kali.
   const [pending, setPending] = useState(false);
   const [terdaftar, setTerdaftar] = useState<{
     nama: string;
     email: string;
   } | null>(null);
 
-  function kirim(event: FormEvent<HTMLFormElement>) {
+  async function kirim(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (pending) return;
 
     const namaBersih = nama.trim();
     const emailBersih = email.trim().toLowerCase();
@@ -57,10 +60,6 @@ export function HalamanDaftar({ daftarAkun }: HalamanDaftarProps) {
     }
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailBersih)) {
       setGalat("Email belum berbentuk alamat email yang benar.");
-      return;
-    }
-    if (emailSudahDipakai(emailBersih)) {
-      setGalat("Email itu sudah dipakai akun lain. Pakai email yang berbeda.");
       return;
     }
     if (sandi.length < MIN_SANDI) {
@@ -74,10 +73,28 @@ export function HalamanDaftar({ daftarAkun }: HalamanDaftarProps) {
 
     setGalat("");
     setPending(true);
-    setTimeout(() => {
-      setPending(false);
+    try {
+      const jawaban = await fetch("/api/akun", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nama: namaBersih, email: emailBersih, sandi }),
+      });
+
+      if (!jawaban.ok) {
+        setGalat(await pesanGalat(jawaban));
+        return;
+      }
+
       setTerdaftar({ nama: namaBersih, email: emailBersih });
-    }, JEDA_DAFTAR);
+      setSandi("");
+      setUlangiSandi("");
+    } catch {
+      setGalat(
+        "Pendaftaran belum bisa diproses karena koneksi bermasalah. Coba lagi sebentar lagi.",
+      );
+    } finally {
+      setPending(false);
+    }
   }
 
   function daftarLagi() {
@@ -210,17 +227,13 @@ export function HalamanDaftar({ daftarAkun }: HalamanDaftarProps) {
               <span>{terdaftar.email}</span>
             </p>
             <p className="text-sm leading-6 text-muted-foreground">
-              Setelah masuk, guru langsung dibawa ke halaman Isi Jurnal untuk
-              mencatat pertemuan hari ini.
-            </p>
-            <p className="text-sm leading-6 text-muted-foreground">
-              Pendaftaran ini masih memakai data tiruan: akunnya belum tersimpan
-              di server, jadi belum bisa dipakai untuk masuk sungguhan.
+              Akunnya sudah terdaftar di server dan kamu langsung masuk sebagai
+              guru, jadi tinggal mulai mencatat pertemuan hari ini.
             </p>
             <div className="flex flex-wrap gap-2">
               <Button asChild size="sm">
-                <Link href="/masuk">
-                  Masuk sebagai guru
+                <Link href="/app/jurnal">
+                  Lanjut ke halaman Isi Jurnal
                   <ArrowRight aria-hidden="true" />
                 </Link>
               </Button>
@@ -236,32 +249,6 @@ export function HalamanDaftar({ daftarAkun }: HalamanDaftarProps) {
           </div>
         )}
       </div>
-
-      <Card className="h-fit">
-        <CardHeader>
-          <CardTitle>Yang sudah dipakai</CardTitle>
-          <CardDescription>
-            Email akun contoh di bawah tidak bisa didaftarkan lagi — sama
-            seperti aturan email unik di tabel pengguna nanti.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {daftarAkun.map((akun) => (
-            <div
-              key={akun.id}
-              className="rounded-lg border bg-muted/40 px-3 py-3"
-            >
-              <p className="truncate font-medium">{akun.nama}</p>
-              <p className="truncate text-sm text-muted-foreground">
-                {akun.email}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {labelPeran(akun.peran)} · {akun.cabang}
-              </p>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
     </div>
   );
 }

@@ -1,5 +1,57 @@
 import { expect, test } from "@playwright/test";
 
+// Email akun yang dibuat tes pendaftaran di atas; dipakai tes berikutnya
+// supaya tidak perlu mendaftar lagi (pendaftaran dibatasi lajunya).
+let emailTerdaftar = "";
+
+test("pendaftaran lewat halaman daftar membuat akun guru dan langsung masuk", async ({
+  page,
+}) => {
+  const email = `daftar-${Date.now()}@example.com`;
+  emailTerdaftar = email;
+  const sandi = "Rahasia-daftar-123!";
+
+  await page.goto("/daftar");
+  await page.getByLabel("Nama lengkap").fill("Guru Daftar Uji");
+  await page.getByLabel("Email", { exact: true }).fill(email);
+  await page.getByLabel("Sandi", { exact: true }).fill(sandi);
+  await page.getByLabel("Ulangi sandi").fill(sandi);
+  await page.getByRole("button", { name: "Daftarkan akun" }).click();
+
+  // Akun dibuat `POST /api/akun`; pendaftarannya sekaligus membuat sesi.
+  await expect(page.getByText(/siap dipakai/)).toBeVisible();
+  await page
+    .getByRole("link", { name: /Lanjut ke halaman Isi Jurnal/ })
+    .click();
+  await expect(page).toHaveURL(/\/app\/jurnal$/);
+
+  // Halaman pendaftaran mengalihkan yang sudah punya sesi.
+  await page.goto("/daftar");
+  await expect(page).toHaveURL(/\/app\/jurnal$/);
+});
+
+test("email yang sudah dipakai ditolak dengan pesan dari endpoint", async ({
+  page,
+}) => {
+  const sandi = "Rahasia-daftar-123!";
+
+  // Setiap tes memakai konteks peramban baru, jadi halaman daftar terbuka
+  // untuk pengunjung anonim.
+  await page.goto("/daftar");
+  await page.getByLabel("Nama lengkap").fill("Guru Dobel Uji");
+  await page.getByLabel("Email", { exact: true }).fill(emailTerdaftar);
+  await page.getByLabel("Sandi", { exact: true }).fill(sandi);
+  await page.getByLabel("Ulangi sandi").fill(sandi);
+  await page.getByRole("button", { name: "Daftarkan akun" }).click();
+
+  // Next.js punya elemen `role=alert` sendiri untuk pengumuman rute, jadi
+  // peringatannya diseleksi dari isinya.
+  await expect(
+    page.getByRole("alert").filter({ hasText: "sudah dipakai" }),
+  ).toBeVisible();
+  await expect(page.getByText(/siap dipakai/)).toHaveCount(0);
+});
+
 test("anonymous visitors cannot access the protected app", async ({
   page,
   request,
