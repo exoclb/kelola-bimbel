@@ -153,7 +153,7 @@
         "summary": "Data contoh kehadiran murid per pertemuan (tipe `KehadiranPertemuan`) sebagai pengganti tabel `journal_attendances` yang API-nya belum ada; mengekspor `getKehadiranAwal()` yang mengembalikan salinan daftar kehadiran."
     },
     "src/lib/mock-menu.ts": {
-        "summary": "Susunan menu tampilan per peran: tipe `MenuApp` (href, label, `perlu?: Permissions`), konstanta `MENU_DASAR` dan `MENU_PER_PERAN` untuk guru (termasuk /app/gaji/saya) dan owner (/app/pemantauan, /app/gaji), serta fungsi `menuUntukPeran()` yang mengembalikan salinan. Menu hanya tampilan — halaman/API tetap memeriksa izin sendiri."
+        "summary": "Susunan menu aplikasi per peran: `MENU_DASAR` (Beranda, Isi Jurnal, Riwayat, Murid, Kelas, Penempatan, Perkembangan, Pengaturan) ditambah menu khusus peran — guru mendapat \"Gaji saya\", owner mendapat \"Pemantauan\" dan \"Gaji\" dengan syarat izin. `menuUntukPeran` mengembalikan salinan daftar supaya pemanggil tidak mengubah menu aslinya."
     },
     "src/lib/mock-pengaturan.ts": {
         "summary": "Data tiruan Pengaturan Bimbel sebagai pengganti tabel `salary_settings`/`notification_preferences`: tipe `ProfilBimbel`, `AturanGaji`, `PreferensiNotifikasi`, dan fungsi `getProfilBimbel()`, `getRiwayatTarif()`, `getAturanGaji()`, `getDaftarGuru()`, `getPreferensiNotifikasi()`. Riwayat tarif meniru aturan baris terbaru yang berlaku sejak tanggal tertentu."
@@ -982,5 +982,11 @@
     },
     "src/app/(protected)/app/murid/[muridId]/page.tsx": {
         "summary": "Halaman detail murid (data tiruan): identitas anak (nama, usia, orang tua, kontak, status aktif), daftar \"Kelas yang sedang diikuti\" dan \"Riwayat kelas\" lengkap dengan cabang, guru pengampu, chip jadwal, tanggal mulai, serta badge Sedang diikuti/Sudah selesai — mendukung satu murid di beberapa kelas sekaligus. Ada keadaan kosong bila murid belum ditempatkan, tautan ke laporan perkembangan, dan `notFound()` untuk id yang tidak ada."
+    },
+    "src/components/daftar-penempatan.tsx": {
+        "summary": "Daftar seluruh penempatan murid di kelas (data tiruan): ringkasan jumlah penempatan, yang aktif, dan berapa murid yang aktif di lebih dari satu kelas; pencarian yang mencocokkan nama murid, kelas, cabang, atau guru; saringan status (semua/aktif/selesai); serta kartu tiap penempatan berisi murid, kelas, guru, tanggal mulai, badge status, dan tautan ke halaman detail murid. Baris aktif ditampilkan lebih dulu, lalu diurutkan menurut nama murid."
+    },
+    "src/app/(protected)/app/penempatan/page.tsx": {
+        "summary": "Halaman `/app/penempatan` (cukup sesi): menampilkan daftar penempatan murid dari data tiruan dengan menggabungkan `getPenempatanAwal()`, `getDaftarMurid()`, dan `getDaftarKelas()`."
     }
 }
