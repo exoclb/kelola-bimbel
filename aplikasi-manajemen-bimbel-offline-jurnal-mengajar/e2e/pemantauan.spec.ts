@@ -242,6 +242,8 @@ test("pengaturan menampilkan bagian sesuai izin akunnya", async ({ page }) => {
     page.getByRole("link", { name: /Atur notifikasi/ }),
   ).toBeVisible();
   await expect(page.getByRole("link", { name: /Atur tarif/ })).toHaveCount(0);
+  // Daftar akun bimbel juga bagian milik owner, bukan untuk guru.
+  await expect(page.getByText("Akun yang terdaftar")).toHaveCount(0);
 
   // Halaman khusus owner tetap tidak bisa dibuka walaupun alamatnya diketik.
   await page.goto("/app/pengaturan/guru");
@@ -258,6 +260,7 @@ test("pengaturan menampilkan bagian sesuai izin akunnya", async ({ page }) => {
   ]) {
     await expect(page.getByRole("link", { name: nama })).toBeVisible();
   }
+  await expect(page.getByText("Akun yang terdaftar")).toBeVisible();
 
   await setRole("user");
 });

@@ -86,8 +86,9 @@ export function PengaturanBimbel({ bolehKelola }: PengaturanBimbelProps) {
         Pengaturan Bimbel
       </h1>
       <p className="mt-3 text-base leading-7 text-muted-foreground">
-        Atur identitas bimbel, aturan gaji, akun guru, dan pemberitahuan dari
-        satu tempat.
+        {bolehKelola
+          ? "Atur identitas bimbel, aturan gaji, akun guru, dan pemberitahuan dari satu tempat."
+          : "Atur pemberitahuan apa saja yang ingin kamu terima dari satu tempat."}
       </p>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -115,43 +116,45 @@ export function PengaturanBimbel({ bolehKelola }: PengaturanBimbelProps) {
         )}
       </div>
 
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Akun yang terdaftar</CardTitle>
-          <CardDescription>
-            Guru mengisi jurnal, owner memantau dan mengatur bimbel.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {guru.map((akun) => (
-            <div
-              key={akun.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/40 px-3 py-3"
-            >
-              <div className="min-w-0">
-                <p className="truncate font-medium">{akun.nama}</p>
-                <p className="truncate text-sm text-muted-foreground">
-                  {akun.email}
-                </p>
+      {bolehKelola && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Akun yang terdaftar</CardTitle>
+            <CardDescription>
+              Guru mengisi jurnal, owner memantau dan mengatur bimbel.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {guru.map((akun) => (
+              <div
+                key={akun.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/40 px-3 py-3"
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{akun.nama}</p>
+                  <p className="truncate text-sm text-muted-foreground">
+                    {akun.email}
+                  </p>
+                </div>
+                <span className="flex items-center gap-2 text-xs">
+                  <span className="rounded-full border bg-background px-2.5 py-0.5 font-medium">
+                    {labelPeran(akun.peran)}
+                  </span>
+                  <span
+                    className={
+                      akun.statusAktif
+                        ? "rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 font-medium text-primary"
+                        : "rounded-full border bg-muted px-2.5 py-0.5 font-medium text-muted-foreground"
+                    }
+                  >
+                    {akun.statusAktif ? "Aktif" : "Nonaktif"}
+                  </span>
+                </span>
               </div>
-              <span className="flex items-center gap-2 text-xs">
-                <span className="rounded-full border bg-background px-2.5 py-0.5 font-medium">
-                  {labelPeran(akun.peran)}
-                </span>
-                <span
-                  className={
-                    akun.statusAktif
-                      ? "rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 font-medium text-primary"
-                      : "rounded-full border bg-muted px-2.5 py-0.5 font-medium text-muted-foreground"
-                  }
-                >
-                  {akun.statusAktif ? "Aktif" : "Nonaktif"}
-                </span>
-              </span>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+            ))}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
