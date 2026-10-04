@@ -1,5 +1,9 @@
 import { ApiError, readJson, withApiSession } from "@/lib/api";
-import { listMuridKelas, tempatkanMurid } from "@/services/kelas.service";
+import {
+  adaKelas,
+  listMuridKelas,
+  tempatkanMurid,
+} from "@/services/kelas.service";
 import { tanggalISO } from "@/lib/tanggal";
 import { kelasIdSchema, tempatkanMuridSchema } from "@/validators/kelas";
 
@@ -10,6 +14,8 @@ type Context = { params: Promise<{ id: string }> };
 export function GET(request: Request, context: Context) {
   return withApiSession(request, async () => {
     const id = kelasIdSchema.parse((await context.params).id);
+    if (!(await adaKelas(id)))
+      throw new ApiError(404, "NOT_FOUND", "Kelas tidak ditemukan.");
     return Response.json({ data: await listMuridKelas(id) });
   });
 }
@@ -34,7 +40,9 @@ export function POST(request: Request, context: Context) {
       throw new ApiError(
         409,
         "SUDAH_TERDAFTAR",
-        "Murid ini sudah terdaftar di kelas lain. Keluarkan dulu dari kelas sebelumnya.",
+        hasil.kelasId === id
+          ? "Murid ini sudah terdaftar di kelas ini."
+          : "Murid ini sudah terdaftar di kelas lain. Keluarkan dulu dari kelas sebelumnya.",
       );
 
     return Response.json({ data: await listMuridKelas(id) }, { status: 201 });

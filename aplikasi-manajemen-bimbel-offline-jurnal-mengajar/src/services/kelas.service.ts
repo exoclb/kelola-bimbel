@@ -439,6 +439,16 @@ export type MuridDiKelasTersimpan = {
   tanggalMulai: string;
 };
 
+/** Benar kalau kelas dengan id itu ada. */
+export async function adaKelas(kelasId: string) {
+  const [kelas] = await db
+    .select({ id: classes.id })
+    .from(classes)
+    .where(eq(classes.id, kelasId))
+    .limit(1);
+  return Boolean(kelas);
+}
+
 /**
  * Murid yang sedang belajar di satu kelas, terurut nama. Hanya penempatan
  * berstatus 'aktif' yang ikut; riwayat yang sudah selesai tidak ditampilkan.
@@ -471,7 +481,7 @@ export type HasilTempatkanMurid =
   | { status: "tersimpan" }
   | { status: "kelas_tidak_ada" }
   | { status: "murid_tidak_ada" }
-  | { status: "sudah_terdaftar" };
+  | { status: "sudah_terdaftar"; kelasId: string | null };
 
 /**
  * Menempatkan murid ke kelas. Satu murid hanya boleh punya satu penempatan
@@ -497,6 +507,20 @@ export async function tempatkanMurid(
     .limit(1);
   if (!murid) return { status: "murid_tidak_ada" };
 
+  // Kelas tempat murid ini sedang aktif, kalau ada. Dipakai untuk memilih
+  // pesan yang tepat: menempatkan ulang di kelas yang sama bukan "kelas lain".
+  const [aktif] = await db
+    .select({ kelasId: studentEnrollments.classId })
+    .from(studentEnrollments)
+    .where(
+      and(
+        eq(studentEnrollments.studentId, muridId),
+        eq(studentEnrollments.status, "aktif"),
+      ),
+    )
+    .limit(1);
+  if (aktif) return { status: "sudah_terdaftar", kelasId: aktif.kelasId };
+
   try {
     await db.insert(studentEnrollments).values({
       studentId: muridId,
@@ -504,7 +528,10 @@ export async function tempatkanMurid(
       tanggalMulai,
     });
   } catch (error) {
-    if (pelanggaranUnik(error)) return { status: "sudah_terdaftar" };
+    // Balapan dua permintaan sekaligus masih dijaga indeks unik parsial,
+    // jadi hasilnya tetap penolakan yang sama.
+    if (pelanggaranUnik(error))
+      return { status: "sudah_terdaftar", kelasId: null };
     throw error;
   }
 
