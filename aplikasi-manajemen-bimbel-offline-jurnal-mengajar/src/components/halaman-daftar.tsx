@@ -2,7 +2,7 @@
 
 import { useId, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, UserPlus } from "lucide-react";
+import { ArrowRight, CheckCircle2, LoaderCircle, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -17,6 +17,8 @@ import { emailSudahDipakai, type AkunMasuk } from "@/lib/mock-akun";
 import { labelPeran } from "@/lib/peran";
 
 const MIN_SANDI = 8;
+/** Jeda tiruan sebelum pendaftaran dianggap selesai. */
+const JEDA_DAFTAR = 700;
 
 type HalamanDaftarProps = {
   daftarAkun: AkunMasuk[];
@@ -35,6 +37,9 @@ export function HalamanDaftar({ daftarAkun }: HalamanDaftarProps) {
   const [sandi, setSandi] = useState("");
   const [ulangiSandi, setUlangiSandi] = useState("");
   const [galat, setGalat] = useState("");
+  // Pendaftaran sungguhan butuh perjalanan ke server; di layar tiruan ini
+  // jedanya dipura-purakan supaya keadaan tombolnya sudah benar.
+  const [pending, setPending] = useState(false);
   const [terdaftar, setTerdaftar] = useState<{
     nama: string;
     email: string;
@@ -68,7 +73,11 @@ export function HalamanDaftar({ daftarAkun }: HalamanDaftarProps) {
     }
 
     setGalat("");
-    setTerdaftar({ nama: namaBersih, email: emailBersih });
+    setPending(true);
+    setTimeout(() => {
+      setPending(false);
+      setTerdaftar({ nama: namaBersih, email: emailBersih });
+    }, JEDA_DAFTAR);
   }
 
   function daftarLagi() {
@@ -99,6 +108,7 @@ export function HalamanDaftar({ daftarAkun }: HalamanDaftarProps) {
               name="nama"
               autoComplete="name"
               maxLength={120}
+              disabled={pending}
               placeholder="mis. Bu Sari"
               value={nama}
               onChange={(event) => setNama(event.target.value)}
@@ -114,6 +124,7 @@ export function HalamanDaftar({ daftarAkun }: HalamanDaftarProps) {
               type="email"
               autoComplete="email"
               maxLength={254}
+              disabled={pending}
               placeholder="nama@kelolabimbel.test"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
@@ -132,6 +143,7 @@ export function HalamanDaftar({ daftarAkun }: HalamanDaftarProps) {
                 type="password"
                 autoComplete="new-password"
                 maxLength={128}
+                disabled={pending}
                 placeholder={`minimal ${MIN_SANDI} huruf`}
                 value={sandi}
                 onChange={(event) => setSandi(event.target.value)}
@@ -144,6 +156,7 @@ export function HalamanDaftar({ daftarAkun }: HalamanDaftarProps) {
                 id={`${idForm}-ulangi`}
                 name="ulangiSandi"
                 maxLength={128}
+                disabled={pending}
                 type="password"
                 autoComplete="new-password"
                 placeholder="tulis ulang sandi"
@@ -168,9 +181,16 @@ export function HalamanDaftar({ daftarAkun }: HalamanDaftarProps) {
             </p>
           )}
 
-          <Button type="submit" className="w-full">
-            <UserPlus aria-hidden="true" />
-            Daftarkan akun
+          <Button type="submit" className="w-full" disabled={pending}>
+            {pending ? (
+              <LoaderCircle
+                className="animate-spin motion-reduce:animate-none"
+                aria-hidden="true"
+              />
+            ) : (
+              <UserPlus aria-hidden="true" />
+            )}
+            {pending ? "Mendaftarkan…" : "Daftarkan akun"}
           </Button>
         </form>
 
