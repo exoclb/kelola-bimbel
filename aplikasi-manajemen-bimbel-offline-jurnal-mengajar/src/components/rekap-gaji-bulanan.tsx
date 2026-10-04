@@ -38,8 +38,17 @@ export function RekapGajiBulanan({
     (jumlah, baris) => jumlah + baris.totalGaji,
     0,
   );
+  // Yang dihitung hanya guru yang gajinya sudah ditandai dibayar; dulu angka ini
+  // berisi jumlah semua guru sehingga seolah-olah semuanya sudah dibayar.
+  const sudahDibayar = rekap.daftar.filter(
+    (baris) => baris.statusPembayaran === "dibayar",
+  ).length;
   const statistik = [
-    { label: "Guru dibayar", nilai: String(rekap.daftar.length), ikon: Users },
+    {
+      label: "Guru sudah dibayar",
+      nilai: `${sudahDibayar} dari ${rekap.daftar.length}`,
+      ikon: Users,
+    },
     {
       label: "Total jam mengajar",
       nilai: formatJam(totalJam),

@@ -60,6 +60,8 @@ export function DaftarGajiGuru({ daftar, periode }: DaftarGajiGuruProps) {
   const belumDibayar = Object.values(pembayaran).filter(
     (baris) => baris.status === "belum_dibayar",
   ).length;
+  /** Guru yang pembayarannya baru dibatalkan, supaya ada kabar di barisnya. */
+  const [dibatalkan, setDibatalkan] = useState<Record<string, boolean>>({});
 
   function ubahStatus(guruId: string, dibayar: boolean) {
     setPembayaran((sebelumnya) => ({
@@ -69,6 +71,7 @@ export function DaftarGajiGuru({ daftar, periode }: DaftarGajiGuruProps) {
         tanggal: dibayar ? tanggalISO(new Date()) : null,
       },
     }));
+    setDibatalkan((sebelumnya) => ({ ...sebelumnya, [guruId]: !dibayar }));
   }
 
   return (
@@ -143,9 +146,11 @@ export function DaftarGajiGuru({ daftar, periode }: DaftarGajiGuruProps) {
               </div>
 
               <p role="status" className="text-sm text-muted-foreground">
-                {sudahDibayar && status.tanggal
-                  ? `Gaji ${baris.guruNama} ditandai dibayar pada ${tanggalTampil.format(new Date(`${status.tanggal}T00:00:00`))}.`
-                  : ""}
+                {dibatalkan[baris.guruId]
+                  ? `Pembayaran gaji ${baris.guruNama} dibatalkan, statusnya kembali belum dibayar.`
+                  : sudahDibayar && status.tanggal
+                    ? `Gaji ${baris.guruNama} ditandai dibayar pada ${tanggalTampil.format(new Date(`${status.tanggal}T00:00:00`))}.`
+                    : ""}
               </p>
             </li>
           );
