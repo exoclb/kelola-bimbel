@@ -51,12 +51,14 @@ export function FormCatatanAnak({
   );
   const [galatTanggal, setGalatTanggal] = useState("");
   const [galatNilai, setGalatNilai] = useState("");
+  const [galatSikap, setGalatSikap] = useState("");
 
   function simpan(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     setGalatTanggal("");
     setGalatNilai("");
+    setGalatSikap("");
 
     if (!tanggal) {
       setGalatTanggal("Tanggal catatan wajib diisi.");
@@ -73,6 +75,10 @@ export function FormCatatanAnak({
     }
     if (angka < 0 || angka > 100) {
       setGalatNilai("Nilai harus antara 0 sampai 100.");
+      return;
+    }
+    if (!sikap.trim()) {
+      setGalatSikap("Sikap anak wajib dipilih.");
       return;
     }
 
@@ -124,8 +130,13 @@ export function FormCatatanAnak({
         <IsianPilih
           id={`${idForm}-sikap`}
           label="Sikap"
+          required
           value={sikap}
-          onChange={(event) => setSikap(event.target.value)}
+          error={galatSikap}
+          onChange={(event) => {
+            setSikap(event.target.value);
+            setGalatSikap("");
+          }}
         >
           {PILIHAN_SIKAP.map((pilihan) => (
             <option key={pilihan} value={pilihan}>
