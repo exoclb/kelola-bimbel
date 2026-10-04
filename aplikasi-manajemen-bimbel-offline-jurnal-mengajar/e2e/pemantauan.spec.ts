@@ -416,6 +416,35 @@ test("aturan gaji disimpan bertanggal dan tarifnya diresolusi per tanggal", asyn
   await setRole("user");
 });
 
+test("halaman aturan gaji menandai tarif yang berlaku, bukan yang bertanggal masa depan", async ({
+  page,
+}) => {
+  await setRole("owner");
+  await masuk(page.request);
+
+  await page.goto("/app/pengaturan/gaji");
+
+  // Tarif bertanggal jauh di depan belum dipakai menghitung gaji.
+  await page.getByLabel("Tarif per jam").fill("88000");
+  await page.getByLabel("Berlaku sejak").fill("2099-12-31");
+  await page.getByRole("button", { name: /Simpan tarif/ }).click();
+  await expect(page.getByText(/Tarif baru tersimpan/)).toBeVisible();
+
+  // Baris bertanggal paling akhir ada di daftar, tetapi tidak ditandai
+  // sebagai tarif yang berlaku sekarang.
+  const barisTeratas = page.locator("ul > li").first();
+  await expect(barisTeratas).toContainText("88.000");
+  await expect(barisTeratas).not.toContainText("Berlaku sekarang");
+
+  const barisBerlaku = page
+    .locator("li")
+    .filter({ hasText: "Berlaku sekarang" });
+  await expect(barisBerlaku).toHaveCount(1);
+  await expect(barisBerlaku).not.toContainText("88.000");
+
+  await setRole("user");
+});
+
 test("owner bisa menambah guru lalu menonaktifkan dan mengaktifkannya lagi", async ({
   request,
 }) => {

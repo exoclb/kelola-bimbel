@@ -40,7 +40,11 @@ export function FormAturanGaji({ riwayatAwal }: FormAturanGajiProps) {
   const [masalah, setMasalah] = useState<Masalah[]>([]);
   const [tersimpan, setTersimpan] = useState<AturanGaji | null>(null);
 
-  const berlaku = tersimpan ?? riwayat[0];
+  // Yang berlaku adalah tarif terbaru yang mulai berlaku paling lambat hari
+  // ini; tarif bertanggal masa depan (termasuk yang baru saja diisi) belum
+  // dipakai menghitung gaji.
+  const hariIni = tanggalISO(new Date());
+  const berlaku = riwayat.find((baris) => baris.berlakuSejak <= hariIni);
 
   function simpan(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -127,13 +131,22 @@ export function FormAturanGaji({ riwayatAwal }: FormAturanGajiProps) {
           <CardContent>
             <p className="mb-5 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border bg-muted/40 px-4 py-3 text-sm">
               <Wallet aria-hidden="true" className="size-4 text-primary" />
-              <span className="font-medium">
-                {formatRupiah(berlaku?.tarifPerJam ?? 0)} per jam
-              </span>
-              <span className="text-muted-foreground">
-                ({berlaku?.skema}) mulai{" "}
-                {formatTanggalLengkap(berlaku?.berlakuSejak ?? "")}
-              </span>
+              {berlaku ? (
+                <>
+                  <span className="font-medium">
+                    {formatRupiah(berlaku.tarifPerJam)} per jam
+                  </span>
+                  <span className="text-muted-foreground">
+                    ({berlaku.skema}) mulai{" "}
+                    {formatTanggalLengkap(berlaku.berlakuSejak)}
+                  </span>
+                </>
+              ) : (
+                <span className="text-muted-foreground">
+                  Belum ada tarif yang berlaku; gaji dihitung setelah tarif
+                  pertama diisi.
+                </span>
+              )}
             </p>
 
             <form onSubmit={simpan} className="space-y-4" noValidate>
@@ -218,7 +231,7 @@ export function FormAturanGaji({ riwayatAwal }: FormAturanGajiProps) {
         </CardHeader>
         <CardContent>
           <ul className="space-y-2">
-            {riwayat.map((baris, urutan) => (
+            {riwayat.map((baris) => (
               <li
                 key={`${baris.berlakuSejak}-${baris.tarifPerJam}`}
                 className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/40 px-3 py-3"
@@ -232,7 +245,7 @@ export function FormAturanGaji({ riwayatAwal }: FormAturanGajiProps) {
                     {formatTanggalLengkap(baris.berlakuSejak)}
                   </span>
                 </span>
-                {urutan === 0 && (
+                {berlaku?.berlakuSejak === baris.berlakuSejak && (
                   <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
                     Berlaku sekarang
                   </span>
