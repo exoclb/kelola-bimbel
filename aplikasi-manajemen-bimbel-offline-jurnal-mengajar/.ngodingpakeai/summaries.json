@@ -981,7 +981,7 @@
         "summary": "Halaman monitoring backup (owner & admin, izin `pengaturan: read`): tiga kartu ringkasan (backup terakhir berhasil beserta umurnya, total catatan, dan proses yang sedang berjalan), daftar catatan backup terbaru dengan badge status sukses/gagal/berjalan, ukuran, lokasi salinan, dan pesan galat; ada keadaan kosong `PesanKosong` bila belum ada catatan, serta catatan bahwa jadwal, retensi, dan uji pemulihan diatur di sisi server."
     },
     "src/app/(protected)/app/murid/[muridId]/page.tsx": {
-        "summary": "Halaman detail murid (data tiruan): identitas anak (nama, usia, orang tua, kontak, status aktif), daftar \"Kelas yang sedang diikuti\" dan \"Riwayat kelas\" lengkap dengan cabang, guru pengampu, chip jadwal, tanggal mulai, serta badge Sedang diikuti/Sudah selesai — mendukung satu murid di beberapa kelas sekaligus. Ada keadaan kosong bila murid belum ditempatkan, tautan ke laporan perkembangan, dan `notFound()` untuk id yang tidak ada."
+        "summary": "Halaman `/app/murid/[muridId]` (cukup sesi): mencari murid dari data tiruan (404 kalau tidak ada) lalu merender komponen klien `DetailMurid` dengan daftar kelas dan penempatan awal, sehingga kelas tambahan bisa ditambahkan atau dikeluarkan langsung dari halaman ini."
     },
     "src/components/daftar-penempatan.tsx": {
         "summary": "Daftar seluruh penempatan murid di kelas (data tiruan): ringkasan jumlah penempatan, yang aktif, dan berapa murid yang aktif di lebih dari satu kelas; pencarian yang mencocokkan nama murid, kelas, cabang, atau guru; saringan status (semua/aktif/selesai); serta kartu tiap penempatan berisi murid, kelas, guru, tanggal mulai, badge status, dan tautan ke halaman detail murid. Baris aktif ditampilkan lebih dulu, lalu diurutkan menurut nama murid."
@@ -994,5 +994,11 @@
     },
     "e2e/penempatan.spec.ts": {
         "summary": "Tes e2e Playwright untuk aturan penempatan multi-kelas: membuat satu murid dan dua kelas, menempatkan murid di kelas A (201) lalu di kelas B (201, tanpa perlu keluar dari kelas lama), menolak penempatan kedua di kelas A (409 `SUDAH_TERDAFTAR` dengan pesan \"sudah terdaftar di kelas ini\"), mengeluarkan murid dari kelas A saja (kelas B tetap berisi murid itu), dan menempatkannya kembali di kelas A setelah keluar."
+    },
+    "drizzle/meta/0014_snapshot.json": {
+        "summary": "Snapshot skema Drizzle setelah migrasi 0014: indeks unik `student_enrollments` tercatat sebagai pasangan (student_id, class_id) untuk status aktif. Dipakai Drizzle Kit untuk menghitung selisih saat membuat migrasi berikutnya."
+    },
+    "src/components/detail-murid.tsx": {
+        "summary": "Komponen klien detail murid (data tiruan) yang mendukung aturan multi-kelas: identitas anak, kartu \"Kelas yang sedang diikuti (N)\" dengan tombol \"Keluarkan dari kelas ini\" per kelas (kelas lain tidak terpengaruh), kartu \"Tambah ke kelas lain\" berisi pilihan kelas yang belum aktif untuk murid itu, serta seksi \"Riwayat kelas\" untuk penempatan yang sudah selesai. Penempatan disimpan di state dengan cermin ref supaya dua klik pada render yang sama tidak menyisipkan dobel, dan setiap aksi menampilkan pesan sukses atau galat yang jelas."
     }
 }
