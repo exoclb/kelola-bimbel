@@ -11,16 +11,15 @@ import {
 import { Label } from "@/components/ui/label";
 import { LencanaNilai } from "@/components/lencana-nilai";
 import { NativeSelect } from "@/components/ui/native-select";
-import type { KehadiranPertemuan } from "@/lib/mock-kehadiran";
-import type { Murid } from "@/lib/mock-murid";
-import type { CatatanPerkembangan } from "@/lib/mock-perkembangan";
+import type { KehadiranTersimpan } from "@/services/kehadiran.service";
+import type { RiwayatPerkembangan } from "@/services/perkembangan.service";
 import { formatTanggalLengkap, hitungUsia } from "@/lib/tanggal";
 
 type RiwayatPerkembanganProps = {
-  daftarMurid: Murid[];
-  muridTerpilih: Murid;
-  catatan: CatatanPerkembangan[];
-  kehadiran: KehadiranPertemuan[];
+  daftarMurid: RiwayatPerkembangan["murid"][];
+  muridTerpilih: RiwayatPerkembangan["murid"];
+  catatan: RiwayatPerkembangan["catatan"]["data"];
+  kehadiran: KehadiranTersimpan[];
 };
 
 /**
@@ -51,7 +50,10 @@ export function RiwayatPerkembangan({
         Riwayat Perkembangan
       </h1>
       <p className="mt-3 text-base leading-7 text-muted-foreground">
-        {muridTerpilih.nama} · {hitungUsia(muridTerpilih.tanggalLahir)} tahun ·{" "}
+        {muridTerpilih.nama} ·{" "}
+        {muridTerpilih.tanggalLahir
+          ? `${hitungUsia(muridTerpilih.tanggalLahir)} tahun · `
+          : ""}
         {urut.length} catatan
       </p>
 

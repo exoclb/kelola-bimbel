@@ -8,8 +8,15 @@ import {
   IsianTeks,
   IsianTeksPanjang,
 } from "@/components/isian-form";
-import { PILIHAN_SIKAP } from "@/lib/mock-perkembangan";
 import { tanggalISO } from "@/lib/tanggal";
+
+/** Pilihan cepat sikap anak selama belajar. */
+const PILIHAN_SIKAP = [
+  "Baik",
+  "Sangat baik",
+  "Cukup",
+  "Perlu perhatian",
+] as const;
 
 export type IsiCatatan = {
   tanggal: string;

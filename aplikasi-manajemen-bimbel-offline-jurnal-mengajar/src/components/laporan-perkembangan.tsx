@@ -1,14 +1,13 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { siteConfig } from "@/config/site";
-import type { KehadiranPertemuan } from "@/lib/mock-kehadiran";
-import type { Murid } from "@/lib/mock-murid";
-import type { CatatanPerkembangan } from "@/lib/mock-perkembangan";
+import type { KehadiranTersimpan } from "@/services/kehadiran.service";
+import type { RiwayatPerkembangan } from "@/services/perkembangan.service";
 import { formatTanggalLengkap, hitungUsia } from "@/lib/tanggal";
 
 type LaporanPerkembanganProps = {
-  murid: Murid;
-  catatan: CatatanPerkembangan[];
-  kehadiran: KehadiranPertemuan[];
+  murid: RiwayatPerkembangan["murid"];
+  catatan: RiwayatPerkembangan["catatan"]["data"];
+  kehadiran: KehadiranTersimpan[];
   tanggalCetak: string;
 };
 
@@ -54,7 +53,9 @@ export function LaporanPerkembangan({
           <div className="text-right text-sm">
             <p className="font-medium">{murid.nama}</p>
             <p className="text-muted-foreground">
-              {hitungUsia(murid.tanggalLahir)} tahun ·{" "}
+              {murid.tanggalLahir
+                ? `${hitungUsia(murid.tanggalLahir)} tahun · `
+                : ""}
               {murid.statusAktif ? "aktif" : "tidak aktif"}
             </p>
           </div>

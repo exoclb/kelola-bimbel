@@ -5,10 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { LaporanPerkembangan } from "@/components/laporan-perkembangan";
 import { TombolCetakUnduh } from "@/components/tombol-cetak-unduh";
 import { Button } from "@/components/ui/button";
-import { getKehadiranAwal } from "@/lib/mock-kehadiran";
-import { getDaftarMurid } from "@/lib/mock-murid";
-import { getCatatanPerkembangan } from "@/lib/mock-perkembangan";
-import { requireSession } from "@/lib/session";
+import { getRiwayatPerkembangan } from "@/services/perkembangan.service";
 import { tanggalISO } from "@/lib/tanggal";
 
 export const metadata: Metadata = { title: "Laporan Perkembangan" };
@@ -18,19 +15,12 @@ export default async function LaporanPerkembanganPage({
 }: {
   params: Promise<{ muridId: string }>;
 }) {
-  await requireSession();
-
+  // Izin `perkembangan: read` sudah diperiksa di layout seksi ini.
   const { muridId } = await params;
-  const murid = getDaftarMurid().find((anak) => anak.id === muridId);
-  if (!murid) notFound();
+  const riwayat = await getRiwayatPerkembangan(muridId, 100, 0);
+  if (!riwayat) notFound();
 
-  const catatan = getCatatanPerkembangan().filter(
-    (baris) => baris.muridId === muridId,
-  );
-  const kehadiran = getKehadiranAwal().filter(
-    (baris) => baris.muridId === muridId,
-  );
-  const namaBerkas = `laporan-perkembangan-${murid.nama
+  const namaBerkas = `laporan-perkembangan-${riwayat.murid.nama
     .toLowerCase()
     .replaceAll(/[^a-z0-9]+/g, "-")
     .replaceAll(/^-|-$/g, "")}`;
@@ -47,9 +37,9 @@ export default async function LaporanPerkembanganPage({
       </div>
 
       <LaporanPerkembangan
-        murid={murid}
-        catatan={catatan}
-        kehadiran={kehadiran}
+        murid={riwayat.murid}
+        catatan={riwayat.catatan.data}
+        kehadiran={riwayat.kehadiran.data}
         tanggalCetak={tanggalISO(new Date())}
       />
 

@@ -70,6 +70,55 @@ function pilihCatatan() {
 }
 
 /**
+ * Catatan terbaru tiap anak — satu baris per anak — untuk kartu halaman
+ * perkembangan. Dicari dalam dua langkah supaya tetap memakai indeks
+ * (student_id, tanggal) dan tidak menarik seluruh riwayat: dulu tanggal
+ * terakhir tiap anak, lalu baris pada tanggal itu yang paling akhir dibuat.
+ */
+export async function listCatatanTerbaruPerMurid(): Promise<
+  CatatanPerkembanganTersimpan[]
+> {
+  const terakhir = await db
+    .select({
+      muridId: studentProgress.studentId,
+      tanggal: sql<string>`max(${studentProgress.tanggal})`.as("tanggal"),
+    })
+    .from(studentProgress)
+    .groupBy(studentProgress.studentId);
+
+  if (terakhir.length === 0) return [];
+
+  const kandidat = await pilihCatatan()
+    .where(
+      and(
+        inArray(
+          studentProgress.studentId,
+          terakhir.map((baris) => baris.muridId),
+        ),
+        inArray(
+          studentProgress.tanggal,
+          terakhir.map((baris) => baris.tanggal),
+        ),
+      ),
+    )
+    .orderBy(desc(studentProgress.tanggal), desc(studentProgress.createdAt));
+
+  const tanggalTerakhir = new Map(
+    terakhir.map((baris) => [baris.muridId, baris.tanggal]),
+  );
+  const terpilih = new Map<string, CatatanPerkembanganTersimpan>();
+  for (const baris of kandidat) {
+    // Pasangan anak–tanggal yang tidak berpasangan dilewati; yang tersisa
+    // diurutkan terbaru lebih dulu sehingga yang pertama itulah catatan
+    // terakhir anak tersebut.
+    if (tanggalTerakhir.get(baris.muridId) !== baris.tanggal) continue;
+    if (!terpilih.has(baris.muridId)) terpilih.set(baris.muridId, baris);
+  }
+
+  return [...terpilih.values()];
+}
+
+/**
  * Riwayat catatan perkembangan. Tanpa penyaring, seluruh catatan semua anak
  * tampil terbaru lebih dulu; `muridId`, `dari`/`sampai`, dan `cari` mempersempit
  * hasilnya.
