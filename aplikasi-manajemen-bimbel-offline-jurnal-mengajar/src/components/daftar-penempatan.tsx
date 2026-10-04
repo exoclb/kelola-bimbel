@@ -179,9 +179,9 @@ export function DaftarPenempatan({
       )}
 
       <p className="mt-6 text-xs leading-5 text-muted-foreground">
-        Catatan: penempatan murid di halaman ini masih data tiruan — satu murid
-        boleh aktif di beberapa kelas sekaligus, dan penyimpanannya ke database
-        menyusul bersama aturan penempatan yang baru.
+        Catatan: sejak aturan multi-kelas, satu murid boleh aktif di beberapa
+        kelas sekaligus; yang ditolak hanya penempatan kedua di kelas yang sama.
+        Data di halaman ini masih tiruan — penyimpanannya ke database menyusul.
       </p>
     </div>
   );

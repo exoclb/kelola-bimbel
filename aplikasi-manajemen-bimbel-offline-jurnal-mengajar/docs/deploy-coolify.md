@@ -98,3 +98,22 @@ owner bisa memantaunya di halaman **Pengaturan → Backup Database**
 gagal, dan di mana salinannya disimpan. Halaman itu hanya membaca; jadwal,
 penyimpanan terpisah, retensi, dan uji pemulihan tetap diatur di sisi server
 (bagian Fase 4 akan melengkapinya).
+
+## Migrasi penempatan multi-kelas
+
+Migrasi `0014_penempatan_multi_kelas.sql` mengganti indeks unik penempatan murid
+(dari satu penempatan aktif per murid menjadi unik per pasangan murid–kelas) dan
+**tidak mengubah satu pun baris penempatan**, jadi riwayat lama tetap utuh.
+Migrasi ini berjalan otomatis lewat target `migrator` sebelum aplikasi start:
+
+```bash
+docker build --target migrator -t kelola-migrator .
+docker run --rm -e MIGRATION_DATABASE_URL="<connection string internal>" kelola-migrator
+```
+
+Urutannya aman untuk aplikasi yang sedang jalan: selama migrasi belum
+diterapkan, perilakunya masih aturan lama (satu kelas per murid); setelah
+diterapkan, menambah murid ke kelas lain langsung diterima. Jalankan migrasi
+lebih dulu di lingkungan uji (`npm run test:e2e` memakai database uji
+terpisah) sebelum produksi, dan pastikan `MIGRATION_DATABASE_URL` memakai
+koneksi langsung (bukan pooler) seperti dijelaskan di `docs/deployment.md`.

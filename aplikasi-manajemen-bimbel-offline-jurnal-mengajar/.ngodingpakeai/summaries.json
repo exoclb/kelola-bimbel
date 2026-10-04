@@ -735,7 +735,7 @@
         "summary": "Berkas instruksi singkat tingkat repo yang mengarahkan agen membaca AGENTS.md untuk konvensi proyek, alur kerja Context7, dan peta skill. Juga menunjuk skill proyek di folder `.agents/skills/` yang dibaca langsung sebelum setup atau pengembangan fitur."
     },
     "docs/deployment.md": {
-        "summary": "Panduan deployment starter PostgreSQL: environment produksi (DATABASE_URL, BETTER_AUTH_SECRET, BETTER_AUTH_URL, MIGRATION_DATABASE_URL), langkah `npm run db:migrate`/build/start, target Docker `runner` dan `migrator`, connection pooling node-postgres (maks 5 koneksi), serta perbedaan data Docker lokal vs hosting."
+        "summary": "Panduan deployment: variabel lingkungan (termasuk `MIGRATION_DATABASE_URL`), cara menjalankan migrasi (`npm run db:migrate`), dua target Dockerfile (`runner` standalone dan `migrator`), serta tautan ke dokumen aturan penempatan multi-kelas."
     },
     "docs/variant.md": {
         "summary": "Dokumentasi varian base PostgreSQL yang diturunkan dari base SQLite 0.1.0. Menjelaskan penggantian driver Drizzle ke node-postgres, tabel auth pgTable, migrasi SQL baru, peran DATABASE_URL/MIGRATION_DATABASE_URL, setup Docker lokal, dan prefix cookie agar bisa berjalan berdampingan dengan starter SQLite."
@@ -912,7 +912,7 @@
         "summary": "Skrip Node (npm `coolify:db`) untuk membuat resource PostgreSQL 17 terkelola di Coolify lewat API v1, karena instance Coolify tidak dapat dibuka dari repo. Perintah `buat` memeriksa daftar database lebih dulu (`GET /api/v1/databases`) sehingga idempoten, lalu memanggil `POST /api/v1/databases/postgresql` dengan `server_uuid`, `project_uuid`, `environment_name`, `name`, `image: postgres:17-alpine`, kredensial, dan `instant_deploy: true`. Kredensial diambil dari environment (COOLIFY_URL/TOKEN/SERVER_UUID/PROJECT_UUID); sandi dibuat acak bila `POSTGRES_PASSWORD` kosong dan hanya ditampilkan sekali. Perintah `status` menampilkan daftar database. Tidak menyimpan rahasia apa pun ke berkas."
     },
     "docs/deploy-coolify.md": {
-        "summary": "Panduan deploy produksi ke Coolify, ditulis bertahap per fase. Fase 1 menjelaskan pembuatan resource PostgreSQL 17 (lewat skrip `scripts/coolify-db.mjs` atau dashboard), versi & sumber daya, pengambilan connection string internal untuk `DATABASE_URL`, dan uji koneksi dengan `npm run doctor`. Ada juga bagian status backup di aplikasi yang menunjuk halaman Pengaturan → Backup Database. Aturan pokoknya: tidak ada nilai rahasia di repo."
+        "summary": "Panduan deploy produksi ke Coolify per fase: pembuatan resource PostgreSQL 17 (skrip `scripts/coolify-db.mjs` atau dashboard), versi & sumber daya, connection string internal, uji koneksi `npm run doctor`, status backup di aplikasi, serta catatan migrasi penempatan multi-kelas (`0014_penempatan_multi_kelas.sql`) yang dijalankan lewat target `migrator` sebelum aplikasi start. Tidak ada nilai rahasia di repo."
     },
     "src/app/(protected)/app/contoh-status/page.tsx": {
         "summary": "Halaman contoh (showcase) yang memamerkan komponen keadaan antarmuka baku: memuat, kosong, gagal dimuat, dan isian form yang belum lengkap, memakai data tiruan. Dipakai sebagai rujukan bentuk state di seluruh aplikasi."
@@ -1000,5 +1000,8 @@
     },
     "src/components/detail-murid.tsx": {
         "summary": "Komponen klien detail murid (data tiruan) yang mendukung aturan multi-kelas: identitas anak, kartu \"Kelas yang sedang diikuti (N)\" dengan tombol \"Keluarkan dari kelas ini\" per kelas (kelas lain tidak terpengaruh), kartu \"Tambah ke kelas lain\" berisi pilihan kelas yang belum aktif untuk murid itu, serta seksi \"Riwayat kelas\" untuk penempatan yang sudah selesai. Penempatan disimpan di state dengan cermin ref supaya dua klik pada render yang sama tidak menyisipkan dobel, dan setiap aksi menampilkan pesan sukses atau galat yang jelas."
+    },
+    "docs/penempatan-murid.md": {
+        "summary": "Spesifikasi sub-fitur Penempatan Murid dengan aturan multi-kelas: murid boleh aktif di beberapa kelas, unik per pasangan murid–kelas (409 `SUDAH_TERDAFTAR`), riwayat penempatan lama ditandai `selesai` bukan dihapus, dan murid boleh kembali ke kelas lama. Berisi tabel alur di aplikasi (`/app/kelas`, `/app/murid`, `/app/murid/<id>`, `/app/penempatan`), daftar endpoint penempatan, dampak ke laporan (kehadiran & ringkasan gabungan lintas kelas), cuplikan migrasi `0014_penempatan_multi_kelas.sql`, dan catatan bagian yang masih memakai data tiruan."
     }
 }

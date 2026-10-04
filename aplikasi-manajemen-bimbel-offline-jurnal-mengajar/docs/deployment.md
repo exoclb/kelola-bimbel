@@ -67,3 +67,5 @@ Use PostgreSQL backups or your provider's backup service and test restoration. D
 Account emails are not verified by the base. Add an email provider for verification and password recovery when needed. Reassess shared auth rate limiting when scaling to multiple app instances.
 
 References: [Drizzle PostgreSQL](https://orm.drizzle.team/docs/get-started-postgresql), [node-postgres pooling](https://node-postgres.com/features/pooling), [Better Auth Drizzle adapter](https://better-auth.com/docs/adapters/drizzle), [PostgreSQL Docker image](https://hub.docker.com/_/postgres).
+
+Perubahan aturan penempatan murid (multi-kelas) beserta migrasinya dirangkum di `docs/penempatan-murid.md`.
