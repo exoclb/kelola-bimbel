@@ -7,6 +7,7 @@
 // skema, berlaku_sejak, jenis_notifikasi, aktif, status_aktif) supaya nanti
 // tinggal diganti sumbernya.
 import { getDaftarAkun, type AkunMasuk } from "@/lib/mock-akun";
+import { JENIS_NOTIFIKASI, type JenisNotifikasi } from "@/lib/notifikasi";
 
 export type ProfilBimbel = {
   nama: string;
@@ -22,7 +23,7 @@ export type AturanGaji = {
 };
 
 export type PreferensiNotifikasi = {
-  jenis: string;
+  jenis: JenisNotifikasi;
   keterangan: string;
   aktif: boolean;
 };
@@ -40,29 +41,6 @@ const PROFIL: ProfilBimbel = {
 const RIWAYAT_TARIF: AturanGaji[] = [
   { tarifPerJam: 50000, skema: "per jam", berlakuSejak: "2026-01-01" },
   { tarifPerJam: 60000, skema: "per jam", berlakuSejak: "2026-07-01" },
-];
-
-const PREFERENSI: PreferensiNotifikasi[] = [
-  {
-    jenis: "jurnal masuk",
-    keterangan: "Ada guru mengirim jurnal mengajar.",
-    aktif: true,
-  },
-  {
-    jenis: "kelas kosong",
-    keterangan: "Kelas hari ini belum diisi jurnalnya.",
-    aktif: true,
-  },
-  {
-    jenis: "gaji dibayar",
-    keterangan: "Rekap gaji satu guru ditandai sudah dibayar.",
-    aktif: true,
-  },
-  {
-    jenis: "laporan bulanan",
-    keterangan: "Ringkasan bimbel dikirim tiap awal bulan.",
-    aktif: false,
-  },
 ];
 
 /** Profil bimbel yang dipakai laporan dan slip gaji. */
@@ -89,5 +67,11 @@ export function getDaftarGuru(): AkunMasuk[] {
 
 /** Preferensi notifikasi akun yang sedang masuk. */
 export function getPreferensiNotifikasi(): PreferensiNotifikasi[] {
-  return PREFERENSI.map((preferensi) => ({ ...preferensi }));
+  // Daftar jenisnya baku di src/lib/notifikasi.ts; di sini hanya keadaannya
+  // yang masih tiruan.
+  return JENIS_NOTIFIKASI.map((item) => ({
+    jenis: item.jenis,
+    keterangan: item.keterangan,
+    aktif: item.bawaanAktif,
+  }));
 }

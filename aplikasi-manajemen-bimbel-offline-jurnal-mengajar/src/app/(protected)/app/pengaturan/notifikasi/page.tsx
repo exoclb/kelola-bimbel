@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { PreferensiNotifikasi } from "@/components/preferensi-notifikasi";
 import { Button } from "@/components/ui/button";
-import { getPreferensiNotifikasi } from "@/lib/mock-pengaturan";
+import { JENIS_NOTIFIKASI } from "@/lib/notifikasi";
 import { requireSession } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Preferensi Notifikasi" };
@@ -28,7 +28,16 @@ export default async function PreferensiNotifikasiPage() {
         Preferensi Notifikasi
       </h1>
 
-      <PreferensiNotifikasi daftarAwal={getPreferensiNotifikasi()} />
+      <PreferensiNotifikasi
+        // Bawaannya sama dengan yang dipakai API: baris preferensi baru ada
+        // setelah akun mengubahnya sendiri.
+        daftarAwal={JENIS_NOTIFIKASI.map((item) => ({
+          jenis: item.jenis,
+          judul: item.judul,
+          keterangan: item.keterangan,
+          aktif: item.bawaanAktif,
+        }))}
+      />
     </div>
   );
 }
