@@ -8,6 +8,13 @@ import { peranDariRole } from "@/lib/peran";
 
 export const runtime = "nodejs";
 
+// Seluruh halaman di grup ini butuh sesi dan membaca basis data saat diminta.
+// Tanpa ini Next.js mencoba merendernya saat build — dan build image produksi
+// tidak punya koneksi database, jadi build-nya gagal (ECONNREFUSED). Halaman
+// yang selalu menampilkan data terbaru milik akun memang harus dirender per
+// permintaan, bukan dibekukan saat build.
+export const dynamic = "force-dynamic";
+
 export default async function ProtectedLayout({
   children,
 }: {

@@ -483,7 +483,7 @@
         "summary": "Skema validasi Zod untuk kelas: listKelasSchema (limit/offset/cari), createKelasSchema (namaKelas, cabang, guruId opsional, jadwal maks 20 dengan cek duplikat hari+jam), tambahJadwalSchema, kelasIdSchema/jadwalIdSchema, tempatkanMuridSchema, dan muridIdSchema."
     },
     ".prettierignore": {
-        "summary": "Daftar path yang diabaikan Prettier saat memformat repo: node_modules, .next, .data, package-lock.json, drizzle/meta, next-env.d.ts, playwright-report, test-results, *.tsbuildinfo, dan .env*. Berkas konfigurasi saja, tanpa simbol program."
+        "summary": "Daftar berkas yang dilewati Prettier: keluaran build dan cache (node_modules, .next, .data, drizzle/meta, playwright-report, test-results), package-lock.json, next-env.d.ts, seluruh berkas .env*, serta berkas yang ditulis ulang otomatis oleh tool ngodingpakeai (.ngodingpakeai/, .claude/, .codex/, AGENTS.md) supaya `format:check` tidak berkedip setiap kali init/sync dijalankan."
     },
     ".prettierrc.json": {
         "summary": "Konfigurasi Prettier untuk seluruh repo: semi aktif, tanda kutip ganda (singleQuote false), dan trailingComma all. Dipakai bersama oleh semua berkas TypeScript/TSX agar gaya formatnya seragam."
@@ -585,7 +585,7 @@
         "summary": "Uji end-to-end Playwright untuk endpoints sesi: POST /api/masuk menolak origin salah dengan 403 FORBIDDEN_ORIGIN, menolak isian tidak valid dengan 422 VALIDATION_ERROR (field email dan sandi), dan GET/DELETE /api/sesi menjawab 401 UNAUTHORIZED tanpa cookie."
     },
     "package.json": {
-        "summary": "Manifes proyek ngodingpakeai-starter (Next.js 16, React 19, Better Auth, Drizzle ORM, Zod, Tailwind v4). Mendefinisikan skrip npm seperti setup, dev, build, check, test, test:e2e, db:generate, db:migrate, db:up/down/status/logs, doctor, role:set, dan create:variant beserta seluruh dependensi dan devDependencies."
+        "summary": "Manifest proyek Next.js 16 (React 19, Better Auth, Drizzle ORM, PostgreSQL) dengan skrip npm untuk dev/build/start, lint/typecheck/format, pengujian unit dan e2e (Playwright lewat database uji terpisah), perintah database (`db:generate`, `db:migrate`, `db:doctor`, `db:up/down/status/logs`), setup awal, serta tambahan rilis produksi: `coolify:db` (membuat resource PostgreSQL di Coolify)."
     },
     "postcss.config.mjs": {
         "summary": "Konfigurasi PostCSS minimal yang mendaftarkan plugin @tailwindcss/postcss untuk memproses Tailwind CSS versi 4 pada proyek Next.js ini."
@@ -907,5 +907,62 @@
     },
     "src/components/tombol-tandai-baca.tsx": {
         "summary": "Komponen klien kecil untuk menandai notifikasi sudah dibaca lewat `PATCH /api/notifikasi` (kirim `{ ids }` atau `{ semua: true }`). Menampilkan ikon berputar selama proses, pesan galat `role=\"alert\"` bila gagal, lalu memanggil `router.refresh()` agar daftar notifikasi di server dimuat ulang. Dipakai di `panel-notifikasi.tsx` dan `daftar-notifikasi.tsx`."
+    },
+    "scripts/coolify-db.mjs": {
+        "summary": "Skrip Node (npm `coolify:db`) untuk membuat resource PostgreSQL 17 terkelola di Coolify lewat API v1, karena instance Coolify tidak dapat dibuka dari repo. Perintah `buat` memeriksa daftar database lebih dulu (`GET /api/v1/databases`) sehingga idempoten, lalu memanggil `POST /api/v1/databases/postgresql` dengan `server_uuid`, `project_uuid`, `environment_name`, `name`, `image: postgres:17-alpine`, kredensial, dan `instant_deploy: true`. Kredensial diambil dari environment (COOLIFY_URL/TOKEN/SERVER_UUID/PROJECT_UUID); sandi dibuat acak bila `POSTGRES_PASSWORD` kosong dan hanya ditampilkan sekali. Perintah `status` menampilkan daftar database. Tidak menyimpan rahasia apa pun ke berkas."
+    },
+    "docs/deploy-coolify.md": {
+        "summary": "Panduan deploy produksi ke Coolify yang ditulis bertahap per fase. Fase 1 (Basis Data Produksi) menjelaskan dua cara membuat resource PostgreSQL 17 (skrip `scripts/coolify-db.mjs` atau dashboard Coolify), versi image dan alokasi sumber daya, pengambilan connection string internal untuk `DATABASE_URL`, serta uji koneksi lewat `npm run doctor`. Aturan pokoknya: tidak ada nilai rahasia di repo, semua di pengelola secret Coolify."
+    },
+    "src/app/(protected)/app/contoh-status/page.tsx": {
+        "summary": "Halaman contoh (showcase) yang memamerkan komponen keadaan antarmuka baku: memuat, kosong, gagal dimuat, dan isian form yang belum lengkap, memakai data tiruan. Dipakai sebagai rujukan bentuk state di seluruh aplikasi."
+    },
+    "src/app/(protected)/app/gaji/loading.tsx": {
+        "summary": "Tampilan memuat untuk halaman gaji memakai komponen baku `StatusMemuat` di dalam pembungkus `max-w-3xl`, supaya tata letak tidak melompat saat data rekap gaji selesai dimuat."
+    },
+    "src/app/(protected)/app/kelas/loading.tsx": {
+        "summary": "Tampilan memuat untuk halaman kelas & jadwal memakai `StatusMemuat` dengan pembungkus `max-w-3xl`, mengikuti bentuk halaman aslinya."
+    },
+    "src/app/(protected)/app/murid/loading.tsx": {
+        "summary": "Tampilan memuat untuk halaman daftar murid memakai `StatusMemuat` di dalam pembungkus `max-w-3xl`."
+    },
+    "src/app/(protected)/app/pemantauan/loading.tsx": {
+        "summary": "Tampilan memuat untuk halaman pemantauan owner memakai `StatusMemuat` dengan pembungkus lebar yang sama seperti halamannya."
+    },
+    "src/app/(protected)/app/pengaturan/loading.tsx": {
+        "summary": "Tampilan memuat untuk seluruh halaman pengaturan bimbel memakai `StatusMemuat`, diwarisi juga oleh sub-halaman (profil, gaji, guru, notifikasi)."
+    },
+    "src/app/(protected)/app/perkembangan/loading.tsx": {
+        "summary": "Tampilan memuat untuk seluruh halaman perkembangan anak (daftar, riwayat, dan laporan) memakai `StatusMemuat` dengan judul dan tiga baris kerangka."
+    },
+    "src/app/api/kelas/[id]/route.ts": {
+        "summary": "Endpoint satu kelas: `GET` mengembalikan satu kelas beserta jadwal dan jumlah muridnya (404 kalau tidak ada), `PATCH` mengubah nama, cabang, dan/atau guru pengampu dengan validasi minimal satu kolom; kalau guru pengampu berubah, seluruh jadwal kelas itu ikut dipindah ke guru baru dan bentrok jadwal dijawab 409 `JADWAL_BENTROK`. Sesi wajib, tanpa izin tambahan."
+    },
+    "src/app/api/pengaturan/gaji/[id]/route.ts": {
+        "summary": "Endpoint perbaikan aturan gaji: `PATCH` menerima sebagian dari `{ tarifPerJam, skema, berlakuSejak }` (minimal satu kolom, id tidak ada → 404, tanggal bentrok → 409 `TANGGAL_SUDAH_ADA`) dan `DELETE` menghapus satu baris (404 kalau tidak ada). Keduanya dijaga izin `pengaturan: write` (owner & admin)."
+    },
+    "src/components/contoh-penjaga-izin.tsx": {
+        "summary": "Contoh pemakaian penjaga akses peran di sisi klien: bagian yang butuh izin `pengaturan: read` hanya tampil untuk owner/admin, sedangkan guru melihat keterangan bahwa bagian itu disembunyikan. Dipakai di halaman contoh status."
+    },
+    "src/components/form-tambah-guru.tsx": {
+        "summary": "Formulir klien untuk menambah akun guru (nama, email, sandi awal) dengan validasi yang sepadan validator API: nama minimal 2 huruf, email berbentuk alamat benar, sandi 8–128 huruf; semua masalah ditampilkan sekaligus, lalu `onTambah` dipanggil dengan data yang sudah dirapikan."
+    },
+    "src/components/form-ubah-kelas.tsx": {
+        "summary": "Formulir klien untuk mengubah data kelas yang sudah ada (nama kelas, cabang, guru pengampu) dengan penanda wajib dan galat per isian; jadwal tidak diubah di sini karena punya formulir sendiri."
+    },
+    "src/components/isian-form.tsx": {
+        "summary": "Kumpulan komponen isian form bersama (`IsianTeks`, `IsianTeksPanjang`, `IsianPilih`, `BungkusIsian`) yang menyatukan label, keterangan, penanda wajib, dan pesan galat per isian supaya seluruh formulir aplikasi tampil konsisten."
+    },
+    "src/components/penjaga-izin.tsx": {
+        "summary": "Komponen klien `PenjagaIzin` yang hanya menampilkan isinya kalau akun yang sedang masuk memiliki izin yang diminta; selama sesi masih dibaca, isi cadangan yang tampil supaya bagian berizin tidak berkedip. Hanya untuk tampilan — penjagaan sebenarnya ada di halaman (`requirePermission`) dan endpoint (`withApiPermission`)."
+    },
+    "src/components/status-antarmuka.tsx": {
+        "summary": "Komponen baku keadaan antarmuka: `StatusMemuat` (kerangka memuat), `PesanKosong` (belum ada isi, boleh diberi aksi), `PesanGalat` (gagal memuat, boleh diberi aksi), dan `PanelStatus`. Dipakai seragam oleh halaman-halaman aplikasi agar bentuk state-nya sama."
+    },
+    "src/lib/izin-klien.ts": {
+        "summary": "Hook klien `useIzinPeran` yang membaca peran akun dari sesi Better Auth lalu memeriksa izinnya memakai definisi peran di `src/lib/permissions.ts`. Hanya untuk keperluan tampilan (menyembunyikan menu/tombol); penjagaan sebenarnya dilakukan di server."
+    },
+    "src/validators/bersama.ts": {
+        "summary": "Potongan skema Zod yang dipakai bersama banyak validator: `skemaLimit` (1–100 dengan bawaan per endpoint), `skemaOffset`, `skemaId`, `skemaTanggal`-pendukung `pesanRentang`, dan `rentangSah` untuk memastikan tanggal akhir tidak mendahului tanggal mulai."
     }
 }
