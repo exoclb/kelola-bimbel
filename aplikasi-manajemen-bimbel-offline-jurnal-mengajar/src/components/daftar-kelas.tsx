@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import {
   FormJadwalKelas,
-  type JadwalGuruLain,
+  type JadwalGuruAda,
 } from "@/components/form-jadwal-kelas";
 import { FormUbahKelas } from "@/components/form-ubah-kelas";
 import { FormTambahKelas } from "@/components/form-tambah-kelas";
@@ -124,11 +124,19 @@ export function DaftarKelas({
   }
 
   /**
-   * Jadwal kelas lain yang diampu guru yang sama, dipakai formulir jadwal untuk
-   * memperingatkan bentrok jam mengajar.
+   * Semua jadwal guru ini — termasuk jadwal kelas yang sedang dibuka — dipakai
+   * formulir jadwal untuk memperingatkan bentrok jam mengajar. Aturan yang sama
+   * dijaga sisi API, jadi keduanya menolak kombinasi yang sama.
    */
-  function jadwalGuruLain(kelas: Kelas): JadwalGuruLain[] {
-    return daftar
+  function jadwalGuruAda(kelas: Kelas): JadwalGuruAda[] {
+    const kelasIni = kelas.jadwal.map((jadwal) => ({
+      namaKelas: kelas.namaKelas,
+      hari: jadwal.hari,
+      jamMulai: jadwal.jamMulai,
+      jamSelesai: jadwal.jamSelesai,
+    }));
+
+    const kelasLain = daftar
       .filter(
         (baris) => baris.id !== kelas.id && baris.guruNama === kelas.guruNama,
       )
@@ -140,6 +148,8 @@ export function DaftarKelas({
           jamSelesai: jadwal.jamSelesai,
         })),
       );
+
+    return [...kelasIni, ...kelasLain];
   }
 
   function simpanUbahKelas(
@@ -324,7 +334,7 @@ export function DaftarKelas({
                     <FormJadwalKelas
                       jadwalAda={kelas.jadwal}
                       guruNama={kelas.guruNama}
-                      jadwalGuruLain={jadwalGuruLain(kelas)}
+                      jadwalGuruAda={jadwalGuruAda(kelas)}
                       onTambah={(jadwal) => {
                         ubahJadwal(kelas.id, (jadwalLama) =>
                           [...jadwalLama, jadwal].sort(urutkanJadwal),

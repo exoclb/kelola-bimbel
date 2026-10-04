@@ -1,5 +1,5 @@
 import { ApiError, readJson, withApiSession } from "@/lib/api";
-import { tambahJadwal } from "@/services/kelas.service";
+import { pesanBentrokJadwal, tambahJadwal } from "@/services/kelas.service";
 import { kelasIdSchema, tambahJadwalSchema } from "@/validators/kelas";
 
 export const runtime = "nodejs";
@@ -26,6 +26,12 @@ export function POST(request: Request, context: Context) {
         409,
         "JADWAL_SUDAH_ADA",
         "Jadwal hari itu pada jam yang sama sudah ada.",
+      );
+    if (hasil.status === "bentrok")
+      throw new ApiError(
+        409,
+        "JADWAL_BENTROK",
+        pesanBentrokJadwal(hasil.bentrok),
       );
 
     return Response.json({ data: hasil.kelas });

@@ -1,5 +1,12 @@
 import { ApiError, readJson, withApiSession } from "@/lib/api";
-import { adaGuru, createKelas, listKelas } from "@/services/kelas.service";
+import {
+  adaGuru,
+  cariBentrokDiDaftar,
+  cariBentrokGuru,
+  createKelas,
+  listKelas,
+  pesanBentrokJadwal,
+} from "@/services/kelas.service";
 import { createKelasSchema, listKelasSchema } from "@/validators/kelas";
 
 export const runtime = "nodejs";
@@ -28,6 +35,16 @@ export function POST(request: Request) {
         "GURU_TIDAK_ADA",
         "Guru pengampu tidak ditemukan.",
       );
+
+    // Jadwal guru baru tidak boleh beririsan, baik dengan jadwal lain di
+    // permintaan yang sama maupun dengan jadwal kelas lain miliknya.
+    if (input.guruId && input.jadwal.length > 0) {
+      const bentrok =
+        cariBentrokDiDaftar(input.jadwal) ??
+        (await cariBentrokGuru(input.guruId, input.jadwal));
+      if (bentrok)
+        throw new ApiError(409, "JADWAL_BENTROK", pesanBentrokJadwal(bentrok));
+    }
 
     const kelas = await createKelas(input);
     return Response.json(

@@ -7,8 +7,8 @@ import { IsianPilih, IsianTeks } from "@/components/isian-form";
 import type { JadwalKelas } from "@/lib/mock-kelas";
 import { HARI_DALAM_SEMINGGU } from "@/lib/tanggal";
 
-/** Jadwal kelas lain yang diampu guru yang sama, untuk memeriksa bentrok. */
-export type JadwalGuruLain = {
+/** Jadwal yang sudah dipegang guru yang sama, untuk memeriksa bentrok. */
+export type JadwalGuruAda = {
   namaKelas: string;
   hari: string;
   jamMulai: string;
@@ -18,7 +18,8 @@ export type JadwalGuruLain = {
 type FormJadwalKelasProps = {
   jadwalAda: JadwalKelas[];
   guruNama: string;
-  jadwalGuruLain: JadwalGuruLain[];
+  /** Termasuk jadwal kelas ini sendiri, karena satu guru pun tidak boleh punya dua jam yang beririsan. */
+  jadwalGuruAda: JadwalGuruAda[];
   onTambah: (jadwal: JadwalKelas) => void;
 };
 
@@ -39,7 +40,7 @@ function bentrokJam(
 export function FormJadwalKelas({
   jadwalAda,
   guruNama,
-  jadwalGuruLain,
+  jadwalGuruAda,
   onTambah,
 }: FormJadwalKelasProps) {
   const idForm = useId();
@@ -70,9 +71,9 @@ export function FormJadwalKelas({
       return;
     }
 
-    // Guru tidak mungkin mengajar dua kelas sekaligus, jadi jadwal kelas lain
-    // miliknya yang jamnya beririsan ditolak.
-    const bentrok = jadwalGuruLain.find((jadwal) =>
+    // Guru tidak mungkin mengajar dua kelas sekaligus, jadi jadwal yang
+    // jamnya beririsan dengan jadwalnya yang lain ditolak.
+    const bentrok = jadwalGuruAda.find((jadwal) =>
       bentrokJam({ hari, jamMulai, jamSelesai }, jadwal),
     );
     if (bentrok) {
@@ -152,10 +153,10 @@ export function FormJadwalKelas({
         />
       </div>
 
-      {jadwalGuruLain.length > 0 && (
+      {jadwalGuruAda.length > 0 && (
         <p className="text-xs leading-5 text-muted-foreground">
-          Jadwal {guruNama} di kelas lain:{" "}
-          {jadwalGuruLain
+          Jadwal {guruNama} yang sudah ada:{" "}
+          {jadwalGuruAda
             .map(
               (jadwal) =>
                 `${jadwal.namaKelas} ${jadwal.hari} ${jadwal.jamMulai}–${jadwal.jamSelesai}`,

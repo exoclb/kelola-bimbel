@@ -220,7 +220,93 @@ export async function adaGuru(guruId: string) {
 export type HasilUbahKelas =
   | { status: "tersimpan"; kelas: KelasTersimpan }
   | { status: "kelas_tidak_ada" }
-  | { status: "guru_tidak_ada" };
+  | { status: "guru_tidak_ada" }
+  | { status: "bentrok"; bentrok: BentrokJadwal };
+
+export type BentrokJadwal = {
+  namaKelas: string;
+  hari: string;
+  jamMulai: string;
+  jamSelesai: string;
+};
+
+/** Kalimat bentrok yang dipakai seluruh endpoint jadwal supaya seragam. */
+export function pesanBentrokJadwal(bentrok: BentrokJadwal) {
+  const kelas = bentrok.namaKelas ? ` dengan ${bentrok.namaKelas}` : "";
+  return `Jadwal ini bentrok${kelas} pada ${bentrok.hari} ${bentrok.jamMulai}–${bentrok.jamSelesai}.`;
+}
+
+/** Benar kalau dua rentang jam di hari yang sama saling menimpa. */
+function irisanJam(
+  a: { hari: string; jamMulai: string; jamSelesai: string },
+  b: { hari: string; jamMulai: string; jamSelesai: string },
+) {
+  return (
+    a.hari === b.hari && a.jamMulai < b.jamSelesai && b.jamMulai < a.jamSelesai
+  );
+}
+
+/** Bentrok di dalam satu daftar jadwal yang sedang dikirim (mis. saat membuat kelas). */
+export function cariBentrokDiDaftar(
+  jadwal: { hari: string; jamMulai: string; jamSelesai: string }[],
+): BentrokJadwal | null {
+  for (let i = 0; i < jadwal.length; i += 1) {
+    for (let j = i + 1; j < jadwal.length; j += 1) {
+      if (irisanJam(jadwal[i], jadwal[j])) {
+        const jamMulai = [jadwal[i], jadwal[j]].sort((a, b) =>
+          a.jamMulai.localeCompare(b.jamMulai),
+        )[0];
+        return { namaKelas: "", ...jamMulai };
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Mencari jadwal guru yang beririsan dengan jadwal yang mau disimpan. Seorang
+ * guru tidak mungkin mengajar dua kelas sekaligus, jadi jadwalnya dianggap
+ * bentrok walau kelasnya berbeda — inilah penjagaan yang tidak bisa dilakukan
+ * indeks unik `(class_id, hari, jam_mulai)` karena indeks itu tidak tahu
+ * jadwal mana milik guru yang sama.
+ */
+export async function cariBentrokGuru(
+  guruId: string,
+  jadwalBaru: { hari: string; jamMulai: string; jamSelesai: string }[],
+  kecualiKelasId?: string,
+): Promise<BentrokJadwal | null> {
+  if (jadwalBaru.length === 0) return null;
+
+  const syarat = [
+    eq(schedules.guruId, guruId),
+    inArray(schedules.hari, [
+      ...new Set(jadwalBaru.map((jadwal) => jadwal.hari)),
+    ]),
+  ];
+  if (kecualiKelasId)
+    syarat.push(sql`${schedules.classId} <> ${kecualiKelasId}`);
+
+  const baris = await db
+    .select({
+      namaKelas: classes.namaKelas,
+      hari: schedules.hari,
+      jamMulai: sql<string>`to_char(${schedules.jamMulai}, 'HH24:MI')`.as(
+        "jam_mulai",
+      ),
+      jamSelesai: sql<string>`to_char(${schedules.jamSelesai}, 'HH24:MI')`.as(
+        "jam_selesai",
+      ),
+    })
+    .from(schedules)
+    .innerJoin(classes, eq(schedules.classId, classes.id))
+    .where(and(...syarat))
+    .orderBy(asc(schedules.hari), asc(schedules.jamMulai));
+
+  return (
+    baris.find((lama) => jadwalBaru.some((baru) => irisanJam(baru, lama))) ??
+    null
+  );
+}
 
 /**
  * Mengubah data kelas: nama, cabang, dan guru pengampu. Guru pengampu ikut
@@ -236,6 +322,25 @@ export async function updateKelas(
   if (!kelas) return { status: "kelas_tidak_ada" };
   if (input.guruId !== undefined && !(await adaGuru(input.guruId))) {
     return { status: "guru_tidak_ada" };
+  }
+
+  // Guru baru membawa serta seluruh jadwal kelas ini, jadi jadwalnya harus
+  // luang: tidak beririsan satu sama lain maupun dengan jadwal kelas lain
+  // miliknya.
+  if (input.guruId !== undefined && input.guruId !== kelas.guruId) {
+    const diDaftar = cariBentrokDiDaftar(kelas.jadwal);
+    if (diDaftar)
+      return {
+        status: "bentrok",
+        bentrok: { ...diDaftar, namaKelas: kelas.namaKelas },
+      };
+
+    const bentrokGuru = await cariBentrokGuru(
+      input.guruId,
+      kelas.jadwal,
+      kelasId,
+    );
+    if (bentrokGuru) return { status: "bentrok", bentrok: bentrokGuru };
   }
 
   await db.transaction(async (tx) => {
@@ -277,10 +382,24 @@ export async function tambahJadwal(
   | { status: "kelas_tidak_ada" }
   | { status: "guru_belum_ada" }
   | { status: "jadwal_sudah_ada" }
+  | { status: "bentrok"; bentrok: BentrokJadwal }
 > {
   const kelas = await getKelasById(kelasId);
   if (!kelas) return { status: "kelas_tidak_ada" };
   if (!kelas.guruId) return { status: "guru_belum_ada" };
+
+  // Jadwal dengan hari & jam mulai yang sama persis di kelas ini ditolak
+  // lebih dulu, supaya pesannya "sudah ada" dan bukan "bentrok".
+  if (
+    kelas.jadwal.some(
+      (lama) => lama.hari === jadwal.hari && lama.jamMulai === jadwal.jamMulai,
+    )
+  ) {
+    return { status: "jadwal_sudah_ada" };
+  }
+
+  const bentrok = await cariBentrokGuru(kelas.guruId, [jadwal]);
+  if (bentrok) return { status: "bentrok", bentrok };
 
   try {
     await db.insert(schedules).values({

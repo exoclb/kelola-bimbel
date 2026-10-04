@@ -1,5 +1,9 @@
 import { ApiError, readJson, withApiSession } from "@/lib/api";
-import { getKelasById, updateKelas } from "@/services/kelas.service";
+import {
+  getKelasById,
+  pesanBentrokJadwal,
+  updateKelas,
+} from "@/services/kelas.service";
 import { kelasIdSchema, updateKelasSchema } from "@/validators/kelas";
 
 export const runtime = "nodejs";
@@ -31,6 +35,12 @@ export function PATCH(request: Request, context: Context) {
         422,
         "GURU_TIDAK_ADA",
         "Guru pengampu tidak ditemukan.",
+      );
+    if (hasil.status === "bentrok")
+      throw new ApiError(
+        409,
+        "JADWAL_BENTROK",
+        pesanBentrokJadwal(hasil.bentrok),
       );
 
     return Response.json({ data: hasil.kelas });
