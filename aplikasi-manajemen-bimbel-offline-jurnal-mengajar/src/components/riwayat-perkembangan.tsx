@@ -119,6 +119,10 @@ export function RiwayatPerkembangan({
                         />
                       )}
                       {formatTanggalLengkap(baris.tanggal)}
+                      <span className="text-muted-foreground">
+                        {" "}
+                        · {baris.kelasNama}
+                      </span>
                     </span>
                     <span className="text-muted-foreground">
                       {baris.hadir

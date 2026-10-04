@@ -139,8 +139,8 @@ export function LaporanPerkembangan({
             <p className="text-sm font-medium">Pertemuan yang tidak dihadiri</p>
             <ul className="text-muted-foreground mt-1 space-y-1 text-sm">
               {tidakHadir.map((baris) => (
-                <li key={baris.tanggal}>
-                  {formatTanggalLengkap(baris.tanggal)}
+                <li key={`${baris.tanggal}-${baris.kelasId}`}>
+                  {formatTanggalLengkap(baris.tanggal)} · {baris.kelasNama}
                   {baris.catatan ? ` — ${baris.catatan}` : ""}
                 </li>
               ))}
