@@ -13,12 +13,10 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { LabelStatusPresensi } from "@/components/label-status-presensi";
 import { PesanKosong } from "@/components/status-antarmuka";
 import type { Jadwal } from "@/lib/mock-jurnal";
-import {
-  labelStatusPresensi,
-  type PresensiGuru,
-} from "@/lib/mock-presensi-guru";
+import type { PresensiGuru } from "@/lib/mock-presensi-guru";
 
 type PresensiGuruHariIniProps = {
   jadwal: Jadwal[];
@@ -135,17 +133,7 @@ export function PresensiGuruHariIni({
                         </span>
                       </p>
                     </div>
-                    <span
-                      className={
-                        ditandai
-                          ? "rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary"
-                          : "rounded-full border bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground"
-                      }
-                    >
-                      {ditandai && baris
-                        ? labelStatusPresensi(baris.status)
-                        : "Belum ditandai"}
-                    </span>
+                    <LabelStatusPresensi status={baris?.status ?? null} />
                   </div>
 
                   {ditandai && baris && (
@@ -180,6 +168,12 @@ export function PresensiGuruHariIni({
                         Tandai hadir
                       </Button>
                     )}
+                    <Button asChild variant="ghost" size="sm">
+                      <Link href={`/app/presensi-guru/${sesi.id}`}>
+                        Buka sesi
+                        <ArrowRight aria-hidden="true" />
+                      </Link>
+                    </Button>
                   </div>
                 </Card>
               </li>

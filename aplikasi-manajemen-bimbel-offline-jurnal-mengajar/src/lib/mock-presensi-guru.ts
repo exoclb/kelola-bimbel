@@ -34,6 +34,20 @@ export function labelStatusPresensi(status: StatusPresensiGuru) {
   }
 }
 
+/** Keterangan singkat tiap status, dipakai pada pilihan di halaman sesi. */
+export function keteranganStatusPresensi(status: StatusPresensiGuru) {
+  switch (status) {
+    case "hadir":
+      return "Saya mengisi sesi ini seperti jadwal.";
+    case "izin":
+      return "Saya tidak bisa mengisi sesi ini dan sudah memberi kabar.";
+    case "tidak_hadir":
+      return "Sesi ini tidak saya isi tanpa kabar lebih dulu.";
+    case "digantikan":
+      return "Sesi ini diisi guru lain yang ditunjuk.";
+  }
+}
+
 // Beberapa sesi sudah ditandai supaya pemuatan ulang status terlihat: guru
 // membuka halaman lagi dan tanda itu masih ada. Dua sesi dipilih dari hari
 // yang berbeda agar hampir setiap hari ada contohnya.
