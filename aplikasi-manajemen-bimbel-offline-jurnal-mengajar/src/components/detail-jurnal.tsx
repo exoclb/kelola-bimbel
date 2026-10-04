@@ -3,13 +3,14 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import {
+  CalendarCheck,
+  CalendarX,
   ArrowLeft,
   CalendarDays,
   Clock,
   LoaderCircle,
   Pencil,
   Save,
-  Users,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -213,11 +214,23 @@ export function DetailJurnal({ jurnal }: DetailJurnalProps) {
                     className="flex flex-wrap items-center justify-between gap-2 py-3 first:pt-0 last:pb-0"
                   >
                     <span className="inline-flex items-center gap-2">
-                      <Users
-                        className="size-4 text-muted-foreground"
-                        aria-hidden="true"
-                      />
-                      {anak.nama}
+                      {anak.hadir ? (
+                        <CalendarCheck
+                          className="size-4 text-primary"
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        <CalendarX
+                          className="size-4 text-destructive"
+                          aria-hidden="true"
+                        />
+                      )}
+                      <Link
+                        href={`/app/murid/${anak.id}`}
+                        className="underline-offset-4 hover:underline"
+                      >
+                        {anak.nama}
+                      </Link>
                     </span>
                     <span className="text-sm text-muted-foreground">
                       {anak.hadir

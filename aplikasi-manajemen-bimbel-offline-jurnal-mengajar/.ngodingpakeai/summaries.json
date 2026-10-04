@@ -438,7 +438,7 @@
         "summary": "Error boundary klien Next.js (default export ErrorPage): menampilkan pesan kesalahan dan tombol Try again yang memanggil reset(). Menyertakan id main-content dan komponen Button dari shadcn/ui."
     },
     "src/components/detail-jurnal.tsx": {
-        "summary": "Komponen klien DetailJurnal untuk melihat dan mengoreksi satu jurnal (materi, kehadiran, catatan) milik guru. Mengelola mode lihat/koreksi, memakai DaftarKehadiran, PemilihMateri, LabelStatusJurnal, formatJam, dan stub koreksiJurnalStub/pisahMateri dari lib/mock-jurnal."
+        "summary": "Halaman detail satu sesi jurnal (data tiruan) dengan dua mode. Mode lihat menampilkan kelas, tanggal, cabang, status, ringkasan (jam mengajar, jumlah murid hadir, materi, catatan), dan kartu \"Kehadiran murid\": \"N dari M murid hadir\" beserta daftar tiap murid dengan ikon hadir/tidak hadir, alasan ketidakhadiran, dan nama murid yang bertaut ke halaman detail murid. Mode \"Koreksi jurnal\" membuka form untuk memperbaiki materi, catatan, dan centang kehadiran (dengan kolom alasan), lalu menyimpan lewat API/simpanan tiruan dan menampilkan pesan konfirmasi."
     },
     "src/components/form-aturan-gaji.tsx": {
         "summary": "Komponen klien FormAturanGaji: formulir tarif per jam, skema, dan tanggal berlaku dengan validasi (MAX_TARIF 10 juta) serta riwayat aturan. Memakai formatRupiah dari lib/gaji dan data tiruan dari lib/mock-pengaturan (belum tersimpan ke server)."
