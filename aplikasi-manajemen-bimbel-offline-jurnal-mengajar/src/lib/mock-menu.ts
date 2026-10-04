@@ -20,6 +20,7 @@ const MENU_DASAR: MenuApp[] = [
   { href: "/app", label: "Beranda" },
   { href: "/app/jurnal", label: "Isi Jurnal" },
   { href: "/app/jurnal/riwayat", label: "Riwayat" },
+  { href: "/app/presensi-guru", label: "Presensi Guru" },
   { href: "/app/murid", label: "Murid" },
   { href: "/app/kelas", label: "Kelas" },
   { href: "/app/penempatan", label: "Penempatan" },
