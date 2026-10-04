@@ -230,29 +230,36 @@ export function FormAturanGaji({ riwayatAwal }: FormAturanGajiProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ul className="space-y-2">
-            {riwayat.map((baris) => (
-              <li
-                key={`${baris.berlakuSejak}-${baris.tarifPerJam}`}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/40 px-3 py-3"
-              >
-                <span className="text-sm">
-                  <span className="font-medium">
-                    {formatRupiah(baris.tarifPerJam)}
-                  </span>{" "}
-                  <span className="text-muted-foreground">
-                    per jam · {baris.skema} · mulai{" "}
-                    {formatTanggalLengkap(baris.berlakuSejak)}
+          {riwayat.length === 0 ? (
+            <p className="text-sm leading-6 text-muted-foreground">
+              Belum ada tarif yang tercatat. Isi tarif pertama di formulir di
+              atas supaya rekap gaji bisa dihitung.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {riwayat.map((baris) => (
+                <li
+                  key={`${baris.berlakuSejak}-${baris.tarifPerJam}`}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/40 px-3 py-3"
+                >
+                  <span className="text-sm">
+                    <span className="font-medium">
+                      {formatRupiah(baris.tarifPerJam)}
+                    </span>{" "}
+                    <span className="text-muted-foreground">
+                      per jam · {baris.skema} · mulai{" "}
+                      {formatTanggalLengkap(baris.berlakuSejak)}
+                    </span>
                   </span>
-                </span>
-                {berlaku?.berlakuSejak === baris.berlakuSejak && (
-                  <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                    Berlaku sekarang
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
+                  {berlaku?.berlakuSejak === baris.berlakuSejak && (
+                    <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                      Berlaku sekarang
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
         </CardContent>
       </Card>
     </div>

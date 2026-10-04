@@ -55,9 +55,13 @@ export function getRiwayatTarif(): AturanGaji[] {
   );
 }
 
-/** Tarif dan skema gaji yang berlaku sekarang (baris riwayat terbaru). */
-export function getAturanGaji(): AturanGaji {
-  return { ...getRiwayatTarif()[0]! };
+/**
+ * Tarif dan skema gaji yang berlaku sekarang (baris riwayat terbaru), atau
+ * `undefined` kalau bimbelnya belum pernah mengatur tarif.
+ */
+export function getAturanGaji(): AturanGaji | undefined {
+  const terbaru = getRiwayatTarif()[0];
+  return terbaru ? { ...terbaru } : undefined;
 }
 
 /** Daftar akun guru dan owner beserta status aktifnya. */

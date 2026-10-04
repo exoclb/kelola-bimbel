@@ -52,7 +52,9 @@ export function PengaturanBimbel({ bolehKelola }: PengaturanBimbelProps) {
       href: "/app/pengaturan/gaji",
       ikon: Wallet,
       judul: "Aturan Gaji & Tarif",
-      ringkasan: `${formatRupiah(aturanGaji.tarifPerJam)} per jam (${aturanGaji.skema}), berlaku sejak ${formatTanggalLengkap(aturanGaji.berlakuSejak)}`,
+      ringkasan: aturanGaji
+        ? `${formatRupiah(aturanGaji.tarifPerJam)} per jam (${aturanGaji.skema}), berlaku sejak ${formatTanggalLengkap(aturanGaji.berlakuSejak)}`
+        : "Belum ada tarif yang diatur.",
       keterangan: "Dasar perhitungan rekap gaji semua guru.",
       tombol: "Atur tarif",
     },
