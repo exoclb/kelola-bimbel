@@ -13,6 +13,20 @@ type SlipGajiHtmlProps = {
   namaBimbel: string;
 };
 
+/**
+ * Amankan nilai dari basis data sebelum ditulis ke dokumen HTML. Nama guru,
+ * email, dan nama kelas bisa berisi tanda `<` atau `&`, jadi tanpa ini dokumen
+ * slip yang dibuka di peramban bisa menjalankan skrip yang disisipkan.
+ */
+function amanHtml(nilai: string) {
+  return nilai
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 /** Nama berkas yang aman untuk diunduh. */
 export function namaBerkasSlip(namaGuru: string, periode: string) {
   const namaAman =
@@ -31,7 +45,7 @@ function barisRincian(baris: BarisGajiGuru) {
     .map(
       (rincian) => `<tr>
       <td>${formatTanggalLengkap(rincian.tanggal)}</td>
-      <td>${rincian.namaKelas}</td>
+      <td>${amanHtml(rincian.namaKelas)}</td>
       <td class="angka">${formatJam(rincian.jamMengajar)}</td>
     </tr>`,
     )
@@ -50,7 +64,7 @@ export function slipGajiHtml({
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Slip gaji ${baris.guruNama} — ${periodeTampil}</title>
+<title>Slip gaji ${amanHtml(baris.guruNama)} — ${periodeTampil}</title>
 <style>
   :root { color-scheme: light; }
   body { font-family: Arial, Helvetica, sans-serif; color: #191919; margin: 0; padding: 32px; background: #fafafa; }
@@ -76,7 +90,7 @@ export function slipGajiHtml({
   <div class="slip">
     <div class="kepala">
       <div>
-        <h1>${namaBimbel}</h1>
+        <h1>${amanHtml(namaBimbel)}</h1>
         <p class="periode">Slip gaji guru · ${periodeTampil}</p>
       </div>
       <p class="status">
@@ -86,8 +100,8 @@ export function slipGajiHtml({
     </div>
 
     <dl>
-      <dt>Nama guru</dt><dd>${baris.guruNama}</dd>
-      <dt>Akun</dt><dd>${baris.guruEmail}</dd>
+      <dt>Nama guru</dt><dd>${amanHtml(baris.guruNama)}</dd>
+      <dt>Akun</dt><dd>${amanHtml(baris.guruEmail)}</dd>
     </dl>
 
     <table>
@@ -106,7 +120,7 @@ export function slipGajiHtml({
 
     <p class="catatan">
       Jam mengajar diambil dari jurnal yang dikirim guru. Slip ini dibuat otomatis
-      oleh ${namaBimbel}.
+      oleh ${amanHtml(namaBimbel)}.
     </p>
   </div>
 </body>
