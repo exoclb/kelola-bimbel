@@ -89,3 +89,12 @@ DATABASE_URL=<connection string internal> npm run doctor
 autentikasi inti. Hasil yang diharapkan: baris `✓ PostgreSQL connection and
 authentication tables`. Kalau gagal, periksa ulang user, nama database, dan
 sandi di resource Coolify — jangan menyalin nilainya ke berkas repo.
+
+## Status backup di aplikasi
+
+Setiap proses backup di server menulis satu baris ke tabel `backup_runs`, dan
+owner bisa memantaunya di halaman **Pengaturan → Backup Database**
+(`/app/pengaturan/backup`): kapan backup terakhir berhasil, berapa catatan yang
+gagal, dan di mana salinannya disimpan. Halaman itu hanya membaca; jadwal,
+penyimpanan terpisah, retensi, dan uji pemulihan tetap diatur di sisi server
+(bagian Fase 4 akan melengkapinya).

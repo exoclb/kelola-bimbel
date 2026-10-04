@@ -194,6 +194,7 @@ Selain tabel bawaan starter (`user`, `session`, `account`, `verification`, `note
 | `student_progress`                          | Catatan perkembangan anak (nilai, sikap, catatan naratif) dari guru.                                                                                                    |
 | `salary_settings`                           | Riwayat tarif per jam; tarif yang dipakai adalah yang berlaku pada bulan yang dihitung.                                                                                 |
 | `salary_recaps`                             | Catatan pembayaran gaji yang sudah ditandai owner.                                                                                                                      |
+| `backup_runs`                               | Catatan tiap proses backup database (waktu mulai/selesai, status, ukuran, lokasi salinan, pesan). Diisi skrip backup di server; halaman pengaturan hanya membacanya.    |
 | `notifications`, `notification_preferences` | Pemberitahuan dalam aplikasi dan preferensi penerimaannya.                                                                                                              |
 
 Aturan yang dijaga database, bukan cuma di kode: indeks unik parsial `student_enrollments_student_aktif_idx` (satu kelas aktif per murid), indeks unik `teaching_journals_guru_jadwal_tanggal_idx` (jurnal tidak dobel sehingga gaji tidak terhitung dua kali), indeks unik `schedules_class_hari_jam_idx` (jadwal kelas tidak dobel), indeks unik `salary_settings_berlaku_sejak_idx` (satu tarif per tanggal berlaku, jadi tarif yang dipakai sebuah jurnal tidak pernah ambigu), dan indeks unik `bimbel_profile_tunggal_idx` (profil bimbel hanya satu baris). Penghapusan murid/kelas ikut menghapus baris turunannya (`on delete cascade`), sedangkan data yang tidak boleh hilang memakai `restrict`.
@@ -223,16 +224,16 @@ Pengaturan profil boleh dibaca semua akun karena nama bimbel dipakai di laporan 
 
 Aturan akses halaman app disimpan di dua tempat saja, mengikuti aturan starter (izin tidak diperiksa lewat middleware yang hanya melihat cookie):
 
-| Halaman                                                                                    | Syaratnya                                                                           |
-| ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
-| `/app`, `/app/jurnal`, `/app/jurnal/riwayat`, `/app/murid`, `/app/kelas`, `/app/gaji/saya` | cukup punya sesi (`requireSession`)                                                 |
-| `/app/perkembangan`, `/app/perkembangan/riwayat`, `/app/perkembangan/[muridId]`            | izin `perkembangan: read`, diperiksa sekali di `app/perkembangan/layout.tsx`        |
-| `/app/pemantauan`                                                                          | izin `jurnal: read-any`                                                             |
-| `/app/gaji`, `/app/gaji/riwayat`, `/app/gaji/slip/[guruId]`                                | izin `gaji: read-any`                                                               |
-| `/admin`                                                                                   | izin `notes: read-any`                                                              |
-| `/app/pengaturan`                                                                          | cukup sesi; kartu bagian yang butuh izin `pengaturan: read` tidak muncul untuk guru |
-| `/app/pengaturan/profil`, `/app/pengaturan/gaji`, `/app/pengaturan/guru`                   | izin `pengaturan: read` (owner & admin)                                             |
-| `/app/pengaturan/notifikasi`                                                               | cukup sesi (preferensi milik akun sendiri)                                          |
+| Halaman                                                                                            | Syaratnya                                                                           |
+| -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `/app`, `/app/jurnal`, `/app/jurnal/riwayat`, `/app/murid`, `/app/kelas`, `/app/gaji/saya`         | cukup punya sesi (`requireSession`)                                                 |
+| `/app/perkembangan`, `/app/perkembangan/riwayat`, `/app/perkembangan/[muridId]`                    | izin `perkembangan: read`, diperiksa sekali di `app/perkembangan/layout.tsx`        |
+| `/app/pemantauan`                                                                                  | izin `jurnal: read-any`                                                             |
+| `/app/gaji`, `/app/gaji/riwayat`, `/app/gaji/slip/[guruId]`                                        | izin `gaji: read-any`                                                               |
+| `/admin`                                                                                           | izin `notes: read-any`                                                              |
+| `/app/pengaturan`                                                                                  | cukup sesi; kartu bagian yang butuh izin `pengaturan: read` tidak muncul untuk guru |
+| `/app/pengaturan/profil`, `/app/pengaturan/gaji`, `/app/pengaturan/guru`, `/app/pengaturan/backup` | izin `pengaturan: read` (owner & admin)                                             |
+| `/app/pengaturan/notifikasi`                                                                       | cukup sesi (preferensi milik akun sendiri)                                          |
 
 Pengunjung tanpa sesi dialihkan ke halaman masuk. Akun yang sudah masuk tetapi tidak punya izinnya **dilihat sebagai halaman tidak ada** (404), bukan "terlarang", supaya rute yang tidak boleh dibuka tidak bisa dipetakan satu per satu. Penjagaan seksi yang dipakai bersama (`perkembangan`) diletakkan di layout, jadi halaman baru di dalam seksi itu tidak mungkin lupa menjaganya, sedangkan seksi dengan akses campuran (`gaji` vs `gaji/saya`) menjaga tiap halaman. Middleware Next.js sengaja tidak dipakai: di sana tidak ada akses basis data, jadi yang bisa diperiksa hanya keberadaan cookie — bukan sesi yang sah. Batas keamanan sebenarnya tetap di API, karena halaman hanyalah tampilan.
 

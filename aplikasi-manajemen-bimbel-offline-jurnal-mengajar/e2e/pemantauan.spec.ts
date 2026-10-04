@@ -244,6 +244,13 @@ test("pengaturan menampilkan bagian sesuai izin akunnya", async ({ page }) => {
   await expect(page.getByRole("link", { name: /Atur tarif/ })).toHaveCount(0);
   // Daftar akun bimbel juga bagian milik owner, bukan untuk guru.
   await expect(page.getByText("Akun yang terdaftar")).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: /Lihat status backup/ }),
+  ).toHaveCount(0);
+
+  // Halaman monitoring backup pun hanya untuk owner.
+  await page.goto("/app/pengaturan/backup");
+  await expect(page.getByText(/This page isn.t here/)).toBeVisible();
 
   // Halaman khusus owner tetap tidak bisa dibuka walaupun alamatnya diketik.
   await page.goto("/app/pengaturan/guru");
@@ -261,6 +268,13 @@ test("pengaturan menampilkan bagian sesuai izin akunnya", async ({ page }) => {
     await expect(page.getByRole("link", { name: nama })).toBeVisible();
   }
   await expect(page.getByText("Akun yang terdaftar")).toBeVisible();
+
+  // Kartu & halaman monitoring backup ikut muncul untuk owner.
+  await page.getByRole("link", { name: /Lihat status backup/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "Backup Database" }),
+  ).toBeVisible();
+  await expect(page.getByText("Backup terakhir berhasil")).toBeVisible();
 
   await setRole("user");
 });

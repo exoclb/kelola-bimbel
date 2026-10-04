@@ -1,5 +1,12 @@
 import Link from "next/link";
-import { ArrowRight, BellRing, Building2, Users, Wallet } from "lucide-react";
+import {
+  ArrowRight,
+  BellRing,
+  Building2,
+  DatabaseBackup,
+  Users,
+  Wallet,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,8 +22,19 @@ import {
   getProfilBimbel,
 } from "@/lib/mock-pengaturan";
 import { labelPeran } from "@/lib/peran";
+import { ambilStatusBackup } from "@/services/backup.service";
 import { formatRupiah } from "@/lib/gaji";
 import { formatTanggalLengkap } from "@/lib/tanggal";
+
+/** "hari ini" / "kemarin" / "N hari lalu" untuk ringkasan kartu backup. */
+function umurBackupSingkat(waktu: Date, sekarang = new Date()) {
+  const hari = Math.floor(
+    (sekarang.getTime() - waktu.getTime()) / (24 * 60 * 60 * 1000),
+  );
+  if (hari <= 0) return "hari ini";
+  if (hari === 1) return "kemarin";
+  return `${hari} hari lalu`;
+}
 
 type PengaturanBimbelProps = {
   /** Guru hanya melihat bagian yang memang boleh dibukanya. */
@@ -27,8 +45,11 @@ type PengaturanBimbelProps = {
  * Halaman utama Pengaturan Bimbel: ringkasan tiap bagian plus menu ke
  * halamannya. Nilainya masih data tiruan (lihat src/lib/mock-pengaturan.ts).
  */
-export function PengaturanBimbel({ bolehKelola }: PengaturanBimbelProps) {
+export async function PengaturanBimbel({ bolehKelola }: PengaturanBimbelProps) {
   const profil = getProfilBimbel();
+  // Kartu backup hanya untuk owner/admin, jadi statusnya pun hanya diambil
+  // kalau akunnya memang boleh melihatnya.
+  const statusBackup = bolehKelola ? await ambilStatusBackup(1) : null;
   const aturanGaji = getAturanGaji();
   const guru = getDaftarGuru();
   const preferensi = getPreferensiNotifikasi();
@@ -69,8 +90,24 @@ export function PengaturanBimbel({ bolehKelola }: PengaturanBimbelProps) {
     },
   ];
 
+  const bagianBackup = statusBackup
+    ? [
+        {
+          href: "/app/pengaturan/backup",
+          ikon: DatabaseBackup,
+          judul: "Backup Database",
+          ringkasan: statusBackup.terakhirSukses
+            ? `Backup terakhir berhasil ${umurBackupSingkat(statusBackup.terakhirSukses.mulai)}`
+            : "Belum ada catatan backup.",
+          keterangan:
+            "Jadwal backup, penyimpanan terpisah, retensi, dan uji pemulihan.",
+          tombol: "Lihat status backup",
+        },
+      ]
+    : [];
+
   const bagian = [
-    ...(bolehKelola ? bagianPemilik : []),
+    ...(bolehKelola ? [...bagianPemilik, ...bagianBackup] : []),
     {
       href: "/app/pengaturan/notifikasi",
       ikon: BellRing,

@@ -222,7 +222,7 @@
         "summary": "Komponen klien Formulir Profil Bimbel: mengelola isian nama, alamat, telepon, email, dan pratinjau logo (PNG/JPG maksimal 1 MB via URL.createObjectURL), memvalidasi semua isian sekaligus, menampilkan masalah dalam role=\"alert\", dan menunjukkan ringkasan tersimpan lewat KonfirmasiPengaturan; data masih lokal/belum dikirim ke server."
     },
     "src/components/pengaturan-bimbel.tsx": {
-        "summary": "Komponen server halaman Pengaturan Bimbel yang merangkum profil bimbel, aturan gaji (formatRupiah/getAturanGaji), jumlah akun guru aktif, dan preferensi notifikasi dalam kartu berisi tautan ke /app/pengaturan/profil, /gaji, /guru, dan /notifikasi; kartu bagian pemilik hanya dirender bila prop bolehKelola benar, dan daftar akun menampilkan labelPeran serta status aktif."
+        "summary": "Halaman utama Pengaturan Bimbel (server component async): kartu ringkasan tiap bagian beserta tombol menuju halamannya. Kartu profil, aturan gaji, kelola guru, dan backup hanya muncul untuk akun berizin `pengaturan: read`, sedangkan kartu preferensi notifikasi selalu ada karena milik akun sendiri; ringkasan backup diambil langsung dari tabel `backup_runs`."
     },
     "src/components/starter-intro.tsx": {
         "summary": "Komponen klien beranda starter (StarterIntro) dengan animasi motion/react yang menampilkan judul 'A small base. A world of ideas.', tombol menuju /app atau /sign-up bergantung status signedIn, kotak prompt siap salin lewat CopyPrompt, dan lima kartu teknologi: Next.js, Drizzle+PostgreSQL, Better Auth, Tailwind+shadcn/ui, serta Motion."
@@ -255,7 +255,7 @@
         "summary": "Dokumentasi arsitektur aplikasi: satu paket Next.js App Router dengan satu database PostgreSQL dan Drizzle. Membahas struktur src (app, components, db/schema, services, validators, lib), alur request API route → session/validation → service → Drizzle, helper getSession/requireSession, pengaturan DATABASE_URL, skema auth Better Auth, aturan UI Server Component/Tailwind v4, serta kompatibilitas TypeScript 5.9 dan ESLint 9."
     },
     "docs/backend.md": {
-        "summary": "Panduan standar backend dan kontrak HTTP aplikasi. Menegaskan pembagian tanggung jawab route vs service (service memfilter kepemilikan lewat user id), mendokumentasikan endpoint Notes (/api/notes CRUD), tabel endpoint aplikasi (/api/jurnal, /api/jadwal, /api/murid, /api/gaji, /api/admin/jurnal, /api/admin/ringkasan-guru), format error `{ error: { code, message } }`, aturan origin/CSRF, dan data model seperti classes, schedules, teaching_journals, journal_attendances, student_progress, salary_settings."
+        "summary": "Kontrak backend aplikasi: struktur endpoint (route → withApiSession/withApiPermission → validator Zod → service → Drizzle), daftar endpoint beserta parameter dan bentuk responsnya, aturan error (`{ error: { code, message, details } }`), tabel model data, tabel akses API per izin, tabel proteksi halaman, serta catatan RBAC. Ikut mencatat tabel `backup_runs` dan halaman `/app/pengaturan/backup`."
     },
     "drizzle/0003_jurnal.sql": {
         "summary": "Migrasi Drizzle yang membuat enum status_jurnal ('terkirim','direview') dan tabel inti bimbel: classes, students, schedules, teaching_journals, dan journal_attendances. Menyertakan foreign key ke tabel user/kelas/murid serta indeks penting seperti teaching_journals_guru_tanggal_idx, schedules_guru_hari_jam_idx, dan indeks unik journal_attendances_journal_student_idx."
@@ -342,7 +342,7 @@
         "summary": "Server component halaman atur ulang sandi pada route /atur-ulang-password dengan metadata title \"Atur Ulang Sandi\". Halaman membaca searchParams (Promise) untuk mengambil token dari tautan, membersihkannya dengan trim, lalu meneruskannya ke komponen klien FormAturUlangSandi. Berkas ini adalah titik masuk UI pemulihan sandi."
     },
     "src/app/(protected)/layout.tsx": {
-        "summary": "Layout server untuk seluruh halaman terproteksi (runtime nodejs) yang memanggil requireSession, menurunkan peran lewat peranDariRole, lalu menyusun menu dari menuUntukPeran sambil menyaring item berdasarkan hasPermission(user.id, item.perlu). Header menampilkan Brand, AppNav, PenandaPengguna, dan SignOutButton, sedangkan konten dibungkus main#main-content. Layout ini menegakkan sesi dan kontrol menu berbasis izin."
+        "summary": "Layout untuk seluruh halaman terlindungi: memeriksa sesi (`requireSession`), menyusun menu sesuai peran dan izin, lalu merender header aplikasi (brand, menu, penanda pengguna, tombol keluar) beserta isi halamannya. Menyetel `runtime = \"nodejs\"` dan `dynamic = \"force-dynamic\"` sehingga halaman-halaman ini selalu dirender per permintaan — tanpa itu Next.js mencoba merendernya saat build dan build image produksi gagal karena tidak punya koneksi database."
     },
     "src/app/api/admin/notes/[id]/route.ts": {
         "summary": "Route handler DELETE /api/admin/notes/[id] (runtime nodejs) yang memakai withApiPermission dengan izin notes: [\"delete-any\"]. ID divalidasi noteIdSchema, lalu deleteAnyNote dipanggil; bila catatan tidak ada dibalas ApiError 404 NOT_FOUND, dan sukses mengembalikan status 204 tanpa isi. Berkas ini menyediakan penghapusan catatan milik akun lain oleh peran berwenang."
@@ -504,7 +504,7 @@
         "summary": "Snapshot skema drizzle-kit termutakhir pada batch ini (setelah migrasi 0010_catatan_perkembangan): memuat tabel `user`, `session`, `account`, `verification`, `notes`, `classes`, `students`, `student_enrollments`, `student_progress`, `schedules`, `teaching_journals`, `journal_attendances`, `notifications`, `notification_preferences`, `salary_settings`, `salary_recaps`, serta enum `status_penempatan`, `status_jurnal`, dan `status_pembayaran_gaji`."
     },
     "drizzle/meta/_journal.json": {
-        "summary": "Jurnal migrasi drizzle-kit versi 7 dialek postgresql berisi 13 entri berurutan dari 0000_auth, 0001_notes, 0002_roles, 0003_jurnal, 0004_jurnal_idempoten, 0005_notifikasi, 0006_tarif_gaji, 0007_rekap_gaji, 0008_jadwal_unik, 0009_penempatan_murid, 0010_catatan_perkembangan, 0011_peran_pengguna, sampai 0012_profil_bimbel. Berkas turunan yang mengurutkan migrasi saat dijalankan."
+        "summary": "Jurnal migrasi Drizzle Kit: daftar berkas migrasi yang sudah dibuat beserta urutannya (0000_auth sampai 0013_backup_runs). Dipakai `drizzle-kit generate` dan `scripts/migrate.mjs` untuk mengetahui migrasi mana yang perlu dijalankan."
     },
     "src/app/(auth)/masuk/page.tsx": {
         "summary": "Halaman Next App Router untuk route /masuk dengan metadata judul Masuk. Merender komponen klien `HalamanMasuk` dan menyuplai daftar akun dari `getDaftarAkun` sebagai data awal layar masuk."
@@ -789,7 +789,7 @@
         "summary": "Inisialisasi koneksi database server-only yang mengekspor `db`. Membuat `Pool` node-postgres (maks 5 koneksi, timeout 5000 ms) dan membungkusnya dengan `drizzle(pool, { schema })`, serta menyimpan instance di `globalThis` agar hot reload pengembangan tidak membuat pool berlebih."
     },
     "src/db/schema/index.ts": {
-        "summary": "Barrel ekspor seluruh tabel skema Drizzle yang menjadi entrypoint bersama untuk Drizzle Kit, pool, dan Better Auth. Mengekspor antara lain `user`, `session`, `account`, `notes`, `classes`, `students`, `student-enrollments`, `student-progress`, `teaching-journals`, dan `salary-recaps`."
+        "summary": "Barrel skema Drizzle: mengekspor seluruh tabel aplikasi (auth, notes, kelas, murid, penempatan, jadwal, jurnal, kehadiran, notifikasi, preferensi notifikasi, tarif & rekap gaji, profil bimbel, backup_runs). Berkas ini yang dibaca Drizzle Kit, pool bersama, dan Better Auth."
     },
     "src/db/schema/session.ts": {
         "summary": "Definisi tabel Drizzle `session` bergaya Better Auth untuk PostgreSQL. Kolomnya meliputi id, expiresAt, token unik, createdAt/updatedAt, ipAddress, userAgent, userId (FK ke `user` dengan onDelete cascade), dan `impersonatedBy` untuk fitur impersonasi admin, plus indeks `session_user_id_idx`."
@@ -834,7 +834,7 @@
         "summary": "Uji end-to-end Playwright untuk alur atur ulang sandi: mendaftar lewat `/api/akun`, meminta token lewat `/api/lupa-sandi`, membaca token dari tabel `verification`, lalu memverifikasi `/api/atur-ulang-sandi` menolak token palsu dan sandi pendek, mengganti sandi, mencabut sesi lama, dan menolak pemakaian token kedua kali (sekali pakai)."
     },
     "e2e/pemantauan.spec.ts": {
-        "summary": "Berkas uji end-to-end Playwright terbesar yang menguji kontrol akses berbasis peran (RBAC) owner vs guru: endpoint pantauan 401 tanpa sesi, penolakan guru dan penerimaan owner, menu/halaman pemantauan dan rekap gaji, pengalihan setelah masuk, serta penyimpanan pengaturan, aturan gaji, tambah/nonaktifkan guru, dan preferensi notifikasi. Peran diset di luar aplikasi seperti `npm run role:set`."
+        "summary": "Tes e2e Playwright untuk pemantauan owner dan halaman pengaturan: pantauan jurnal harian, filter, pengaturan per izin akun (termasuk daftar akun & halaman backup hanya untuk owner), simpan profil, aturan gaji bertanggal (termasuk PATCH/DELETE dan penolakan tanggal bentrok), kelola akun guru, preferensi notifikasi, dan notifikasi saat jurnal masuk."
     },
     "next-env.d.ts": {
         "summary": "Berkas deklarasi tipe Next.js yang di-generate otomatis (referensi tipe `next`, `next/image-types/global`, dan rute bertipe), berisi catatan agar tidak diedit manual. Dipakai agar TypeScript mengenali tipe global Next.js."
@@ -912,7 +912,7 @@
         "summary": "Skrip Node (npm `coolify:db`) untuk membuat resource PostgreSQL 17 terkelola di Coolify lewat API v1, karena instance Coolify tidak dapat dibuka dari repo. Perintah `buat` memeriksa daftar database lebih dulu (`GET /api/v1/databases`) sehingga idempoten, lalu memanggil `POST /api/v1/databases/postgresql` dengan `server_uuid`, `project_uuid`, `environment_name`, `name`, `image: postgres:17-alpine`, kredensial, dan `instant_deploy: true`. Kredensial diambil dari environment (COOLIFY_URL/TOKEN/SERVER_UUID/PROJECT_UUID); sandi dibuat acak bila `POSTGRES_PASSWORD` kosong dan hanya ditampilkan sekali. Perintah `status` menampilkan daftar database. Tidak menyimpan rahasia apa pun ke berkas."
     },
     "docs/deploy-coolify.md": {
-        "summary": "Panduan deploy produksi ke Coolify yang ditulis bertahap per fase. Fase 1 (Basis Data Produksi) menjelaskan dua cara membuat resource PostgreSQL 17 (skrip `scripts/coolify-db.mjs` atau dashboard Coolify), versi image dan alokasi sumber daya, pengambilan connection string internal untuk `DATABASE_URL`, serta uji koneksi lewat `npm run doctor`. Aturan pokoknya: tidak ada nilai rahasia di repo, semua di pengelola secret Coolify."
+        "summary": "Panduan deploy produksi ke Coolify, ditulis bertahap per fase. Fase 1 menjelaskan pembuatan resource PostgreSQL 17 (lewat skrip `scripts/coolify-db.mjs` atau dashboard), versi & sumber daya, pengambilan connection string internal untuk `DATABASE_URL`, dan uji koneksi dengan `npm run doctor`. Ada juga bagian status backup di aplikasi yang menunjuk halaman Pengaturan → Backup Database. Aturan pokoknya: tidak ada nilai rahasia di repo."
     },
     "src/app/(protected)/app/contoh-status/page.tsx": {
         "summary": "Halaman contoh (showcase) yang memamerkan komponen keadaan antarmuka baku: memuat, kosong, gagal dimuat, dan isian form yang belum lengkap, memakai data tiruan. Dipakai sebagai rujukan bentuk state di seluruh aplikasi."
@@ -964,5 +964,20 @@
     },
     "src/validators/bersama.ts": {
         "summary": "Potongan skema Zod yang dipakai bersama banyak validator: `skemaLimit` (1–100 dengan bawaan per endpoint), `skemaOffset`, `skemaId`, `skemaTanggal`-pendukung `pesanRentang`, dan `rentangSah` untuk memastikan tanggal akhir tidak mendahului tanggal mulai."
+    },
+    "src/db/schema/backup-runs.ts": {
+        "summary": "Skema tabel `backup_runs` di Drizzle: satu baris per proses backup database berisi waktu mulai/selesai, status (`berjalan`/`sukses`/`gagal` sebagai teks supaya tidak butuh migrasi enum), ukuran berkas, lokasi salinan, dan pesan (mis. galat). Ada indeks pada kolom `mulai` untuk mengambil catatan terbaru. Barisnya ditulis skrip backup di server, bukan aplikasi."
+    },
+    "drizzle/0013_backup_runs.sql": {
+        "summary": "Migrasi SQL yang membuat tabel `backup_runs` (id, mulai, selesai, status, ukuran_byte, lokasi, pesan) beserta indeks `backup_runs_mulai_idx`. Dihasilkan Drizzle Kit dari src/db/schema/backup-runs.ts."
+    },
+    "drizzle/meta/0013_snapshot.json": {
+        "summary": "Snapshot skema Drizzle setelah migrasi 0013 (tabel `backup_runs` ikut tercatat). Dipakai Drizzle Kit untuk menghitung selisih saat membuat migrasi berikutnya."
+    },
+    "src/services/backup.service.ts": {
+        "summary": "Layanan server yang menyediakan status backup untuk halaman monitoring: beberapa catatan terbaru (terurut waktu mulai terbaru), backup terakhir yang berhasil, serta jumlah total/sukses/gagal/berjalan dihitung di SQL dengan `count(*) filter`. Hanya membaca tabel `backup_runs`."
+    },
+    "src/app/(protected)/app/pengaturan/backup/page.tsx": {
+        "summary": "Halaman monitoring backup (owner & admin, izin `pengaturan: read`): tiga kartu ringkasan (backup terakhir berhasil beserta umurnya, total catatan, dan proses yang sedang berjalan), daftar catatan backup terbaru dengan badge status sukses/gagal/berjalan, ukuran, lokasi salinan, dan pesan galat; ada keadaan kosong `PesanKosong` bila belum ada catatan, serta catatan bahwa jadwal, retensi, dan uji pemulihan diatur di sisi server."
     }
 }
