@@ -101,10 +101,16 @@ export function PresensiGuruHariIni({
         {pesan}
       </p>
 
-      <div className="mt-6">
+      <div className="mt-6 flex flex-wrap items-center gap-2">
         <Button asChild variant="outline" size="sm">
           <Link href="/app/jurnal">
             Isi jurnal hari ini
+            <ArrowRight aria-hidden="true" />
+          </Link>
+        </Button>
+        <Button asChild variant="ghost" size="sm">
+          <Link href="/app/presensi-guru/riwayat">
+            Riwayat kehadiran
             <ArrowRight aria-hidden="true" />
           </Link>
         </Button>
