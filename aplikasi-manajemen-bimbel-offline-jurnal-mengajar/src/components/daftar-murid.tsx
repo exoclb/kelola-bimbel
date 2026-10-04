@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarDays, Phone, UserRound } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, CalendarDays, Phone, UserRound } from "lucide-react";
 import { cn } from "cn";
 import { FormTambahMurid } from "@/components/form-tambah-murid";
 import { KolomPencarian } from "@/components/kolom-pencarian";
 import { PesanKosong } from "@/components/status-antarmuka";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { Murid } from "@/lib/mock-murid";
 import { formatTanggalLengkap, hitungUsia } from "@/lib/tanggal";
@@ -113,6 +115,14 @@ export function DaftarMurid({ daftarAwal }: DaftarMuridProps) {
                   >
                     {murid.statusAktif ? "Aktif" : "Tidak aktif"}
                   </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`/app/murid/${murid.id}`}>
+                      Detail murid
+                      <ArrowRight aria-hidden="true" />
+                    </Link>
+                  </Button>
                 </div>
                 {(murid.namaOrangTua || murid.kontakOrangTua) && (
                   <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-muted-foreground">

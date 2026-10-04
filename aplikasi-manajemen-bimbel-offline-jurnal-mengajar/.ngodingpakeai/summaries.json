@@ -468,7 +468,7 @@
         "summary": "Utilitas perhitungan dan format gaji: formatRupiah (Rp1.200.000), hitungGaji (total jam × tarif per jam, dibulatkan), periodeBulan (YYYY-MM), dan formatPeriode ('2026-10' → 'Oktober 2026')."
     },
     "src/lib/mock-penempatan.ts": {
-        "summary": "Data contoh penempatan murid ke kelas beserta tipe Penempatan (muridId, kelasId, tanggalMulai, status aktif/selesai) dan fungsi getPenempatanAwal. Pengganti sementara GET /api/penempatan karena tabel student_enrollments belum ada."
+        "summary": "Data contoh penempatan murid ke kelas beserta helper `getPenempatanAwal()` dan `kelasMurid(muridId)`. Bentuknya mengikuti kolom tabel `student_enrollments` (murid, kelas, tanggal mulai, status aktif/selesai), sudah memuat contoh aturan multi-kelas (satu murid aktif di beberapa kelas, penempatan lama disimpan sebagai riwayat berstatus selesai), dan `kelasMurid` menyusun kelas aktif lebih dulu lalu riwayat terbaru beserta data kelasnya."
     },
     "src/lib/utils.ts": {
         "summary": "Utilitas bersama kecil: mengekspor ulang `cn` (penggabung kelas) dari paket 'cn' sesuai konvensi shadcn/ui."
@@ -624,7 +624,7 @@
         "summary": "Route profil bimbel (runtime nodejs): GET memakai withApiSession agar semua akun dapat membaca profil (ambilProfilBimbel); PUT memakai withApiPermission dengan izin pengaturan: write untuk menyimpan profil termasuk logo data URL (profilBimbelSchema, simpanProfilBimbel)."
     },
     "src/components/daftar-murid.tsx": {
-        "summary": "Komponen klien DaftarMurid yang menampilkan daftar murid bimbel beserta kontak orang tua dan status aktif, dengan pencarian nama murid/orang tua, penghitung murid aktif, serta penyisipan murid baru lewat FormTambahMurid dan KolomPencarian. Data masih disimpan di state layar (belum ke database) dan memakai formatTanggalLengkap serta hitungUsia."
+        "summary": "Daftar murid bimbel (data tiruan): ringkasan jumlah murid aktif, pencarian yang cocokkan nama anak/orang tua/kontak, formulir tambah murid, dan kartu tiap anak berisi usia, orang tua, kontak, serta badge aktif/tidak aktif. Setiap kartu punya tautan \"Detail murid\" menuju halaman detail murid."
     },
     "src/components/penanda-pengguna.tsx": {
         "summary": "Komponen PenandaPengguna yang menampilkan inisial, nama, email, dan lencana peran (labelPeran) pengguna yang sedang masuk. Bersifat informatif saja; penentuan hak akses tetap dilakukan halaman dan API."
@@ -979,5 +979,8 @@
     },
     "src/app/(protected)/app/pengaturan/backup/page.tsx": {
         "summary": "Halaman monitoring backup (owner & admin, izin `pengaturan: read`): tiga kartu ringkasan (backup terakhir berhasil beserta umurnya, total catatan, dan proses yang sedang berjalan), daftar catatan backup terbaru dengan badge status sukses/gagal/berjalan, ukuran, lokasi salinan, dan pesan galat; ada keadaan kosong `PesanKosong` bila belum ada catatan, serta catatan bahwa jadwal, retensi, dan uji pemulihan diatur di sisi server."
+    },
+    "src/app/(protected)/app/murid/[muridId]/page.tsx": {
+        "summary": "Halaman detail murid (data tiruan): identitas anak (nama, usia, orang tua, kontak, status aktif), daftar \"Kelas yang sedang diikuti\" dan \"Riwayat kelas\" lengkap dengan cabang, guru pengampu, chip jadwal, tanggal mulai, serta badge Sedang diikuti/Sudah selesai — mendukung satu murid di beberapa kelas sekaligus. Ada keadaan kosong bila murid belum ditempatkan, tautan ke laporan perkembangan, dan `notFound()` untuk id yang tidak ada."
     }
 }
