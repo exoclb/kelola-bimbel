@@ -14,6 +14,9 @@ export const statement = {
   jurnal: ["read-any"],
   // Rekap gaji seluruh guru hanya untuk owner.
   gaji: ["read-any"],
+  // Portal orang tua: membaca tagihan dan perkembangan anak yang tertaut ke
+  // akun wali. Penautan anak dibatasi lewat sesi, bukan lewat izin ini.
+  portal: ["read"],
   // Tagihan bulanan murid. Owner membuat tagihan dan menandainya lunas untuk
   // semua murid; murid/wali melihat tagihannya sendiri lewat sesi, tanpa izin
   // tambahan.
@@ -35,11 +38,14 @@ export const ac = createAccessControl(statement);
 // them), the signed-in default can do nothing beyond its own rows.
 export const roles = {
   user: ac.newRole({ notes: [], perkembangan: ["read", "write"] }),
+  // Orang tua/wali: hanya membuka portal dan membaca data anaknya.
+  "orang-tua": ac.newRole({ portal: ["read"] }),
   // Pemilik bimbel: memantau jurnal dan gaji semua guru, tanpa hak admin sistem.
   owner: ac.newRole({
     jurnal: ["read-any"],
     gaji: ["read-any"],
     tagihan: ["read-any", "write-any"],
+    portal: ["read"],
     perkembangan: ["read", "write"],
     pengaturan: ["read", "write"],
   }),
@@ -49,6 +55,7 @@ export const roles = {
     jurnal: ["read-any"],
     gaji: ["read-any"],
     tagihan: ["read-any", "write-any"],
+    portal: ["read"],
     perkembangan: ["read", "write"],
     pengaturan: ["read", "write"],
   }),

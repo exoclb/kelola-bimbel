@@ -46,9 +46,27 @@ export const MENU_PER_PERAN: Record<PeranPengguna, MenuApp[]> = {
       perlu: { tagihan: ["read-any"] },
     },
   ],
+  // Wali hanya memakai portal orang tua: ringkasan anak dan tagihan SPP-nya.
+  "orang-tua": [
+    { href: "/portal", label: "Beranda", perlu: { portal: ["read"] } },
+    {
+      href: "/portal/tagihan",
+      label: "Tagihan SPP",
+      perlu: { portal: ["read"] },
+    },
+  ],
 };
 
 /** Salinan menu satu peran supaya pemanggil tidak mengubah daftar aslinya. */
 export function menuUntukPeran(peran: PeranPengguna): MenuApp[] {
   return MENU_PER_PERAN[peran].map((menu) => ({ ...menu }));
+}
+
+/**
+ * Menu Portal Wali. Dipakai cangkang portal untuk semua akun yang boleh
+ * membukanya — termasuk owner yang sedang meninjau — supaya yang tampil selalu
+ * menu portal, bukan menu guru/owner.
+ */
+export function menuUntukPortal(): MenuApp[] {
+  return menuUntukPeran("orang-tua");
 }
