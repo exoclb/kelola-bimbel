@@ -1075,5 +1075,17 @@
     },
     "src/app/(protected)/app/tagihan/pengingat/loading.tsx": {
         "summary": "Tampilan memuat halaman pengingat tagihan: `StatusMemuat` 'Mengumpulkan tagihan menunggak…' dengan empat baris, mengikuti pola `loading.tsx` halaman owner lain."
+    },
+    "src/lib/mock-portal-wali.ts": {
+        "summary": "Data contoh Portal Wali sebelum ada penautan akun wali–murid di database: tipe `AnakWali` (murid, nama, nama & kontak orang tua, kelas) dan `CatatanPerkembangan` (tanggal, nilai, sikap, catatan) mengikuti kolom `students`/`student_progress`, plus `AnakPortal` yang menambahkan catatan dan rekap kehadiran. Berisi dua anak contoh (`mrd-1` Aisyah Putri, `mrd-7` Gita Permata) supaya pemilih anak bisa dicoba dan catatan contoh bertanggal relatif (`hariLalu` + `tanggalISO`). `getAnakPortal()` menghitung kehadiran dari `getRiwayatJurnal()` (jumlah sesi, jumlah hadir, tanggal sesi terakhir) sehingga tidak menyimpan data kehadiran sendiri."
+    },
+    "src/components/beranda-portal-wali.tsx": {
+        "summary": "Beranda portal wali (klien, hanya baca): menampilkan identitas bimbel dari profil (mark huruf awal + nama + alamat/telepon), pemilih anak (`NativeSelect`, muncul bila akun punya lebih dari satu anak) yang mengganti seluruh isi halaman, kartu anak terpilih (nama, kelas, nama wali), kartu 'Tagihan Terdekat' (nominal, lencana `LabelStatusTagihan`, periode, tanggal bayar atau 'belum dibayar', peringatan 'Sudah lewat N bulan' bila menunggak, jumlah tagihan anak) yang dibaca dari `tagihan-store` lewat `useSyncExternalStore`, dan kartu 'Sorotan Perkembangan' berisi rekap kehadiran ('Hadir X dari Y sesi tercatat · terakhir …') serta tiga catatan terbaru (nilai, sikap, tanggal, catatan). Ada keadaan kosong untuk anak tanpa tagihan/catatan."
+    },
+    "src/app/(protected)/portal/page.tsx": {
+        "summary": "Halaman beranda portal wali (`/portal`): dijaga `requireSession()` (grup `(protected)` juga memeriksa sesi), lalu merender `BerandaPortalWali` dengan anak contoh dari `getAnakPortal()` dan identitas bimbel dari `getProfilBimbel()`. Penautan akun wali ke murid dan pengalihan peran menyusul."
+    },
+    "src/app/(protected)/portal/loading.tsx": {
+        "summary": "Tampilan memuat beranda portal wali: `StatusMemuat` 'Menyiapkan portal wali…' dengan empat baris, mengikuti pola `loading.tsx` halaman terproteksi lain."
     }
 }
