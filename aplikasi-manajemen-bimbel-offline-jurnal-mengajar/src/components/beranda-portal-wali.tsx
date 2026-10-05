@@ -3,8 +3,7 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { CalendarCheck, GraduationCap, Receipt, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { NativeSelect } from "@/components/ui/native-select";
+import { PemilihAnak } from "@/components/pemilih-anak";
 import { LabelStatusTagihan } from "@/components/label-status-tagihan";
 import { formatRupiah } from "@/lib/gaji";
 import type { AnakPortal } from "@/lib/mock-portal-wali";
@@ -117,22 +116,9 @@ export function BerandaPortalWali({ anak, profil }: BerandaPortalWaliProps) {
         melihat.
       </p>
 
-      {anak.length > 1 && (
-        <div className="mt-6 max-w-xs space-y-2">
-          <Label htmlFor="anak">Pilih anak</Label>
-          <NativeSelect
-            id="anak"
-            value={muridId}
-            onChange={(event) => setMuridId(event.target.value)}
-          >
-            {anak.map((baris) => (
-              <option key={baris.muridId} value={baris.muridId}>
-                {baris.nama}
-              </option>
-            ))}
-          </NativeSelect>
-        </div>
-      )}
+      <div className="mt-6">
+        <PemilihAnak anak={anak} nilai={muridId} onPilih={setMuridId} />
+      </div>
 
       <Card className="mt-6">
         <CardHeader>
