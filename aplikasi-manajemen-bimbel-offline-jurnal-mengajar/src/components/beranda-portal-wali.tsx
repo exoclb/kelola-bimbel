@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import { CalendarCheck, GraduationCap, Receipt, Users } from "lucide-react";
+import Link from "next/link";
+import {
+  ArrowRight,
+  CalendarCheck,
+  GraduationCap,
+  Receipt,
+  Users,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PemilihAnak } from "@/components/pemilih-anak";
 import { LabelStatusTagihan } from "@/components/label-status-tagihan";
@@ -25,6 +33,8 @@ import { formatTanggalLengkap } from "@/lib/tanggal";
 type BerandaPortalWaliProps = {
   anak: AnakPortal[];
   profil: ProfilBimbel;
+  /** Anak yang dipilih lewat alamat halaman (`?anak=`), bila ada. */
+  muridIdAwal?: string;
 };
 
 const nilaiTampil = new Intl.NumberFormat("id-ID", {
@@ -42,14 +52,20 @@ const namaHariBulan = new Intl.DateTimeFormat("id-ID", {
  * yang dipilih, dan sorotan perkembangan terbarunya. Semuanya hanya baca dan
  * masih memakai data tiruan.
  */
-export function BerandaPortalWali({ anak, profil }: BerandaPortalWaliProps) {
+export function BerandaPortalWali({
+  anak,
+  profil,
+  muridIdAwal,
+}: BerandaPortalWaliProps) {
   const tagihan = useSyncExternalStore(
     langgananTagihan,
     snapshotTagihan,
     snapshotTagihan,
   );
 
-  const [muridId, setMuridId] = useState(anak[0]?.muridId ?? "");
+  const [muridId, setMuridId] = useState(
+    muridIdAwal || (anak[0]?.muridId ?? ""),
+  );
 
   useEffect(() => {
     siapkanTagihan();
@@ -170,11 +186,21 @@ export function BerandaPortalWali({ anak, profil }: BerandaPortalWaliProps) {
                   Sudah lewat {terlambat} bulan dari periode tagihan ini.
                 </p>
               )}
-              {tagihanAnak.length > 1 && (
-                <p className="text-xs text-muted-foreground">
-                  {tagihanAnak.length} tagihan tercatat untuk anak ini.
-                </p>
-              )}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                {tagihanAnak.length > 1 ? (
+                  <p className="text-xs text-muted-foreground">
+                    {tagihanAnak.length} tagihan tercatat untuk anak ini.
+                  </p>
+                ) : (
+                  <span />
+                )}
+                <Button asChild variant="outline" size="sm">
+                  <Link href={`/portal/tagihan?anak=${dipilih.muridId}`}>
+                    Lihat semua tagihan
+                    <ArrowRight aria-hidden="true" />
+                  </Link>
+                </Button>
+              </div>
             </>
           )}
         </CardContent>

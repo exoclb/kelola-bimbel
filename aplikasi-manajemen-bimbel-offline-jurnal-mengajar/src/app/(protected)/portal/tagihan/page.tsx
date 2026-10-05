@@ -1,0 +1,26 @@
+import type { Metadata } from "next";
+import { TagihanSppAnak } from "@/components/tagihan-spp-anak";
+import { getAnakPortal } from "@/lib/mock-portal-wali";
+import { requireSession } from "@/lib/session";
+
+export const metadata: Metadata = { title: "Tagihan SPP Anak" };
+
+export default async function TagihanSppAnakPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ anak?: string }>;
+}) {
+  await requireSession();
+
+  const anak = getAnakPortal();
+  const params = await searchParams;
+
+  // Anak yang diminta dipakai hanya kalau memang tertaut ke akun wali ini;
+  // selain itu kembali ke anak pertama. Nanti penyaringan ini dilakukan di
+  // sisi data, bukan hanya di tampilan.
+  const muridId = anak.some((baris) => baris.muridId === params.anak)
+    ? (params.anak ?? "")
+    : (anak[0]?.muridId ?? "");
+
+  return <TagihanSppAnak anak={anak} muridId={muridId} />;
+}
