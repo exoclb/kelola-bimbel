@@ -95,6 +95,24 @@ const CATATAN: Record<string, CatatanTersimpan[]> = {
   ],
 };
 
+/**
+ * Anak yang tertaut ke akun wali ini, atau `null` kalau id-nya bukan anak yang
+ * tertaut. Dipakai setiap halaman portal supaya data anak lain tidak pernah
+ * tersaji — nanti aturan yang sama dijalankan di sisi data (per sesi).
+ */
+export function anakTertaut(muridId: string | null | undefined) {
+  return getAnakPortal().find((baris) => baris.muridId === muridId) ?? null;
+}
+
+/**
+ * Anak yang diminta lewat alamat halaman; kalau id-nya bukan anak yang tertaut,
+ * kembali ke anak pertama (atau `null` bila akun belum punya anak).
+ */
+export function anakTertautAtauPertama(muridId?: string | null) {
+  const anak = getAnakPortal();
+  return anak.find((baris) => baris.muridId === muridId) ?? anak[0] ?? null;
+}
+
 /** Anak yang tertaut ke akun wali contoh, lengkap catatan dan kehadirannya. */
 export function getAnakPortal(): AnakPortal[] {
   const jurnal = getRiwayatJurnal();

@@ -129,7 +129,7 @@ export function BerandaPortalWali({
       </h1>
       <p className="mt-3 text-base leading-7 text-muted-foreground">
         Pantauan tagihan dan perkembangan anak Anda. Portal ini hanya untuk
-        melihat.
+        melihat, dan hanya menampilkan anak yang tertaut ke akun Anda.
       </p>
 
       <div className="mt-6">

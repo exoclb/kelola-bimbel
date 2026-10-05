@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { BerandaPortalWali } from "@/components/beranda-portal-wali";
 import { getProfilBimbel } from "@/lib/mock-pengaturan";
-import { getAnakPortal } from "@/lib/mock-portal-wali";
+import { anakTertautAtauPertama, getAnakPortal } from "@/lib/mock-portal-wali";
 import { requireSession } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Portal Wali" };
@@ -17,9 +17,8 @@ export default async function PortalWaliPage({
   // murid menyusul, jadi portal dibangun lebih dulu di atas data tiruan.
   const anak = getAnakPortal();
   const params = await searchParams;
-  const muridIdAwal = anak.some((baris) => baris.muridId === params.anak)
-    ? params.anak
-    : undefined;
+  // Hanya anak yang tertaut ke akun wali ini yang boleh dipakai dari alamat.
+  const muridIdAwal = anakTertautAtauPertama(params.anak)?.muridId;
 
   return (
     <BerandaPortalWali

@@ -2,6 +2,7 @@ import { AppNav } from "@/components/app-nav";
 import { Brand } from "@/components/brand";
 import { PenandaPengguna } from "@/components/penanda-pengguna";
 import { SignOutButton } from "@/components/sign-out-button";
+import { redirect } from "next/navigation";
 import { hasPermission, requireSession } from "@/lib/session";
 import { menuUntukPeran, type MenuApp } from "@/lib/mock-menu";
 import { peranDariRole } from "@/lib/peran";
@@ -26,6 +27,11 @@ export default async function ProtectedLayout({
   // yang butuh izin khusus tetap diperiksa izinnya — jadi akun yang izinnya
   // dicabut kehilangan menunya tanpa menunggu perannya diganti.
   const peran = peranDariRole(user.role);
+
+  // Akun wali tidak memakai area guru maupun owner: langsung diarahkan ke
+  // portalnya sendiri, termasuk kalau alamatnya diketik langsung.
+  if (peran === "orang-tua") redirect("/portal");
+
   const menu: MenuApp[] = (
     await Promise.all(
       menuUntukPeran(peran).map(async (item) =>
