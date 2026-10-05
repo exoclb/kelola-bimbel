@@ -153,7 +153,7 @@
         "summary": "Data contoh kehadiran murid per pertemuan (tipe `KehadiranPertemuan`) sebagai pengganti tabel `journal_attendances` yang API-nya belum ada; mengekspor `getKehadiranAwal()` yang mengembalikan salinan daftar kehadiran."
     },
     "src/lib/mock-menu.ts": {
-        "summary": "Konfigurasi menu aplikasi: `MENU_DASAR` (Beranda, Isi Jurnal, Riwayat, Presensi Guru, Murid, Kelas, Penempatan, Perkembangan, Pengaturan) untuk semua peran, ditambah \"Gaji saya\" untuk guru dan `MENU_OWNER` (Pemantauan, Gaji, Guru, Akun, Backup) untuk owner; helper untuk menyusun menu sesuai peran pengguna."
+        "summary": "Susunan menu tiap peran (masih data tiruan, halaman dan API tetap memeriksa izin sendiri): `MENU_DASAR` (Beranda, Isi Jurnal, Riwayat, Presensi Guru, Murid, Kelas, Penempatan, Perkembangan, Pengaturan) untuk semua peran, guru ditambah 'Gaji saya', dan owner ditambah Pemantauan, Gaji, serta Tagihan — masing-masing dengan `perlu` izinnya sendiri (`jurnal: read-any`, `gaji: read-any`, `tagihan: read-any`)."
     },
     "src/lib/mock-pengaturan.ts": {
         "summary": "Data tiruan Pengaturan Bimbel sebagai pengganti tabel `salary_settings`/`notification_preferences`: tipe `ProfilBimbel`, `AturanGaji`, `PreferensiNotifikasi`, dan fungsi `getProfilBimbel()`, `getRiwayatTarif()`, `getAturanGaji()`, `getDaftarGuru()`, `getPreferensiNotifikasi()`. Riwayat tarif meniru aturan baris terbaru yang berlaku sejak tanggal tertentu."
@@ -549,7 +549,7 @@
         "summary": "Definisi skema Drizzle tabel `notification_preferences` untuk preferensi notifikasi per akun: id uuid, user_id berelasi ke `user.id` cascade, jenis_notifikasi varchar(40), aktif boolean bawaan true, dan created_at, dijaga uniqueIndex `notification_preferences_user_jenis_idx` pada (user_id, jenis_notifikasi)."
     },
     "src/lib/permissions.ts": {
-        "summary": "Pusat izin berbasis better-auth access control: `statement` mendefinisikan resource notes (read-any, delete-any), jurnal (read-any), gaji (read-any), perkembangan (read, write), dan pengaturan (read, write); `roles` menetapkan role user, owner, dan admin. Mengekspor juga `DEFAULT_ROLE`, `ADMIN_ROLES`, tipe `AppRole`, dan `Permissions`."
+        "summary": "Registry izin (Better Auth access control): resource `notes`, `jurnal` (read-any), `gaji` (read-any), `tagihan` (read-any + write-any untuk tagihan seluruh murid), `perkembangan` (read/write), dan `pengaturan` (read/write). Peran `user` minimal (hanya perkembangan), `owner` memantau jurnal, gaji, tagihan, dan pengaturan bimbel, `admin` menambahkan hak admin sistem. Berisi `statement`, `ac`, `roles`, `DEFAULT_ROLE`, `ADMIN_ROLES`, dan tipe `Permissions` turunan dari statement."
     },
     "src/lib/session.ts": {
         "summary": "Pembantu sesi server-only: `getSession` (di-cache React) menganggap akun dengan `banned` tidak punya sesi, `requireSession` mengalihkan ke /sign-in, `hasPermission` memakai `auth.api.userHasPermission`, dan `requirePermission` merender notFound agar pengguna tidak bisa memetakan route yang tidak boleh diaksesnya."
@@ -1027,5 +1027,23 @@
     },
     "src/components/daftar-riwayat-presensi-guru.tsx": {
         "summary": "Daftar riwayat kehadiran guru per sesi mengajar, terbaru di atas: judul + ringkasan jumlah per status (hadir/izin/tidak hadir/digantikan), tombol ke halaman presensi hari ini, keadaan kosong `PesanKosong`, dan satu kartu per catatan berisi kelas, tanggal (`formatTanggalLengkap`), jam, cabang, lencana `LabelStatusPresensi`, nama guru, guru pengganti bila ada, catatan alasan, serta jejak 'Diubah <nama> · <jam>'."
+    },
+    "src/lib/tagihan.ts": {
+        "summary": "Hitungan dan format tagihan murid (sisi pemasukan, melengkapi `src/lib/gaji.ts`): `periodeTagihan()` (YYYY-MM bulan berjalan), `geserPeriode()` (geser beberapa bulan, mis. 2026-01 -1 → 2025-12), `formatPeriodeTagihan()` (memakai format periode gaji), `labelStatusTagihan()`, tipe `StatusTagihan` (`belum_lunas` | `lunas`), dan `hitungRekapTagihan()` yang mengembalikan jumlah tagihan, jumlah/nominal lunas, serta jumlah/nominal belum lunas."
+    },
+    "src/lib/mock-tagihan.ts": {
+        "summary": "Data contoh tagihan bulanan murid (pengganti `GET /api/tagihan`): tipe `Tagihan` mengikuti rencana kolom tabel `student_invoices` (murid, periode bulan/tahun, nominal, status, tanggal bayar, penanda sudah diingatkan, jejak waktu) plus `kelasNama` khusus tampilan. Berisi 12 baris contoh untuk periode berjalan dan dua bulan sebelumnya (dibuat dengan offset `geserBulan` + `tanggalBayarHari` sehingga tanggalnya selalu ikut bulan sebenarnya), serta getter `getSemuaTagihan()`, `getTagihanPeriode(bulan, tahun)` (urut nama murid), `getPeriodeTagihanTersedia()`, `getMuridTagihan()`, dan `getTagihanMurid(muridId)` (riwayat satu murid, terbaru dulu)."
+    },
+    "src/components/label-status-tagihan.tsx": {
+        "summary": "Lencana status tagihan murid: 'Lunas' (tinta primary) dan 'Belum lunas' (tinta destructive), dipakai halaman daftar tagihan dan halaman berikutnya."
+    },
+    "src/components/daftar-tagihan.tsx": {
+        "summary": "Daftar tagihan bulanan murid untuk satu periode di halaman owner: judul + ringkasan (jumlah tagihan, lunas, belum lunas), tiga kartu angka (nominal lunas, nominal belum lunas, total periode memakai `formatRupiah` + `hitungRekapTagihan`), keadaan kosong `PesanKosong`, dan satu kartu per tagihan berisi nama murid, kelas, lencana `LabelStatusTagihan`, nominal, periode (nama bulan Indonesia), tanggal bayar bila sudah lunas, serta penanda 'Sudah diingatkan'. Datanya masih tiruan; saringan, pembuatan tagihan, dan penandaan lunas menyusul."
+    },
+    "src/app/(protected)/app/tagihan/page.tsx": {
+        "summary": "Halaman daftar tagihan murid (`/app/tagihan`) untuk owner: dijaga `requirePermission({ tagihan: [\"read-any\"] })`, lalu menampilkan periode berjalan (`periodeTagihan(new Date())`) lewat `getTagihanPeriode` dan `formatPeriodeTagihan`."
+    },
+    "src/app/(protected)/app/tagihan/loading.tsx": {
+        "summary": "Tampilan memuat halaman daftar tagihan: `StatusMemuat` 'Memuat daftar tagihan…' dengan empat baris, mengikuti pola `loading.tsx` halaman owner lain (juga membuat halaman tidak-ditemukan tampil benar saat akses ditolak)."
     }
 }

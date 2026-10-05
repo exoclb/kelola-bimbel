@@ -40,6 +40,11 @@ export const MENU_PER_PERAN: Record<PeranPengguna, MenuApp[]> = {
       perlu: { jurnal: ["read-any"] },
     },
     { href: "/app/gaji", label: "Gaji", perlu: { gaji: ["read-any"] } },
+    {
+      href: "/app/tagihan",
+      label: "Tagihan",
+      perlu: { tagihan: ["read-any"] },
+    },
   ],
 };
 

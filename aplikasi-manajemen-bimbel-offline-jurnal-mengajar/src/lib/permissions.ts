@@ -14,6 +14,10 @@ export const statement = {
   jurnal: ["read-any"],
   // Rekap gaji seluruh guru hanya untuk owner.
   gaji: ["read-any"],
+  // Tagihan bulanan murid. Owner membuat tagihan dan menandainya lunas untuk
+  // semua murid; murid/wali melihat tagihannya sendiri lewat sesi, tanpa izin
+  // tambahan.
+  tagihan: ["read-any", "write-any"],
   // Catatan perkembangan dan kehadiran anak. Berbeda dari jurnal, datanya
   // memang dipakai bersama guru pengampu, jadi aksinya menggambarkan siapa
   // yang boleh membuka fitur ini sama sekali: guru (role `user`), owner, dan
@@ -35,6 +39,7 @@ export const roles = {
   owner: ac.newRole({
     jurnal: ["read-any"],
     gaji: ["read-any"],
+    tagihan: ["read-any", "write-any"],
     perkembangan: ["read", "write"],
     pengaturan: ["read", "write"],
   }),
@@ -43,6 +48,7 @@ export const roles = {
     notes: ["read-any", "delete-any"],
     jurnal: ["read-any"],
     gaji: ["read-any"],
+    tagihan: ["read-any", "write-any"],
     perkembangan: ["read", "write"],
     pengaturan: ["read", "write"],
   }),
