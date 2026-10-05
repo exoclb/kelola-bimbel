@@ -1,14 +1,25 @@
+"use client";
+
+import { useEffect, useMemo, useSyncExternalStore } from "react";
+import Link from "next/link";
+import { CalendarPlus } from "lucide-react";
 import { cn } from "cn";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LabelStatusTagihan } from "@/components/label-status-tagihan";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { formatRupiah } from "@/lib/gaji";
-import type { Tagihan } from "@/lib/mock-tagihan";
+import { periodeDariTagihan } from "@/lib/mock-tagihan";
+import {
+  langgananTagihan,
+  siapkanTagihan,
+  snapshotTagihan,
+} from "@/lib/tagihan-store";
 import { formatPeriodeTagihan, hitungRekapTagihan } from "@/lib/tagihan";
 
 type DaftarTagihanProps = {
-  daftar: Tagihan[];
-  periodeTampil: string;
+  bulan: number;
+  tahun: number;
 };
 
 const tanggalTampil = new Intl.DateTimeFormat("id-ID", {
@@ -18,10 +29,37 @@ const tanggalTampil = new Intl.DateTimeFormat("id-ID", {
 });
 
 /**
- * Daftar tagihan bulanan murid untuk satu periode. Datanya masih contoh;
- * saringan per murid/periode, pembuatan tagihan, dan penandaan lunas menyusul.
+ * Daftar tagihan bulanan murid untuk satu periode. Tagihan yang belum lunas
+ * ditandai garis kiri merah dan latar tipis, sedangkan yang lunas tampil biasa,
+ * jadi bedanya terlihat sekilas tanpa mengandalkan warna saja. Datanya dibaca
+ * dari penyimpanan sementara bersama, jadi tagihan yang baru dibuat langsung
+ * muncul di sini.
  */
-export function DaftarTagihan({ daftar, periodeTampil }: DaftarTagihanProps) {
+export function DaftarTagihan({ bulan, tahun }: DaftarTagihanProps) {
+  const semua = useSyncExternalStore(
+    langgananTagihan,
+    snapshotTagihan,
+    snapshotTagihan,
+  );
+
+  useEffect(() => {
+    siapkanTagihan();
+  }, []);
+
+  const daftar = useMemo(
+    () =>
+      semua
+        .filter(
+          (baris) =>
+            baris.periodeBulan === bulan && baris.periodeTahun === tahun,
+        )
+        .sort((a, b) => a.muridNama.localeCompare(b.muridNama, "id")),
+    [semua, bulan, tahun],
+  );
+
+  const periodeTampil = formatPeriodeTagihan(
+    `${tahun}-${String(bulan).padStart(2, "0")}`,
+  );
   const rekap = hitungRekapTagihan(daftar);
 
   return (
@@ -30,11 +68,19 @@ export function DaftarTagihan({ daftar, periodeTampil }: DaftarTagihanProps) {
       <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
         Daftar Tagihan
       </h1>
-      <p className="mt-3 text-base leading-7 text-muted-foreground">
-        {rekap.jumlah > 0
-          ? `${rekap.jumlah} tagihan bulan ${periodeTampil} · ${rekap.jumlahLunas} lunas · ${rekap.jumlahBelumLunas} belum lunas.`
-          : `Belum ada tagihan yang tercatat untuk bulan ${periodeTampil}.`}
-      </p>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-base leading-7 text-muted-foreground">
+          {rekap.jumlah > 0
+            ? `${rekap.jumlah} tagihan bulan ${periodeTampil} · ${rekap.jumlahLunas} lunas · ${rekap.jumlahBelumLunas} belum lunas.`
+            : `Belum ada tagihan yang tercatat untuk bulan ${periodeTampil}.`}
+        </p>
+        <Button asChild size="sm">
+          <Link href="/app/tagihan/baru">
+            <CalendarPlus aria-hidden="true" />
+            Buat tagihan
+          </Link>
+        </Button>
+      </div>
 
       {rekap.jumlah > 0 && (
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -72,7 +118,7 @@ export function DaftarTagihan({ daftar, periodeTampil }: DaftarTagihanProps) {
         <PesanKosong
           className="mt-6"
           judul="Belum ada tagihan bulan ini"
-          keterangan="Tagihan yang dibuat untuk periode ini akan muncul di daftar sini."
+          keterangan="Tekan Buat tagihan untuk menerbitkan tagihan periode ini."
         />
       ) : (
         <ul className="mt-6 space-y-3">
@@ -103,9 +149,7 @@ export function DaftarTagihan({ daftar, periodeTampil }: DaftarTagihanProps) {
                         {formatRupiah(tagihan.nominal)}
                       </span>
                       <span>
-                        {formatPeriodeTagihan(
-                          `${tagihan.periodeTahun}-${String(tagihan.periodeBulan).padStart(2, "0")}`,
-                        )}
+                        {formatPeriodeTagihan(periodeDariTagihan(tagihan))}
                       </span>
                       {tagihan.tanggalBayar ? (
                         <span>
@@ -133,7 +177,7 @@ export function DaftarTagihan({ daftar, periodeTampil }: DaftarTagihanProps) {
 
       <p className="mt-6 text-xs leading-5 text-muted-foreground">
         Catatan: tagihan di halaman ini masih data tiruan — penyimpanan ke
-        database menyusul bersama pembuatan tagihan dan penandaan lunas.
+        database menyusul bersama penandaan lunas.
       </p>
     </div>
   );

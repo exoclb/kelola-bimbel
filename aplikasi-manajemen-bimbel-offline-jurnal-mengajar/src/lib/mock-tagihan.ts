@@ -188,8 +188,8 @@ export function getSemuaTagihan(): Tagihan[] {
   });
 }
 
-/** Periode dalam bentuk `YYYY-MM`. */
-function periodeBaris(baris: Tagihan) {
+/** Periode satu baris tagihan dalam bentuk `YYYY-MM`. */
+export function periodeDariTagihan(baris: Tagihan) {
   return `${baris.periodeTahun}-${String(baris.periodeBulan).padStart(2, "0")}`;
 }
 
@@ -204,7 +204,7 @@ export function getTagihanPeriode(bulan: number, tahun: number): Tagihan[] {
 
 /** Periode yang punya tagihan, terbaru lebih dulu (mis. "2026-10"). */
 export function getPeriodeTagihanTersedia(): string[] {
-  return [...new Set(getSemuaTagihan().map(periodeBaris))].sort((a, b) =>
+  return [...new Set(getSemuaTagihan().map(periodeDariTagihan))].sort((a, b) =>
     b.localeCompare(a),
   );
 }
@@ -220,5 +220,5 @@ export function getMuridTagihan(): string[] {
 export function getTagihanMurid(muridId: string): Tagihan[] {
   return getSemuaTagihan()
     .filter((baris) => baris.muridId === muridId)
-    .sort((a, b) => periodeBaris(b).localeCompare(periodeBaris(a)));
+    .sort((a, b) => periodeDariTagihan(b).localeCompare(periodeDariTagihan(a)));
 }
