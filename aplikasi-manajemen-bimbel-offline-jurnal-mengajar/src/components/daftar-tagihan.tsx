@@ -1,3 +1,4 @@
+import { cn } from "cn";
 import { Card } from "@/components/ui/card";
 import { LabelStatusTagihan } from "@/components/label-status-tagihan";
 import { PesanKosong } from "@/components/status-antarmuka";
@@ -75,49 +76,58 @@ export function DaftarTagihan({ daftar, periodeTampil }: DaftarTagihanProps) {
         />
       ) : (
         <ul className="mt-6 space-y-3">
-          {daftar.map((tagihan) => (
-            <li key={tagihan.id}>
-              <Card className="gap-3 px-5 py-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <p className="font-medium">{tagihan.muridNama}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {tagihan.kelasNama}
-                    </p>
+          {daftar.map((tagihan) => {
+            const lunas = tagihan.status === "lunas";
+            return (
+              <li key={tagihan.id}>
+                <Card
+                  className={cn(
+                    "gap-3 px-5 py-4",
+                    !lunas &&
+                      "border-l-4 border-l-destructive/60 bg-destructive/5",
+                  )}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <p className="font-medium">{tagihan.muridNama}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {tagihan.kelasNama}
+                      </p>
+                    </div>
+                    <LabelStatusTagihan status={tagihan.status} />
                   </div>
-                  <LabelStatusTagihan status={tagihan.status} />
-                </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                    <span className="font-medium text-foreground">
-                      {formatRupiah(tagihan.nominal)}
-                    </span>
-                    <span>
-                      {formatPeriodeTagihan(
-                        `${tagihan.periodeTahun}-${String(tagihan.periodeBulan).padStart(2, "0")}`,
-                      )}
-                    </span>
-                    {tagihan.tanggalBayar ? (
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                      <span className="font-medium text-foreground">
+                        {formatRupiah(tagihan.nominal)}
+                      </span>
                       <span>
-                        Dibayar{" "}
-                        {tanggalTampil.format(
-                          new Date(`${tagihan.tanggalBayar}T00:00:00`),
+                        {formatPeriodeTagihan(
+                          `${tagihan.periodeTahun}-${String(tagihan.periodeBulan).padStart(2, "0")}`,
                         )}
                       </span>
-                    ) : (
-                      <span>Belum dibayar</span>
+                      {tagihan.tanggalBayar ? (
+                        <span>
+                          Dibayar{" "}
+                          {tanggalTampil.format(
+                            new Date(`${tagihan.tanggalBayar}T00:00:00`),
+                          )}
+                        </span>
+                      ) : (
+                        <span>Belum dibayar</span>
+                      )}
+                    </div>
+                    {tagihan.sudahDiingatkan && (
+                      <span className="rounded-full border bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
+                        Sudah diingatkan
+                      </span>
                     )}
                   </div>
-                  {tagihan.sudahDiingatkan && (
-                    <span className="rounded-full border bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
-                      Sudah diingatkan
-                    </span>
-                  )}
-                </div>
-              </Card>
-            </li>
-          ))}
+                </Card>
+              </li>
+            );
+          })}
         </ul>
       )}
 
