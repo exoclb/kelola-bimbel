@@ -1038,7 +1038,7 @@
         "summary": "Lencana status tagihan murid dengan pembeda yang tidak bergantung warna saja: ikon `CheckCircle2` + 'Lunas' bergaya netral (border + `bg-secondary`, teks foreground) dan ikon `Clock3` + 'Belum lunas' bergaya peringatan (`border-destructive/30 bg-destructive/10 text-destructive`). Dipakai halaman daftar tagihan dan halaman berikutnya."
     },
     "src/components/daftar-tagihan.tsx": {
-        "summary": "Komponen klien daftar tagihan bulanan murid untuk satu periode (bulan/tahun dari halaman): membaca `tagihan-store` lewat `useSyncExternalStore` sehingga tagihan yang baru dibuat langsung muncul, menampilkan judul + ringkasan (jumlah, lunas, belum lunas), tombol 'Buat tagihan' ke `/app/tagihan/baru`, tiga kartu angka (nominal lunas, nominal belum lunas, total), keadaan kosong `PesanKosong`, dan satu kartu per tagihan berisi nama murid, kelas, lencana `LabelStatusTagihan`, nominal, periode, tanggal bayar atau 'Belum dibayar', serta penanda 'Sudah diingatkan'. Tagihan belum lunas ditandai garis kiri merah 4px + latar `bg-destructive/5`, yang lunas tampil biasa."
+        "summary": "Komponen klien daftar tagihan bulanan murid untuk satu periode (bulan/tahun dari halaman): membaca `tagihan-store` lewat `useSyncExternalStore` sehingga tagihan yang baru dibuat langsung muncul, menampilkan judul + ringkasan (jumlah, lunas, belum lunas), tombol 'Rekap pemasukan' ke `/app/tagihan/rekap` dan 'Buat tagihan' ke `/app/tagihan/baru`, tiga kartu angka (nominal lunas, nominal belum lunas, total), keadaan kosong `PesanKosong`, dan satu kartu per tagihan berisi nama murid, kelas, lencana `LabelStatusTagihan`, nominal, periode, tanggal bayar atau 'Belum dibayar', serta penanda 'Sudah diingatkan'. Tagihan belum lunas ditandai garis kiri merah 4px + latar `bg-destructive/5`, yang lunas tampil biasa."
     },
     "src/app/(protected)/app/tagihan/page.tsx": {
         "summary": "Halaman daftar tagihan murid (`/app/tagihan`) untuk owner: dijaga `requirePermission({ tagihan: [\"read-any\"] })`, lalu menghitung periode berjalan lewat `periodeTagihan(new Date())` dan menyerahkan bulan/tahun ke `DaftarTagihan` (yang membaca penyimpanan sementara)."
@@ -1057,5 +1057,14 @@
     },
     "src/app/(protected)/app/tagihan/baru/loading.tsx": {
         "summary": "Tampilan memuat halaman buat tagihan bulanan: `StatusMemuat` 'Menyiapkan formulir tagihan…' dengan empat baris, mengikuti pola `loading.tsx` halaman owner lain."
+    },
+    "src/components/rekap-pemasukan.tsx": {
+        "summary": "Komponen klien rekap pemasukan bulanan dari tagihan murid: pemilih bulan/tahun (bawaan bulan berjalan), tiga kartu angka (`formatRupiah` + `hitungRekapTagihan`) yaitu 'Pemasukan masuk' (nominal lunas + jumlah tagihannya), 'Belum lunas' (sisa tagihan sebagai acuan penagihan), dan 'Total ditagihkan' (jumlah tagihan + nama periode), lalu kartu 'Rincian per Murid' berisi satu baris per murid (nama, kelas, nominal, lencana `LabelStatusTagihan`) atau `PesanKosong` bila periode itu belum ada tagihan. Membaca `tagihan-store` lewat `useSyncExternalStore`, jadi tagihan yang baru dibuat ikut terhitung; ada tautan ke daftar tagihan dan halaman buat tagihan."
+    },
+    "src/app/(protected)/app/tagihan/rekap/page.tsx": {
+        "summary": "Halaman rekap pemasukan bulanan (`/app/tagihan/rekap`) untuk owner: dijaga `requirePermission({ tagihan: [\"read-any\"] })`, lalu merender `RekapPemasukan` (periode dipilih di sisi klien dari penyimpanan sementara tagihan)."
+    },
+    "src/app/(protected)/app/tagihan/rekap/loading.tsx": {
+        "summary": "Tampilan memuat halaman rekap pemasukan bulanan: `StatusMemuat` 'Menghitung rekap pemasukan…' dengan empat baris, mengikuti pola `loading.tsx` halaman owner lain."
     }
 }

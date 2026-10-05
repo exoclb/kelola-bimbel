@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { CalendarPlus } from "lucide-react";
+import { CalendarPlus, PiggyBank } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -74,12 +74,20 @@ export function DaftarTagihan({ bulan, tahun }: DaftarTagihanProps) {
             ? `${rekap.jumlah} tagihan bulan ${periodeTampil} · ${rekap.jumlahLunas} lunas · ${rekap.jumlahBelumLunas} belum lunas.`
             : `Belum ada tagihan yang tercatat untuk bulan ${periodeTampil}.`}
         </p>
-        <Button asChild size="sm">
-          <Link href="/app/tagihan/baru">
-            <CalendarPlus aria-hidden="true" />
-            Buat tagihan
-          </Link>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link href="/app/tagihan/rekap">
+              <PiggyBank aria-hidden="true" />
+              Rekap pemasukan
+            </Link>
+          </Button>
+          <Button asChild size="sm">
+            <Link href="/app/tagihan/baru">
+              <CalendarPlus aria-hidden="true" />
+              Buat tagihan
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {rekap.jumlah > 0 && (
