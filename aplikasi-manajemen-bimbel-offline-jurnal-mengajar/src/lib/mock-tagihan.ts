@@ -157,6 +157,37 @@ const TAGIHAN: TagihanTersimpan[] = [
     sudahDiingatkan: false,
     geserBulan: -2,
   },
+  // Tunggakan contoh: belum lunas padahal bulannya sudah lewat.
+  {
+    muridId: "mrd-4",
+    muridNama: "Dimas Pratama",
+    kelasNama: "Matematika SMP Kelas 8",
+    nominal: 450000,
+    status: "belum_lunas",
+    tanggalBayarHari: null,
+    sudahDiingatkan: true,
+    geserBulan: -1,
+  },
+  {
+    muridId: "mrd-8",
+    muridNama: "Hana Salsabila",
+    kelasNama: "Calistung TK",
+    nominal: 350000,
+    status: "belum_lunas",
+    tanggalBayarHari: null,
+    sudahDiingatkan: false,
+    geserBulan: -1,
+  },
+  {
+    muridId: "mrd-3",
+    muridNama: "Citra Ayu Lestari",
+    kelasNama: "IPA SD Kelas 6",
+    nominal: 400000,
+    status: "belum_lunas",
+    tanggalBayarHari: null,
+    sudahDiingatkan: false,
+    geserBulan: -2,
+  },
 ];
 
 /** Bulan dan tahun contoh untuk satu pergeseran bulan. */

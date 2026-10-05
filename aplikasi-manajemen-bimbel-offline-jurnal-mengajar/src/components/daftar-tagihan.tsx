@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { CalendarPlus, PiggyBank } from "lucide-react";
+import { BellRing, CalendarPlus, PiggyBank } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -75,6 +75,12 @@ export function DaftarTagihan({ bulan, tahun }: DaftarTagihanProps) {
             : `Belum ada tagihan yang tercatat untuk bulan ${periodeTampil}.`}
         </p>
         <div className="flex flex-wrap items-center gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link href="/app/tagihan/pengingat">
+              <BellRing aria-hidden="true" />
+              Menunggak
+            </Link>
+          </Button>
           <Button asChild variant="outline" size="sm">
             <Link href="/app/tagihan/rekap">
               <PiggyBank aria-hidden="true" />

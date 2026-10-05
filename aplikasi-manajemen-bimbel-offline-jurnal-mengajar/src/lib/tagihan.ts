@@ -25,6 +25,25 @@ export function formatPeriodeTagihan(periode: string) {
   return formatPeriode(periode);
 }
 
+/**
+ * Jarak bulan antara dua periode (`YYYY-MM`). Hasil positif berarti periode
+ * pertama lebih baru. Dipakai untuk menghitung umur tunggakan.
+ */
+export function selisihBulan(periode: string, pembanding: string) {
+  const [tahun, bulan] = periode.split("-").map(Number);
+  const [tahunLawan, bulanLawan] = pembanding.split("-").map(Number);
+  return (tahun - tahunLawan) * 12 + (bulan - bulanLawan);
+}
+
+/** Tagihan dianggap menunggak bila belum lunas dan periodenya sudah lewat. */
+export function menunggak(
+  periode: string,
+  periodeBerjalan: string,
+  status: StatusTagihan,
+) {
+  return status === "belum_lunas" && selisihBulan(periode, periodeBerjalan) < 0;
+}
+
 /** Nama status tagihan untuk ditampilkan di lencana. */
 export function labelStatusTagihan(status: StatusTagihan) {
   return status === "lunas" ? "Lunas" : "Belum lunas";
