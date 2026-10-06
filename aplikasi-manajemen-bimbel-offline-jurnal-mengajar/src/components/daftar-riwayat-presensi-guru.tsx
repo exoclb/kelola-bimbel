@@ -13,6 +13,8 @@ import { formatTanggalLengkap } from "@/lib/tanggal";
 
 type DaftarRiwayatKehadiranProps = {
   daftar: RiwayatKehadiranGuru[];
+  /** Keterangan cakupan: milik sendiri atau semua guru. */
+  cakupan: string;
 };
 
 const URUTAN_STATUS: StatusPresensiGuru[] = [
@@ -33,6 +35,7 @@ const jamTampil = new Intl.DateTimeFormat("id-ID", {
  */
 export function DaftarRiwayatKehadiran({
   daftar,
+  cakupan,
 }: DaftarRiwayatKehadiranProps) {
   const jumlah = Object.fromEntries(
     URUTAN_STATUS.map((status) => [
@@ -47,6 +50,8 @@ export function DaftarRiwayatKehadiran({
       <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
         Riwayat Kehadiran Guru
       </h1>
+
+      <p className="mt-1 text-sm text-muted-foreground">{cakupan}</p>
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <p className="text-base leading-7 text-muted-foreground">
