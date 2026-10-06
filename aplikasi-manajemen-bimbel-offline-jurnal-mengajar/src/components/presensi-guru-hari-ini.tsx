@@ -16,6 +16,7 @@ import { Card } from "@/components/ui/card";
 import { LabelStatusPresensi } from "@/components/label-status-presensi";
 import { PesanKosong } from "@/components/status-antarmuka";
 import type { Jadwal } from "@/lib/mock-jurnal";
+import { labelStatusPresensi } from "@/lib/mock-presensi-guru";
 import {
   batalkanStatusPresensiGuru,
   langgananPresensiGuru,
@@ -64,6 +65,18 @@ export function PresensiGuruHariIni({
   const sudahDitandai = jadwal.filter((sesi) => presensiUntuk(sesi.id)).length;
   const belumDitandai = jadwal.length - sudahDitandai;
 
+  // Ringkasan status hari ini: berapa sesi yang sudah hadir, izin, tidak hadir,
+  // atau digantikan. Status yang belum dipakai tidak ditampilkan.
+  const rincianStatus = (
+    ["hadir", "izin", "tidak_hadir", "digantikan"] as const
+  )
+    .map((status) => ({
+      status,
+      jumlah: jadwal.filter((sesi) => presensiUntuk(sesi.id)?.status === status)
+        .length,
+    }))
+    .filter((baris) => baris.jumlah > 0);
+
   function tandaiHadir(sesi: Jadwal) {
     simpanStatusPresensiGuru({
       jadwalId: sesi.id,
@@ -96,6 +109,19 @@ export function PresensiGuruHariIni({
           ? "Tidak ada sesi mengajar hari ini."
           : `${jadwal.length} sesi hari ini · ${sudahDitandai} sudah ditandai · ${belumDitandai} belum ditandai.`}
       </p>
+
+      {rincianStatus.length > 0 && (
+        <ul className="mt-3 flex flex-wrap gap-1.5">
+          {rincianStatus.map((baris) => (
+            <li
+              key={baris.status}
+              className="rounded-full border bg-muted px-2.5 py-0.5 text-xs text-muted-foreground"
+            >
+              {baris.jumlah} {labelStatusPresensi(baris.status).toLowerCase()}
+            </li>
+          ))}
+        </ul>
+      )}
 
       <p role="status" className="mt-4 text-sm text-muted-foreground">
         {pesan}
