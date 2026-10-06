@@ -92,10 +92,13 @@ export function PresensiSesi({
   const baris = presensi.find((item) => item.jadwalId === jadwal.id) ?? null;
   const jejak = riwayat.filter((item) => item.jadwalId === jadwal.id);
 
-  const [pilihan, setPilihan] = useState<StatusPresensiGuru | null>(
-    baris?.status ?? null,
-  );
+  // Pilihan pengguna (belum diisi = belum memilih sendiri). Selama belum
+  // memilih, tampilan mengikuti status tersimpan supaya setelah halaman dimuat
+  // ulang pilihannya tidak tampak kosong.
+  const [pilihanSendiri, setPilihanSendiri] =
+    useState<StatusPresensiGuru | null>(null);
   const [pesan, setPesan] = useState("");
+  const pilihan = pilihanSendiri ?? baris?.status ?? null;
 
   function simpan() {
     if (!pilihan) return;
@@ -203,7 +206,7 @@ export function PresensiSesi({
                   key={status}
                   type="button"
                   aria-pressed={dipilih}
-                  onClick={() => setPilihan(status)}
+                  onClick={() => setPilihanSendiri(status)}
                   className={cn(
                     "rounded-lg border p-3 text-left transition",
                     dipilih
