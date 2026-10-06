@@ -63,6 +63,18 @@ const CATATAN: Record<string, CatatanTersimpan[]> = {
       sikap: "A",
       catatan: "Mengumpulkan tugas tepat waktu dan aktif bertanya.",
     },
+    {
+      hariLalu: 21,
+      nilai: 72,
+      sikap: "C",
+      catatan: "Beberapa kali tidak mengerjakan latihan rumah.",
+    },
+    {
+      hariLalu: 33,
+      nilai: 80,
+      sikap: "B",
+      catatan: "Sudah bisa menyusun kalimat tanya sederhana.",
+    },
   ],
   "mrd-8": [
     {
@@ -76,6 +88,18 @@ const CATATAN: Record<string, CatatanTersimpan[]> = {
       nilai: 75,
       sikap: "B",
       catatan: "Perlu pendampingan saat menulis angka.",
+    },
+    {
+      hariLalu: 19,
+      nilai: 79,
+      sikap: "B",
+      catatan: "Sudah hafal urutan angka 1–20.",
+    },
+    {
+      hariLalu: 31,
+      nilai: 85,
+      sikap: "A",
+      catatan: "Antusias mengikuti kegiatan mewarnai dan menulis.",
     },
   ],
 };

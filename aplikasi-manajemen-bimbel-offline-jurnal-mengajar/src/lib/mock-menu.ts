@@ -69,6 +69,11 @@ export const MENU_PER_PERAN: Record<PeranPengguna, MenuApp[]> = {
       label: "Tagihan SPP",
       perlu: { portal: ["read"] },
     },
+    {
+      href: "/portal/perkembangan",
+      label: "Perkembangan",
+      perlu: { portal: ["read"] },
+    },
   ],
 };
 

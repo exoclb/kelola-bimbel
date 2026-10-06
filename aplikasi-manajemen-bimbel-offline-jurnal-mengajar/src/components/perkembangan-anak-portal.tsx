@@ -1,0 +1,226 @@
+"use client";
+
+import { useMemo } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, CalendarCheck, GraduationCap } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PemilihAnak } from "@/components/pemilih-anak";
+import { PesanKosong } from "@/components/status-antarmuka";
+import { cn } from "cn";
+import { getRiwayatJurnal } from "@/lib/mock-jurnal";
+import type { AnakPortal } from "@/lib/mock-portal-wali";
+import { formatTanggalLengkap } from "@/lib/tanggal";
+
+type PerkembanganAnakPortalProps = {
+  anak: AnakPortal[];
+  muridId: string;
+};
+
+const angkaTampil = new Intl.NumberFormat("id-ID", {
+  maximumFractionDigits: 0,
+});
+
+/**
+ * Riwayat perkembangan anak untuk wali (hanya baca): catatan nilai & sikap
+ * beserta rekap kehadiran per sesi yang tercatat di jurnal guru. Anak yang
+ * dipilih mengikuti alamat halaman (`?anak=`) seperti halaman tagihan SPP.
+ */
+export function PerkembanganAnakPortal({
+  anak,
+  muridId,
+}: PerkembanganAnakPortalProps) {
+  const router = useRouter();
+  const dipilih = anak.find((baris) => baris.muridId === muridId) ?? anak[0];
+
+  // Kehadiran per sesi dibaca dari jurnal guru yang sudah ada.
+  const sesi = useMemo(() => {
+    if (!dipilih) return [];
+    return getRiwayatJurnal()
+      .map((jurnal) => ({
+        jurnal,
+        baris: jurnal.murid.find((murid) => murid.id === dipilih.muridId),
+      }))
+      .filter((item) => item.baris)
+      .sort((a, b) => b.jurnal.tanggal.localeCompare(a.jurnal.tanggal));
+  }, [dipilih]);
+
+  const daftarCatatan = dipilih?.catatan ?? [];
+  const hadir = sesi.filter((item) => item.baris?.hadir).length;
+
+  return (
+    <div className="mx-auto max-w-3xl">
+      <p className="mb-3 text-sm font-medium text-primary">Portal Wali</p>
+      <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+        Perkembangan Anak
+      </h1>
+      <p className="mt-3 text-base leading-7 text-muted-foreground">
+        {dipilih
+          ? `Catatan nilai, sikap, dan kehadiran ${dipilih.nama} dari guru.`
+          : "Akun ini belum tertaut ke murid mana pun."}
+      </p>
+
+      {dipilih && (
+        <>
+          <div className="mt-6">
+            <PemilihAnak
+              anak={anak}
+              nilai={dipilih.muridId}
+              onPilih={(id) =>
+                router.replace(`/portal/perkembangan?anak=${id}`)
+              }
+            />
+          </div>
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-3">
+            <Card className="gap-1 px-5 py-4">
+              <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <CalendarCheck className="size-4" aria-hidden="true" />
+                Kehadiran
+              </p>
+              <p className="text-xl font-semibold">
+                {hadir} dari {sesi.length} sesi
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {sesi[0]
+                  ? `terakhir ${formatTanggalLengkap(sesi[0].jurnal.tanggal)}`
+                  : "belum ada sesi tercatat"}
+              </p>
+            </Card>
+            <Card className="gap-1 px-5 py-4">
+              <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <GraduationCap className="size-4" aria-hidden="true" />
+                Catatan guru
+              </p>
+              <p className="text-xl font-semibold">
+                {daftarCatatan.length} catatan
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {daftarCatatan[0]
+                  ? `terbaru ${formatTanggalLengkap(daftarCatatan[0].tanggal)}`
+                  : "belum ada catatan"}
+              </p>
+            </Card>
+            <Card className="gap-1 px-5 py-4">
+              <p className="text-sm text-muted-foreground">Rata-rata nilai</p>
+              <p className="text-xl font-semibold">
+                {daftarCatatan.length > 0
+                  ? angkaTampil.format(
+                      daftarCatatan.reduce(
+                        (jumlah, baris) => jumlah + baris.nilai,
+                        0,
+                      ) / daftarCatatan.length,
+                    )
+                  : "—"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                dari {daftarCatatan.length} catatan
+              </p>
+            </Card>
+          </div>
+
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle>Catatan Nilai &amp; Sikap</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {daftarCatatan.length === 0 ? (
+                <PesanKosong
+                  judul="Belum ada catatan"
+                  keterangan="Catatan guru akan muncul di sini setelah dicatat."
+                />
+              ) : (
+                <ul className="space-y-3">
+                  {daftarCatatan.map((baris) => (
+                    <li
+                      key={`${baris.tanggal}-${baris.nilai}-${baris.sikap}`}
+                      className="rounded-lg border px-3 py-2"
+                    >
+                      <div className="flex flex-wrap items-center gap-2 text-sm">
+                        <span className="font-medium">
+                          Nilai {angkaTampil.format(baris.nilai)}
+                        </span>
+                        <span className="rounded-full border bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
+                          Sikap {baris.sikap}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {formatTanggalLengkap(baris.tanggal)}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {baris.catatan}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle>Rekap Kehadiran per Sesi</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {sesi.length === 0 ? (
+                <PesanKosong
+                  judul="Belum ada sesi"
+                  keterangan="Kehadiran muncul setelah guru mengisi jurnal sesi."
+                />
+              ) : (
+                <ul className="divide-y">
+                  {sesi.map((item) => (
+                    <li
+                      key={`${item.jurnal.id}-${item.jurnal.tanggal}`}
+                      className="flex flex-wrap items-center justify-between gap-3 py-2.5 text-sm"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-medium">{item.jurnal.namaKelas}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatTanggalLengkap(item.jurnal.tanggal)} ·{" "}
+                          {item.jurnal.jamMulai}–{item.jurnal.jamSelesai}
+                        </p>
+                      </div>
+                      <span
+                        className={cn(
+                          "rounded-full border px-2.5 py-0.5 text-xs font-medium",
+                          item.baris?.hadir
+                            ? "border-primary/30 bg-primary/10 text-primary"
+                            : "border-destructive/30 bg-destructive/10 text-destructive",
+                        )}
+                      >
+                        {item.baris?.hadir ? "Hadir" : "Tidak hadir"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
+
+      <div className="mt-6 flex flex-wrap items-center gap-2">
+        <Button asChild variant="outline" size="sm">
+          <Link href={`/portal${dipilih ? `?anak=${dipilih.muridId}` : ""}`}>
+            <ArrowLeft aria-hidden="true" />
+            Kembali ke beranda portal
+          </Link>
+        </Button>
+        <Button asChild variant="ghost" size="sm">
+          <Link
+            href={`/portal/tagihan${dipilih ? `?anak=${dipilih.muridId}` : ""}`}
+          >
+            Tagihan SPP anak
+          </Link>
+        </Button>
+      </div>
+
+      <p className="mt-6 text-xs leading-5 text-muted-foreground">
+        Catatan: riwayat ini masih data tiruan — nanti dibaca dari catatan
+        perkembangan dan presensi jurnal yang tersimpan di database.
+      </p>
+    </div>
+  );
+}
