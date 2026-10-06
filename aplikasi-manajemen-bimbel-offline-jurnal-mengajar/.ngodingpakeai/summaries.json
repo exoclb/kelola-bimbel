@@ -501,7 +501,7 @@
         "summary": "Snapshot skema drizzle-kit termutakhir pada batch ini (setelah migrasi 0010_catatan_perkembangan): memuat tabel `user`, `session`, `account`, `verification`, `notes`, `classes`, `students`, `student_enrollments`, `student_progress`, `schedules`, `teaching_journals`, `journal_attendances`, `notifications`, `notification_preferences`, `salary_settings`, `salary_recaps`, serta enum `status_penempatan`, `status_jurnal`, dan `status_pembayaran_gaji`."
     },
     "drizzle/meta/_journal.json": {
-        "summary": "Jurnal migrasi Drizzle Kit: daftar entri migrasi berurutan (idx, versi, waktu, dan tag nama berkas). Entri terakhir saat ini `0015_tagihan_murid`, mengikuti penamaan deskriptif berbahasa Indonesia untuk setiap migrasi yang dibuat drizzle-kit."
+        "summary": "Jurnal migrasi Drizzle Kit: daftar entri migrasi berurutan (idx, versi, waktu, dan tag nama berkas). Entri terakhir saat ini `0016_pengeluaran_operasional`, mengikuti penamaan deskriptif berbahasa Indonesia untuk setiap migrasi yang dibuat drizzle-kit."
     },
     "src/app/(auth)/masuk/page.tsx": {
         "summary": "Halaman Next App Router untuk route /masuk dengan metadata judul Masuk. Merender komponen klien `HalamanMasuk` dan menyuplai daftar akun dari `getDaftarAkun` sebagai data awal layar masuk."
@@ -786,7 +786,7 @@
         "summary": "Inisialisasi koneksi database server-only yang mengekspor `db`. Membuat `Pool` node-postgres (maks 5 koneksi, timeout 5000 ms) dan membungkusnya dengan `drizzle(pool, { schema })`, serta menyimpan instance di `globalThis` agar hot reload pengembangan tidak membuat pool berlebih."
     },
     "src/db/schema/index.ts": {
-        "summary": "Entrypoint ekspor seluruh tabel Drizzle (dipakai Drizzle Kit, pool bersama, dan Better Auth): user, session, account, verification, notes, classes, bimbel-profile, students, student-enrollments, student-progress, schedules, teaching-journals, journal-attendances, notifications, notification-preferences, salary-settings, salary-recaps, backup-runs, dan student-invoices."
+        "summary": "Entrypoint ekspor seluruh tabel Drizzle (dipakai Drizzle Kit, pool bersama, dan Better Auth): user, session, account, verification, notes, classes, bimbel-profile, students, student-enrollments, student-progress, schedules, teaching-journals, journal-attendances, notifications, notification-preferences, salary-settings, salary-recaps, backup-runs, student-invoices, expense-categories, dan expenses."
     },
     "src/db/schema/session.ts": {
         "summary": "Definisi tabel Drizzle `session` bergaya Better Auth untuk PostgreSQL. Kolomnya meliputi id, expiresAt, token unik, createdAt/updatedAt, ipAddress, userAgent, userId (FK ke `user` dengan onDelete cascade), dan `impersonatedBy` untuk fitur impersonasi admin, plus indeks `session_user_id_idx`."
@@ -1171,5 +1171,17 @@
     },
     "src/app/portal/perkembangan/loading.tsx": {
         "summary": "Tampilan memuat halaman riwayat perkembangan anak di portal: `StatusMemuat` 'Memuat perkembangan anak…' dengan empat baris."
+    },
+    "src/db/schema/expense-categories.ts": {
+        "summary": "Skema tabel `expense_categories` (kategori pengeluaran operasional seperti sewa, listrik/air, alat tulis, pemeliharaan): id (uuid PK), nama (varchar 80), created_at (timestamptz). Nama kategori dijaga unik lewat indeks `expense_categories_nama_idx` supaya kategori yang sama tidak dibuat dua kali dengan ejaan berbeda."
+    },
+    "src/db/schema/expenses.ts": {
+        "summary": "Skema tabel `expenses` (pengeluaran operasional bimbel): id (uuid PK), kategori_id (uuid, FK ke `expense_categories` dengan `on delete restrict` supaya riwayat pengeluaran tidak ikut terhapus), nominal (numeric 12,2 mode number), tanggal (date), catatan (text, opsional), created_at + updated_at (timestamptz, updated_at memakai `$onUpdate`). Indeks: `expenses_tanggal_idx` pada tanggal dan `expenses_kategori_idx` pada kategori_id, dipakai daftar/rekap per periode dan saringan per kategori."
+    },
+    "drizzle/0016_pengeluaran_operasional.sql": {
+        "summary": "Migrasi tabel pengeluaran operasional: membuat `expense_categories` (id uuid PK default gen_random_uuid, nama varchar(80), created_at timestamptz default now()) dengan indeks unik `expense_categories_nama_idx` pada nama, lalu `expenses` (id uuid PK, kategori_id uuid dengan FK ke `expense_categories` ON DELETE restrict, nominal numeric(12,2), tanggal date, catatan text, created_at/updated_at timestamptz default now()) beserta indeks `expenses_tanggal_idx` dan `expenses_kategori_idx`."
+    },
+    "drizzle/meta/0016_snapshot.json": {
+        "summary": "Snapshot skema Drizzle Kit untuk migrasi ke-16 (`0016_pengeluaran_operasional`): memuat definisi lengkap tabel `expense_categories` dan `expenses`, relasi FK kategori dengan ON DELETE restrict, serta indeks-indeksnya; dipakai drizzle-kit untuk menghitung perubahan skema berikutnya."
     }
 }
