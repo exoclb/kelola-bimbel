@@ -111,6 +111,31 @@ export function buatTagihanBaru(
   return { dibuat: baru.length, dilewati };
 }
 
+/**
+ * Tandai satu tagihan lunas beserta tanggal pembayarannya. Dipakai owner saat
+ * pembayaran SPP diterima.
+ */
+export function tandaiLunas(id: string, tanggalBayar: string) {
+  tagihan = tagihan.map((baris) =>
+    baris.id === id
+      ? { ...baris, status: "lunas", tanggalBayar, sudahDiingatkan: false }
+      : baris,
+  );
+  simpanKePenyimpanan();
+  umumkan();
+}
+
+/** Batalkan status lunas (mis. salah tandai): kembali belum lunas tanpa tanggal. */
+export function batalkanLunas(id: string) {
+  tagihan = tagihan.map((baris) =>
+    baris.id === id
+      ? { ...baris, status: "belum_lunas", tanggalBayar: null }
+      : baris,
+  );
+  simpanKePenyimpanan();
+  umumkan();
+}
+
 /** Dipakai halaman buat tagihan: murid yang sudah ditagih pada satu periode. */
 export function muridSudahDitagih(periode: string) {
   const [tahun, bulan] = periode.split("-").map(Number);

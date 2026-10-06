@@ -1,21 +1,26 @@
 "use client";
 
-import { useEffect, useMemo, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { BellRing, CalendarPlus, PiggyBank } from "lucide-react";
+import { BellRing, CalendarPlus, Check, PiggyBank, Undo2 } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { LabelStatusTagihan } from "@/components/label-status-tagihan";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { formatRupiah } from "@/lib/gaji";
 import { periodeDariTagihan } from "@/lib/mock-tagihan";
 import {
+  batalkanLunas,
   langgananTagihan,
   siapkanTagihan,
   snapshotTagihan,
+  tandaiLunas,
 } from "@/lib/tagihan-store";
 import { formatPeriodeTagihan, hitungRekapTagihan } from "@/lib/tagihan";
+import { tanggalISO } from "@/lib/tanggal";
 
 type DaftarTagihanProps = {
   bulan: number;
@@ -41,6 +46,11 @@ export function DaftarTagihan({ bulan, tahun }: DaftarTagihanProps) {
     snapshotTagihan,
     snapshotTagihan,
   );
+
+  // Tagihan yang sedang ditandai lunas, dan tanggal bayar yang diisi owner.
+  const [bukaId, setBukaId] = useState<string | null>(null);
+  const [tanggalBayar, setTanggalBayar] = useState(tanggalISO(new Date()));
+  const [pesan, setPesan] = useState("");
 
   useEffect(() => {
     siapkanTagihan();
@@ -95,6 +105,10 @@ export function DaftarTagihan({ bulan, tahun }: DaftarTagihanProps) {
           </Button>
         </div>
       </div>
+
+      <p role="status" className="mt-4 text-sm text-muted-foreground">
+        {pesan}
+      </p>
 
       {rekap.jumlah > 0 && (
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -180,6 +194,77 @@ export function DaftarTagihan({ bulan, tahun }: DaftarTagihanProps) {
                       <span className="rounded-full border bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
                         Sudah diingatkan
                       </span>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap items-end gap-2">
+                    {lunas ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          batalkanLunas(tagihan.id);
+                          setBukaId(null);
+                          setPesan(
+                            `${tagihan.muridNama}: status lunas dibatalkan.`,
+                          );
+                        }}
+                      >
+                        <Undo2 aria-hidden="true" />
+                        Batalkan lunas
+                      </Button>
+                    ) : bukaId === tagihan.id ? (
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor={`bayar-${tagihan.id}`}>
+                            Tanggal bayar
+                          </Label>
+                          <Input
+                            id={`bayar-${tagihan.id}`}
+                            type="date"
+                            value={tanggalBayar}
+                            onChange={(event) =>
+                              setTanggalBayar(event.target.value)
+                            }
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => {
+                            tandaiLunas(tagihan.id, tanggalBayar);
+                            setPesan(
+                              `${tagihan.muridNama}: ditandai lunas (${tanggalBayar}).`,
+                            );
+                            setBukaId(null);
+                          }}
+                        >
+                          <Check aria-hidden="true" />
+                          Simpan
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setBukaId(null)}
+                        >
+                          Batal
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setTanggalBayar(tanggalISO(new Date()));
+                          setBukaId(tagihan.id);
+                        }}
+                      >
+                        <Check aria-hidden="true" />
+                        Tandai lunas
+                      </Button>
                     )}
                   </div>
                 </Card>
