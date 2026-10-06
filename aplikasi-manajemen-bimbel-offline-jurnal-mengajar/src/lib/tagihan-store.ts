@@ -5,7 +5,8 @@
 // dibuka ulang. Isinya contoh dan bukan data pengguna, jadi aman dipakai di
 // server maupun peramban. Nanti diganti panggilan API.
 
-import { getSemuaTagihan, type Tagihan } from "@/lib/mock-tagihan";
+import { getSemuaTagihan } from "@/lib/mock-tagihan";
+import type { Tagihan } from "@/lib/tagihan";
 
 const KUNCI = "tagihan-tiruan-v1";
 

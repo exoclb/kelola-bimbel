@@ -6,23 +6,13 @@
 // sehingga nanti tinggal diganti sumbernya. `kelasNama` hanya untuk tampilan,
 // diambil dari penempatan murid.
 
-import { periodeTagihan, type StatusTagihan } from "@/lib/tagihan";
+import {
+  periodeDariTagihan,
+  periodeTagihan,
+  type Tagihan,
+} from "@/lib/tagihan";
 
-export type Tagihan = {
-  id: string;
-  muridId: string;
-  muridNama: string;
-  /** Hanya untuk tampilan; di database kelas datang dari penempatan murid. */
-  kelasNama: string;
-  periodeBulan: number;
-  periodeTahun: number;
-  nominal: number;
-  status: StatusTagihan;
-  /** Diisi hanya kalau statusnya "lunas". */
-  tanggalBayar: string | null;
-  sudahDiingatkan: boolean;
-  dibuatPada: string;
-};
+export type { Tagihan };
 
 type TagihanTersimpan = Omit<
   Tagihan,
@@ -227,11 +217,6 @@ export function getSemuaTagihan(): Tagihan[] {
       dibuatPada: `${periode}-01T08:00:00`,
     };
   });
-}
-
-/** Periode satu baris tagihan dalam bentuk `YYYY-MM`. */
-export function periodeDariTagihan(baris: Tagihan) {
-  return `${baris.periodeTahun}-${String(baris.periodeBulan).padStart(2, "0")}`;
 }
 
 /** Tagihan satu periode, diurutkan menurut nama murid. */

@@ -11,7 +11,7 @@ import { Card } from "@/components/ui/card";
 import { LabelStatusTagihan } from "@/components/label-status-tagihan";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { formatRupiah } from "@/lib/gaji";
-import { periodeDariTagihan } from "@/lib/mock-tagihan";
+import { periodeDariTagihan } from "@/lib/tagihan";
 import {
   batalkanLunas,
   langgananTagihan,

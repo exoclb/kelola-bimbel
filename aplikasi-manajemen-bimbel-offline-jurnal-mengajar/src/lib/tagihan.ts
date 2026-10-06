@@ -8,6 +8,23 @@ import { formatPeriode } from "@/lib/gaji";
 
 export type StatusTagihan = "belum_lunas" | "lunas";
 
+/** Satu tagihan murid: bentuk kolomnya mengikuti tabel `student_invoices`. */
+export type Tagihan = {
+  id: string;
+  muridId: string;
+  muridNama: string;
+  /** Hanya untuk tampilan; di database kelas datang dari penempatan murid. */
+  kelasNama: string;
+  periodeBulan: number;
+  periodeTahun: number;
+  nominal: number;
+  status: StatusTagihan;
+  /** Diisi hanya kalau statusnya "lunas". */
+  tanggalBayar: string | null;
+  sudahDiingatkan: boolean;
+  dibuatPada: string;
+};
+
 /** "2026-10" untuk bulan berjalan. */
 export function periodeTagihan(tanggal: Date) {
   return `${tanggal.getFullYear()}-${String(tanggal.getMonth() + 1).padStart(2, "0")}`;
@@ -42,6 +59,11 @@ export function menunggak(
   status: StatusTagihan,
 ) {
   return status === "belum_lunas" && selisihBulan(periode, periodeBerjalan) < 0;
+}
+
+/** Periode satu baris tagihan dalam bentuk `YYYY-MM`. */
+export function periodeDariTagihan(baris: Tagihan) {
+  return `${baris.periodeTahun}-${String(baris.periodeBulan).padStart(2, "0")}`;
 }
 
 /** Nama status tagihan untuk ditampilkan di lencana. */
