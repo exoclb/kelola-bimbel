@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Mail, Phone, UserRound, Users } from "lucide-react";
+import { ArrowRight, Mail, Phone, Power, UserRound, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PesanKosong } from "@/components/status-antarmuka";
@@ -33,7 +33,7 @@ export function DaftarWali({ daftar }: DaftarWaliProps) {
       </h1>
       <p className="mt-3 text-base leading-7 text-muted-foreground">
         {daftar.length > 0
-          ? `${ringkas.jumlahAkun} akun wali · ${ringkas.jumlahTertaut} sudah tertaut · ${ringkas.jumlahBelumTertaut} belum tertaut · ${ringkas.jumlahMurid} murid tertaut.`
+          ? `${ringkas.jumlahAkun} akun wali · ${ringkas.jumlahPortalAktif} portal aktif · ${ringkas.jumlahPortalNonaktif} nonaktif · ${ringkas.jumlahTertaut} sudah tertaut · ${ringkas.jumlahMurid} murid tertaut.`
           : "Belum ada akun wali yang terdaftar."}
       </p>
 
@@ -67,18 +67,30 @@ export function DaftarWali({ daftar }: DaftarWaliProps) {
                       )}
                     </p>
                   </div>
-                  <span
-                    className={
-                      wali.murid.length > 0
-                        ? "inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary"
-                        : "inline-flex items-center gap-1.5 rounded-full border border-dashed px-2.5 py-0.5 text-xs font-medium text-muted-foreground"
-                    }
-                  >
-                    <Users className="size-3.5" aria-hidden="true" />
-                    {wali.murid.length > 0
-                      ? `${wali.murid.length} murid`
-                      : "Belum tertaut"}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span
+                      className={
+                        wali.murid.length > 0
+                          ? "inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary"
+                          : "inline-flex items-center gap-1.5 rounded-full border border-dashed px-2.5 py-0.5 text-xs font-medium text-muted-foreground"
+                      }
+                    >
+                      <Users className="size-3.5" aria-hidden="true" />
+                      {wali.murid.length > 0
+                        ? `${wali.murid.length} murid`
+                        : "Belum tertaut"}
+                    </span>
+                    <span
+                      className={
+                        wali.aksesPortal
+                          ? "inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary"
+                          : "inline-flex items-center gap-1.5 rounded-full border border-destructive/30 bg-destructive/10 px-2.5 py-0.5 text-xs font-medium text-destructive"
+                      }
+                    >
+                      <Power className="size-3.5" aria-hidden="true" />
+                      {wali.aksesPortal ? "Portal aktif" : "Portal nonaktif"}
+                    </span>
+                  </div>
                 </div>
 
                 {wali.murid.length > 0 ? (
@@ -104,8 +116,9 @@ export function DaftarWali({ daftar }: DaftarWaliProps) {
       )}
 
       <p className="mt-6 text-xs leading-5 text-muted-foreground">
-        Catatan: daftar penautan ini masih data tiruan — penambahan dan
-        pencabutan penautan menyusul bersama penyimpanan ke database.
+        Catatan: daftar penautan ini masih data tiruan — penambahan, pencabutan
+        penautan, dan pengaturan akses portal menyusul bersama penyimpanan ke
+        database.
       </p>
     </div>
   );

@@ -20,6 +20,8 @@ export type AkunWali = {
   nama: string;
   email: string;
   kontak: string;
+  /** Akses portal: akun nonaktif masih terdaftar tetapi tidak bisa masuk. */
+  aksesPortal: boolean;
   murid: WaliMurid[];
 };
 
@@ -31,6 +33,7 @@ type PenautanTersimpan = {
   nama: string;
   email: string;
   kontak: string;
+  aksesPortal: boolean;
   muridIds: string[];
 };
 
@@ -43,6 +46,7 @@ const PENAUTAN: PenautanTersimpan[] = [
     nama: "Ibu Ratna",
     email: "ratna.wali@kelolabimbel.test",
     kontak: "0813-2211-4455",
+    aksesPortal: true,
     muridIds: ["mrd-2", "mrd-8"],
   },
   {
@@ -50,6 +54,7 @@ const PENAUTAN: PenautanTersimpan[] = [
     nama: "Bapak Hendra",
     email: "hendra.wali@kelolabimbel.test",
     kontak: "0812-3456-7801",
+    aksesPortal: true,
     muridIds: ["mrd-1"],
   },
   {
@@ -57,6 +62,7 @@ const PENAUTAN: PenautanTersimpan[] = [
     nama: "Ibu Melati",
     email: "melati.wali@kelolabimbel.test",
     kontak: "0857-9900-1122",
+    aksesPortal: true,
     muridIds: ["mrd-3"],
   },
   {
@@ -64,6 +70,7 @@ const PENAUTAN: PenautanTersimpan[] = [
     nama: "Bapak Yusuf",
     email: "yusuf.wali@kelolabimbel.test",
     kontak: "0821-4455-6677",
+    aksesPortal: true,
     muridIds: ["mrd-4"],
   },
   {
@@ -71,6 +78,7 @@ const PENAUTAN: PenautanTersimpan[] = [
     nama: "Ibu Dewi",
     email: "dewi.wali@kelolabimbel.test",
     kontak: "0878-5566-3344",
+    aksesPortal: true,
     muridIds: ["mrd-7"],
   },
   {
@@ -78,6 +86,7 @@ const PENAUTAN: PenautanTersimpan[] = [
     nama: "Bapak Nugroho",
     email: "nugroho.wali@kelolabimbel.test",
     kontak: "0811-7788-2233",
+    aksesPortal: false,
     muridIds: [],
   },
 ];
@@ -99,6 +108,7 @@ export function getDaftarWali(): AkunWali[] {
     nama: wali.nama,
     email: wali.email,
     kontak: wali.kontak,
+    aksesPortal: wali.aksesPortal,
     murid: wali.muridIds.map((id) => ({
       muridId: id,
       nama: murid.get(id) ?? "Murid tidak dikenal",
@@ -119,5 +129,7 @@ export function ringkasPenautan(daftar: AkunWali[]) {
     jumlahTertaut: daftar.filter((wali) => wali.murid.length > 0).length,
     jumlahBelumTertaut: daftar.filter((wali) => wali.murid.length === 0).length,
     jumlahMurid: daftar.reduce((jumlah, wali) => jumlah + wali.murid.length, 0),
+    jumlahPortalAktif: daftar.filter((wali) => wali.aksesPortal).length,
+    jumlahPortalNonaktif: daftar.filter((wali) => !wali.aksesPortal).length,
   };
 }
