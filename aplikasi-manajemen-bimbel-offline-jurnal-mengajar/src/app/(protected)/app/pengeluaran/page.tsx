@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { DaftarPengeluaran } from "@/components/daftar-pengeluaran";
-import { getSemuaPengeluaran } from "@/lib/mock-pengeluaran";
-import { periodePengeluaran, pengeluaranPeriode } from "@/lib/pengeluaran";
 import { formatPeriode } from "@/lib/gaji";
+import { periodePengeluaran } from "@/lib/pengeluaran";
 import { requirePermission } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Pengeluaran Operasional" };
@@ -16,7 +15,7 @@ export default async function PengeluaranPage() {
 
   return (
     <DaftarPengeluaran
-      daftar={pengeluaranPeriode(getSemuaPengeluaran(), periode)}
+      periode={periode}
       periodeTampil={formatPeriode(periode)}
     />
   );
