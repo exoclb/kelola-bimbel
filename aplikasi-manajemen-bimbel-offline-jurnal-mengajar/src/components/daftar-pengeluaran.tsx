@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { CalendarDays, PencilLine, Receipt, Trash2 } from "lucide-react";
+import { FormTambahPengeluaran } from "@/components/form-tambah-pengeluaran";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ import {
   langgananPengeluaran,
   siapkanPengeluaran,
   snapshotPengeluaran,
+  tambahPengeluaran,
   ubahPengeluaran,
 } from "@/lib/pengeluaran-store";
 import {
@@ -144,8 +146,20 @@ export function DaftarPengeluaran({
           : `Belum ada pengeluaran yang tercatat pada ${periodeTampil}.`}
       </p>
 
+      <div className="mt-6">
+        <FormTambahPengeluaran
+          onTambah={(baris) => {
+            const lengkap = tambahPengeluaran(baris);
+            setPesan(
+              `Pengeluaran ${lengkap.kategoriNama} ${formatRupiah(lengkap.nominal)} dicatat.`,
+            );
+            return lengkap;
+          }}
+        />
+      </div>
+
       {daftar.length > 0 && (
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <Card className="gap-1 px-5 py-4">
             <p className="text-sm text-muted-foreground">Total periode</p>
             <p className="text-xl font-semibold">{formatRupiah(total)}</p>

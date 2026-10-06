@@ -68,6 +68,24 @@ export function ubahPengeluaran(baris: Pengeluaran) {
   umumkan();
 }
 
+let urutanBaru = 0;
+
+/**
+ * Tambah satu baris pengeluaran baru. Id dibuat di sini (bukan di komponen)
+ * supaya komponen tetap murni dan tidak memanggil waktu saat merender.
+ */
+export function tambahPengeluaran(baris: Omit<Pengeluaran, "id">) {
+  urutanBaru += 1;
+  const lengkap: Pengeluaran = {
+    ...baris,
+    id: `exp-baru-${Date.now()}-${urutanBaru}`,
+  };
+  pengeluaran = [...pengeluaran, lengkap];
+  simpanKePenyimpanan();
+  umumkan();
+  return lengkap;
+}
+
 /** Hapus satu baris pengeluaran. */
 export function hapusPengeluaran(id: string) {
   pengeluaran = pengeluaran.filter((baris) => baris.id !== id);
