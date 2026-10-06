@@ -11,9 +11,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DaftarGajiGuru } from "@/components/daftar-gaji-guru";
+import { TombolUnduhLaporan } from "@/components/tombol-unduh-laporan";
 import { formatJam } from "@/lib/jurnal";
 import { formatRupiah } from "@/lib/gaji";
 import type { RekapGaji } from "@/lib/mock-gaji";
+import { getProfilBimbel } from "@/lib/mock-pengaturan";
 
 type RekapGajiBulananProps = {
   rekap: RekapGaji;
@@ -43,6 +45,25 @@ export function RekapGajiBulanan({
   const sudahDibayar = rekap.daftar.filter(
     (baris) => baris.statusPembayaran === "dibayar",
   ).length;
+
+  // Baris untuk unduhan: angka ditulis apa adanya supaya bisa dijumlahkan lagi
+  // di lembar kerja, ditutup baris total.
+  const barisUnduhan: (string | number)[][] = rekap.daftar.map((baris) => [
+    baris.guruNama,
+    baris.jumlahJurnal,
+    baris.totalJam,
+    baris.tarifPerJam,
+    baris.totalGaji,
+    baris.statusPembayaran === "dibayar" ? "Dibayar" : "Belum dibayar",
+  ]);
+  barisUnduhan.push([
+    "Total",
+    rekap.daftar.reduce((jumlah, baris) => jumlah + baris.jumlahJurnal, 0),
+    totalJam,
+    rekap.tarifPerJam,
+    totalGaji,
+    `${sudahDibayar} dari ${rekap.daftar.length} guru dibayar`,
+  ]);
   const statistik = [
     {
       label: "Guru sudah dibayar",
@@ -73,6 +94,23 @@ export function RekapGajiBulanan({
             Riwayat gaji
           </Link>
         </Button>
+      </div>
+
+      <div className="mt-6">
+        <TombolUnduhLaporan
+          judul="Rekap Gaji Guru"
+          periode={periodeTampil}
+          kop={getProfilBimbel()}
+          kolom={[
+            "Guru",
+            "Jumlah Jurnal",
+            "Total Jam",
+            "Tarif per Jam (Rp)",
+            "Total Gaji (Rp)",
+            "Status Pembayaran",
+          ]}
+          baris={barisUnduhan}
+        />
       </div>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-3">
