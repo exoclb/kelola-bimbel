@@ -222,7 +222,7 @@
         "summary": "Komponen klien Formulir Profil Bimbel: mengelola isian nama, alamat, telepon, email, dan pratinjau logo (PNG/JPG maksimal 1 MB via URL.createObjectURL), memvalidasi semua isian sekaligus, menampilkan masalah dalam role=\"alert\", dan menunjukkan ringkasan tersimpan lewat KonfirmasiPengaturan; data masih lokal/belum dikirim ke server."
     },
     "src/components/pengaturan-bimbel.tsx": {
-        "summary": "Halaman utama Pengaturan Bimbel (server component async): kartu ringkasan tiap bagian beserta tombol menuju halamannya. Kartu profil, aturan gaji, kelola guru, dan backup hanya muncul untuk akun berizin `pengaturan: read`, sedangkan kartu preferensi notifikasi selalu ada karena milik akun sendiri; ringkasan backup diambil langsung dari tabel `backup_runs`."
+        "summary": "Halaman pengaturan bimbel (server) yang menyusun kartu navigasi: bagian pemilik (Profil Bimbel, Aturan Gaji & Tarif, Kelola Guru, dan Penautan Akun Wali dengan ringkasan 'N dari M akun tertaut ke murid'), kartu Backup Database bila statusnya tersedia, serta kartu Preferensi Notifikasi untuk semua akun; kartu pemilik hanya muncul bagi akun berizin `pengaturan: read`. Bagian bawah menampilkan ringkasan profil, akun, dan status backup dengan tautan ke halamannya masing-masing."
     },
     "src/components/starter-intro.tsx": {
         "summary": "Komponen klien beranda starter (StarterIntro) dengan animasi motion/react yang menampilkan judul 'A small base. A world of ideas.', tombol menuju /app atau /sign-up bergantung status signedIn, kotak prompt siap salin lewat CopyPrompt, dan lima kartu teknologi: Next.js, Drizzle+PostgreSQL, Better Auth, Tailwind+shadcn/ui, serta Motion."
@@ -708,7 +708,7 @@
         "summary": "Data contoh untuk halaman rekap gaji selagi tabel `salary_settings`/`salary_recaps` belum tersambung, berisi tipe `BarisRekapGaji`, `RincianJam`, `RekapGaji`, dan fungsi `getRekapGajiBulanan(periode)` serta `getRiwayatGaji()` (enam bulan terakhir). Perhitungan memakai `hitungGaji` dari `@/lib/gaji`."
     },
     "src/lib/mock-murid.ts": {
-        "summary": "Data contoh daftar murid dengan tipe `Murid` (id, nama, tanggalLahir, namaOrangTua, kontakOrangTua, statusAktif) dan fungsi `getDaftarMurid()` yang mengurutkan nama. Bentuknya mengikuti kolom tabel `students` sebagai pengganti sementara `GET /api/murid`."
+        "summary": "Data contoh daftar murid (tabel `students` sudah ada, API-nya belum): tipe `Murid` mengikuti kolom tabel (nama, tanggal_lahir, nama_orang_tua, kontak_orang_tua, status_aktif) dan `getDaftarMurid()` mengembalikan daftar terurut nama. Hana Salsabila (mrd-8) memakai wali yang sama dengan Bima Saputra (mrd-2) — Ibu Ratna — supaya contoh satu akun wali dengan dua anak konsisten."
     },
     "src/lib/tanggal.ts": {
         "summary": "Kumpulan pembantu format tanggal berbahasa Indonesia: konstanta `HARI_DALAM_SEMINGGU`/tipe `NamaHari`, serta fungsi `tanggalISO`, `namaHari`, `formatTanggalLengkap`, dan `hitungUsia`. Dipakai bersama halaman jurnal, riwayat, dan fitur lain agar tampilan tanggal seragam."
@@ -1077,7 +1077,7 @@
         "summary": "Tampilan memuat halaman pengingat tagihan: `StatusMemuat` 'Mengumpulkan tagihan menunggak…' dengan empat baris, mengikuti pola `loading.tsx` halaman owner lain."
     },
     "src/lib/mock-portal-wali.ts": {
-        "summary": "Data contoh Portal Wali sebelum ada penautan akun wali–murid di database: tipe `AnakWali` (murid, nama, nama & kontak orang tua, kelas) dan `CatatanPerkembangan` (tanggal, nilai, sikap, catatan) mengikuti kolom `students`/`student_progress`, plus `AnakPortal` dengan catatan dan rekap kehadiran. Berisi dua anak contoh (`mrd-1` Aisyah Putri, `mrd-7` Gita Permata). Aturan pemisahan data ada di sini: `anakTertaut(muridId)` mengembalikan anak yang tertaut atau `null`, dan `anakTertautAtauPertama(muridId)` memakai id dari alamat hanya bila memang anak yang tertaut (selain itu anak pertama) — dipakai setiap halaman portal. `getAnakPortal()` menghitung kehadiran dari `getRiwayatJurnal()`."
+        "summary": "Data contoh Portal Wali (beranda). Anak yang tampil diambil dari penautan akun wali (`mock-wali.ts`, memakai `WALI_PORTAL`) sehingga daftar di portal sama dengan daftar penautan yang dilihat owner. Tipe `AnakWali` (murid, nama, nama & kontak orang tua, kelas) dan `CatatanPerkembangan` (tanggal, nilai, sikap, catatan) mengikuti kolom `students`/`student_progress`. `getAnakPortal()` menyusun anak tertaut dari penautan itu (nama dari `getDaftarMurid`), menghitung kehadiran dari `getRiwayatJurnal()` (jumlah sesi, hadir, tanggal terakhir), dan menyertakan catatan contoh bertanggal relatif; `anakTertaut(muridId)` serta `anakTertautAtauPertama(muridId)` menjadi satu-satunya aturan pemisahan data per anak di halaman portal."
     },
     "src/components/beranda-portal-wali.tsx": {
         "summary": "Beranda portal wali (klien, hanya baca): identitas bimbel dari profil (mark huruf awal + nama + alamat/telepon), keterangan bahwa portal hanya menampilkan anak yang tertaut ke akun, `PemilihAnak` yang mengganti seluruh isi halaman (anak awal bisa datang dari `?anak=`), kartu anak terpilih, kartu 'Tagihan Terdekat' (nominal, lencana `LabelStatusTagihan`, periode, tanggal bayar atau 'belum dibayar', peringatan 'Sudah lewat N bulan' bila menunggak, tautan 'Lihat semua tagihan' ke `/portal/tagihan?anak=…`) dari `tagihan-store` lewat `useSyncExternalStore`, dan kartu 'Sorotan Perkembangan' (rekap kehadiran + tiga catatan terbaru: nilai, sikap, tanggal, catatan)."
@@ -1150,5 +1150,17 @@
     },
     "src/components/form-tambah-pengeluaran.tsx": {
         "summary": "Formulir klien tambah pengeluaran operasional, muncul dari tombol 'Tambah pengeluaran' (pola form ringkas aplikasi). Isian: nominal (angka, wajib lebih dari nol), tanggal (bawaan hari ini, tidak boleh melewati hari ini), kategori (`NativeSelect` dari `getKategoriPengeluaran`), dan catatan. Validasi tampil per isian dengan `role=\"alert\"` + `aria-invalid`/`aria-describedby`. Setelah simpan muncul kartu konfirmasi (`role=\"status\"`) berisi kategori, nominal (`formatRupiah`), tanggal, dan catatan yang tercatat, plus tombol 'Tambah pengeluaran lagi'. Id baris dibuat oleh pemanggil (store), bukan di komponen, supaya komponen tetap murni."
+    },
+    "src/lib/mock-wali.ts": {
+        "summary": "Data contoh akun wali dan penautannya ke murid (tabel penautan belum ada): tipe `AkunWali` (waliId, nama, email, kontak, daftar murid tertaut) dan `WaliMurid` (muridId, nama, kelasNama). Berisi enam akun wali — satu di antaranya tertaut ke dua anak sekaligus (Ibu Ratna → Bima + Hana) dan satu belum tertaut ke siapa pun (Bapak Nugroho) — dengan `WALI_PORTAL` menunjuk akun yang dipakai contoh portal. Getter: `getDaftarWali()`, `getWali(waliId)`, dan `ringkasPenautan()` (jumlah akun, tertaut, belum tertaut, dan murid tertaut)."
+    },
+    "src/components/daftar-wali.tsx": {
+        "summary": "Komponen server daftar penautan akun wali: tombol kembali ke pengaturan, judul, ringkasan ('N akun wali · M sudah tertaut · K belum tertaut · J murid tertaut'), keadaan kosong `PesanKosong`, dan satu kartu per akun wali berisi nama, email, kontak, lencana jumlah murid ('N murid' atau 'Belum tertaut'), serta chip tiap murid tertaut ('Nama · Kelas') atau keterangan 'Akun ini belum ditautkan ke murid mana pun.'"
+    },
+    "src/app/(protected)/app/pengaturan/wali/page.tsx": {
+        "summary": "Halaman daftar penautan akun wali (`/app/pengaturan/wali`) untuk owner: dijaga `requirePermission({ pengaturan: [\"read\"] })`, lalu merender `DaftarWali` dengan `getDaftarWali()`."
+    },
+    "src/app/(protected)/app/pengaturan/wali/loading.tsx": {
+        "summary": "Tampilan memuat halaman daftar penautan akun wali: `StatusMemuat` 'Memuat penautan akun wali…' dengan empat baris."
     }
 }
