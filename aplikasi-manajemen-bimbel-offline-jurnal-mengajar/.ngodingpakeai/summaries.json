@@ -1207,5 +1207,17 @@
     },
     "src/app/api/tagihan/[id]/route.ts": {
         "summary": "Route `PATCH /api/tagihan/<id>` berizin `tagihan: write-any`: mengubah status tagihan (lunas beserta tanggal bayar, atau kembali belum lunas), membalas `{data: Tagihan}` atau 404 NOT_FOUND bila id tidak ada. Runtime nodejs, `params` di-await (Next 16)."
+    },
+    "src/lib/mock-cabang.ts": {
+        "summary": "Data contoh cabang bimbel (tabel cabang belum ada): tipe  mengikuti rencana kolomnya — id, nama, alamat, kontak, statusAktif — dengan tiga contoh yang selaras dengan teks  pada data kelas (Cabang Pusat dan Cabang Utara aktif, Cabang Selatan nonaktif dan belum punya kelas). Getter  (urut nama) dan  (jumlah cabang, aktif, nonaktif)."
+    },
+    "src/components/daftar-cabang.tsx": {
+        "summary": "Komponen server daftar cabang untuk owner: judul \"Daftar Cabang\", ringkasan \"N cabang · M aktif · K nonaktif\",  saat kosong, dan kartu per cabang berisi nama, alamat, kontak, lencana status (Aktif bergaya primary / Nonaktif bergaya muted garis putus-putus), serta jumlah kelas di cabang itu (dihitung dari  dengan mencocokkan kolom cabang, \"Belum ada kelas\" bila nol)."
+    },
+    "src/app/(protected)/app/cabang/page.tsx": {
+        "summary": "Halaman daftar cabang () untuk owner: metadata \"Daftar Cabang\", dijaga , lalu merender  dengan ."
+    },
+    "src/app/(protected)/app/cabang/loading.tsx": {
+        "summary": "Tampilan memuat halaman daftar cabang:  \"Memuat daftar cabang…\"."
     }
 }

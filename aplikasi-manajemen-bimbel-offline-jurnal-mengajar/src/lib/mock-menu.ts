@@ -34,6 +34,7 @@ export const MENU_PER_PERAN: Record<PeranPengguna, MenuApp[]> = {
   // Owner: memantau jurnal semua guru dan mengelola rekap gaji.
   owner: [
     ...MENU_DASAR,
+    { href: "/app/cabang", label: "Cabang", perlu: { pengaturan: ["read"] } },
     {
       href: "/app/pemantauan",
       label: "Pemantauan",
