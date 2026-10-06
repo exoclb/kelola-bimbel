@@ -1038,10 +1038,10 @@
         "summary": "Lencana status tagihan murid dengan pembeda yang tidak bergantung warna saja: ikon `CheckCircle2` + 'Lunas' bergaya netral (border + `bg-secondary`, teks foreground) dan ikon `Clock3` + 'Belum lunas' bergaya peringatan (`border-destructive/30 bg-destructive/10 text-destructive`). Dipakai halaman daftar tagihan dan halaman berikutnya."
     },
     "src/components/daftar-tagihan.tsx": {
-        "summary": "Komponen klien daftar tagihan bulanan murid untuk satu periode: membaca `tagihan-store` lewat `useSyncExternalStore`, ringkasan 'N tagihan bulan <periode> · M lunas · K belum lunas', tombol 'Menunggak'/'Rekap pemasukan'/'Buat tagihan', pesan aksi `role=\"status\"`, tiga kartu angka, keadaan kosong `PesanKosong`, dan kartu per tagihan (murid, kelas, lencana `LabelStatusTagihan`, nominal, periode, tanggal bayar, penanda 'Sudah diingatkan') dengan aksi 'Tandai lunas' (isian tanggal bayar + Simpan/Batal) dan 'Batalkan lunas'. Helper `periodeDariTagihan` diimpor dari modul domain `@/lib/tagihan`."
+        "summary": "Komponen klien daftar tagihan bulanan murid: menerima `daftar` (dari database lewat service di halaman server), `periode`, `periodeTampil`, dan `muridSudahDitagih`; menampilkan ringkasan, tombol ke halaman Menunggak/Rekap/Buat, tiga kartu angka, dan kartu per tagihan dengan aksi 'Tandai lunas' (isian tanggal bayar) dan 'Batalkan lunas' yang memanggil `PATCH /api/tagihan/<id>` lalu `router.refresh()`, dengan pesan status dan galat sendiri."
     },
     "src/app/(protected)/app/tagihan/page.tsx": {
-        "summary": "Halaman daftar tagihan murid (`/app/tagihan`) untuk owner: dijaga `requirePermission({ tagihan: [\"read-any\"] })`, lalu menghitung periode berjalan lewat `periodeTagihan(new Date())` dan menyerahkan bulan/tahun ke `DaftarTagihan` (yang membaca penyimpanan sementara)."
+        "summary": "Halaman daftar tagihan (`/app/tagihan`) untuk owner: `requirePermission({tagihan:[\"read-any\"]})`, memanggil `listTagihan` dan `daftarMuridSudahDitagih` untuk periode berjalan, lalu meneruskan hasilnya ke `DaftarTagihan`."
     },
     "src/app/(protected)/app/tagihan/loading.tsx": {
         "summary": "Tampilan memuat halaman daftar tagihan: `StatusMemuat` 'Memuat daftar tagihan…' dengan empat baris, mengikuti pola `loading.tsx` halaman owner lain (juga membuat halaman tidak-ditemukan tampil benar saat akses ditolak)."
@@ -1050,28 +1050,28 @@
         "summary": "Penyimpanan sementara tagihan murid: daftar (awalnya dari `getSemuaTagihan()` pada berkas data contoh) disimpan di variabel modul, disalin ke `localStorage` (kunci `tagihan-tiruan-v1`) setiap perubahan supaya bertahan saat halaman dibuka ulang, dan dibaca sekali lewat `siapkanTagihan()`. Menyediakan `langgananTagihan`/`snapshotTagihan` untuk `useSyncExternalStore`, `buatTagihanBaru()`, `tandaiLunas(id, tanggalBayar)`, `batalkanLunas(id)`, dan `muridSudahDitagih(periode)`. Tipe `Tagihan` diimpor dari modul domain `@/lib/tagihan`, bukan dari berkas contoh."
     },
     "src/components/form-tagihan-bulanan.tsx": {
-        "summary": "Formulir klien buat tagihan bulanan: memilih bulan dan tahun (`NativeSelect`, bawaan bulan berjalan), nominal per murid (`IsianTeks` angka dengan validasi harus lebih dari nol), saringan kelas, dan daftar murid aktif dengan kotak centang (satu murid atau sekaligus banyak) — murid yang sudah punya tagihan pada periode terpilih ditandai 'Sudah ditagih' dan tidak bisa dicentang. Menampilkan ringkasan pilihan ('N murid dipilih · total Rp…'), pesan `role=\"alert\"` untuk kesalahan, pesan `role=\"status\"` berisi jumlah tagihan yang dibuat beserta murid yang dilewati, tombol 'Buat tagihan' (nonaktif sebelum ada pilihan/nominal sah) dan tautan ke daftar tagihan. Memakai `tagihan-store` lewat `useSyncExternalStore`."
+        "summary": "Formulir klien penerbitan tagihan bulanan: pemilih bulan/tahun, nominal, saringan kelas, dan daftar murid dengan kotak centang; murid yang sudah ditagih pada periode terpilih diambil dari `GET /api/tagihan?periode=` (nilai awal dari prop server) dan ditandai 'Sudah ditagih' (tidak bisa dicentang); pembuatan lewat `POST /api/tagihan` lalu menampilkan `{dibuat, dilewati}` dan `router.refresh()`."
     },
     "src/app/(protected)/app/tagihan/baru/page.tsx": {
-        "summary": "Halaman buat tagihan bulanan (`/app/tagihan/baru`) untuk owner: dijaga `requirePermission({ tagihan: [\"write-any\"] })`, lalu menyiapkan daftar murid aktif (`getDaftarMurid`) lengkap dengan kelasnya dari penempatan (`kelasMurid(...).kelas.namaKelas`, bawaan 'Belum ada kelas') dan pilihan kelasnya, untuk diserahkan ke `FormTagihanBulanan`."
+        "summary": "Halaman buat tagihan (`/app/tagihan/baru`) untuk owner: daftar murid aktif, kelas, dan penempatan dibaca dari database (`listMurid`, `listKelas`, `listMuridKelas`) plus `daftarMuridSudahDitagih` untuk periode berjalan, lalu diserahkan ke `FormTagihanBulanan`."
     },
     "src/app/(protected)/app/tagihan/baru/loading.tsx": {
         "summary": "Tampilan memuat halaman buat tagihan bulanan: `StatusMemuat` 'Menyiapkan formulir tagihan…' dengan empat baris, mengikuti pola `loading.tsx` halaman owner lain."
     },
     "src/components/rekap-pemasukan.tsx": {
-        "summary": "Komponen klien rekap pemasukan bulanan dari tagihan murid: pemilih bulan/tahun (bawaan bulan berjalan), tiga kartu angka (`formatRupiah` + `hitungRekapTagihan`) yaitu 'Pemasukan masuk' (nominal lunas + jumlah tagihannya), 'Belum lunas' (sisa tagihan sebagai acuan penagihan), dan 'Total ditagihkan' (jumlah tagihan + nama periode), lalu kartu 'Rincian per Murid' berisi satu baris per murid (nama, kelas, nominal, lencana `LabelStatusTagihan`) atau `PesanKosong` bila periode itu belum ada tagihan. Membaca `tagihan-store` lewat `useSyncExternalStore`, jadi tagihan yang baru dibuat ikut terhitung; ada tautan ke daftar tagihan dan halaman buat tagihan."
+        "summary": "Komponen server rekap pemasukan bulanan: menerima `daftar` tagihan periode terpilih + `periode`/`periodeTampil`, menampilkan tiga kartu ringkas (pemasukan masuk, belum lunas, total ditagihkan), rincian per murid, keadaan kosong, dan pemilih periode berupa form GET bulan+tahun."
     },
     "src/app/(protected)/app/tagihan/rekap/page.tsx": {
-        "summary": "Halaman rekap pemasukan bulanan (`/app/tagihan/rekap`) untuk owner: dijaga `requirePermission({ tagihan: [\"read-any\"] })`, lalu merender `RekapPemasukan` (periode dipilih di sisi klien dari penyimpanan sementara tagihan)."
+        "summary": "Halaman rekap pemasukan (`/app/tagihan/rekap`) untuk owner: membaca `searchParams` bulan/tahun (bawaan periode berjalan), memanggil `listTagihan`, lalu merender `RekapPemasukan`."
     },
     "src/app/(protected)/app/tagihan/rekap/loading.tsx": {
         "summary": "Tampilan memuat halaman rekap pemasukan bulanan: `StatusMemuat` 'Menghitung rekap pemasukan…' dengan empat baris, mengikuti pola `loading.tsx` halaman owner lain."
     },
     "src/components/daftar-tagihan-menunggak.tsx": {
-        "summary": "Komponen klien daftar tagihan menunggak: membaca `tagihan-store` lewat `useSyncExternalStore`, menyaring dengan `menunggak()` dan mengurutkan dari periode paling lama, menampilkan ringkasan ('N tagihan menunggak · total Rp… · K belum diingatkan'), keadaan kosong `PesanKosong`, dan kartu per tagihan (murid, kelas, lencana `LabelStatusTagihan`, nominal, periode + 'terlambat N bulan', nama & kontak wali dari `getDaftarMurid`, penanda 'Sudah/Belum diingatkan'). Helper `periodeDariTagihan` berasal dari modul domain `@/lib/tagihan`."
+        "summary": "Komponen server daftar tagihan menunggak: menerima `daftar` (tagihan belum lunas dari periode yang sudah lewat, disusun halaman server), `periodeBerjalan`, dan daftar wali; menampilkan ringkasan, kartu per tagihan (murid, kelas, lencana status, nominal, periode + 'terlambat N bulan', nama & kontak wali), penanda sudah/belum diingatkan, dan keadaan kosong."
     },
     "src/app/(protected)/app/tagihan/pengingat/page.tsx": {
-        "summary": "Halaman pengingat tagihan (`/app/tagihan/pengingat`) untuk owner: dijaga `requirePermission({ tagihan: [\"read-any\"] })`, lalu merender `DaftarTagihanMenunggak` (penyaringan tunggakan dihitung di sisi klien dari penyimpanan sementara tagihan)."
+        "summary": "Halaman pengingat tunggakan (`/app/tagihan/pengingat`) untuk owner: menelusuri 12 periode mundur lewat `listTagihan`, menyaring yang belum lunas dan periodenya sudah lewat, mengambil daftar wali dari `listMurid`, lalu merender `DaftarTagihanMenunggak`."
     },
     "src/app/(protected)/app/tagihan/pengingat/loading.tsx": {
         "summary": "Tampilan memuat halaman pengingat tagihan: `StatusMemuat` 'Mengumpulkan tagihan menunggak…' dengan empat baris, mengikuti pola `loading.tsx` halaman owner lain."
@@ -1195,5 +1195,17 @@
     },
     "src/components/tombol-unduh-laporan.tsx": {
         "summary": "Komponen klien tombol unduh laporan (berkas disusun dari data yang tampil): menerima `judul`, `periode`, `kop` (nama/alamat/telepon bimbel, biasanya dari profil bimbel), `kolom`, dan `baris`. Tombol 'Unduh PDF' memakai dialog cetak browser ('Simpan sebagai PDF') dan 'Unduh Excel' menyusun berkas tabel ber-kop bimbel sebagai blob `application/vnd.ms-excel` lalu mengunduhnya; nama berkas seragam `<judul>-<periode>.<ext>`. Umpan balik proses: state `sedangProses` menonaktifkan kedua tombol dan menampilkan ikon berputar, status `role=\"status\"` dengan `aria-live=\"polite\"` menampilkan 'Menyiapkan berkas …' lalu hasilnya ('Berkas Excel … diunduh.' atau petunjuk dialog cetak), sedangkan kegagalan penyusunan berkas dan keadaan tanpa data ditampilkan sebagai `role=\"alert\"`. Kontrolnya memakai `print:hidden` supaya tidak ikut tercetak."
+    },
+    "src/validators/tagihan.ts": {
+        "summary": "Validasi Zod untuk API tagihan: `listTagihanSchema` (periode `YYYY-MM`), `createTagihanSchema` (periode, nominal int > 0, muridIds minimal satu uuid), `updateTagihanSchema` (status 'lunas' atau 'belum_lunas', tanggalBayar opsional `YYYY-MM-DD`), dan `tagihanIdSchema`; memakai helper `skemaPeriodeBulan`/`skemaTanggal` dari `src/validators/tanggal.ts`."
+    },
+    "src/services/tagihan.service.ts": {
+        "summary": "Layanan database tagihan SPP di atas tabel `student_invoices`: `listTagihan({periode})` (join ke `students` untuk nama dan ke kelas aktif pertama lewat `student_enrollments`+`classes`, urut nama murid, keluaran bentuk `Tagihan`), `daftarMuridSudahDitagih({periode})`, `createTagihan({periode,nominal,muridIds})` (insert banyak baris `onConflictDoNothing` pada indeks unik murid+periode, mengembalikan `{dibuat, dilewati}` berisi nama yang sudah ditagih), dan `updateTagihan(id,{status,tanggalBayar})` (lunas mengisi tanggal bayar + mereset penanda diingatkan, belum_lunas mengosongkan tanggal; `null` bila id tidak ada)."
+    },
+    "src/app/api/tagihan/route.ts": {
+        "summary": "Route API tagihan: `GET /api/tagihan?periode=YYYY-MM` berizin `tagihan: read-any` mengembalikan `{data: Tagihan[], meta:{periode, jumlah, muridSudahDitagih}}`, dan `POST /api/tagihan` berizin write-any yang membuat tagihan lalu membalas 201 `{data:{dibuat, dilewati}}`. Runtime nodejs, pola `withApiPermission` + Zod seperti route lain."
+    },
+    "src/app/api/tagihan/[id]/route.ts": {
+        "summary": "Route `PATCH /api/tagihan/<id>` berizin `tagihan: write-any`: mengubah status tagihan (lunas beserta tanggal bayar, atau kembali belum lunas), membalas `{data: Tagihan}` atau 404 NOT_FOUND bila id tidak ada. Runtime nodejs, `params` di-await (Next 16)."
     }
 }
