@@ -153,7 +153,7 @@
         "summary": "Data contoh kehadiran murid per pertemuan (tipe `KehadiranPertemuan`) sebagai pengganti tabel `journal_attendances` yang API-nya belum ada; mengekspor `getKehadiranAwal()` yang mengembalikan salinan daftar kehadiran."
     },
     "src/lib/mock-menu.ts": {
-        "summary": "Susunan menu tiap peran (masih data tiruan; halaman dan API tetap memeriksa izin sendiri): `MENU_DASAR` (Beranda, Isi Jurnal, Riwayat, Presensi Guru, Murid, Kelas, Penempatan, Perkembangan, Pengaturan), guru ditambah 'Gaji saya', owner ditambah Pemantauan, Gaji, Tagihan, Pengeluaran, Laba Rugi, dan Arus Kas, sedangkan `orang-tua` hanya menu portal (Beranda `/portal`, Tagihan SPP `/portal/tagihan`). Tersedia `menuUntukPeran(peran)` dan `menuUntukPortal()`."
+        "summary": "Susunan menu tiap peran (masih data tiruan; halaman dan API tetap memeriksa izin sendiri): `MENU_DASAR` (Beranda, Isi Jurnal, Riwayat, Presensi Guru, Murid, Kelas, Penempatan, Perkembangan, Pengaturan), guru ditambah 'Gaji saya', owner ditambah Pemantauan, Gaji, Tagihan, Pengeluaran, Laba Rugi, dan Arus Kas, sedangkan `orang-tua` memakai menu portal (Beranda `/portal`, Tagihan SPP `/portal/tagihan`, Perkembangan `/portal/perkembangan`). Tersedia `menuUntukPeran(peran)` dan `menuUntukPortal()`."
     },
     "src/lib/mock-pengaturan.ts": {
         "summary": "Data tiruan Pengaturan Bimbel sebagai pengganti tabel `salary_settings`/`notification_preferences`: tipe `ProfilBimbel`, `AturanGaji`, `PreferensiNotifikasi`, dan fungsi `getProfilBimbel()`, `getRiwayatTarif()`, `getAturanGaji()`, `getDaftarGuru()`, `getPreferensiNotifikasi()`. Riwayat tarif meniru aturan baris terbaru yang berlaku sejak tanggal tertentu."
@@ -1077,7 +1077,7 @@
         "summary": "Tampilan memuat halaman pengingat tagihan: `StatusMemuat` 'Mengumpulkan tagihan menunggak…' dengan empat baris, mengikuti pola `loading.tsx` halaman owner lain."
     },
     "src/lib/mock-portal-wali.ts": {
-        "summary": "Data contoh Portal Wali (beranda). Anak yang tampil diambil dari penautan akun wali (`mock-wali.ts`, memakai `WALI_PORTAL`) sehingga daftar di portal sama dengan daftar penautan yang dilihat owner. Tipe `AnakWali` (murid, nama, nama & kontak orang tua, kelas) dan `CatatanPerkembangan` (tanggal, nilai, sikap, catatan) mengikuti kolom `students`/`student_progress`. `getAnakPortal()` menyusun anak tertaut dari penautan itu (nama dari `getDaftarMurid`), menghitung kehadiran dari `getRiwayatJurnal()` (jumlah sesi, hadir, tanggal terakhir), dan menyertakan catatan contoh bertanggal relatif; `anakTertaut(muridId)` serta `anakTertautAtauPertama(muridId)` menjadi satu-satunya aturan pemisahan data per anak di halaman portal."
+        "summary": "Data contoh Portal Wali. Anak yang tampil diambil dari penautan akun wali (`mock-wali.ts`, memakai `WALI_PORTAL`) sehingga daftar di portal sama dengan daftar penautan yang dilihat owner. Tipe `AnakWali`, `CatatanPerkembangan` (tanggal, nilai, sikap, catatan), dan `AnakPortal` (anak + catatan + rekap kehadiran) mengikuti kolom `students`/`student_progress`. `getAnakPortal()` menyusun anak tertaut (nama dari `getDaftarMurid`), catatan contoh bertanggal relatif (lima catatan untuk Bima, empat untuk Hana, tersebar ~1 bulan terakhir), dan kehadiran dari `getRiwayatJurnal()`; `anakTertaut(muridId)` serta `anakTertautAtauPertama(muridId)` menjadi satu-satunya aturan pemisahan data per anak di halaman portal."
     },
     "src/components/beranda-portal-wali.tsx": {
         "summary": "Beranda portal wali (klien, hanya baca): identitas bimbel dari profil (mark huruf awal + nama + alamat/telepon), keterangan bahwa portal hanya menampilkan anak yang tertaut ke akun, `PemilihAnak` yang mengganti seluruh isi halaman (anak awal bisa datang dari `?anak=`), kartu anak terpilih, kartu 'Tagihan Terdekat' (nominal, lencana `LabelStatusTagihan`, periode, tanggal bayar atau 'belum dibayar', peringatan 'Sudah lewat N bulan' bila menunggak, tautan 'Lihat semua tagihan' ke `/portal/tagihan?anak=…`) dari `tagihan-store` lewat `useSyncExternalStore`, dan kartu 'Sorotan Perkembangan' (rekap kehadiran + tiga catatan terbaru: nilai, sikap, tanggal, catatan)."
@@ -1162,5 +1162,14 @@
     },
     "src/app/(protected)/app/pengaturan/wali/loading.tsx": {
         "summary": "Tampilan memuat halaman daftar penautan akun wali: `StatusMemuat` 'Memuat penautan akun wali…' dengan empat baris."
+    },
+    "src/components/perkembangan-anak-portal.tsx": {
+        "summary": "Halaman klien riwayat perkembangan anak di portal wali (hanya baca): `PemilihAnak` yang mengganti alamat halaman (`router.replace('/portal/perkembangan?anak=…')`), tiga kartu ringkas (Kehadiran 'H hadir dari N sesi' + tanggal terakhir, jumlah catatan guru + tanggal terbaru, dan rata-rata nilai), kartu 'Catatan Nilai & Sikap' berisi tiap catatan (nilai, lencana sikap, tanggal panjang, catatan guru) atau `PesanKosong`, dan kartu 'Rekap Kehadiran per Sesi' berisi sesi dari jurnal guru (kelas, tanggal, jam, lencana Hadir/Tidak hadir) atau `PesanKosong`; ada tautan kembali ke beranda portal dan ke tagihan SPP anak. Anak dan catatannya datang lewat prop `AnakPortal[]` dari `getAnakPortal()`, sedangkan sesi dihitung dari `getRiwayatJurnal()` yang sudah ada."
+    },
+    "src/app/portal/perkembangan/page.tsx": {
+        "summary": "Halaman riwayat perkembangan anak di portal (`/portal/perkembangan`): dijaga `requireSession()`, memakai `anakTertautAtauPertama(params.anak)` sehingga hanya anak yang tertaut ke akun wali yang bisa dipilih dari alamat (id asing jatuh ke anak pertama), lalu merender `PerkembanganAnakPortal` dengan anak-anak dari `getAnakPortal()`."
+    },
+    "src/app/portal/perkembangan/loading.tsx": {
+        "summary": "Tampilan memuat halaman riwayat perkembangan anak di portal: `StatusMemuat` 'Memuat perkembangan anak…' dengan empat baris."
     }
 }
