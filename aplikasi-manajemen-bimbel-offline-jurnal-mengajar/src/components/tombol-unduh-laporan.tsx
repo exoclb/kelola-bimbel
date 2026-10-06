@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Download, FileSpreadsheet, Printer } from "lucide-react";
+import { Download, FileSpreadsheet, LoaderCircle, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export type KopLaporan = {
@@ -56,6 +56,11 @@ export function TombolUnduhLaporan({
 }: TombolUnduhLaporanProps) {
   const [pesan, setPesan] = useState("");
   const [galat, setGalat] = useState("");
+  // Menandai berkas mana yang sedang disiapkan, supaya tombolnya tidak
+  // ditekan dua kali dan statusnya jelas.
+  const [sedangProses, setSedangProses] = useState<"pdf" | "excel" | null>(
+    null,
+  );
 
   function unduhExcel() {
     setGalat("");
@@ -63,8 +68,12 @@ export function TombolUnduhLaporan({
       setGalat("Belum ada data pada periode ini untuk diunduh.");
       return;
     }
-
-    const tabel = `<!doctype html>
+    setSedangProses("excel");
+    setPesan("Menyiapkan berkas Excel…");
+    // Beri kesempatan status tampil dulu sebelum berkasnya disusun.
+    setTimeout(() => {
+      try {
+        const tabel = `<!doctype html>
 <html lang="id"><head><meta charset="utf-8"><title>${lolosTeks(judul)} ${lolosTeks(periode)}</title></head>
 <body>
   <h2 style="margin:0">${lolosTeks(kop.nama)}</h2>
@@ -82,15 +91,22 @@ export function TombolUnduhLaporan({
   </table>
 </body></html>`;
 
-    const nama = namaBerkas(judul, periode, "xls");
-    const tautan = document.createElement("a");
-    tautan.href = URL.createObjectURL(
-      new Blob([tabel], { type: "application/vnd.ms-excel" }),
-    );
-    tautan.download = nama;
-    tautan.click();
-    URL.revokeObjectURL(tautan.href);
-    setPesan(`Berkas Excel ${nama} diunduh.`);
+        const nama = namaBerkas(judul, periode, "xls");
+        const tautan = document.createElement("a");
+        tautan.href = URL.createObjectURL(
+          new Blob([tabel], { type: "application/vnd.ms-excel" }),
+        );
+        tautan.download = nama;
+        tautan.click();
+        URL.revokeObjectURL(tautan.href);
+        setPesan(`Berkas Excel ${nama} diunduh.`);
+      } catch {
+        setGalat("Berkas Excel gagal disiapkan. Coba lagi.");
+        setPesan("");
+      } finally {
+        setSedangProses(null);
+      }
+    }, 0);
   }
 
   function unduhPdf() {
@@ -99,21 +115,46 @@ export function TombolUnduhLaporan({
       setGalat("Belum ada data pada periode ini untuk diunduh.");
       return;
     }
-    setPesan(
-      `Dialog cetak dibuka. Pilih "Simpan sebagai PDF" untuk menyimpan ${namaBerkas(judul, periode, "pdf")}.`,
-    );
-    window.print();
+    const nama = namaBerkas(judul, periode, "pdf");
+    setSedangProses("pdf");
+    setPesan(`Menyiapkan ${nama}…`);
+    setTimeout(() => {
+      setPesan(
+        `Dialog cetak dibuka. Pilih "Simpan sebagai PDF" untuk menyimpan ${nama}.`,
+      );
+      setSedangProses(null);
+      window.print();
+    }, 0);
   }
 
   return (
     <div className="space-y-2 print:hidden">
       <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" size="sm" onClick={unduhPdf}>
-          <Printer aria-hidden="true" />
+        <Button
+          type="button"
+          size="sm"
+          disabled={sedangProses !== null}
+          onClick={unduhPdf}
+        >
+          {sedangProses === "pdf" ? (
+            <LoaderCircle className="animate-spin" aria-hidden="true" />
+          ) : (
+            <Printer aria-hidden="true" />
+          )}
           Unduh PDF
         </Button>
-        <Button type="button" variant="outline" size="sm" onClick={unduhExcel}>
-          <FileSpreadsheet aria-hidden="true" />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={sedangProses !== null}
+          onClick={unduhExcel}
+        >
+          {sedangProses === "excel" ? (
+            <LoaderCircle className="animate-spin" aria-hidden="true" />
+          ) : (
+            <FileSpreadsheet aria-hidden="true" />
+          )}
           Unduh Excel
         </Button>
         <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -126,7 +167,11 @@ export function TombolUnduhLaporan({
           {galat}
         </p>
       )}
-      <p role="status" className="text-sm text-muted-foreground">
+      <p
+        role="status"
+        aria-live="polite"
+        className="text-sm text-muted-foreground"
+      >
         {pesan}
       </p>
     </div>
