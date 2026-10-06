@@ -1219,5 +1219,11 @@
     },
     "src/app/(protected)/app/cabang/loading.tsx": {
         "summary": "Tampilan memuat halaman daftar cabang:  \"Memuat daftar cabang…\"."
+    },
+    "src/lib/cabang-store.ts": {
+        "summary": "Penyimpanan peramban untuk data cabang (tiruan) di atas localStorage kunci `cabang-tiruan-v1`, mengikuti pola `src/lib/pengeluaran-store.ts`. Menyediakan `langgananCabang`/`snapshotCabang` untuk `useSyncExternalStore`, `siapkanCabang()` (memuat dari penyimpanan saat pertama, id baru `cab-<timestamp>-<n>`, daftar selalu urut nama), `namaCabangDipakai(nama, kecualiId?)`, `tambahCabang()` yang menolak nama duplikat dengan `{ ok:false, pesan }`, dan `ubahCabang()`. Tipe `Cabang` serta `ringkasCabang` di-ekspor ulang dari data contoh cabang."
+    },
+    "src/components/form-tambah-cabang.tsx": {
+        "summary": "Formulir klien penambahan cabang: tombol 'Tambah cabang' membuka isian nama (wajib, maks 80), alamat, kontak, dan status aktif/nonaktif dengan id `nama-cabang-baru`/`alamat-cabang-baru`/`kontak-cabang-baru`/`status-cabang-baru`; validasi tampil sebagai pesan `role=\"alert\"`, nama duplikat ditolak, dan setelah tersimpan muncul kartu konfirmasi berisi nilai yang tercatat beserta tombol 'Tambah cabang lagi'."
     }
 }
