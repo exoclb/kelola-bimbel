@@ -1110,12 +1110,15 @@
         "summary": "Data contoh pengeluaran operasional (pengganti `GET /api/pengeluaran`): lima kategori (`kat-sewa`, `kat-listrik`, `kat-atk`, `kat-pemeliharaan`, `kat-internet`) dan 12 baris pengeluaran mengikuti rencana kolom tabel `expenses` (kategori, nominal, tanggal, catatan) — empat baris di bulan berjalan (sewa, listrik, internet, alat tulis) plus bulan-bulan sebelumnya untuk saringan periode dan laporan. Tanggal dihitung dari offset `hariLalu` + `tanggalISO` supaya contohnya ikut bergerak mengikuti tanggal sebenarnya. Getter: `getSemuaPengeluaran()` (terbaru lebih dulu) dan `getKategoriPengeluaran()` untuk pilihan pada form dan saringan."
     },
     "src/components/daftar-pengeluaran.tsx": {
-        "summary": "Komponen server daftar pengeluaran operasional untuk owner: judul + ringkasan ('N catatan pengeluaran pada <periode>'), dua kartu ringkas yaitu 'Total periode' (`formatRupiah` + `hitungTotalPengeluaran`) dan 'Per kategori' (`totalPerKategori`, terbesar dulu), keadaan kosong `PesanKosong`, serta satu kartu per pengeluaran berisi kategori, tanggal (`id-ID` panjang), nominal, dan catatan. Datanya masih contoh; form, saringan, dan pengelolaan kategori menyusul."
+        "summary": "Halaman kelola pengeluaran operasional (klien): membaca `pengeluaran-store` lewat `useSyncExternalStore` dan menyaring satu periode, menampilkan ringkasan ('N catatan pengeluaran pada <periode>'), kartu 'Total periode' dan 'Per kategori', pesan aksi `role=\"status\"`, keadaan kosong `PesanKosong`, dan satu kartu per pengeluaran berisi kategori, tanggal, nominal, dan catatan. Tiap baris punya tombol 'Ubah' (membuka form inline berisi nominal, tanggal, kategori, catatan dengan validasi nominal > 0 lewat `role=\"alert\"`, plus 'Simpan perubahan'/'Batal') dan 'Hapus' (menampilkan konfirmasi 'Hapus pengeluaran … ini?' dengan 'Ya, hapus'/'Batal' sebelum benar-benar dihapus)."
     },
     "src/app/(protected)/app/pengeluaran/page.tsx": {
-        "summary": "Halaman pengeluaran operasional (`/app/pengeluaran`) untuk owner: dijaga `requirePermission({ pengeluaran: [\"read-any\"] })`, lalu menampilkan periode berjalan (`periodePengeluaran(new Date())`) lewat `pengeluaranPeriode(getSemuaPengeluaran(), periode)` dan `formatPeriode`."
+        "summary": "Halaman pengeluaran operasional (`/app/pengeluaran`) untuk owner: dijaga `requirePermission({ pengeluaran: [\"read-any\"] })`, menghitung periode berjalan lewat `periodePengeluaran(new Date())`, lalu menyerahkan `periode` + `periodeTampil` (`formatPeriode`) ke `DaftarPengeluaran` yang membaca penyimpanan sementara."
     },
     "src/app/(protected)/app/pengeluaran/loading.tsx": {
         "summary": "Tampilan memuat halaman pengeluaran operasional: `StatusMemuat` 'Memuat pengeluaran…' dengan empat baris, mengikuti pola `loading.tsx` halaman owner lain."
+    },
+    "src/lib/pengeluaran-store.ts": {
+        "summary": "Penyimpanan sementara pengeluaran operasional sebelum tabelnya ada: daftar (awalnya dari `getSemuaPengeluaran()`) disimpan di variabel modul, disalin ke `localStorage` (kunci `pengeluaran-tiruan-v1`) setiap berubah supaya perubahan bertahan saat halaman dibuka ulang, dan dibaca sekali lewat `siapkanPengeluaran()` setelah aplikasi jalan di peramban. Menyediakan `langgananPengeluaran`/`snapshotPengeluaran` untuk `useSyncExternalStore`, serta `ubahPengeluaran(baris)` (mengganti nominal, tanggal, kategori, atau catatan) dan `hapusPengeluaran(id)`."
     }
 }
