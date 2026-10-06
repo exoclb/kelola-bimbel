@@ -534,7 +534,7 @@
         "summary": "Komponen klien `PemilihMateri` untuk memilih materi ajar lewat tombol cepat dari `PILIHAN_MATERI` plus kolom topik spesifik opsional (maks 120 karakter). Mendukung state disabled dan penampilan pesan error dengan `role=alert`."
     },
     "src/components/rekap-gaji-bulanan.tsx": {
-        "summary": "Komponen `RekapGajiBulanan` untuk owner: menghitung total jam dan total gaji dari `rekap.daftar`, menampilkan kartu statistik (jumlah guru, total jam, total gaji), form GET pemilih bulan bertipe month, dan `DaftarGajiGuru` per guru. Menautkan ke /app/gaji/riwayat."
+        "summary": "Rekap gaji satu bulan untuk owner (komponen server): ringkasan jumlah guru, total jam, dan total gaji; `TombolUnduhLaporan` ('Rekap Gaji Guru', kop dari `getProfilBimbel()`, kolom Guru/Jumlah Jurnal/Total Jam/Tarif per Jam (Rp)/Total Gaji (Rp)/Status Pembayaran) berisi baris tiap guru dengan angka apa adanya plus baris Total; kartu statistik (guru sudah dibayar, total jam mengajar, total gaji); pemilih bulan (form GET `?periode=`); riwayat gaji; serta daftar rincian per guru (`DaftarGajiGuru`) dengan penandaan pembayaran. Perhitungan jam mengikuti jurnal dan tarif dari `getRekapGajiBulanan`."
     },
     "src/components/rekap-gaji-saya.tsx": {
         "summary": "Komponen `RekapGajiSaya` menampilkan rekap gaji guru yang sedang masuk: statistik jam mengajar, total gaji, dan status pembayaran, plus form pemilih bulan. Merender `SlipGaji` dan `TombolCetakUnduh` dengan `namaBerkas` untuk cetak/unduh slip."
