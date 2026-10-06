@@ -153,7 +153,7 @@
         "summary": "Data contoh kehadiran murid per pertemuan (tipe `KehadiranPertemuan`) sebagai pengganti tabel `journal_attendances` yang API-nya belum ada; mengekspor `getKehadiranAwal()` yang mengembalikan salinan daftar kehadiran."
     },
     "src/lib/mock-menu.ts": {
-        "summary": "Susunan menu tiap peran (masih data tiruan; halaman dan API tetap memeriksa izin sendiri): `MENU_DASAR` (Beranda, Isi Jurnal, Riwayat, Presensi Guru, Murid, Kelas, Penempatan, Perkembangan, Pengaturan), guru ditambah 'Gaji saya', owner ditambah Pemantauan, Gaji, Tagihan, dan Pengeluaran, sedangkan `orang-tua` hanya menu portal (Beranda `/portal`, Tagihan SPP `/portal/tagihan`). Tersedia `menuUntukPeran(peran)` dan `menuUntukPortal()`."
+        "summary": "Susunan menu tiap peran (masih data tiruan; halaman dan API tetap memeriksa izin sendiri): `MENU_DASAR` (Beranda, Isi Jurnal, Riwayat, Presensi Guru, Murid, Kelas, Penempatan, Perkembangan, Pengaturan), guru ditambah 'Gaji saya', owner ditambah Pemantauan, Gaji, Tagihan, Pengeluaran, dan Laba Rugi, sedangkan `orang-tua` hanya menu portal (Beranda `/portal`, Tagihan SPP `/portal/tagihan`). Tersedia `menuUntukPeran(peran)` dan `menuUntukPortal()`."
     },
     "src/lib/mock-pengaturan.ts": {
         "summary": "Data tiruan Pengaturan Bimbel sebagai pengganti tabel `salary_settings`/`notification_preferences`: tipe `ProfilBimbel`, `AturanGaji`, `PreferensiNotifikasi`, dan fungsi `getProfilBimbel()`, `getRiwayatTarif()`, `getAturanGaji()`, `getDaftarGuru()`, `getPreferensiNotifikasi()`. Riwayat tarif meniru aturan baris terbaru yang berlaku sejak tanggal tertentu."
@@ -1120,5 +1120,14 @@
     },
     "src/lib/pengeluaran-store.ts": {
         "summary": "Penyimpanan sementara pengeluaran operasional sebelum tabelnya ada: daftar (awalnya dari `getSemuaPengeluaran()`) disimpan di variabel modul, disalin ke `localStorage` (kunci `pengeluaran-tiruan-v1`) setiap berubah supaya perubahan bertahan saat halaman dibuka ulang, dan dibaca sekali lewat `siapkanPengeluaran()` setelah aplikasi jalan di peramban. Menyediakan `langgananPengeluaran`/`snapshotPengeluaran` untuk `useSyncExternalStore`, serta `ubahPengeluaran(baris)` (mengganti nominal, tanggal, kategori, atau catatan) dan `hapusPengeluaran(id)`."
+    },
+    "src/components/laporan-laba-rugi.tsx": {
+        "summary": "Laporan laba rugi bulanan (klien) untuk owner: pemilih bulan/tahun, empat kartu angka (Pemasukan SPP dari tagihan lunas periode itu, Biaya honor guru dari `getRekapGajiBulanan`, Pengeluaran operasional dari penyimpanan pengeluaran, dan Laba/Rugi bersih dengan warna berbeda untuk untung/rugi), lalu kartu rincian berisi baris pemasukan dan dua baris biaya (ditampilkan dengan tanda minus lewat `nilaiTampil`) serta baris hasil; ada catatan bila masih ada tagihan belum lunas pada periode itu, plus tautan ke halaman tagihan, gaji, dan pengeluaran. Membaca `tagihan-store` dan `pengeluaran-store` lewat `useSyncExternalStore` (masing-masing dengan `siapkan*()` di `useEffect`), sedangkan honor guru diambil dari mock gaji — semuanya hanya membaca modul yang sudah ada."
+    },
+    "src/app/(protected)/app/laba-rugi/page.tsx": {
+        "summary": "Halaman laporan laba rugi (`/app/laba-rugi`) untuk owner: dijaga `requirePermission({ pengeluaran: [\"read-any\"] })`, lalu merender `LaporanLabaRugi` (periode dipilih di sisi klien)."
+    },
+    "src/app/(protected)/app/laba-rugi/loading.tsx": {
+        "summary": "Tampilan memuat halaman laporan laba rugi: `StatusMemuat` 'Menghitung laba rugi…' dengan empat baris."
     }
 }
