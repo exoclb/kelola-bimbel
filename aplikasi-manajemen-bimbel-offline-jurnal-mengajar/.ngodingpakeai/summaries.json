@@ -501,7 +501,7 @@
         "summary": "Snapshot skema drizzle-kit termutakhir pada batch ini (setelah migrasi 0010_catatan_perkembangan): memuat tabel `user`, `session`, `account`, `verification`, `notes`, `classes`, `students`, `student_enrollments`, `student_progress`, `schedules`, `teaching_journals`, `journal_attendances`, `notifications`, `notification_preferences`, `salary_settings`, `salary_recaps`, serta enum `status_penempatan`, `status_jurnal`, dan `status_pembayaran_gaji`."
     },
     "drizzle/meta/_journal.json": {
-        "summary": "Jurnal migrasi Drizzle Kit: daftar berkas migrasi yang sudah dibuat beserta urutannya (0000_auth sampai 0013_backup_runs). Dipakai `drizzle-kit generate` dan `scripts/migrate.mjs` untuk mengetahui migrasi mana yang perlu dijalankan."
+        "summary": "Jurnal migrasi Drizzle Kit: daftar entri migrasi berurutan (idx, versi, waktu, dan tag nama berkas). Entri terakhir saat ini `0015_tagihan_murid`, mengikuti penamaan deskriptif berbahasa Indonesia untuk setiap migrasi yang dibuat drizzle-kit."
     },
     "src/app/(auth)/masuk/page.tsx": {
         "summary": "Halaman Next App Router untuk route /masuk dengan metadata judul Masuk. Merender komponen klien `HalamanMasuk` dan menyuplai daftar akun dari `getDaftarAkun` sebagai data awal layar masuk."
@@ -786,7 +786,7 @@
         "summary": "Inisialisasi koneksi database server-only yang mengekspor `db`. Membuat `Pool` node-postgres (maks 5 koneksi, timeout 5000 ms) dan membungkusnya dengan `drizzle(pool, { schema })`, serta menyimpan instance di `globalThis` agar hot reload pengembangan tidak membuat pool berlebih."
     },
     "src/db/schema/index.ts": {
-        "summary": "Barrel skema Drizzle: mengekspor seluruh tabel aplikasi (auth, notes, kelas, murid, penempatan, jadwal, jurnal, kehadiran, notifikasi, preferensi notifikasi, tarif & rekap gaji, profil bimbel, backup_runs). Berkas ini yang dibaca Drizzle Kit, pool bersama, dan Better Auth."
+        "summary": "Entrypoint ekspor seluruh tabel Drizzle (dipakai Drizzle Kit, pool bersama, dan Better Auth): user, session, account, verification, notes, classes, bimbel-profile, students, student-enrollments, student-progress, schedules, teaching-journals, journal-attendances, notifications, notification-preferences, salary-settings, salary-recaps, backup-runs, dan student-invoices."
     },
     "src/db/schema/session.ts": {
         "summary": "Definisi tabel Drizzle `session` bergaya Better Auth untuk PostgreSQL. Kolomnya meliputi id, expiresAt, token unik, createdAt/updatedAt, ipAddress, userAgent, userId (FK ke `user` dengan onDelete cascade), dan `impersonatedBy` untuk fitur impersonasi admin, plus indeks `session_user_id_idx`."
@@ -1138,5 +1138,14 @@
     },
     "src/app/(protected)/app/arus-kas/loading.tsx": {
         "summary": "Tampilan memuat halaman arus kas: `StatusMemuat` 'Menyusun arus kas…' dengan empat baris."
+    },
+    "src/db/schema/student-invoices.ts": {
+        "summary": "Skema tabel `student_invoices` (tagihan SPP bulanan murid) beserta enum `status_tagihan` ('belum_lunas' | 'lunas'). Kolom: id (uuid PK), student_id (FK ke `students`, on delete cascade), periode_bulan + periode_tahun (integer), nominal (numeric 12,2 dengan mode number), status (enum, default 'belum_lunas'), tanggal_bayar (date, null selama belum lunas), sudah_diingatkan (boolean, default false), created_at + updated_at (timestamptz, updated_at memakai `$onUpdate`). Indeks: `student_invoices_murid_periode_idx` unik pada (student_id, periode_bulan, periode_tahun) sebagai penjaga anti-tagihan-ganda di level basis data, dan `student_invoices_periode_idx` pada (periode_tahun, periode_bulan) untuk daftar/rekap per periode."
+    },
+    "drizzle/0015_tagihan_murid.sql": {
+        "summary": "Migrasi tabel tagihan SPP murid: membuat enum `status_tagihan` ('belum_lunas', 'lunas'), tabel `student_invoices` (id uuid PK default gen_random_uuid, student_id uuid dengan FK cascade ke `students`, periode_bulan, periode_tahun, nominal numeric(12,2), status enum default 'belum_lunas', tanggal_bayar date, sudah_diingatkan boolean default false, created_at/updated_at timestamptz default now()), indeks unik `student_invoices_murid_periode_idx` pada (student_id, periode_bulan, periode_tahun), dan indeks `student_invoices_periode_idx` pada (periode_tahun, periode_bulan)."
+    },
+    "drizzle/meta/0015_snapshot.json": {
+        "summary": "Snapshot skema Drizzle Kit untuk migrasi ke-15 (`0015_tagihan_murid`): memuat definisi lengkap tabel `student_invoices`, enum `status_tagihan`, relasi FK ke `students`, serta kedua indeksnya; dipakai drizzle-kit untuk menghitung perubahan skema berikutnya."
     }
 }
