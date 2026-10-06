@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BellRing, CalendarPlus, Check, PiggyBank, Undo2 } from "lucide-react";
 import { cn } from "cn";
@@ -11,20 +12,19 @@ import { Card } from "@/components/ui/card";
 import { LabelStatusTagihan } from "@/components/label-status-tagihan";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { formatRupiah } from "@/lib/gaji";
-import { periodeDariTagihan } from "@/lib/tagihan";
 import {
-  batalkanLunas,
-  langgananTagihan,
-  siapkanTagihan,
-  snapshotTagihan,
-  tandaiLunas,
-} from "@/lib/tagihan-store";
-import { formatPeriodeTagihan, hitungRekapTagihan } from "@/lib/tagihan";
+  formatPeriodeTagihan,
+  hitungRekapTagihan,
+  periodeDariTagihan,
+  type Tagihan,
+} from "@/lib/tagihan";
 import { tanggalISO } from "@/lib/tanggal";
 
 type DaftarTagihanProps = {
-  bulan: number;
-  tahun: number;
+  daftar: Tagihan[];
+  periode: string;
+  periodeTampil: string;
+  muridSudahDitagih: string[];
 };
 
 const tanggalTampil = new Intl.DateTimeFormat("id-ID", {
@@ -37,40 +37,45 @@ const tanggalTampil = new Intl.DateTimeFormat("id-ID", {
  * Daftar tagihan bulanan murid untuk satu periode. Tagihan yang belum lunas
  * ditandai garis kiri merah dan latar tipis, sedangkan yang lunas tampil biasa,
  * jadi bedanya terlihat sekilas tanpa mengandalkan warna saja. Datanya dibaca
- * dari penyimpanan sementara bersama, jadi tagihan yang baru dibuat langsung
- * muncul di sini.
+ * dari server, dan penandaan lunas dikirim ke API lalu halaman dimuat ulang.
  */
-export function DaftarTagihan({ bulan, tahun }: DaftarTagihanProps) {
-  const semua = useSyncExternalStore(
-    langgananTagihan,
-    snapshotTagihan,
-    snapshotTagihan,
-  );
+export function DaftarTagihan({ daftar, periodeTampil }: DaftarTagihanProps) {
+  const router = useRouter();
 
   // Tagihan yang sedang ditandai lunas, dan tanggal bayar yang diisi owner.
   const [bukaId, setBukaId] = useState<string | null>(null);
   const [tanggalBayar, setTanggalBayar] = useState(tanggalISO(new Date()));
   const [pesan, setPesan] = useState("");
+  const [galat, setGalat] = useState("");
+  const [pendingId, setPendingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    siapkanTagihan();
-  }, []);
-
-  const daftar = useMemo(
-    () =>
-      semua
-        .filter(
-          (baris) =>
-            baris.periodeBulan === bulan && baris.periodeTahun === tahun,
-        )
-        .sort((a, b) => a.muridNama.localeCompare(b.muridNama, "id")),
-    [semua, bulan, tahun],
-  );
-
-  const periodeTampil = formatPeriodeTagihan(
-    `${tahun}-${String(bulan).padStart(2, "0")}`,
-  );
   const rekap = hitungRekapTagihan(daftar);
+
+  async function ubahStatus(
+    tagihan: Tagihan,
+    muatan:
+      { status: "lunas"; tanggalBayar?: string } | { status: "belum_lunas" },
+    sukses: string,
+  ) {
+    if (pendingId) return;
+    setPendingId(tagihan.id);
+    setGalat("");
+    try {
+      const jawaban = await fetch(`/api/tagihan/${tagihan.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(muatan),
+      });
+      if (!jawaban.ok) throw new Error("gagal");
+      setPesan(sukses);
+      setBukaId(null);
+      router.refresh();
+    } catch {
+      setGalat(`Gagal memperbarui tagihan ${tagihan.muridNama}. Coba lagi.`);
+    } finally {
+      setPendingId(null);
+    }
+  }
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -109,6 +114,11 @@ export function DaftarTagihan({ bulan, tahun }: DaftarTagihanProps) {
       <p role="status" className="mt-4 text-sm text-muted-foreground">
         {pesan}
       </p>
+      {galat && (
+        <p role="alert" className="mt-2 text-sm text-destructive">
+          {galat}
+        </p>
+      )}
 
       {rekap.jumlah > 0 && (
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -152,6 +162,7 @@ export function DaftarTagihan({ bulan, tahun }: DaftarTagihanProps) {
         <ul className="mt-6 space-y-3">
           {daftar.map((tagihan) => {
             const lunas = tagihan.status === "lunas";
+            const pending = pendingId === tagihan.id;
             return (
               <li key={tagihan.id}>
                 <Card
@@ -203,10 +214,11 @@ export function DaftarTagihan({ bulan, tahun }: DaftarTagihanProps) {
                         type="button"
                         variant="ghost"
                         size="sm"
+                        disabled={pending}
                         onClick={() => {
-                          batalkanLunas(tagihan.id);
-                          setBukaId(null);
-                          setPesan(
+                          void ubahStatus(
+                            tagihan,
+                            { status: "belum_lunas" },
                             `${tagihan.muridNama}: status lunas dibatalkan.`,
                           );
                         }}
@@ -232,12 +244,13 @@ export function DaftarTagihan({ bulan, tahun }: DaftarTagihanProps) {
                         <Button
                           type="button"
                           size="sm"
+                          disabled={pending}
                           onClick={() => {
-                            tandaiLunas(tagihan.id, tanggalBayar);
-                            setPesan(
+                            void ubahStatus(
+                              tagihan,
+                              { status: "lunas", tanggalBayar },
                               `${tagihan.muridNama}: ditandai lunas (${tanggalBayar}).`,
                             );
-                            setBukaId(null);
                           }}
                         >
                           <Check aria-hidden="true" />
@@ -247,6 +260,7 @@ export function DaftarTagihan({ bulan, tahun }: DaftarTagihanProps) {
                           type="button"
                           variant="ghost"
                           size="sm"
+                          disabled={pending}
                           onClick={() => setBukaId(null)}
                         >
                           Batal
@@ -273,11 +287,6 @@ export function DaftarTagihan({ bulan, tahun }: DaftarTagihanProps) {
           })}
         </ul>
       )}
-
-      <p className="mt-6 text-xs leading-5 text-muted-foreground">
-        Catatan: tagihan di halaman ini masih data tiruan — penyimpanan ke
-        database menyusul bersama penandaan lunas.
-      </p>
     </div>
   );
 }

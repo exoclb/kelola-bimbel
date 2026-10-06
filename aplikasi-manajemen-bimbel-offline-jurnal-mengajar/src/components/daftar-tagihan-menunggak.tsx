@@ -1,6 +1,3 @@
-"use client";
-
-import { useEffect, useMemo, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { ArrowRight, BellRing, Phone, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,54 +5,36 @@ import { Card } from "@/components/ui/card";
 import { LabelStatusTagihan } from "@/components/label-status-tagihan";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { formatRupiah } from "@/lib/gaji";
-import { getDaftarMurid } from "@/lib/mock-murid";
-import { periodeDariTagihan } from "@/lib/tagihan";
-import {
-  langgananTagihan,
-  siapkanTagihan,
-  snapshotTagihan,
-} from "@/lib/tagihan-store";
 import {
   formatPeriodeTagihan,
-  menunggak,
-  periodeTagihan,
+  periodeDariTagihan,
   selisihBulan,
+  type Tagihan,
 } from "@/lib/tagihan";
+
+type WaliTagihan = {
+  id: string;
+  namaOrangTua: string | null;
+  kontakOrangTua: string | null;
+};
+
+type DaftarTagihanMenunggakProps = {
+  daftar: Tagihan[];
+  periodeBerjalan: string;
+  wali: WaliTagihan[];
+};
 
 /**
  * Daftar tagihan menunggak: tagihan yang belum lunas padahal bulannya sudah
  * lewat, diurutkan dari yang paling lama. Tiap baris menampilkan wali yang
- * bisa dihubungi. Datanya masih tiruan.
+ * bisa dihubungi. Datanya dibaca dari server.
  */
-export function DaftarTagihanMenunggak() {
-  const semua = useSyncExternalStore(
-    langgananTagihan,
-    snapshotTagihan,
-    snapshotTagihan,
-  );
-
-  useEffect(() => {
-    siapkanTagihan();
-  }, []);
-
-  const periodeBerjalan = periodeTagihan(new Date());
-
-  const daftar = useMemo(
-    () =>
-      semua
-        .filter((baris) =>
-          menunggak(periodeDariTagihan(baris), periodeBerjalan, baris.status),
-        )
-        .sort((a, b) =>
-          periodeDariTagihan(a).localeCompare(periodeDariTagihan(b)),
-        ),
-    [semua, periodeBerjalan],
-  );
-
-  const wali = useMemo(
-    () => new Map(getDaftarMurid().map((anak) => [anak.id, anak])),
-    [],
-  );
+export function DaftarTagihanMenunggak({
+  daftar,
+  periodeBerjalan,
+  wali: daftarWali,
+}: DaftarTagihanMenunggakProps) {
+  const wali = new Map(daftarWali.map((anak) => [anak.id, anak]));
 
   const total = daftar.reduce((jumlah, baris) => jumlah + baris.nominal, 0);
   const belumDiingatkan = daftar.filter(
@@ -147,12 +126,6 @@ export function DaftarTagihanMenunggak() {
           <Link href="/app/tagihan/baru">Buat tagihan</Link>
         </Button>
       </div>
-
-      <p className="mt-6 text-xs leading-5 text-muted-foreground">
-        Catatan: daftar tunggakan ini masih data tiruan — pencatatan sudah
-        diingatkan dan pengiriman pesan ke wali menyusul pada penyimpanan
-        database.
-      </p>
     </div>
   );
 }

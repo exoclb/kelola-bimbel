@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, CalendarPlus, Check, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,12 +17,6 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { IsianTeks } from "@/components/isian-form";
 import { formatRupiah } from "@/lib/gaji";
-import {
-  buatTagihanBaru,
-  langgananTagihan,
-  siapkanTagihan,
-  snapshotTagihan,
-} from "@/lib/tagihan-store";
 import { formatPeriodeTagihan } from "@/lib/tagihan";
 
 type MuridDitagih = {
@@ -34,6 +29,8 @@ type MuridDitagih = {
 type FormTagihanBulananProps = {
   murid: MuridDitagih[];
   kelasTersedia: string[];
+  /** Murid yang sudah ditagih pada periode berjalan (bawaan dari server). */
+  muridSudahDitagih: string[];
 };
 
 const NAMA_BULAN = new Intl.DateTimeFormat("id-ID", { month: "long" });
@@ -46,44 +43,54 @@ const bulanSekarang = new Date();
  * Formulir buat tagihan bulanan: pilih periode dan nominal, centang murid yang
  * ditagih (satu atau sekaligus banyak), lalu simpan. Murid yang sudah punya
  * tagihan pada periode itu tidak bisa dicentang lagi supaya tagihannya tidak
- * ganda. Datanya masih tiruan dan disimpan selama aplikasi terbuka.
+ * ganda. Tagihannya disimpan lewat API, jadi daftar tagihan selalu segar.
  */
 export function FormTagihanBulanan({
   murid,
   kelasTersedia,
+  muridSudahDitagih,
 }: FormTagihanBulananProps) {
-  const semua = useSyncExternalStore(
-    langgananTagihan,
-    snapshotTagihan,
-    snapshotTagihan,
-  );
+  const router = useRouter();
 
   const [bulan, setBulan] = useState(bulanSekarang.getMonth() + 1);
   const [tahun, setTahun] = useState(bulanSekarang.getFullYear());
   const [nominal, setNominal] = useState("400000");
   const [kelas, setKelas] = useState("");
   const [dipilih, setDipilih] = useState<string[]>([]);
+  const [sudahDitagih, setSudahDitagih] = useState<string[]>(muridSudahDitagih);
   const [galat, setGalat] = useState("");
+  const [galatMuat, setGalatMuat] = useState("");
   const [pesan, setPesan] = useState("");
-
-  useEffect(() => {
-    siapkanTagihan();
-  }, []);
+  const [pending, setPending] = useState(false);
 
   const periode = `${tahun}-${String(bulan).padStart(2, "0")}`;
 
-  const sudahDitagih = useMemo(
-    () =>
-      new Set(
-        semua
-          .filter(
-            (baris) =>
-              baris.periodeBulan === bulan && baris.periodeTahun === tahun,
-          )
-          .map((baris) => baris.muridId),
-      ),
-    [semua, bulan, tahun],
-  );
+  // Tanda "sudah ditagih" harus ikut periode yang dipilih, bukan periode saat
+  // halaman dibuka. Prop dari server hanya menjadi nilai awal.
+  useEffect(() => {
+    const kendali = new AbortController();
+    async function muat() {
+      try {
+        const jawaban = await fetch(`/api/tagihan?periode=${periode}`, {
+          signal: kendali.signal,
+        });
+        if (!jawaban.ok) throw new Error("gagal");
+        const isi = await jawaban.json();
+        setSudahDitagih(isi?.meta?.muridSudahDitagih ?? []);
+        setGalatMuat("");
+      } catch (kesalahan) {
+        if ((kesalahan as Error).name !== "AbortError") {
+          setGalatMuat(
+            "Gagal memuat murid yang sudah ditagih. Coba pilih ulang periodenya.",
+          );
+        }
+      }
+    }
+    void muat();
+    return () => kendali.abort();
+  }, [periode]);
+
+  const sudahDitagihSet = useMemo(() => new Set(sudahDitagih), [sudahDitagih]);
 
   const daftarMurid = useMemo(
     () => murid.filter((anak) => !kelas || anak.kelasNama === kelas),
@@ -95,7 +102,7 @@ export function FormTagihanBulanan({
     nominal.trim() !== "" && Number.isFinite(nominalAngka) && nominalAngka > 0;
   const terpilih = daftarMurid.filter((anak) => dipilih.includes(anak.id));
 
-  function simpan() {
+  async function simpan() {
     if (terpilih.length === 0) {
       setGalat("Pilih minimal satu murid yang akan ditagih.");
       return;
@@ -104,20 +111,48 @@ export function FormTagihanBulanan({
       setGalat("Nominal tagihan harus angka lebih dari nol.");
       return;
     }
+    if (pending) return;
 
-    const hasil = buatTagihanBaru(periode, Math.round(nominalAngka), terpilih);
-    const bagian = [
-      `${hasil.dibuat} tagihan ${formatPeriodeTagihan(periode)} dibuat`,
-      `nominal ${formatRupiah(Math.round(nominalAngka))}`,
-    ];
-    if (hasil.dilewati.length > 0) {
-      bagian.push(
-        `dilewati karena sudah ditagih: ${hasil.dilewati.join(", ")}`,
-      );
-    }
-    setPesan(`${bagian.join(" · ")}.`);
+    const nominalBulat = Math.round(nominalAngka);
+    setPending(true);
     setGalat("");
-    setDipilih([]);
+    try {
+      const jawaban = await fetch("/api/tagihan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          periode,
+          nominal: nominalBulat,
+          muridIds: terpilih.map((anak) => anak.id),
+        }),
+      });
+      if (!jawaban.ok) throw new Error("gagal");
+      const isi = await jawaban.json();
+      const hasil = (isi?.data ?? { dibuat: 0, dilewati: [] }) as {
+        dibuat: number;
+        dilewati: string[];
+      };
+      const bagian = [
+        `${hasil.dibuat} tagihan ${formatPeriodeTagihan(periode)} dibuat`,
+        `nominal ${formatRupiah(nominalBulat)}`,
+      ];
+      if (hasil.dilewati.length > 0) {
+        bagian.push(
+          `dilewati karena sudah ditagih: ${hasil.dilewati.join(", ")}`,
+        );
+      }
+      setPesan(`${bagian.join(" · ")}.`);
+      setGalat("");
+      setDipilih([]);
+      setSudahDitagih((sebelumnya) => [
+        ...new Set([...sebelumnya, ...terpilih.map((anak) => anak.id)]),
+      ]);
+      router.refresh();
+    } catch {
+      setGalat("Tagihan belum bisa disimpan. Coba lagi sebentar lagi.");
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
@@ -186,7 +221,7 @@ export function FormTagihanBulanan({
             Murid yang Ditagih
           </CardTitle>
           <CardDescription>
-            {semua.length > 0
+            {murid.length > 0
               ? `Centang satu murid atau sekaligus banyak untuk ${formatPeriodeTagihan(periode)}. Murid bertanda "sudah ditagih" tidak bisa dicentang.`
               : "Belum ada murid aktif yang bisa ditagih."}
           </CardDescription>
@@ -210,9 +245,15 @@ export function FormTagihanBulanan({
             </div>
           )}
 
+          {galatMuat && (
+            <p role="alert" className="text-sm text-destructive">
+              {galatMuat}
+            </p>
+          )}
+
           <ul className="space-y-2">
             {daftarMurid.map((anak) => {
-              const sudah = sudahDitagih.has(anak.id);
+              const sudah = sudahDitagihSet.has(anak.id);
               const centang = dipilih.includes(anak.id);
               return (
                 <li
@@ -273,8 +314,8 @@ export function FormTagihanBulanan({
             <Button
               type="button"
               size="sm"
-              disabled={terpilih.length === 0 || !nominalSah}
-              onClick={simpan}
+              disabled={terpilih.length === 0 || !nominalSah || pending}
+              onClick={() => void simpan()}
             >
               <CalendarPlus aria-hidden="true" />
               Buat tagihan
@@ -290,7 +331,7 @@ export function FormTagihanBulanan({
           {pesan && (
             <p className="flex items-center gap-1.5 text-sm text-primary">
               <Check className="size-4" aria-hidden="true" />
-              Tagihan tersimpan di daftar (masih data tiruan).
+              Tagihan tersimpan di daftar.
             </p>
           )}
         </CardContent>

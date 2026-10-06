@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import { DaftarTagihan } from "@/components/daftar-tagihan";
 import { requirePermission } from "@/lib/session";
-import { periodeTagihan } from "@/lib/tagihan";
+import { formatPeriodeTagihan, periodeTagihan } from "@/lib/tagihan";
+import {
+  daftarMuridSudahDitagih,
+  listTagihan,
+} from "@/services/tagihan.service";
 
 export const metadata: Metadata = { title: "Daftar Tagihan" };
 
@@ -10,7 +14,18 @@ export default async function DaftarTagihanPage() {
   await requirePermission({ tagihan: ["read-any"] });
 
   // Tanpa saringan, halaman menampilkan periode berjalan.
-  const [tahun, bulan] = periodeTagihan(new Date()).split("-").map(Number);
+  const periode = periodeTagihan(new Date());
+  const [daftar, muridSudahDitagih] = await Promise.all([
+    listTagihan({ periode }),
+    daftarMuridSudahDitagih({ periode }),
+  ]);
 
-  return <DaftarTagihan bulan={bulan} tahun={tahun} />;
+  return (
+    <DaftarTagihan
+      daftar={daftar}
+      periode={periode}
+      periodeTampil={formatPeriodeTagihan(periode)}
+      muridSudahDitagih={muridSudahDitagih}
+    />
+  );
 }

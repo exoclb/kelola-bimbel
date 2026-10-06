@@ -1,6 +1,3 @@
-"use client";
-
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { ArrowRight, PiggyBank, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,82 +8,63 @@ import { LabelStatusTagihan } from "@/components/label-status-tagihan";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { formatRupiah } from "@/lib/gaji";
 import {
-  langgananTagihan,
-  siapkanTagihan,
-  snapshotTagihan,
-} from "@/lib/tagihan-store";
-import { formatPeriodeTagihan, hitungRekapTagihan } from "@/lib/tagihan";
+  hitungRekapTagihan,
+  type StatusTagihan,
+  type Tagihan,
+} from "@/lib/tagihan";
 
 const NAMA_BULAN = new Intl.DateTimeFormat("id-ID", { month: "long" });
 const bulanTampil = (bulan: number) =>
   NAMA_BULAN.format(new Date(2026, bulan - 1, 1));
 
-const sekarang = new Date();
+type RekapPemasukanProps = {
+  daftar: Tagihan[];
+  periode: string;
+  periodeTampil: string;
+};
 
 /**
  * Rekap pemasukan bulanan dari tagihan murid: total yang sudah masuk, sisa
  * yang belum lunas, dan rincian per murid pada bulan yang dipilih. Datanya
- * dibaca dari penyimpanan sementara bersama, jadi tagihan yang baru dibuat
- * ikut terhitung.
+ * dibaca dari server; bulan dipilih lewat alamat halaman supaya rekap selalu
+ * dihitung dari data terbaru.
  */
-export function RekapPemasukan() {
-  const semua = useSyncExternalStore(
-    langgananTagihan,
-    snapshotTagihan,
-    snapshotTagihan,
-  );
+export function RekapPemasukan({
+  daftar,
+  periode,
+  periodeTampil,
+}: RekapPemasukanProps) {
+  const [tahunTerpilih, bulanTerpilih] = periode.split("-").map(Number);
+  const tahunSekarang = new Date().getFullYear();
 
-  const [bulan, setBulan] = useState(sekarang.getMonth() + 1);
-  const [tahun, setTahun] = useState(sekarang.getFullYear());
-
-  useEffect(() => {
-    siapkanTagihan();
-  }, []);
-
-  const daftar = useMemo(
-    () =>
-      semua
-        .filter(
-          (baris) =>
-            baris.periodeBulan === bulan && baris.periodeTahun === tahun,
-        )
-        .sort((a, b) => a.muridNama.localeCompare(b.muridNama, "id")),
-    [semua, bulan, tahun],
-  );
-
-  const periodeTampil = formatPeriodeTagihan(
-    `${tahun}-${String(bulan).padStart(2, "0")}`,
-  );
   const rekap = hitungRekapTagihan(daftar);
   const total = rekap.nominalLunas + rekap.nominalBelumLunas;
 
   // Rincian per murid: satu baris per murid pada periode ini.
-  const perMurid = useMemo(() => {
-    const peta = new Map<
-      string,
-      { nama: string; kelas: string; nominal: number; status: string }
-    >();
-    for (const baris of daftar) {
-      const ada = peta.get(baris.muridId);
-      if (ada) {
-        peta.set(baris.muridId, {
-          ...ada,
-          nominal: ada.nominal + baris.nominal,
-          status: ada.status === "lunas" ? baris.status : ada.status,
-        });
-      } else {
-        peta.set(baris.muridId, {
-          nama: baris.muridNama,
-          kelas: baris.kelasNama,
-          nominal: baris.nominal,
-          status: baris.status,
-        });
-      }
+  const peta = new Map<
+    string,
+    { nama: string; kelas: string; nominal: number; status: StatusTagihan }
+  >();
+  for (const baris of daftar) {
+    const ada = peta.get(baris.muridId);
+    if (ada) {
+      peta.set(baris.muridId, {
+        ...ada,
+        nominal: ada.nominal + baris.nominal,
+        status: ada.status === "lunas" ? baris.status : ada.status,
+      });
+    } else {
+      peta.set(baris.muridId, {
+        nama: baris.muridNama,
+        kelas: baris.kelasNama,
+        nominal: baris.nominal,
+        status: baris.status,
+      });
     }
-    return [...peta.values()].sort((a, b) =>
-      a.nama.localeCompare(b.nama, "id"),
-    );
-  }, [daftar]);
+  }
+  const perMurid = [...peta.values()].sort((a, b) =>
+    a.nama.localeCompare(b.nama, "id"),
+  );
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -103,40 +81,47 @@ export function RekapPemasukan() {
         <CardHeader>
           <CardTitle>Pilih periode</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="bulan">Bulan</Label>
-            <NativeSelect
-              id="bulan"
-              value={bulan}
-              onChange={(event) => setBulan(Number(event.target.value))}
-            >
-              {Array.from({ length: 12 }, (_, urutan) => urutan + 1).map(
-                (nilai) => (
-                  <option key={nilai} value={nilai}>
-                    {bulanTampil(nilai)}
-                  </option>
-                ),
-              )}
-            </NativeSelect>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="tahun">Tahun</Label>
-            <NativeSelect
-              id="tahun"
-              value={tahun}
-              onChange={(event) => setTahun(Number(event.target.value))}
-            >
-              {[0, -1, -2].map((geser) => {
-                const nilai = sekarang.getFullYear() + geser;
-                return (
-                  <option key={nilai} value={nilai}>
-                    {nilai}
-                  </option>
-                );
-              })}
-            </NativeSelect>
-          </div>
+        <CardContent>
+          <form method="get" className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="bulan">Bulan</Label>
+              <NativeSelect
+                id="bulan"
+                name="bulan"
+                defaultValue={bulanTerpilih}
+              >
+                {Array.from({ length: 12 }, (_, urutan) => urutan + 1).map(
+                  (nilai) => (
+                    <option key={nilai} value={nilai}>
+                      {bulanTampil(nilai)}
+                    </option>
+                  ),
+                )}
+              </NativeSelect>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tahun">Tahun</Label>
+              <NativeSelect
+                id="tahun"
+                name="tahun"
+                defaultValue={tahunTerpilih}
+              >
+                {[0, -1, -2].map((geser) => {
+                  const nilai = tahunSekarang + geser;
+                  return (
+                    <option key={nilai} value={nilai}>
+                      {nilai}
+                    </option>
+                  );
+                })}
+              </NativeSelect>
+            </div>
+            <div className="sm:col-span-2">
+              <Button type="submit" size="sm">
+                Tampilkan
+              </Button>
+            </div>
+          </form>
         </CardContent>
       </Card>
 
@@ -225,11 +210,6 @@ export function RekapPemasukan() {
           <Link href="/app/tagihan/baru">Buat tagihan</Link>
         </Button>
       </div>
-
-      <p className="mt-6 text-xs leading-5 text-muted-foreground">
-        Catatan: rekap ini masih data tiruan — unduh dan penyimpanan ke database
-        menyusul.
-      </p>
     </div>
   );
 }
