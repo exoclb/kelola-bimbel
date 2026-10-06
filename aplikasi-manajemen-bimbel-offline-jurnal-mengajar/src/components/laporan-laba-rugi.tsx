@@ -11,12 +11,14 @@ import {
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { TombolUnduhLaporan } from "@/components/tombol-unduh-laporan";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { cn } from "cn";
 import { formatRupiah, formatPeriode } from "@/lib/gaji";
 import { getRekapGajiBulanan } from "@/lib/mock-gaji";
+import { getProfilBimbel } from "@/lib/mock-pengaturan";
 import {
   langgananPengeluaran,
   siapkanPengeluaran,
@@ -228,6 +230,21 @@ export function LaporanLabaRugi() {
           </p>
           <p className="text-xs text-muted-foreground">{periodeTampil}</p>
         </Card>
+      </div>
+
+      <div className="mt-4">
+        <TombolUnduhLaporan
+          judul="Laporan Laba Rugi"
+          periode={periodeTampil}
+          kop={getProfilBimbel()}
+          kolom={["Keterangan", "Jumlah (Rp)"]}
+          baris={[
+            ["Pemasukan SPP (lunas)", rekapTagihan.nominalLunas],
+            ["Biaya honor guru", -biayaHonor],
+            ["Pengeluaran operasional", -biayaOperasional],
+            [untung ? "Laba bersih" : "Rugi bersih", labaBersih],
+          ]}
+        />
       </div>
 
       <Card className="mt-4">
