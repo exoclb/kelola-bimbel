@@ -20,3 +20,4 @@ export * from "./backup-runs";
 export * from "./student-invoices";
 export * from "./expense-categories";
 export * from "./expenses";
+export * from "./teacher-attendances";
