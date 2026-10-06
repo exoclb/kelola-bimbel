@@ -22,6 +22,7 @@ import {
   getProfilBimbel,
 } from "@/lib/mock-pengaturan";
 import { labelPeran } from "@/lib/peran";
+import { getDaftarWali, ringkasPenautan } from "@/lib/mock-wali";
 import { ambilStatusBackup } from "@/services/backup.service";
 import { formatRupiah } from "@/lib/gaji";
 import { formatTanggalLengkap } from "@/lib/tanggal";
@@ -56,6 +57,7 @@ export async function PengaturanBimbel({ bolehKelola }: PengaturanBimbelProps) {
 
   const guruAktif = guru.filter((akun) => akun.statusAktif).length;
   const preferensiAktif = preferensi.filter((item) => item.aktif).length;
+  const ringkasWali = ringkasPenautan(getDaftarWali());
 
   // Kartu yang menyangkut seluruh bimbel hanya muncul untuk yang boleh
   // mengelolanya; preferensi notifikasi selalu ada karena milik akun sendiri.
@@ -87,6 +89,14 @@ export async function PengaturanBimbel({ bolehKelola }: PengaturanBimbelProps) {
       keterangan:
         "Tambah akun guru atau nonaktifkan yang sudah tidak mengajar.",
       tombol: "Kelola guru",
+    },
+    {
+      href: "/app/pengaturan/wali",
+      ikon: Users,
+      judul: "Penautan Akun Wali",
+      ringkasan: `${ringkasWali.jumlahTertaut} dari ${ringkasWali.jumlahAkun} akun tertaut ke murid`,
+      keterangan: "Lihat akun wali beserta murid yang tertaut padanya.",
+      tombol: "Lihat penautan",
     },
   ];
 

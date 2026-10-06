@@ -75,8 +75,9 @@ const MURID: Murid[] = [
     id: "mrd-8",
     nama: "Hana Salsabila",
     tanggalLahir: "2016-12-11",
-    namaOrangTua: "Bapak Fikri",
-    kontakOrangTua: "0899-3322-1100",
+    // Saudara Bima (mrd-2): satu akun wali bisa tertaut ke dua anak sekaligus.
+    namaOrangTua: "Ibu Ratna",
+    kontakOrangTua: "0813-2211-4455",
     statusAktif: true,
   },
 ];
