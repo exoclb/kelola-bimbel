@@ -17,6 +17,8 @@ export const statement = {
   // Portal orang tua: membaca tagihan dan perkembangan anak yang tertaut ke
   // akun wali. Penautan anak dibatasi lewat sesi, bukan lewat izin ini.
   portal: ["read"],
+  // Pengeluaran operasional bimbel. Hanya owner yang mencatat dan mengelola.
+  pengeluaran: ["read-any", "write-any"],
   // Tagihan bulanan murid. Owner membuat tagihan dan menandainya lunas untuk
   // semua murid; murid/wali melihat tagihannya sendiri lewat sesi, tanpa izin
   // tambahan.
@@ -45,6 +47,7 @@ export const roles = {
     jurnal: ["read-any"],
     gaji: ["read-any"],
     tagihan: ["read-any", "write-any"],
+    pengeluaran: ["read-any", "write-any"],
     portal: ["read"],
     perkembangan: ["read", "write"],
     pengaturan: ["read", "write"],
@@ -55,6 +58,7 @@ export const roles = {
     jurnal: ["read-any"],
     gaji: ["read-any"],
     tagihan: ["read-any", "write-any"],
+    pengeluaran: ["read-any", "write-any"],
     portal: ["read"],
     perkembangan: ["read", "write"],
     pengaturan: ["read", "write"],

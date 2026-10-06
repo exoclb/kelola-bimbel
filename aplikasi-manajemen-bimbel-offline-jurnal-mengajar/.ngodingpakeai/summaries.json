@@ -153,7 +153,7 @@
         "summary": "Data contoh kehadiran murid per pertemuan (tipe `KehadiranPertemuan`) sebagai pengganti tabel `journal_attendances` yang API-nya belum ada; mengekspor `getKehadiranAwal()` yang mengembalikan salinan daftar kehadiran."
     },
     "src/lib/mock-menu.ts": {
-        "summary": "Susunan menu tiap peran (masih data tiruan; halaman dan API tetap memeriksa izin sendiri): `MENU_DASAR` (Beranda, Isi Jurnal, Riwayat, Presensi Guru, Murid, Kelas, Penempatan, Perkembangan, Pengaturan), guru ditambah 'Gaji saya', owner ditambah Pemantauan, Gaji, dan Tagihan, sedangkan `orang-tua` hanya menu portal (Beranda `/portal`, Tagihan SPP `/portal/tagihan`). Tersedia `menuUntukPeran(peran)` (salinan menu per peran) dan `menuUntukPortal()` yang selalu mengembalikan menu portal untuk cangkang Portal Wali."
+        "summary": "Susunan menu tiap peran (masih data tiruan; halaman dan API tetap memeriksa izin sendiri): `MENU_DASAR` (Beranda, Isi Jurnal, Riwayat, Presensi Guru, Murid, Kelas, Penempatan, Perkembangan, Pengaturan), guru ditambah 'Gaji saya', owner ditambah Pemantauan, Gaji, Tagihan, dan Pengeluaran, sedangkan `orang-tua` hanya menu portal (Beranda `/portal`, Tagihan SPP `/portal/tagihan`). Tersedia `menuUntukPeran(peran)` dan `menuUntukPortal()`."
     },
     "src/lib/mock-pengaturan.ts": {
         "summary": "Data tiruan Pengaturan Bimbel sebagai pengganti tabel `salary_settings`/`notification_preferences`: tipe `ProfilBimbel`, `AturanGaji`, `PreferensiNotifikasi`, dan fungsi `getProfilBimbel()`, `getRiwayatTarif()`, `getAturanGaji()`, `getDaftarGuru()`, `getPreferensiNotifikasi()`. Riwayat tarif meniru aturan baris terbaru yang berlaku sejak tanggal tertentu."
@@ -549,7 +549,7 @@
         "summary": "Definisi skema Drizzle tabel `notification_preferences` untuk preferensi notifikasi per akun: id uuid, user_id berelasi ke `user.id` cascade, jenis_notifikasi varchar(40), aktif boolean bawaan true, dan created_at, dijaga uniqueIndex `notification_preferences_user_jenis_idx` pada (user_id, jenis_notifikasi)."
     },
     "src/lib/permissions.ts": {
-        "summary": "Registry izin (Better Auth access control): resource `notes`, `jurnal` (read-any), `gaji` (read-any), `portal` (read — membuka Portal Wali; penautan anak dibatasi lewat sesi), `tagihan` (read-any + write-any), `perkembangan` (read/write), dan `pengaturan` (read/write). Peran `user` minimal, `orang-tua` hanya `portal: read`, `owner` memantau jurnal, gaji, tagihan, pengaturan bimbel, dan boleh meninjau portal, `admin` menambahkan hak admin sistem. Berisi `statement`, `ac`, `roles`, `DEFAULT_ROLE`, `ADMIN_ROLES`, dan tipe `Permissions` turunan dari statement."
+        "summary": "Registry izin (Better Auth access control): resource `notes`, `jurnal` (read-any), `gaji` (read-any), `portal` (read — membuka Portal Wali), `tagihan` (read-any + write-any), `pengeluaran` (read-any + write-any — pengeluaran operasional bimbel), `perkembangan` (read/write), dan `pengaturan` (read/write). Peran `user` minimal, `orang-tua` hanya `portal: read`, `owner` memantau jurnal, gaji, tagihan, pengeluaran, pengaturan bimbel, dan boleh meninjau portal, `admin` menambahkan hak admin sistem. Berisi `statement`, `ac`, `roles`, `DEFAULT_ROLE`, `ADMIN_ROLES`, dan tipe `Permissions`."
     },
     "src/lib/session.ts": {
         "summary": "Pembantu sesi server-only: `getSession` (di-cache React) menganggap akun dengan `banned` tidak punya sesi, `requireSession` mengalihkan ke /sign-in, `hasPermission` memakai `auth.api.userHasPermission`, dan `requirePermission` merender notFound agar pengguna tidak bisa memetakan route yang tidak boleh diaksesnya."
@@ -1102,5 +1102,20 @@
     },
     "src/app/portal/tagihan/loading.tsx": {
         "summary": "Tampilan memuat halaman tagihan SPP anak: `StatusMemuat` 'Memuat tagihan anak…' dengan empat baris."
+    },
+    "src/lib/pengeluaran.ts": {
+        "summary": "Hitungan dan bentuk pengeluaran operasional bimbel (melengkapi pemasukan SPP di `src/lib/tagihan.ts` dan honor guru di `src/lib/gaji.ts`): tipe `KategoriPengeluaran` (id, nama) dan `Pengeluaran` (id, kategoriId, kategoriNama untuk tampilan, nominal, tanggal, catatan). Helper: `periodePengeluaran(tanggal)` dan `periodeDariPengeluaran(baris)` (bentuk `YYYY-MM`, memakai `periodeBulan` dari modul gaji), `pengeluaranPeriode(daftar, periode)` (terbaru lebih dulu), `hitungTotalPengeluaran(daftar)`, dan `totalPerKategori(daftar)` (terbesar lebih dulu)."
+    },
+    "src/lib/mock-pengeluaran.ts": {
+        "summary": "Data contoh pengeluaran operasional (pengganti `GET /api/pengeluaran`): lima kategori (`kat-sewa`, `kat-listrik`, `kat-atk`, `kat-pemeliharaan`, `kat-internet`) dan 12 baris pengeluaran mengikuti rencana kolom tabel `expenses` (kategori, nominal, tanggal, catatan) — empat baris di bulan berjalan (sewa, listrik, internet, alat tulis) plus bulan-bulan sebelumnya untuk saringan periode dan laporan. Tanggal dihitung dari offset `hariLalu` + `tanggalISO` supaya contohnya ikut bergerak mengikuti tanggal sebenarnya. Getter: `getSemuaPengeluaran()` (terbaru lebih dulu) dan `getKategoriPengeluaran()` untuk pilihan pada form dan saringan."
+    },
+    "src/components/daftar-pengeluaran.tsx": {
+        "summary": "Komponen server daftar pengeluaran operasional untuk owner: judul + ringkasan ('N catatan pengeluaran pada <periode>'), dua kartu ringkas yaitu 'Total periode' (`formatRupiah` + `hitungTotalPengeluaran`) dan 'Per kategori' (`totalPerKategori`, terbesar dulu), keadaan kosong `PesanKosong`, serta satu kartu per pengeluaran berisi kategori, tanggal (`id-ID` panjang), nominal, dan catatan. Datanya masih contoh; form, saringan, dan pengelolaan kategori menyusul."
+    },
+    "src/app/(protected)/app/pengeluaran/page.tsx": {
+        "summary": "Halaman pengeluaran operasional (`/app/pengeluaran`) untuk owner: dijaga `requirePermission({ pengeluaran: [\"read-any\"] })`, lalu menampilkan periode berjalan (`periodePengeluaran(new Date())`) lewat `pengeluaranPeriode(getSemuaPengeluaran(), periode)` dan `formatPeriode`."
+    },
+    "src/app/(protected)/app/pengeluaran/loading.tsx": {
+        "summary": "Tampilan memuat halaman pengeluaran operasional: `StatusMemuat` 'Memuat pengeluaran…' dengan empat baris, mengikuti pola `loading.tsx` halaman owner lain."
     }
 }
