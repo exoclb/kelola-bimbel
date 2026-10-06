@@ -501,7 +501,7 @@
         "summary": "Snapshot skema drizzle-kit termutakhir pada batch ini (setelah migrasi 0010_catatan_perkembangan): memuat tabel `user`, `session`, `account`, `verification`, `notes`, `classes`, `students`, `student_enrollments`, `student_progress`, `schedules`, `teaching_journals`, `journal_attendances`, `notifications`, `notification_preferences`, `salary_settings`, `salary_recaps`, serta enum `status_penempatan`, `status_jurnal`, dan `status_pembayaran_gaji`."
     },
     "drizzle/meta/_journal.json": {
-        "summary": "Jurnal migrasi Drizzle Kit: daftar entri migrasi berurutan (idx, versi, waktu, dan tag nama berkas). Entri terakhir saat ini `0016_pengeluaran_operasional`, mengikuti penamaan deskriptif berbahasa Indonesia untuk setiap migrasi yang dibuat drizzle-kit."
+        "summary": "Jurnal migrasi Drizzle Kit: daftar entri migrasi berurutan (idx, versi, waktu, dan tag nama berkas). Entri terakhir saat ini `0017_presensi_guru`, mengikuti penamaan deskriptif berbahasa Indonesia untuk setiap migrasi yang dibuat drizzle-kit."
     },
     "src/app/(auth)/masuk/page.tsx": {
         "summary": "Halaman Next App Router untuk route /masuk dengan metadata judul Masuk. Merender komponen klien `HalamanMasuk` dan menyuplai daftar akun dari `getDaftarAkun` sebagai data awal layar masuk."
@@ -786,7 +786,7 @@
         "summary": "Inisialisasi koneksi database server-only yang mengekspor `db`. Membuat `Pool` node-postgres (maks 5 koneksi, timeout 5000 ms) dan membungkusnya dengan `drizzle(pool, { schema })`, serta menyimpan instance di `globalThis` agar hot reload pengembangan tidak membuat pool berlebih."
     },
     "src/db/schema/index.ts": {
-        "summary": "Entrypoint ekspor seluruh tabel Drizzle (dipakai Drizzle Kit, pool bersama, dan Better Auth): user, session, account, verification, notes, classes, bimbel-profile, students, student-enrollments, student-progress, schedules, teaching-journals, journal-attendances, notifications, notification-preferences, salary-settings, salary-recaps, backup-runs, student-invoices, expense-categories, dan expenses."
+        "summary": "Entrypoint ekspor seluruh tabel Drizzle (dipakai Drizzle Kit, pool bersama, dan Better Auth): user, session, account, verification, notes, classes, bimbel-profile, students, student-enrollments, student-progress, schedules, teaching-journals, journal-attendances, notifications, notification-preferences, salary-settings, salary-recaps, backup-runs, student-invoices, expense-categories, expenses, dan teacher-attendances."
     },
     "src/db/schema/session.ts": {
         "summary": "Definisi tabel Drizzle `session` bergaya Better Auth untuk PostgreSQL. Kolomnya meliputi id, expiresAt, token unik, createdAt/updatedAt, ipAddress, userAgent, userId (FK ke `user` dengan onDelete cascade), dan `impersonatedBy` untuk fitur impersonasi admin, plus indeks `session_user_id_idx`."
@@ -1183,5 +1183,14 @@
     },
     "drizzle/meta/0016_snapshot.json": {
         "summary": "Snapshot skema Drizzle Kit untuk migrasi ke-16 (`0016_pengeluaran_operasional`): memuat definisi lengkap tabel `expense_categories` dan `expenses`, relasi FK kategori dengan ON DELETE restrict, serta indeks-indeksnya; dipakai drizzle-kit untuk menghitung perubahan skema berikutnya."
+    },
+    "src/db/schema/teacher-attendances.ts": {
+        "summary": "Skema tabel `teacher_attendances` (presensi kehadiran guru per sesi mengajar) beserta enum `status_kehadiran_guru` ('hadir' | 'izin' | 'tidak_hadir' | 'digantikan'). Kolom: id (uuid PK), guru_id (FK ke `user`, on delete cascade), schedule_id (FK ke `schedules`, on delete cascade), tanggal (date), status (enum, default 'hadir'), guru_pengganti_id (FK ke `user`, on delete set null, diisi hanya saat status 'digantikan'), catatan (text), diubah_oleh_id (FK ke `user`, on delete set null — siapa terakhir mengubah), created_at + updated_at (timestamptz, updated_at memakai `$onUpdate`). Indeks: `teacher_attendances_guru_jadwal_tanggal_idx` unik pada (guru_id, schedule_id, tanggal) sehingga satu sesi hanya punya satu catatan (idempoten), dan `teacher_attendances_tanggal_idx` untuk daftar/rekap harian."
+    },
+    "drizzle/0017_presensi_guru.sql": {
+        "summary": "Migrasi presensi guru per sesi: membuat enum `status_kehadiran_guru` ('hadir','izin','tidak_hadir','digantikan') dan tabel `teacher_attendances` (id uuid PK, guru_id text FK cascade ke `user`, schedule_id uuid FK cascade ke `schedules`, tanggal date, status enum default 'hadir', guru_pengganti_id & diubah_oleh_id text FK set null ke `user`, catatan text, created_at/updated_at timestamptz default now()), dengan indeks unik `teacher_attendances_guru_jadwal_tanggal_idx` pada (guru_id, schedule_id, tanggal) dan indeks `teacher_attendances_tanggal_idx` pada tanggal."
+    },
+    "drizzle/meta/0017_snapshot.json": {
+        "summary": "Snapshot skema Drizzle Kit untuk migrasi ke-17 (`0017_presensi_guru`): memuat definisi tabel `teacher_attendances`, enum `status_kehadiran_guru`, keempat relasi FK ke `user`/`schedules` beserta perilaku on delete-nya, dan kedua indeksnya; dipakai drizzle-kit untuk menghitung perubahan skema berikutnya."
     }
 }
