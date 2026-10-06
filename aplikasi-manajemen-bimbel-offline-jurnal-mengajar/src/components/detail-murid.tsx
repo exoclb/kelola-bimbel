@@ -337,22 +337,26 @@ export function DetailMurid({
         )}
       </Card>
 
-      {riwayatKelas.length > 0 && (
-        <>
-          <h2 className="mt-8 text-xl font-semibold tracking-tight">
-            Riwayat kelas
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Kelas yang sudah tidak diikuti lagi; catatan lama tetap tersimpan.
-          </p>
-          <ul className="mt-3 space-y-3">
-            {riwayatKelas.map((item) => (
-              <li key={`${item.kelasId}-${item.tanggalMulai}`}>
-                <KartuKelas kelas={item.kelas} baris={item} />
-              </li>
-            ))}
-          </ul>
-        </>
+      <h2 className="mt-8 text-xl font-semibold tracking-tight">
+        Riwayat kelas ({riwayatKelas.length})
+      </h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Kelas yang sudah tidak diikuti lagi; catatan lama tetap tersimpan.
+      </p>
+      {riwayatKelas.length === 0 ? (
+        <PesanKosong
+          className="mt-3"
+          judul="Belum ada riwayat kelas"
+          keterangan="Riwayat muncul setelah murid keluar dari sebuah kelas."
+        />
+      ) : (
+        <ul className="mt-3 space-y-3">
+          {riwayatKelas.map((item) => (
+            <li key={`${item.kelasId}-${item.tanggalMulai}`}>
+              <KartuKelas kelas={item.kelas} baris={item} />
+            </li>
+          ))}
+        </ul>
       )}
 
       <p className="mt-6 text-xs leading-5 text-muted-foreground">
