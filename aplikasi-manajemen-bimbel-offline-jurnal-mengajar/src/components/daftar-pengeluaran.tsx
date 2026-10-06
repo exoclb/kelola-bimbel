@@ -4,13 +4,13 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { CalendarDays, PencilLine, Receipt, Trash2 } from "lucide-react";
 import { FormTambahPengeluaran } from "@/components/form-tambah-pengeluaran";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { PesanKosong } from "@/components/status-antarmuka";
-import { formatRupiah } from "@/lib/gaji";
+import { formatPeriode, formatRupiah } from "@/lib/gaji";
 import { getKategoriPengeluaran } from "@/lib/mock-pengeluaran";
 import {
   hapusPengeluaran,
@@ -29,7 +29,6 @@ import {
 
 type DaftarPengeluaranProps = {
   periode: string;
-  periodeTampil: string;
 };
 
 type Draf = {
@@ -51,10 +50,7 @@ const tanggalTampil = new Intl.DateTimeFormat("id-ID", {
  * Hapus memakai konfirmasi lebih dulu supaya tidak keliru. Datanya masih
  * contoh dan hanya berlaku selama aplikasi terbuka.
  */
-export function DaftarPengeluaran({
-  periode,
-  periodeTampil,
-}: DaftarPengeluaranProps) {
+export function DaftarPengeluaran({ periode }: DaftarPengeluaranProps) {
   const semua = useSyncExternalStore(
     langgananPengeluaran,
     snapshotPengeluaran,
@@ -67,15 +63,24 @@ export function DaftarPengeluaran({
   const [draf, setDraf] = useState<Draf | null>(null);
   const [galat, setGalat] = useState("");
   const [pesan, setPesan] = useState("");
+  // Saringan daftar: periode (YYYY-MM) dan kategori. Bawaannya periode yang
+  // dikirim halaman, yaitu bulan berjalan.
+  const [periodeSaring, setPeriodeSaring] = useState(periode);
+  const [kategoriSaring, setKategoriSaring] = useState("");
 
   useEffect(() => {
     siapkanPengeluaran();
   }, []);
 
   const daftar = useMemo(
-    () => pengeluaranPeriode(semua, periode),
-    [semua, periode],
+    () =>
+      pengeluaranPeriode(semua, periodeSaring).filter(
+        (baris) => !kategoriSaring || baris.kategoriId === kategoriSaring,
+      ),
+    [semua, periodeSaring, kategoriSaring],
   );
+  const adaSaringan = Boolean(kategoriSaring) || periodeSaring !== periode;
+  const periodeTampil = formatPeriode(periodeSaring);
   const total = hitungTotalPengeluaran(daftar);
   const perKategori = totalPerKategori(daftar);
 
@@ -158,6 +163,49 @@ export function DaftarPengeluaran({
         />
       </div>
 
+      <Card className="mt-4">
+        <CardContent className="grid gap-4 py-4 sm:grid-cols-3">
+          <div className="space-y-2">
+            <Label htmlFor="saring-periode">Bulan</Label>
+            <Input
+              id="saring-periode"
+              type="month"
+              value={periodeSaring}
+              onChange={(event) => setPeriodeSaring(event.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="saring-kategori">Kategori</Label>
+            <NativeSelect
+              id="saring-kategori"
+              value={kategoriSaring}
+              onChange={(event) => setKategoriSaring(event.target.value)}
+            >
+              <option value="">Semua kategori</option>
+              {kategori.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.nama}
+                </option>
+              ))}
+            </NativeSelect>
+          </div>
+          <div className="flex items-end">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={!adaSaringan}
+              onClick={() => {
+                setPeriodeSaring(periode);
+                setKategoriSaring("");
+              }}
+            >
+              Hapus saringan
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {daftar.length > 0 && (
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <Card className="gap-1 px-5 py-4">
@@ -193,8 +241,16 @@ export function DaftarPengeluaran({
       {daftar.length === 0 ? (
         <PesanKosong
           className="mt-6"
-          judul="Belum ada pengeluaran"
-          keterangan="Pengeluaran operasional yang dicatat owner akan muncul di daftar sini."
+          judul={
+            adaSaringan
+              ? "Tidak ada pengeluaran pada saringan ini"
+              : "Belum ada pengeluaran"
+          }
+          keterangan={
+            adaSaringan
+              ? "Coba ganti bulan atau kategorinya."
+              : "Pengeluaran operasional yang dicatat owner akan muncul di daftar sini."
+          }
         />
       ) : (
         <ul className="mt-6 space-y-3">

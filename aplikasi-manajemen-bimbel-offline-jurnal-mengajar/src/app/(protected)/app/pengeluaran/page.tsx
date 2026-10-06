@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { DaftarPengeluaran } from "@/components/daftar-pengeluaran";
-import { formatPeriode } from "@/lib/gaji";
 import { periodePengeluaran } from "@/lib/pengeluaran";
 import { requirePermission } from "@/lib/session";
 
@@ -13,10 +12,5 @@ export default async function PengeluaranPage() {
   // Tanpa saringan, halaman menampilkan periode berjalan.
   const periode = periodePengeluaran(new Date());
 
-  return (
-    <DaftarPengeluaran
-      periode={periode}
-      periodeTampil={formatPeriode(periode)}
-    />
-  );
+  return <DaftarPengeluaran periode={periode} />;
 }
