@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { MapPin, PencilLine, Phone, Users } from "lucide-react";
+import {
+  MapPin,
+  PencilLine,
+  Phone,
+  Power,
+  PowerOff,
+  Users,
+} from "lucide-react";
 import { FormTambahCabang } from "@/components/form-tambah-cabang";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -99,6 +106,14 @@ export function DaftarCabang() {
     });
     setPesan(`Cabang ${namaRapi} diperbarui.`);
     batal();
+  }
+
+  function gantiStatus(baris: Cabang) {
+    const statusBaru = !baris.statusAktif;
+    ubahCabang({ ...baris, statusAktif: statusBaru });
+    setPesan(
+      `Cabang ${baris.nama} ${statusBaru ? "diaktifkan" : "dinonaktifkan"}.`,
+    );
   }
 
   return (
@@ -261,6 +276,21 @@ export function DaftarCabang() {
                         >
                           <PencilLine aria-hidden="true" />
                           Ubah
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          title={`${cabang.statusAktif ? "Nonaktifkan" : "Aktifkan"} cabang ${cabang.nama}`}
+                          aria-label={`${cabang.statusAktif ? "Nonaktifkan" : "Aktifkan"} cabang ${cabang.nama}`}
+                          onClick={() => gantiStatus(cabang)}
+                        >
+                          {cabang.statusAktif ? (
+                            <PowerOff aria-hidden="true" />
+                          ) : (
+                            <Power aria-hidden="true" />
+                          )}
+                          {cabang.statusAktif ? "Nonaktifkan" : "Aktifkan"}
                         </Button>
                       </div>
                     </>
