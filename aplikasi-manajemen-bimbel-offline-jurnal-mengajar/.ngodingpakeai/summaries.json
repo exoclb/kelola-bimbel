@@ -153,7 +153,7 @@
         "summary": "Data contoh kehadiran murid per pertemuan (tipe `KehadiranPertemuan`) sebagai pengganti tabel `journal_attendances` yang API-nya belum ada; mengekspor `getKehadiranAwal()` yang mengembalikan salinan daftar kehadiran."
     },
     "src/lib/mock-menu.ts": {
-        "summary": "Susunan menu tiap peran (masih data tiruan; halaman dan API tetap memeriksa izin sendiri): `MENU_DASAR` (Beranda, Isi Jurnal, Riwayat, Presensi Guru, Murid, Kelas, Penempatan, Perkembangan, Pengaturan), guru ditambah 'Gaji saya', owner ditambah Pemantauan, Gaji, Tagihan, Pengeluaran, dan Laba Rugi, sedangkan `orang-tua` hanya menu portal (Beranda `/portal`, Tagihan SPP `/portal/tagihan`). Tersedia `menuUntukPeran(peran)` dan `menuUntukPortal()`."
+        "summary": "Susunan menu tiap peran (masih data tiruan; halaman dan API tetap memeriksa izin sendiri): `MENU_DASAR` (Beranda, Isi Jurnal, Riwayat, Presensi Guru, Murid, Kelas, Penempatan, Perkembangan, Pengaturan), guru ditambah 'Gaji saya', owner ditambah Pemantauan, Gaji, Tagihan, Pengeluaran, Laba Rugi, dan Arus Kas, sedangkan `orang-tua` hanya menu portal (Beranda `/portal`, Tagihan SPP `/portal/tagihan`). Tersedia `menuUntukPeran(peran)` dan `menuUntukPortal()`."
     },
     "src/lib/mock-pengaturan.ts": {
         "summary": "Data tiruan Pengaturan Bimbel sebagai pengganti tabel `salary_settings`/`notification_preferences`: tipe `ProfilBimbel`, `AturanGaji`, `PreferensiNotifikasi`, dan fungsi `getProfilBimbel()`, `getRiwayatTarif()`, `getAturanGaji()`, `getDaftarGuru()`, `getPreferensiNotifikasi()`. Riwayat tarif meniru aturan baris terbaru yang berlaku sejak tanggal tertentu."
@@ -1129,5 +1129,14 @@
     },
     "src/app/(protected)/app/laba-rugi/loading.tsx": {
         "summary": "Tampilan memuat halaman laporan laba rugi: `StatusMemuat` 'Menghitung laba rugi…' dengan empat baris."
+    },
+    "src/components/arus-kas.tsx": {
+        "summary": "Halaman arus kas (klien) untuk owner: tren 4 bulan terakhir berisi, per bulan, jumlah pemasukan SPP, total pengeluaran (honor guru + operasional), dan laba bersih, ditampilkan sebagai dua batang relatif terhadap nilai terbesar pada rentang itu (batang primary untuk pemasukan, destructive untuk pengeluaran, dengan `aria-label` berisi angkanya) plus baris angka di bawahnya; diakhiri baris total 4 bulan dan legenda. Angka dijumlahkan dari `tagihan-store` dan `pengeluaran-store` (lewat `useSyncExternalStore` + `siapkan*()` di `useEffect`) serta honor dari `getRekapGajiBulanan`, dengan periode dihitung memakai `geserPeriode`. Ada tautan ke laporan laba rugi dan pengeluaran."
+    },
+    "src/app/(protected)/app/arus-kas/page.tsx": {
+        "summary": "Halaman arus kas (`/app/arus-kas`) untuk owner: dijaga `requirePermission({ pengeluaran: [\"read-any\"] })`, lalu merender `ArusKas` (tren bulanan dihitung di sisi klien dari modul tagihan, gaji, dan pengeluaran)."
+    },
+    "src/app/(protected)/app/arus-kas/loading.tsx": {
+        "summary": "Tampilan memuat halaman arus kas: `StatusMemuat` 'Menyusun arus kas…' dengan empat baris."
     }
 }

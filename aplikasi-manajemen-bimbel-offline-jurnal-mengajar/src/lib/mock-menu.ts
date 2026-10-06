@@ -55,6 +55,11 @@ export const MENU_PER_PERAN: Record<PeranPengguna, MenuApp[]> = {
       label: "Laba Rugi",
       perlu: { pengeluaran: ["read-any"] },
     },
+    {
+      href: "/app/arus-kas",
+      label: "Arus Kas",
+      perlu: { pengeluaran: ["read-any"] },
+    },
   ],
   // Wali hanya memakai portal orang tua: ringkasan anak dan tagihan SPP-nya.
   "orang-tua": [
