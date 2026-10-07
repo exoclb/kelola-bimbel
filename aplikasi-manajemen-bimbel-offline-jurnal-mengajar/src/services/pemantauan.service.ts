@@ -9,8 +9,8 @@ import {
   teachingJournals,
   user,
 } from "@/db/schema";
-import { getDaftarCabang } from "@/lib/mock-cabang";
 import type { NamaHari } from "@/lib/tanggal";
+import { listCabang } from "@/services/cabang.service";
 import type { ListJurnalHarianInput } from "@/validators/jurnal";
 
 // Semua pembacaan lintas akun untuk pantauan owner. Fungsi di sini sengaja
@@ -232,10 +232,12 @@ export async function opsiSaringPemantauan() {
   return {
     daftarKelas,
     daftarGuru,
-    // Tabel `cabang` belum ada di database, jadi pilihannya mengikuti data
-    // contoh cabang. Cabang nonaktif pun tetap muncul supaya bisa ditandai
-    // dan dipilih saat menelusuri arsip. Nanti diganti query ke tabel cabang.
-    daftarCabang: getDaftarCabang().map(({ nama, statusAktif }) => ({
+    // Tabel `cabang` belum ada di database, jadi pilihannya mengikuti daftar
+    // cabang yang sedang berlaku di layanan cabang (termasuk cabang yang baru
+    // ditambah atau dinonaktifkan lewat halaman cabang). Cabang nonaktif pun
+    // tetap muncul supaya bisa ditandai dan dipilih saat menelusuri arsip.
+    // Nanti diganti query ke tabel cabang.
+    daftarCabang: listCabang().map(({ nama, statusAktif }) => ({
       nama,
       statusAktif,
     })),

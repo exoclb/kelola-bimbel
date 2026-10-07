@@ -3,13 +3,17 @@
 // Tabel `cabang` belum ada di database, dan jurnal hari ini baru sebagian
 // terisi. Supaya owner tetap bisa melihat gambaran tiap cabang, ringkasan di
 // halaman pemantauan dihitung dari data tiruan yang sudah dipakai halaman
-// lain: cabang, kelas, penempatan murid, dan riwayat jurnal. Saat backend
-// siap, fungsi ini menjadi satu query agregat per cabang.
+// lain: cabang, kelas, penempatan murid, dan riwayat jurnal. Daftar cabangnya
+// diambil dari layanan cabang supaya ikut cabang yang baru ditambah atau
+// dinonaktifkan lewat halaman cabang. Saat backend siap, fungsi ini menjadi
+// satu query agregat per cabang.
 
-import { getDaftarCabang } from "@/lib/mock-cabang";
+import "server-only";
+
 import { getDaftarKelas } from "@/lib/mock-kelas";
 import { getRiwayatJurnal } from "@/lib/mock-jurnal";
 import { getPenempatanAwal } from "@/lib/mock-penempatan";
+import { listCabang } from "@/services/cabang.service";
 
 export type RingkasanCabang = {
   nama: string;
@@ -33,7 +37,7 @@ export function ringkasanPerCabang(): RingkasanCabang[] {
   const penempatan = getPenempatanAwal();
   const jurnal = getRiwayatJurnal();
 
-  return getDaftarCabang().map((cabang) => {
+  return listCabang().map((cabang) => {
     const kelasCabang = kelas.filter((baris) => baris.cabang === cabang.nama);
     const idKelas = new Set(kelasCabang.map((baris) => baris.id));
     const murid = new Set(
