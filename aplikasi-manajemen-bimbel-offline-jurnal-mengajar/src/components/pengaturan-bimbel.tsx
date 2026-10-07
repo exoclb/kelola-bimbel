@@ -4,6 +4,7 @@ import {
   BellRing,
   Building2,
   DatabaseBackup,
+  ServerCog,
   Users,
   Wallet,
 } from "lucide-react";
@@ -97,6 +98,15 @@ export async function PengaturanBimbel({ bolehKelola }: PengaturanBimbelProps) {
       ringkasan: `${ringkasWali.jumlahTertaut} dari ${ringkasWali.jumlahAkun} akun tertaut ke murid`,
       keterangan: "Lihat akun wali beserta murid yang tertaut padanya.",
       tombol: "Lihat penautan",
+    },
+    {
+      href: "/app/pengaturan/lingkungan",
+      ikon: ServerCog,
+      judul: "Status Variabel Lingkungan",
+      ringkasan: "Cek variabel mana yang sudah terpasang di server",
+      keterangan:
+        "Hanya status ada/tidak — nilai variabelnya tidak pernah ditampilkan.",
+      tombol: "Lihat status",
     },
   ];
 

@@ -1243,5 +1243,17 @@
     },
     "src/app/api/cabang/[id]/route.ts": {
         "summary": "Route API cabang per id: `GET /api/cabang/<id>` mengembalikan satu cabang dan `PATCH /api/cabang/<id>` mengubah kolom cabang dan/atau status aktifnya; membalas 404 bila id tidak ada dan 409 bila nama baru sudah dipakai. Izin pengaturan read/write, runtime nodejs, `params` di-await."
+    },
+    "src/lib/variabel-lingkungan.ts": {
+        "summary": "Metadata 17 variabel lingkungan rilis (nama, kategori wajib/opsional/otomatis, keterangan kegunaan) beserta pembacaan kondisinya di server: `bacaKondisiVariabelLingkungan` hanya menghasilkan nama + boolean terpasang (nilai rahasia tidak pernah diteruskan ke klien) dan `ringkasKondisiVariabelLingkungan` untuk ringkasan angka. Memakai `import \"server-only\"`."
+    },
+    "src/components/daftar-variabel-lingkungan.tsx": {
+        "summary": "Komponen presentasional halaman status variabel lingkungan: kartu ringkasan (variabel terdaftar/wajib/belum terpasang), banner peringatan bahwa halaman hanya memeriksa ada-tidaknya variabel dan tidak menampilkan nilainya, serta tiga kelompok baris (Wajib/Opsional/Otomatis) berisi nama variabel, lencana status, dan keterangan pengisinya. Hanya menerima data tanpa nilai (nama + boolean)."
+    },
+    "src/app/(protected)/app/pengaturan/lingkungan/page.tsx": {
+        "summary": "Halaman owner `/app/pengaturan/lingkungan` (Status Variabel Lingkungan): dijaga `requirePermission({ pengaturan: [\"read\"] })`, membaca kondisi variabel di server lalu merender `DaftarVariabelLingkungan` — halaman checklist kesiapan rilis."
+    },
+    "src/app/(protected)/app/pengaturan/lingkungan/loading.tsx": {
+        "summary": "Tampilan memuat halaman status variabel lingkungan (`StatusMemuat`)."
     }
 }
