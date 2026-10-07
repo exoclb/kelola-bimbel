@@ -13,7 +13,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PemilihAnak } from "@/components/pemilih-anak";
 import { LabelStatusTagihan } from "@/components/label-status-tagihan";
+import { LencanaBaru } from "@/components/lencana-baru";
 import { formatRupiah } from "@/lib/gaji";
+import {
+  siapkanJejakBaca,
+  useBelumDibaca,
+} from "@/lib/jejak-baca-portal-store";
 import type { AnakPortal } from "@/lib/mock-portal-wali";
 import type { ProfilBimbel } from "@/lib/mock-pengaturan";
 import { periodeDariTagihan } from "@/lib/tagihan";
@@ -69,9 +74,19 @@ export function BerandaPortalWali({
 
   useEffect(() => {
     siapkanTagihan();
+    siapkanJejakBaca();
   }, []);
 
   const dipilih = anak.find((baris) => baris.muridId === muridId) ?? anak[0];
+
+  // Lencana "Baru" per bagian anak yang sedang dibuka. Anak lain tidak
+  // terpengaruh karena statusnya disimpan per (muridId, bagian).
+  const kehadiranBaru = useBelumDibaca(dipilih?.muridId ?? "", "kehadiran");
+  const perkembanganBaru = useBelumDibaca(
+    dipilih?.muridId ?? "",
+    "perkembangan",
+  );
+  const tagihanBaru = useBelumDibaca(dipilih?.muridId ?? "", "tagihan");
 
   const tagihanAnak = useMemo(
     () =>
@@ -150,9 +165,35 @@ export function BerandaPortalWali({
 
       <Card className="mt-4">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex flex-wrap items-center gap-2">
+            <CalendarCheck className="size-4" aria-hidden="true" />
+            Kehadiran
+            {kehadiranBaru && <LencanaBaru />}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Hadir {dipilih.kehadiran.hadir} dari {dipilih.kehadiran.sesi} sesi
+            tercatat
+            {dipilih.kehadiran.terakhir
+              ? ` · terakhir ${formatTanggalLengkap(dipilih.kehadiran.terakhir)}`
+              : ""}
+          </p>
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/portal/perkembangan?anak=${dipilih.muridId}`}>
+              Lihat rekap kehadiran
+              <ArrowRight aria-hidden="true" />
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-4">
+        <CardHeader>
+          <CardTitle className="flex flex-wrap items-center gap-2">
             <Receipt className="size-4" aria-hidden="true" />
             Tagihan Terdekat
+            {tagihanBaru && <LencanaBaru />}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
@@ -208,21 +249,13 @@ export function BerandaPortalWali({
 
       <Card className="mt-4">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex flex-wrap items-center gap-2">
             <GraduationCap className="size-4" aria-hidden="true" />
             Sorotan Perkembangan
+            {perkembanganBaru && <LencanaBaru />}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
-            <CalendarCheck className="size-4" aria-hidden="true" />
-            Hadir {dipilih.kehadiran.hadir} dari {dipilih.kehadiran.sesi} sesi
-            tercatat
-            {dipilih.kehadiran.terakhir
-              ? ` · terakhir ${formatTanggalLengkap(dipilih.kehadiran.terakhir)}`
-              : ""}
-          </p>
-
           {catatanTerbaru.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               Belum ada catatan perkembangan untuk anak ini.
@@ -254,6 +287,12 @@ export function BerandaPortalWali({
               ))}
             </ul>
           )}
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/portal/perkembangan?anak=${dipilih.muridId}`}>
+              Lihat semua catatan
+              <ArrowRight aria-hidden="true" />
+            </Link>
+          </Button>
         </CardContent>
       </Card>
 

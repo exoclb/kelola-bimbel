@@ -10,6 +10,12 @@ import { PemilihAnak } from "@/components/pemilih-anak";
 import { LabelStatusTagihan } from "@/components/label-status-tagihan";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { formatRupiah } from "@/lib/gaji";
+import {
+  belumDibaca,
+  siapkanJejakBaca,
+  tandaiTerbaca,
+  useTercatatDibaca,
+} from "@/lib/jejak-baca-portal-store";
 import type { AnakWali } from "@/lib/mock-portal-wali";
 import { periodeDariTagihan } from "@/lib/tagihan";
 import {
@@ -49,6 +55,19 @@ export function TagihanSppAnak({ anak, muridId }: TagihanSppAnakProps) {
 
   const dipilih = anak.find((baris) => baris.muridId === muridId) ?? anak[0];
 
+  // Bagian tagihan ditandai terbaca begitu halaman ini dibuka, jadi lencana
+  // "Baru" di beranda hilang dan tetap hilang setelah muat ulang.
+  const muridIdBaca = dipilih?.muridId;
+
+  useEffect(() => {
+    if (!muridIdBaca) return;
+    siapkanJejakBaca();
+    if (!belumDibaca(muridIdBaca, "tagihan")) return;
+    tandaiTerbaca(muridIdBaca, "tagihan");
+  }, [muridIdBaca]);
+
+  const tagihanTercatat = useTercatatDibaca(muridIdBaca ?? "", "tagihan");
+
   const daftar = useMemo(
     () =>
       semua
@@ -71,6 +90,13 @@ export function TagihanSppAnak({ anak, muridId }: TagihanSppAnakProps) {
         {dipilih
           ? `Tagihan ${dipilih.nama} — hanya untuk dilihat, tanpa pembayaran di portal.`
           : "Akun ini belum tertaut ke murid mana pun."}
+      </p>
+
+      <p
+        role="status"
+        className="mt-3 text-sm text-muted-foreground empty:mt-0"
+      >
+        {tagihanTercatat ? "Bagian tagihan sudah ditandai dibaca." : null}
       </p>
 
       {dipilih && (

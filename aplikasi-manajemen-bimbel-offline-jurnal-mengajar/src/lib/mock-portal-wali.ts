@@ -9,6 +9,7 @@
 
 import { getRiwayatJurnal } from "@/lib/mock-jurnal";
 import { getDaftarMurid } from "@/lib/mock-murid";
+import { getSemuaTagihan } from "@/lib/mock-tagihan";
 import { getWali, WALI_PORTAL } from "@/lib/mock-wali";
 import { tanggalISO } from "@/lib/tanggal";
 
@@ -28,6 +29,17 @@ export type CatatanPerkembangan = {
   catatan: string;
 };
 
+/** Bagian portal yang punya penanda "baru" sendiri. */
+export type BagianPortal = "kehadiran" | "perkembangan" | "tagihan";
+
+/** Keadaan satu bagian anak: kapan isinya berubah dan kapan terakhir dibaca. */
+export type WaktuBagian = {
+  /** Tanggal (`YYYY-MM-DD`) isi bagian ini terakhir berubah, `null` bila kosong. */
+  terbaru: string | null;
+  /** Tanggal baca terakhir menurut data tiruan, `null` bila belum pernah dibaca. */
+  terakhirDibaca: string | null;
+};
+
 export type AnakPortal = AnakWali & {
   catatan: CatatanPerkembangan[];
   kehadiran: {
@@ -37,6 +49,8 @@ export type AnakPortal = AnakWali & {
     /** Tanggal sesi terakhir, atau `null` bila belum ada. */
     terakhir: string | null;
   };
+  /** Waktu isi & baca tiap bagian, dasar penanda "baru" di portal. */
+  bagian: Record<BagianPortal, WaktuBagian>;
 };
 
 type CatatanTersimpan = Omit<CatatanPerkembangan, "tanggal"> & {
@@ -104,6 +118,31 @@ const CATATAN: Record<string, CatatanTersimpan[]> = {
   ],
 };
 
+/** Tanggal (`YYYY-MM-DD`) beberapa hari sebelum hari ini. */
+function tanggalHariLalu(hariLalu: number) {
+  const tanggal = new Date();
+  tanggal.setDate(tanggal.getDate() - hariLalu);
+  return tanggalISO(tanggal);
+}
+
+/** Tanggal baca bawaan, atau `null` kalau bagiannya belum pernah dibaca. */
+function tanggalDibaca(hariLalu: number | undefined) {
+  return hariLalu === undefined ? null : tanggalHariLalu(hariLalu);
+}
+
+// Tanggal baca terakhir menurut data tiruan, dalam "berapa hari lalu"
+// (0 = hari ini). Bagian yang tidak terdaftar berarti belum pernah dibaca.
+//
+// Aturan penanda "baru": satu bagian bertanda "baru" kalau isinya lebih baru
+// daripada tanggal baca terakhir. Jadi `mrd-2` bertanda "baru" pada kehadiran,
+// catatan perkembangan, dan tagihan (catatan terbaru 2 hari lalu padahal
+// terakhir dibaca 5 hari lalu), sedangkan `mrd-8` hanya pada tagihan karena
+// kehadiran dan catatannya sudah dibaca setelah isinya berubah.
+const TERAKHIR_DIBACA: Record<string, Partial<Record<BagianPortal, number>>> = {
+  "mrd-2": { kehadiran: 1, perkembangan: 5, tagihan: 10 },
+  "mrd-8": { kehadiran: 2, perkembangan: 1 },
+};
+
 /** Anak yang tertaut ke akun wali contoh, lengkap catatan dan kehadirannya. */
 export function getAnakPortal(): AnakPortal[] {
   const wali = getWali(WALI_PORTAL);
@@ -111,6 +150,7 @@ export function getAnakPortal(): AnakPortal[] {
 
   const murid = new Map(getDaftarMurid().map((anak) => [anak.id, anak]));
   const jurnal = getRiwayatJurnal();
+  const tagihan = getSemuaTagihan();
   const hariIni = new Date();
 
   return wali.murid.map((tautan) => {
@@ -125,6 +165,22 @@ export function getAnakPortal(): AnakPortal[] {
     const tanggalSesi = sesi
       .map((baris) => baris.tanggal)
       .sort((a, b) => b.localeCompare(a));
+    const catatan = (CATATAN[tautan.muridId] ?? []).map(
+      ({ hariLalu, ...baris }) => {
+        const tanggal = new Date(hariIni);
+        tanggal.setDate(tanggal.getDate() - hariLalu);
+        return { ...baris, tanggal: tanggalISO(tanggal) };
+      },
+    );
+    // Tagihan dianggap berubah saat diterbitkan atau saat dibayar, jadi
+    // tanggal terbarunya diambil dari kedua kolom itu.
+    const tanggalTagihan =
+      tagihan
+        .filter((baris) => baris.muridId === tautan.muridId)
+        .flatMap((baris) => [baris.dibuatPada.slice(0, 10), baris.tanggalBayar])
+        .filter((nilai): nilai is string => Boolean(nilai))
+        .sort((a, b) => b.localeCompare(a))[0] ?? null;
+    const dibaca = TERAKHIR_DIBACA[tautan.muridId] ?? {};
 
     return {
       muridId: tautan.muridId,
@@ -132,18 +188,41 @@ export function getAnakPortal(): AnakPortal[] {
       namaOrangTua: anak?.namaOrangTua ?? wali.nama,
       kontakOrangTua: anak?.kontakOrangTua ?? wali.kontak,
       kelasNama: tautan.kelasNama,
-      catatan: (CATATAN[tautan.muridId] ?? []).map(({ hariLalu, ...baris }) => {
-        const tanggal = new Date(hariIni);
-        tanggal.setDate(tanggal.getDate() - hariLalu);
-        return { ...baris, tanggal: tanggalISO(tanggal) };
-      }),
+      catatan,
       kehadiran: {
         sesi: sesi.length,
         hadir,
         terakhir: tanggalSesi[0] ?? null,
       },
+      bagian: {
+        kehadiran: {
+          terbaru: tanggalSesi[0] ?? null,
+          terakhirDibaca: tanggalDibaca(dibaca.kehadiran),
+        },
+        perkembangan: {
+          terbaru: catatan[0]?.tanggal ?? null,
+          terakhirDibaca: tanggalDibaca(dibaca.perkembangan),
+        },
+        tagihan: {
+          terbaru: tanggalTagihan,
+          terakhirDibaca: tanggalDibaca(dibaca.tagihan),
+        },
+      },
     };
   });
+}
+
+/**
+ * Waktu isi & baca terakhir satu bagian anak — sumber tiruan penanda "baru".
+ * Fase berikutnya cukup mengganti isi fungsi ini dengan query per sesi wali,
+ * tanpa mengubah tampilan.
+ */
+export function waktuBagian(
+  muridId: string,
+  bagian: BagianPortal,
+): WaktuBagian | null {
+  const anak = getAnakPortal().find((baris) => baris.muridId === muridId);
+  return anak?.bagian[bagian] ?? null;
 }
 
 /**

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CalendarCheck, GraduationCap } from "lucide-react";
@@ -9,6 +9,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PemilihAnak } from "@/components/pemilih-anak";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { cn } from "cn";
+import {
+  belumDibaca,
+  siapkanJejakBaca,
+  tandaiTerbacaBanyak,
+  useTercatatDibaca,
+  type BagianPortal,
+} from "@/lib/jejak-baca-portal-store";
 import { getRiwayatJurnal } from "@/lib/mock-jurnal";
 import type { AnakPortal } from "@/lib/mock-portal-wali";
 import { formatTanggalLengkap } from "@/lib/tanggal";
@@ -33,6 +40,32 @@ export function PerkembanganAnakPortal({
 }: PerkembanganAnakPortalProps) {
   const router = useRouter();
   const dipilih = anak.find((baris) => baris.muridId === muridId) ?? anak[0];
+
+  // Halaman ini memuat dua bagian sekaligus: rekap kehadiran dan catatan
+  // perkembangan. Bagian yang masih bertanda "Baru" ditandai terbaca begitu
+  // halaman dibuka, jadi lencana di beranda hilang dan tetap hilang setelah
+  // muat ulang.
+  const muridIdBaca = dipilih?.muridId;
+
+  useEffect(() => {
+    if (!muridIdBaca) return;
+    siapkanJejakBaca();
+    const bagian: BagianPortal[] = ["kehadiran", "perkembangan"];
+    tandaiTerbacaBanyak(
+      muridIdBaca,
+      bagian.filter((item) => belumDibaca(muridIdBaca, item)),
+    );
+  }, [muridIdBaca]);
+
+  const kehadiranTercatat = useTercatatDibaca(muridIdBaca ?? "", "kehadiran");
+  const perkembanganTercatat = useTercatatDibaca(
+    muridIdBaca ?? "",
+    "perkembangan",
+  );
+  const labelDibaca = [
+    ...(kehadiranTercatat ? ["kehadiran"] : []),
+    ...(perkembanganTercatat ? ["catatan perkembangan"] : []),
+  ];
 
   // Kehadiran per sesi dibaca dari jurnal guru yang sudah ada.
   const sesi = useMemo(() => {
@@ -59,6 +92,15 @@ export function PerkembanganAnakPortal({
         {dipilih
           ? `Catatan nilai, sikap, dan kehadiran ${dipilih.nama} dari guru.`
           : "Akun ini belum tertaut ke murid mana pun."}
+      </p>
+
+      <p
+        role="status"
+        className="mt-3 text-sm text-muted-foreground empty:mt-0"
+      >
+        {labelDibaca.length > 0
+          ? `Bagian ${labelDibaca.join(" dan ")} sudah ditandai dibaca.`
+          : null}
       </p>
 
       {dipilih && (

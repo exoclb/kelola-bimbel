@@ -1267,5 +1267,11 @@
     },
     "src/app/(protected)/app/penempatan/loading.tsx": {
         "summary": "Tampilan memuat halaman penempatan murid ke kelas: `StatusMemuat` berjudul \"Memuat penempatan murid…\". Ditambahkan agar rute penempatan punya keadaan memuat sendiri seperti rute lain di aplikasi."
+    },
+    "src/lib/jejak-baca-portal-store.ts": {
+        "summary": "Status baca (jejak baca) Portal Wali untuk fase data tiruan: menyimpan tanggal dibaca per anak+bagian (`muridId|bagian`) di localStorage kunci `jejak-baca-portal-v2` plus salinan memori, dengan API sempit yang mudah diganti sumber database — `tandaiTerbaca`, `tandaiTerbacaBanyak`, `belumDibaca`, `tercatatDibaca`, `siapkanJejakBaca`, `langgananJejakBaca`, `snapshotJejakBaca`, serta hook `useBelumDibaca`/`useTercatatDibaca`. Bagian dianggap baru bila tanggal konten terbaru lebih baru dari tanggal baca terakhir."
+    },
+    "src/components/lencana-baru.tsx": {
+        "summary": "Lencana kecil \"Baru\" (presentasional) untuk menandai bagian Portal Wali yang belum dibaca wali; menerima className opsional dan dipakai pada kartu Kehadiran, Tagihan Terdekat, dan Sorotan Perkembangan di beranda portal."
     }
 }
