@@ -1231,5 +1231,17 @@
     },
     "src/components/ringkasan-cabang.tsx": {
         "summary": "Komponen server kartu ringkasan cabang di halaman pemantauan: judul Ringkasan semua cabang atau Ringkasan <nama cabang> (dengan penanda nonaktif), catatan bahwa angkanya dihitung dari data contoh, dan empat angka (kelas, jurnal terisi, kelas belum ada jurnal, murid aktif); memakai PesanKosong bila cabang terpilih tidak punya kelas."
+    },
+    "src/validators/cabang.ts": {
+        "summary": "Skema Zod untuk API cabang: `buatCabangSchema` (nama 1..80, alamat dan kontak wajib, statusAktif boolean bawaan true), `ubahCabangSchema` (semua kolom opsional dengan syarat minimal satu diisi), dan `cabangIdSchema` (id tiruan seperti cbg-1, bukan uuid)."
+    },
+    "src/services/cabang.service.ts": {
+        "summary": "Layanan cabang di atas data tiruan (belum tabel database, ditandai di komentar): `listCabang()` urut nama, `ringkasCabang()`, `getCabang(id)`, `tambahCabang(input)` yang menolak nama duplikat (trim, tak peka huruf besar/kecil) dengan `{ ok:false, pesan }`, `ubahCabang(id, input)`, dan `setStatusAktif(id, statusAktif)`. Penyimpanannya tingkat proses Node lewat `src/lib/mock-cabang.ts`, terpisah dari store localStorage milik sisi peramban."
+    },
+    "src/app/api/cabang/route.ts": {
+        "summary": "Route API cabang: `GET /api/cabang` berizin pengaturan read mengembalikan `{ data: Cabang[] }` (urut nama), dan `POST /api/cabang` berizin write membuat cabang baru — 201 saat berhasil, 422 saat validasi gagal, 409 saat nama sudah dipakai. Pola `withApiPermission` + runtime nodejs."
+    },
+    "src/app/api/cabang/[id]/route.ts": {
+        "summary": "Route API cabang per id: `GET /api/cabang/<id>` mengembalikan satu cabang dan `PATCH /api/cabang/<id>` mengubah kolom cabang dan/atau status aktifnya; membalas 404 bila id tidak ada dan 409 bila nama baru sudah dipakai. Izin pengaturan read/write, runtime nodejs, `params` di-await."
     }
 }
