@@ -65,6 +65,8 @@ The [Notes API](docs/backend.md) demonstrates the standard: **API routes → Bet
 
 The same doc covers **role-based access**: `src/lib/permissions.ts` declares resources and roles, `/api/admin/notes` and `/admin` are guarded by permissions rather than a session alone, and `npm run role:set -- you@example.com admin` promotes an account. Signup can never set a role.
 
+Not every screen is wired to the database yet. Expenses, teacher attendance, and parts of billing and reporting still render sample data from `src/lib/mock-*.ts` through browser stores (`localStorage`) in `src/lib/*-store.ts`. The [mock data and browser store map](docs/peta-data-tiruan.md) lists who imports each file and which service replaces it.
+
 ## Commands
 
 | Command                       | What it does                                                             |
@@ -99,7 +101,7 @@ Tests require Docker even if your app uses a hosted database. They launch a uniq
 - Add UI primitives: `npx shadcn@4.21.0 add dialog`.
 - Create another PostgreSQL derivative: `npm run create:variant -- dashboard ../my-dashboard`.
 
-See [architecture](docs/architecture.md), [derivatives](docs/derivatives.md), [prompts](docs/prompts.md), and [changes from SQLite](docs/variant.md).
+See [architecture](docs/architecture.md), [derivatives](docs/derivatives.md), [prompts](docs/prompts.md), [changes from SQLite](docs/variant.md), and the [mock data and browser store map](docs/peta-data-tiruan.md).
 
 ## Hosting
 
