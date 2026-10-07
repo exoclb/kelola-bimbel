@@ -56,15 +56,18 @@ export function TagihanSppAnak({
 
   const dipilih = anak.find((baris) => baris.muridId === muridId) ?? anak[0];
 
-  // Bagian tagihan ditandai terbaca begitu halaman ini dibuka (lewat API), jadi
-  // lencana "Baru" di beranda hilang dan tetap hilang setelah muat ulang.
+  // Bagian tagihan ditandai terbaca begitu halaman ini dibuka (lewat API), lalu
+  // halaman disegarkan supaya status dari server diperbarui — lencana "Baru"
+  // di pemilih anak ikut hilang tanpa muat ulang manual.
   const muridIdBaca = dipilih?.muridId;
   const statusDipilih = muridIdBaca ? statusAwal[muridIdBaca] : undefined;
 
   useEffect(() => {
     if (!muridIdBaca || !statusDipilih?.tagihan.baru) return;
-    void tandaiTerbaca(muridIdBaca, "tagihan");
-  }, [muridIdBaca, statusDipilih]);
+    void tandaiTerbaca(muridIdBaca, "tagihan").then((berhasil) => {
+      if (berhasil) router.refresh();
+    });
+  }, [muridIdBaca, statusDipilih, router]);
 
   const tagihanTercatat = statusDipilih
     ? statusDipilih.tagihan.tercatat || statusDipilih.tagihan.baru
@@ -107,6 +110,7 @@ export function TagihanSppAnak({
             <PemilihAnak
               anak={anak}
               nilai={dipilih.muridId}
+              status={statusAwal}
               onPilih={(id) => router.replace(`/portal/tagihan?anak=${id}`)}
             />
           </div>

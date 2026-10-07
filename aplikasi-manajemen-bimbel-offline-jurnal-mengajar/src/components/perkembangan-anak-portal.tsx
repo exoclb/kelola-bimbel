@@ -44,16 +44,21 @@ export function PerkembanganAnakPortal({
 
   // Halaman ini memuat dua bagian sekaligus: rekap kehadiran dan catatan
   // perkembangan. Bagian yang masih bertanda "Baru" ditandai terbaca begitu
-  // halaman dibuka (lewat API), jadi lencana di beranda hilang dan tetap hilang
-  // setelah muat ulang.
+  // halaman dibuka (lewat API), lalu halaman disegarkan (`router.refresh()`)
+  // supaya status dari server diperbarui — lencana di kartu maupun di pemilih
+  // anak ikut hilang tanpa muat ulang manual. Penyegaran hanya dijalankan kalau
+  // memang ada bagian baru, jadi tidak ada putaran tak berujung.
   const muridIdBaca = dipilih?.muridId;
   const statusDipilih = muridIdBaca ? statusAwal[muridIdBaca] : undefined;
 
   useEffect(() => {
     if (!muridIdBaca || !statusDipilih) return;
     const baru = BAGIAN_HALAMAN.filter((bagian) => statusDipilih[bagian].baru);
-    void tandaiTerbacaBanyak(muridIdBaca, [...baru]);
-  }, [muridIdBaca, statusDipilih]);
+    if (baru.length === 0) return;
+    void tandaiTerbacaBanyak(muridIdBaca, [...baru]).then((berhasil) => {
+      if (berhasil) router.refresh();
+    });
+  }, [muridIdBaca, statusDipilih, router]);
 
   // Umpan balik untuk bagian yang sudah (atau baru akan) tercatat terbaca oleh
   // wali ini.
@@ -110,6 +115,7 @@ export function PerkembanganAnakPortal({
             <PemilihAnak
               anak={anak}
               nilai={dipilih.muridId}
+              status={statusAwal}
               onPilih={(id) =>
                 router.replace(`/portal/perkembangan?anak=${id}`)
               }

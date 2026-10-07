@@ -145,7 +145,12 @@ export function BerandaPortalWali({
       </p>
 
       <div className="mt-6">
-        <PemilihAnak anak={anak} nilai={muridId} onPilih={setMuridId} />
+        <PemilihAnak
+          anak={anak}
+          nilai={muridId}
+          status={statusAwal}
+          onPilih={setMuridId}
+        />
       </div>
 
       <Card className="mt-6">
