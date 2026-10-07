@@ -1258,5 +1258,8 @@
     },
     "scripts/seed.mjs": {
         "summary": "Runner seeder data awal yang idempoten: membuat akun owner pertama (baris `user` + `account` credential dengan hash better-auth) dalam satu transaksi, memakai cek keberadaan lebih dulu dan `INSERT ... ON CONFLICT (email) DO NOTHING RETURNING id` sehingga aman dijalankan berkali-kali maupun bersamaan. Konfigurasi lewat `--email`/`SEED_OWNER_EMAIL`, `--nama`/`SEED_OWNER_NAME`, dan `SEED_OWNER_PASSWORD` (tanpa default). Mencetak laporan ringkas per langkah (dibuat/dilewati) + ringkasan akhir, keluar dengan kode 1 saat gagal, dan tidak pernah mencetak sandi/hash/token. Skrip lain (setup/prepare/migrate) tidak membuat akun, jadi seeder ini tidak tumpang tindih."
+    },
+    "e2e/masuk-per-peran.spec.ts": {
+        "summary": "Skenario E2E masuk per peran yang belum tercakup spec lain (Playwright, memakai helper setRole lewat Pool + STARTER_TEST_DATABASE_URL seperti pemantauan.spec.ts): (1) kredensial salah menampilkan alert dan tetap di halaman masuk tanpa sesi setengah jadi; (2) wali (orang-tua) masuk lalu mendarat di /portal dengan menu portal dan tanpa menu owner; (3) pengunjung anonim yang membuka /portal diarahkan ke halaman masuk. Akun uji unik per uuid; tidak menyentuh data harness lain."
     }
 }
