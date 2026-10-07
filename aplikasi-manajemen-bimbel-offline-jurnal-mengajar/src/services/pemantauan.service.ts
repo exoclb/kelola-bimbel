@@ -9,6 +9,7 @@ import {
   teachingJournals,
   user,
 } from "@/db/schema";
+import { getDaftarCabang } from "@/lib/mock-cabang";
 import type { NamaHari } from "@/lib/tanggal";
 import type { ListJurnalHarianInput } from "@/validators/jurnal";
 
@@ -231,9 +232,13 @@ export async function opsiSaringPemantauan() {
   return {
     daftarKelas,
     daftarGuru,
-    daftarCabang: [...new Set(daftarKelas.map((kelas) => kelas.cabang))].sort(
-      (a, b) => a.localeCompare(b, "id"),
-    ),
+    // Tabel `cabang` belum ada di database, jadi pilihannya mengikuti data
+    // contoh cabang. Cabang nonaktif pun tetap muncul supaya bisa ditandai
+    // dan dipilih saat menelusuri arsip. Nanti diganti query ke tabel cabang.
+    daftarCabang: getDaftarCabang().map(({ nama, statusAktif }) => ({
+      nama,
+      statusAktif,
+    })),
   };
 }
 

@@ -14,7 +14,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 type SaringPemantauanProps = {
   kelas: { classId: string; namaKelas: string; cabang: string }[];
   guru: { guruId: string; guruNama: string }[];
-  cabang: string[];
+  cabang: { nama: string; statusAktif: boolean }[];
   nilai: { classId: string; guruId: string; cabang: string };
   adaSaringan: boolean;
 };
@@ -22,6 +22,8 @@ type SaringPemantauanProps = {
 /**
  * Saringan pantauan owner berdasarkan kelas, guru, atau cabang. Nilainya
  * dikirim lewat query URL supaya penyaringan tetap dikerjakan di server.
+ * Pilihan cabangnya mengikuti data cabang, jadi cabang nonaktif pun tetap
+ * bisa dipilih dan diberi penanda.
  */
 export function SaringPemantauan({
   kelas,
@@ -49,9 +51,11 @@ export function SaringPemantauan({
                 defaultValue={nilai.cabang}
               >
                 <option value="">Semua cabang</option>
-                {cabang.map((nama) => (
-                  <option key={nama} value={nama}>
-                    {nama}
+                {cabang.map((baris) => (
+                  <option key={baris.nama} value={baris.nama}>
+                    {baris.statusAktif
+                      ? baris.nama
+                      : `${baris.nama} (nonaktif)`}
                   </option>
                 ))}
               </NativeSelect>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, ClipboardList, Clock, Users } from "lucide-react";
+import { ArrowLeft, ClipboardList, Clock, Database, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,12 +12,14 @@ import { PesanKosong } from "@/components/status-antarmuka";
 import { PanelJurnal } from "@/components/panel-jurnal";
 import { DaftarNotifikasi } from "@/components/daftar-notifikasi";
 import { PanelNotifikasi } from "@/components/panel-notifikasi";
+import { PanelRingkasanCabang } from "@/components/ringkasan-cabang";
 import { SaringPemantauan } from "@/components/saring-pemantauan";
 import {
   DaftarStatusGuru,
   RingkasanStatusGuru,
 } from "@/components/status-guru-hari-ini";
 import { formatJam } from "@/lib/jurnal";
+import type { RingkasanCabang } from "@/lib/ringkasan-cabang";
 import type {
   JurnalHarian,
   KehadiranJurnal,
@@ -32,10 +34,11 @@ type PemantauanHarianProps = {
   saring: {
     kelas: { classId: string; namaKelas: string; cabang: string }[];
     guru: { guruId: string; guruNama: string }[];
-    cabang: string[];
+    cabang: { nama: string; statusAktif: boolean }[];
     nilai: { classId: string; guruId: string; cabang: string };
     adaSaringan: boolean;
   };
+  ringkasanCabang: RingkasanCabang[];
   statusGuru: StatusGuruHariIni[];
   notifikasi: NotifikasiTersimpan[];
   belumDibaca: number;
@@ -54,6 +57,7 @@ export function PemantauanHarian({
   data,
   kelasKosong,
   saring,
+  ringkasanCabang,
   statusGuru,
   notifikasi,
   belumDibaca,
@@ -114,6 +118,22 @@ export function PemantauanHarian({
         {tanggalTampil} · dipantau oleh {namaOwner}
       </p>
 
+      <div
+        role="note"
+        className="mt-6 rounded-xl border border-dashed px-4 py-4"
+      >
+        <p className="flex items-center gap-2 font-medium">
+          <Database className="size-4 shrink-0" aria-hidden="true" />
+          Data tiruan — belum dari database
+        </p>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+          Pilihan cabang dan ringkasan per cabang di halaman ini masih memakai
+          data contoh (daftar cabang serta data contoh kelas, penempatan murid,
+          dan riwayat jurnal). Daftar jurnal, status guru, dan pemberitahuan
+          sudah dibaca dari database.
+        </p>
+      </div>
+
       <div className="mt-8 grid gap-4 sm:grid-cols-3">
         {statistik.map(({ label, nilai, ikon: Ikon }) => (
           <Card key={label} className="gap-1 px-5 py-4">
@@ -133,6 +153,13 @@ export function PemantauanHarian({
           cabang={saring.cabang}
           nilai={saring.nilai}
           adaSaringan={saring.adaSaringan}
+        />
+      </div>
+
+      <div className="mt-6">
+        <PanelRingkasanCabang
+          daftar={ringkasanCabang}
+          terpilih={saring.nilai.cabang}
         />
       </div>
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PemantauanHarian } from "@/components/pemantauan-harian";
+import { ringkasanPerCabang } from "@/lib/ringkasan-cabang";
 import { requirePermission } from "@/lib/session";
 import { formatTanggalLengkap, namaHari, tanggalISO } from "@/lib/tanggal";
 import {
@@ -33,6 +34,7 @@ export default async function PemantauanPage({
   const tanggal = tanggalISO(sekarang);
   const params = await searchParams;
   const opsi = await opsiSaringPemantauan();
+  const ringkasanCabang = ringkasanPerCabang();
 
   // Saringan hanya diterima kalau nilainya memang ada di daftar pilihan, jadi
   // nilai asing dari URL tidak pernah ikut menyaring apa pun.
@@ -43,7 +45,7 @@ export default async function PemantauanPage({
     guruId: opsi.daftarGuru.some((guru) => guru.guruId === params.guruId)
       ? (params.guruId ?? "")
       : "",
-    cabang: opsi.daftarCabang.includes(params.cabang ?? "")
+    cabang: opsi.daftarCabang.some((cabang) => cabang.nama === params.cabang)
       ? (params.cabang ?? "")
       : "",
   };
@@ -84,6 +86,7 @@ export default async function PemantauanPage({
         nilai,
         adaSaringan,
       }}
+      ringkasanCabang={ringkasanCabang}
       tanggalTampil={formatTanggalLengkap(tanggal)}
       namaOwner={user.name}
       hasMore={hasil.meta.hasMore}
