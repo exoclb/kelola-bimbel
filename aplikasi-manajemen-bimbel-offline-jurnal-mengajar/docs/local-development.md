@@ -28,6 +28,7 @@ The agent can use `npm run predev` then `npm run doctor` when dependencies alrea
 | `npm run db:logs`    | Show the last 80 database log lines without following indefinitely       |
 | `npm run db:down`    | Remove this copy's container and network, keeping its data volume        |
 | `npm run db:migrate` | Apply committed migrations                                               |
+| `npm run db:seed`    | Create the first owner account; idempotent, needs `SEED_OWNER_PASSWORD`  |
 | `npm run doctor`     | Verify connection, auth tables, and project tooling files                |
 
 Use these commands instead of bare `docker compose up`: the wrappers load Next.js environment files and the saved project name. The database listens only on `127.0.0.1`, using a generated high port recorded in `.env.local`. Each fresh derivative has its own project, password, port, and volume.

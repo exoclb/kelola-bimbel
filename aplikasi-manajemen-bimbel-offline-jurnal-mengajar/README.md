@@ -79,6 +79,7 @@ The same doc covers **role-based access**: `src/lib/permissions.ts` declares res
 | `npm run doctor`              | Check config, database connection, auth tables, and AI files             |
 | `npm run db:generate`         | Generate migration SQL after a schema edit                               |
 | `npm run db:migrate`          | Apply committed migrations                                               |
+| `npm run db:seed`             | Create the first owner account; idempotent, needs `SEED_OWNER_PASSWORD`  |
 | `npm run role:set`            | Grant a role: `npm run role:set -- you@example.com admin`                |
 | `npm run db:studio`           | Inspect the database with Drizzle Studio                                 |
 | `npm run check`               | Lint, typecheck, and tests against disposable PostgreSQL                 |

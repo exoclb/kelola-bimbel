@@ -1255,5 +1255,8 @@
     },
     "src/app/(protected)/app/pengaturan/lingkungan/loading.tsx": {
         "summary": "Tampilan memuat halaman status variabel lingkungan (`StatusMemuat`)."
+    },
+    "scripts/seed.mjs": {
+        "summary": "Runner seeder data awal yang idempoten: membuat akun owner pertama (baris `user` + `account` credential dengan hash better-auth) dalam satu transaksi, memakai cek keberadaan lebih dulu dan `INSERT ... ON CONFLICT (email) DO NOTHING RETURNING id` sehingga aman dijalankan berkali-kali maupun bersamaan. Konfigurasi lewat `--email`/`SEED_OWNER_EMAIL`, `--nama`/`SEED_OWNER_NAME`, dan `SEED_OWNER_PASSWORD` (tanpa default). Mencetak laporan ringkas per langkah (dibuat/dilewati) + ringkasan akhir, keluar dengan kode 1 saat gagal, dan tidak pernah mencetak sandi/hash/token. Skrip lain (setup/prepare/migrate) tidak membuat akun, jadi seeder ini tidak tumpang tindih."
     }
 }
