@@ -1225,5 +1225,11 @@
     },
     "src/components/form-tambah-cabang.tsx": {
         "summary": "Formulir klien penambahan cabang: tombol 'Tambah cabang' membuka isian nama (wajib, maks 80), alamat, kontak, dan status aktif/nonaktif dengan id `nama-cabang-baru`/`alamat-cabang-baru`/`kontak-cabang-baru`/`status-cabang-baru`; validasi tampil sebagai pesan `role=\"alert\"`, nama duplikat ditolak, dan setelah tersimpan muncul kartu konfirmasi berisi nilai yang tercatat beserta tombol 'Tambah cabang lagi'."
+    },
+    "src/lib/ringkasan-cabang.ts": {
+        "summary": "Perhitungan ringkasan per cabang untuk halaman pemantauan, seluruhnya dari data tiruan yang sudah ada (cabang, kelas, penempatan murid, riwayat jurnal) tanpa sumber data baru. Menghasilkan jumlahKelas, jurnalTerisi, belumAdaJurnal (kelas tanpa jurnal), dan jumlahMurid (murid unik dari penempatan aktif) untuk satu cabang, plus fungsi penjumlah untuk mode semua cabang."
+    },
+    "src/components/ringkasan-cabang.tsx": {
+        "summary": "Komponen server kartu ringkasan cabang di halaman pemantauan: judul Ringkasan semua cabang atau Ringkasan <nama cabang> (dengan penanda nonaktif), catatan bahwa angkanya dihitung dari data contoh, dan empat angka (kelas, jurnal terisi, kelas belum ada jurnal, murid aktif); memakai PesanKosong bila cabang terpilih tidak punya kelas."
     }
 }
