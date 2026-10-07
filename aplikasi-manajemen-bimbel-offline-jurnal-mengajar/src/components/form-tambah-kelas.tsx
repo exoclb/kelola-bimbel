@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+  type FormEvent,
+} from "react";
 import { CalendarPlus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +17,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { IsianPilih, IsianTeks } from "@/components/isian-form";
+import {
+  langgananCabang,
+  siapkanCabang,
+  snapshotCabang,
+} from "@/lib/cabang-store";
 import { GURU_KELAS, type Kelas } from "@/lib/mock-kelas";
 import { HARI_DALAM_SEMINGGU } from "@/lib/tanggal";
 
@@ -23,17 +34,42 @@ type Galat = { namaKelas?: string; cabang?: string; jamSelesai?: string };
 /**
  * Formulir tambah kelas beserta satu jadwal awalnya. Jadwal dikumpulkan dari
  * daftar hari yang sama dengan halaman jurnal, jadi nama harinya konsisten.
+ * Pilihan cabangnya mengikuti data cabang dan hanya menawarkan cabang aktif.
  * Pesan kesalahan muncul di bawah isian yang salah.
  */
 export function FormTambahKelas({ onTambah }: FormTambahKelasProps) {
+  // Pilihan cabang ikut data cabang di halaman /app/cabang, jadi cabang yang
+  // baru ditambahkan langsung muncul di sini. Baca lewat store supaya
+  // perubahannya terlihat tanpa memuat ulang halaman.
+  const daftarCabang = useSyncExternalStore(
+    langgananCabang,
+    snapshotCabang,
+    snapshotCabang,
+  );
+  const pilihanCabang = useMemo(
+    () => daftarCabang.filter((baris) => baris.statusAktif),
+    [daftarCabang],
+  );
+
   const [terbuka, setTerbuka] = useState(false);
   const [namaKelas, setNamaKelas] = useState("");
-  const [cabang, setCabang] = useState("");
+  const [cabangDipilih, setCabangDipilih] = useState("");
   const [guruNama, setGuruNama] = useState(GURU_KELAS[0]);
   const [hari, setHari] = useState<string>(HARI_DALAM_SEMINGGU[0]);
   const [jamMulai, setJamMulai] = useState("07:00");
   const [jamSelesai, setJamSelesai] = useState("08:30");
   const [galat, setGalat] = useState<Galat>({});
+
+  useEffect(() => {
+    siapkanCabang();
+  }, []);
+
+  // Cabang terpilih bisa dinonaktifkan atau dihapus dari halaman cabang. Kalau
+  // itu terjadi (atau belum ada pilihan), pakai cabang aktif pertama supaya
+  // isiannya selalu menunjuk cabang yang masih aktif.
+  const cabang = pilihanCabang.some((baris) => baris.nama === cabangDipilih)
+    ? cabangDipilih
+    : (pilihanCabang[0]?.nama ?? "");
 
   function simpan(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -59,7 +95,7 @@ export function FormTambahKelas({ onTambah }: FormTambahKelasProps) {
     });
 
     setNamaKelas("");
-    setCabang("");
+    setCabangDipilih("");
     setGalat({});
     setTerbuka(false);
   }
@@ -104,22 +140,30 @@ export function FormTambahKelas({ onTambah }: FormTambahKelasProps) {
                 }));
               }}
             />
-            <IsianTeks
+            <IsianPilih
               id="cabang"
               label="Cabang"
               required
               value={cabang}
-              maxLength={120}
-              placeholder="Misalnya: Cabang Pusat"
               error={galat.cabang}
+              keterangan="Hanya cabang aktif yang bisa dipakai untuk kelas baru."
               onChange={(event) => {
-                setCabang(event.target.value);
+                setCabangDipilih(event.target.value);
                 setGalat((sebelumnya) => ({
                   ...sebelumnya,
                   cabang: undefined,
                 }));
               }}
-            />
+            >
+              {pilihanCabang.length === 0 && (
+                <option value="">Belum ada cabang aktif</option>
+              )}
+              {pilihanCabang.map((baris) => (
+                <option key={baris.id} value={baris.nama}>
+                  {baris.nama}
+                </option>
+              ))}
+            </IsianPilih>
             <IsianPilih
               id="guruNama"
               label="Guru pengampu"

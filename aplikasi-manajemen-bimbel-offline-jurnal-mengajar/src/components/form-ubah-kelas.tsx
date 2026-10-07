@@ -1,9 +1,20 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+  type FormEvent,
+} from "react";
 import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { IsianPilih, IsianTeks } from "@/components/isian-form";
+import {
+  langgananCabang,
+  siapkanCabang,
+  snapshotCabang,
+} from "@/lib/cabang-store";
 import { GURU_KELAS, type Kelas } from "@/lib/mock-kelas";
 
 type FormUbahKelasProps = {
@@ -19,19 +30,44 @@ type FormUbahKelasProps = {
 type Galat = { namaKelas?: string; cabang?: string };
 
 /**
- * Formulir ubah data kelas: nama, cabang, dan guru pengampu. Jadwal tidak
- * diubah di sini — jadwal punya formulirnya sendiri supaya penjagaan bentrok
- * jam tetap di satu tempat.
+ * Formulir ubah data kelas: nama, cabang, dan guru pengampu. Pilihan cabangnya
+ * mengikuti data cabang, tetapi hanya cabang aktif yang ditawarkan untuk
+ * pemindahan. Jadwal tidak diubah di sini — jadwal punya formulirnya sendiri
+ * supaya penjagaan bentrok jam tetap di satu tempat.
  */
 export function FormUbahKelas({
   kelas,
   onSimpan,
   onBatal,
 }: FormUbahKelasProps) {
+  // Pilihan cabang ikut data cabang di halaman /app/cabang. Untuk formulir
+  // ubah, cabang nonaktif tidak ditawarkan lagi sebagai tujuan baru, tetapi
+  // cabang kelas yang sedang dibuka tetap disertakan (ditandai nonaktif) agar
+  // menyimpan perubahan lain tidak diam-diam memindahkan kelasnya.
+  const daftarCabang = useSyncExternalStore(
+    langgananCabang,
+    snapshotCabang,
+    snapshotCabang,
+  );
+  const pilihanCabang = useMemo(
+    () => daftarCabang.filter((baris) => baris.statusAktif),
+    [daftarCabang],
+  );
+  const cabangSaatIni = daftarCabang.find(
+    (baris) => baris.nama === kelas.cabang,
+  );
+  const adaOpsiSaatIni = pilihanCabang.some(
+    (baris) => baris.nama === kelas.cabang,
+  );
+
   const [namaKelas, setNamaKelas] = useState(kelas.namaKelas);
   const [cabang, setCabang] = useState(kelas.cabang);
   const [guruNama, setGuruNama] = useState(kelas.guruNama);
   const [galat, setGalat] = useState<Galat>({});
+
+  useEffect(() => {
+    siapkanCabang();
+  }, []);
 
   function simpan(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -71,18 +107,30 @@ export function FormUbahKelas({
             setGalat((sebelumnya) => ({ ...sebelumnya, namaKelas: undefined }));
           }}
         />
-        <IsianTeks
+        <IsianPilih
           id={`ubah-${kelas.id}-cabang`}
           label="Cabang"
           value={cabang}
-          maxLength={120}
           required
           error={galat.cabang}
+          keterangan="Cabang nonaktif tidak ditawarkan untuk pemindahan baru."
           onChange={(event) => {
             setCabang(event.target.value);
             setGalat((sebelumnya) => ({ ...sebelumnya, cabang: undefined }));
           }}
-        />
+        >
+          {!adaOpsiSaatIni && (
+            <option value={kelas.cabang}>
+              {kelas.cabang}
+              {cabangSaatIni && !cabangSaatIni.statusAktif ? " (nonaktif)" : ""}
+            </option>
+          )}
+          {pilihanCabang.map((baris) => (
+            <option key={baris.id} value={baris.nama}>
+              {baris.nama}
+            </option>
+          ))}
+        </IsianPilih>
         <IsianPilih
           id={`ubah-${kelas.id}-guru`}
           label="Guru pengampu"
