@@ -1264,5 +1264,8 @@
     },
     "docs/peta-data-tiruan.md": {
         "summary": "Peta data tiruan & penyimpanan peramban untuk gerbang kualitas rilis: tabel per berkas berisi pengimpor (berkas:baris), klasifikasi (hidup / impor mati / berkas mati), dan catatan. Menyimpulkan 3 store peramban masih hidup (tagihan-store duplikat dari tagihan.service + /api/tagihan; pengeluaran-store & presensi-guru-store belum punya layanan padahal tabelnya sudah ada), semua mock tersisa hidup kecuali mock-kehadiran.ts yang dihapus, plus daftar ekspor mati dan rekomendasi lanjutan (migrasi store ke layanan database). Memuat tanggal dan perintah grep untuk memverifikasi ulang."
+    },
+    "src/app/(protected)/app/penempatan/loading.tsx": {
+        "summary": "Tampilan memuat halaman penempatan murid ke kelas: `StatusMemuat` berjudul \"Memuat penempatan murid…\". Ditambahkan agar rute penempatan punya keadaan memuat sendiri seperti rute lain di aplikasi."
     }
 }
