@@ -2,8 +2,9 @@ import { cn } from "cn";
 
 /**
  * Lencana kecil "Baru" untuk menandai bagian Portal Wali yang belum dibaca.
- * Hanya tampilan: sumber statusnya ada di `jejak-baca-portal-store`, jadi
- * lencana ini tidak pernah menyimpan keadaan sendiri.
+ * Hanya tampilan: sumber statusnya datang dari server (`jejak-baca.service`),
+ * diteruskan ke lencana ini sebagai prop, jadi lencana tidak pernah menyimpan
+ * keadaan sendiri.
  */
 export function LencanaBaru({ className }: { className?: string }) {
   return (

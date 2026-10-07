@@ -9,21 +9,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PemilihAnak } from "@/components/pemilih-anak";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { cn } from "cn";
-import {
-  belumDibaca,
-  siapkanJejakBaca,
-  tandaiTerbacaBanyak,
-  useTercatatDibaca,
-  type BagianPortal,
-} from "@/lib/jejak-baca-portal-store";
+import { tandaiTerbacaBanyak } from "@/lib/jejak-baca-portal-store";
 import { getRiwayatJurnal } from "@/lib/mock-jurnal";
-import type { AnakPortal } from "@/lib/mock-portal-wali";
+import type { AnakPortal, StatusJejakPortal } from "@/lib/mock-portal-wali";
 import { formatTanggalLengkap } from "@/lib/tanggal";
 
 type PerkembanganAnakPortalProps = {
   anak: AnakPortal[];
   muridId: string;
+  /** Status baca wali ini per anak, dihitung server (lihat jejak-baca.service). */
+  statusAwal: StatusJejakPortal;
 };
+
+// Halaman ini memuat dua bagian sekaligus: rekap kehadiran dan catatan
+// perkembangan.
+const BAGIAN_HALAMAN = ["kehadiran", "perkembangan"] as const;
 
 const angkaTampil = new Intl.NumberFormat("id-ID", {
   maximumFractionDigits: 0,
@@ -37,34 +37,35 @@ const angkaTampil = new Intl.NumberFormat("id-ID", {
 export function PerkembanganAnakPortal({
   anak,
   muridId,
+  statusAwal,
 }: PerkembanganAnakPortalProps) {
   const router = useRouter();
   const dipilih = anak.find((baris) => baris.muridId === muridId) ?? anak[0];
 
   // Halaman ini memuat dua bagian sekaligus: rekap kehadiran dan catatan
   // perkembangan. Bagian yang masih bertanda "Baru" ditandai terbaca begitu
-  // halaman dibuka, jadi lencana di beranda hilang dan tetap hilang setelah
-  // muat ulang.
+  // halaman dibuka (lewat API), jadi lencana di beranda hilang dan tetap hilang
+  // setelah muat ulang.
   const muridIdBaca = dipilih?.muridId;
+  const statusDipilih = muridIdBaca ? statusAwal[muridIdBaca] : undefined;
 
   useEffect(() => {
-    if (!muridIdBaca) return;
-    siapkanJejakBaca();
-    const bagian: BagianPortal[] = ["kehadiran", "perkembangan"];
-    tandaiTerbacaBanyak(
-      muridIdBaca,
-      bagian.filter((item) => belumDibaca(muridIdBaca, item)),
-    );
-  }, [muridIdBaca]);
+    if (!muridIdBaca || !statusDipilih) return;
+    const baru = BAGIAN_HALAMAN.filter((bagian) => statusDipilih[bagian].baru);
+    void tandaiTerbacaBanyak(muridIdBaca, [...baru]);
+  }, [muridIdBaca, statusDipilih]);
 
-  const kehadiranTercatat = useTercatatDibaca(muridIdBaca ?? "", "kehadiran");
-  const perkembanganTercatat = useTercatatDibaca(
-    muridIdBaca ?? "",
-    "perkembangan",
-  );
+  // Umpan balik untuk bagian yang sudah (atau baru akan) tercatat terbaca oleh
+  // wali ini.
   const labelDibaca = [
-    ...(kehadiranTercatat ? ["kehadiran"] : []),
-    ...(perkembanganTercatat ? ["catatan perkembangan"] : []),
+    ...(statusDipilih &&
+    (statusDipilih.kehadiran.tercatat || statusDipilih.kehadiran.baru)
+      ? ["kehadiran"]
+      : []),
+    ...(statusDipilih &&
+    (statusDipilih.perkembangan.tercatat || statusDipilih.perkembangan.baru)
+      ? ["catatan perkembangan"]
+      : []),
   ];
 
   // Kehadiran per sesi dibaca dari jurnal guru yang sudah ada.

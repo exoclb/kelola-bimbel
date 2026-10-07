@@ -30,7 +30,9 @@ export type CatatanPerkembangan = {
 };
 
 /** Bagian portal yang punya penanda "baru" sendiri. */
-export type BagianPortal = "kehadiran" | "perkembangan" | "tagihan";
+export const BAGIAN_PORTAL = ["kehadiran", "perkembangan", "tagihan"] as const;
+
+export type BagianPortal = (typeof BAGIAN_PORTAL)[number];
 
 /** Keadaan satu bagian anak: kapan isinya berubah dan kapan terakhir dibaca. */
 export type WaktuBagian = {
@@ -39,6 +41,25 @@ export type WaktuBagian = {
   /** Tanggal baca terakhir menurut data tiruan, `null` bila belum pernah dibaca. */
   terakhirDibaca: string | null;
 };
+
+/**
+ * Status baca satu bagian anak: `WaktuBagian` ditambah kesimpulan "baru" dan
+ * penanda apakah wali ini sendiri pernah menandainya terbaca. Bentuk inilah
+ * yang dikirim `GET/POST /api/jejak-baca` dan diteruskan halaman portal sebagai
+ * prop, jadi tampilan tidak pernah menghitung statusnya sendiri.
+ */
+export type StatusBagianPortal = WaktuBagian & {
+  /** Bagian dianggap baru bila isinya lebih baru daripada `terakhirDibaca`. */
+  baru: boolean;
+  /** Wali ini sudah pernah menandai bagian ini terbaca (bukan bawaan data tiruan). */
+  tercatat: boolean;
+};
+
+/** Status ketiga bagian satu anak. */
+export type StatusJejakAnak = Record<BagianPortal, StatusBagianPortal>;
+
+/** Status tiap anak yang tertaut ke akun wali, berkunci `muridId`. */
+export type StatusJejakPortal = Record<string, StatusJejakAnak>;
 
 export type AnakPortal = AnakWali & {
   catatan: CatatanPerkembangan[];

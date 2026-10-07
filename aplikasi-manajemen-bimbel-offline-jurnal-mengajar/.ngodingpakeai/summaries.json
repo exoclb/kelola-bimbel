@@ -1273,5 +1273,14 @@
     },
     "src/components/lencana-baru.tsx": {
         "summary": "Lencana kecil \"Baru\" (presentasional) untuk menandai bagian Portal Wali yang belum dibaca wali; menerima className opsional dan dipakai pada kartu Kehadiran, Tagihan Terdekat, dan Sorotan Perkembangan di beranda portal."
+    },
+    "src/services/jejak-baca.service.ts": {
+        "summary": "Layanan jejak baca Portal Wali: menyimpan tanggal baca per kunci `userId|muridId|bagian` (dari sesi wali + anak + bagian) di penyimpanan proses `globalThis.__kelolaBimbelJejakBaca` mengikuti pola mock-cabang, jadi status milik tiap akun wali. Menyediakan `statusAnak`/`statusSemuaAnak` (mengembalikan terbaru, terakhirDibaca, baru), `tandaiTerbaca` (idempoten), dan validasi anak wajib tertaut ke akun (selain itu 404). Aturan 'baru' terkonsentrasi di satu baris berkomentar PERBANDINGAN WAKTU (`terbaru > terakhirDibaca`) agar fase database tinggal memindahkannya ke query Drizzle."
+    },
+    "src/app/api/jejak-baca/route.ts": {
+        "summary": "Route API jejak baca Portal Wali: `GET /api/jejak-baca?anak=<muridId>` mengembalikan status tiap bagian untuk anak itu, dan `POST /api/jejak-baca` dengan `{ anak, bagian }` menandai terbaca (idempoten). Identitas wali diambil dari sesi server; 401 tanpa sesi, 403 untuk peran tanpa izin portal, 404 bila anak tidak tertaut ke akun itu, 422 saat kueri/badan tidak sah. Runtime nodejs, pola withApiPermission + validasi Zod."
+    },
+    "src/validators/jejak-baca.ts": {
+        "summary": "Skema Zod untuk API jejak baca Portal Wali: validasi kueri `anak` pada GET dan badan POST `{ anak, bagian }` dengan daftar bagian yang sah (kehadiran, perkembangan, tagihan), memakai tuple BAGIAN_PORTAL dari data contoh portal."
     }
 }

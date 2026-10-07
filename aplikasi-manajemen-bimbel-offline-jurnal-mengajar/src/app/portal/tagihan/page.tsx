@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { TagihanSppAnak } from "@/components/tagihan-spp-anak";
 import { anakTertautAtauPertama, getAnakPortal } from "@/lib/mock-portal-wali";
+import { statusSemuaAnak } from "@/services/jejak-baca.service";
 import { requireSession } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Tagihan SPP Anak" };
@@ -10,7 +11,7 @@ export default async function TagihanSppAnakPage({
 }: {
   searchParams: Promise<{ anak?: string }>;
 }) {
-  await requireSession();
+  const session = await requireSession();
 
   const anak = getAnakPortal();
   const params = await searchParams;
@@ -20,5 +21,11 @@ export default async function TagihanSppAnakPage({
   // sisi data, bukan hanya di tampilan.
   const muridId = anakTertautAtauPertama(params.anak)?.muridId ?? "";
 
-  return <TagihanSppAnak anak={anak} muridId={muridId} />;
+  return (
+    <TagihanSppAnak
+      anak={anak}
+      muridId={muridId}
+      statusAwal={statusSemuaAnak(session.user.id)}
+    />
+  );
 }

@@ -15,11 +15,7 @@ import { PemilihAnak } from "@/components/pemilih-anak";
 import { LabelStatusTagihan } from "@/components/label-status-tagihan";
 import { LencanaBaru } from "@/components/lencana-baru";
 import { formatRupiah } from "@/lib/gaji";
-import {
-  siapkanJejakBaca,
-  useBelumDibaca,
-} from "@/lib/jejak-baca-portal-store";
-import type { AnakPortal } from "@/lib/mock-portal-wali";
+import type { AnakPortal, StatusJejakPortal } from "@/lib/mock-portal-wali";
 import type { ProfilBimbel } from "@/lib/mock-pengaturan";
 import { periodeDariTagihan } from "@/lib/tagihan";
 import {
@@ -40,6 +36,8 @@ type BerandaPortalWaliProps = {
   profil: ProfilBimbel;
   /** Anak yang dipilih lewat alamat halaman (`?anak=`), bila ada. */
   muridIdAwal?: string;
+  /** Status baca wali ini per anak, dihitung server (lihat jejak-baca.service). */
+  statusAwal: StatusJejakPortal;
 };
 
 const nilaiTampil = new Intl.NumberFormat("id-ID", {
@@ -61,6 +59,7 @@ export function BerandaPortalWali({
   anak,
   profil,
   muridIdAwal,
+  statusAwal,
 }: BerandaPortalWaliProps) {
   const tagihan = useSyncExternalStore(
     langgananTagihan,
@@ -74,19 +73,17 @@ export function BerandaPortalWali({
 
   useEffect(() => {
     siapkanTagihan();
-    siapkanJejakBaca();
   }, []);
 
   const dipilih = anak.find((baris) => baris.muridId === muridId) ?? anak[0];
 
-  // Lencana "Baru" per bagian anak yang sedang dibuka. Anak lain tidak
-  // terpengaruh karena statusnya disimpan per (muridId, bagian).
-  const kehadiranBaru = useBelumDibaca(dipilih?.muridId ?? "", "kehadiran");
-  const perkembanganBaru = useBelumDibaca(
-    dipilih?.muridId ?? "",
-    "perkembangan",
-  );
-  const tagihanBaru = useBelumDibaca(dipilih?.muridId ?? "", "tagihan");
+  // Lencana "Baru" per bagian anak yang sedang dibuka, diambil dari status yang
+  // dihitung server untuk wali ini. Anak lain tidak terpengaruh karena
+  // statusnya berkunci per (muridId, bagian).
+  const statusDipilih = dipilih ? statusAwal[dipilih.muridId] : undefined;
+  const kehadiranBaru = statusDipilih?.kehadiran.baru ?? false;
+  const perkembanganBaru = statusDipilih?.perkembangan.baru ?? false;
+  const tagihanBaru = statusDipilih?.tagihan.baru ?? false;
 
   const tagihanAnak = useMemo(
     () =>

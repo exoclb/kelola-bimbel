@@ -10,13 +10,8 @@ import { PemilihAnak } from "@/components/pemilih-anak";
 import { LabelStatusTagihan } from "@/components/label-status-tagihan";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { formatRupiah } from "@/lib/gaji";
-import {
-  belumDibaca,
-  siapkanJejakBaca,
-  tandaiTerbaca,
-  useTercatatDibaca,
-} from "@/lib/jejak-baca-portal-store";
-import type { AnakWali } from "@/lib/mock-portal-wali";
+import { tandaiTerbaca } from "@/lib/jejak-baca-portal-store";
+import type { AnakWali, StatusJejakPortal } from "@/lib/mock-portal-wali";
 import { periodeDariTagihan } from "@/lib/tagihan";
 import {
   langgananTagihan,
@@ -28,6 +23,8 @@ import { formatPeriodeTagihan, hitungRekapTagihan } from "@/lib/tagihan";
 type TagihanSppAnakProps = {
   anak: AnakWali[];
   muridId: string;
+  /** Status baca wali ini per anak, dihitung server (lihat jejak-baca.service). */
+  statusAwal: StatusJejakPortal;
 };
 
 const tanggalTampil = new Intl.DateTimeFormat("id-ID", {
@@ -41,7 +38,11 @@ const tanggalTampil = new Intl.DateTimeFormat("id-ID", {
  * alamat halaman (`?anak=`), jadi pilihan yang sama terbawa saat wali pindah
  * ke halaman portal lain.
  */
-export function TagihanSppAnak({ anak, muridId }: TagihanSppAnakProps) {
+export function TagihanSppAnak({
+  anak,
+  muridId,
+  statusAwal,
+}: TagihanSppAnakProps) {
   const router = useRouter();
   const semua = useSyncExternalStore(
     langgananTagihan,
@@ -55,18 +56,19 @@ export function TagihanSppAnak({ anak, muridId }: TagihanSppAnakProps) {
 
   const dipilih = anak.find((baris) => baris.muridId === muridId) ?? anak[0];
 
-  // Bagian tagihan ditandai terbaca begitu halaman ini dibuka, jadi lencana
-  // "Baru" di beranda hilang dan tetap hilang setelah muat ulang.
+  // Bagian tagihan ditandai terbaca begitu halaman ini dibuka (lewat API), jadi
+  // lencana "Baru" di beranda hilang dan tetap hilang setelah muat ulang.
   const muridIdBaca = dipilih?.muridId;
+  const statusDipilih = muridIdBaca ? statusAwal[muridIdBaca] : undefined;
 
   useEffect(() => {
-    if (!muridIdBaca) return;
-    siapkanJejakBaca();
-    if (!belumDibaca(muridIdBaca, "tagihan")) return;
-    tandaiTerbaca(muridIdBaca, "tagihan");
-  }, [muridIdBaca]);
+    if (!muridIdBaca || !statusDipilih?.tagihan.baru) return;
+    void tandaiTerbaca(muridIdBaca, "tagihan");
+  }, [muridIdBaca, statusDipilih]);
 
-  const tagihanTercatat = useTercatatDibaca(muridIdBaca ?? "", "tagihan");
+  const tagihanTercatat = statusDipilih
+    ? statusDipilih.tagihan.tercatat || statusDipilih.tagihan.baru
+    : false;
 
   const daftar = useMemo(
     () =>
