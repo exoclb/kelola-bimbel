@@ -12,19 +12,16 @@ import type { BuatCabangInput, UbahCabangInput } from "@/validators/cabang";
 //
 // PENTING: sumbernya masih data tiruan di `src/lib/mock-cabang.ts` — tabel
 // `cabang` belum ada di database. Fungsi di sini membaca dan menulis daftar di
-// modul itu sebagai penyimpanan tingkat proses Node (bukan `localStorage`;
-// itu hanya untuk sisi peramban lewat `src/lib/cabang-store.ts`). Perubahan
-// bertahan selama server hidup dan hilang saat server dimulai ulang; nanti
-// tinggal diganti query Drizzle tanpa mengubah bentuk hasilnya.
+// modul itu sebagai penyimpanan tingkat proses Node. Perubahan bertahan selama
+// server hidup dan hilang saat server dimulai ulang; nanti tinggal diganti
+// query Drizzle tanpa mengubah bentuk hasilnya.
 
 export type { Cabang };
 
 /**
  * Apakah nama cabang sudah dipakai cabang lain. Spasi tepi dan besar/kecil
  * huruf diabaikan. Saat menyunting, kirim `kecualiId` berisi id baris yang
- * sedang diubah supaya namanya sendiri tidak dianggap bentrok. Aturan ini
- * disamakan dengan penyimpanan peramban (`namaCabangDipakai` di
- * `src/lib/cabang-store.ts`).
+ * sedang diubah supaya namanya sendiri tidak dianggap bentrok.
  */
 export function namaCabangDipakai(nama: string, kecualiId?: string) {
   const kunci = nama.trim().toLocaleLowerCase("id");

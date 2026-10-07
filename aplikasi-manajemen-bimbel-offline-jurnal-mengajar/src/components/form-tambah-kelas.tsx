@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useMemo,
-  useState,
-  useSyncExternalStore,
-  type FormEvent,
-} from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { CalendarPlus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,15 +11,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { IsianPilih, IsianTeks } from "@/components/isian-form";
-import {
-  langgananCabang,
-  siapkanCabang,
-  snapshotCabang,
-} from "@/lib/cabang-store";
+import type { Cabang } from "@/lib/mock-cabang";
 import { GURU_KELAS, type Kelas } from "@/lib/mock-kelas";
 import { HARI_DALAM_SEMINGGU } from "@/lib/tanggal";
 
 type FormTambahKelasProps = {
+  /** Semua cabang dari layanan cabang, urut nama. */
+  daftarCabang: Cabang[];
   onTambah: (kelas: Kelas) => void;
 };
 
@@ -34,18 +26,14 @@ type Galat = { namaKelas?: string; cabang?: string; jamSelesai?: string };
 /**
  * Formulir tambah kelas beserta satu jadwal awalnya. Jadwal dikumpulkan dari
  * daftar hari yang sama dengan halaman jurnal, jadi nama harinya konsisten.
- * Pilihan cabangnya mengikuti data cabang dan hanya menawarkan cabang aktif.
+ * Pilihan cabangnya berasal dari layanan cabang (dibaca di server lalu
+ * diteruskan sebagai prop) dan hanya menawarkan cabang aktif.
  * Pesan kesalahan muncul di bawah isian yang salah.
  */
-export function FormTambahKelas({ onTambah }: FormTambahKelasProps) {
-  // Pilihan cabang ikut data cabang di halaman /app/cabang, jadi cabang yang
-  // baru ditambahkan langsung muncul di sini. Baca lewat store supaya
-  // perubahannya terlihat tanpa memuat ulang halaman.
-  const daftarCabang = useSyncExternalStore(
-    langgananCabang,
-    snapshotCabang,
-    snapshotCabang,
-  );
+export function FormTambahKelas({
+  daftarCabang,
+  onTambah,
+}: FormTambahKelasProps) {
   const pilihanCabang = useMemo(
     () => daftarCabang.filter((baris) => baris.statusAktif),
     [daftarCabang],
@@ -59,10 +47,6 @@ export function FormTambahKelas({ onTambah }: FormTambahKelasProps) {
   const [jamMulai, setJamMulai] = useState("07:00");
   const [jamSelesai, setJamSelesai] = useState("08:30");
   const [galat, setGalat] = useState<Galat>({});
-
-  useEffect(() => {
-    siapkanCabang();
-  }, []);
 
   // Cabang terpilih bisa dinonaktifkan atau dihapus dari halaman cabang. Kalau
   // itu terjadi (atau belum ada pilihan), pakai cabang aktif pertama supaya

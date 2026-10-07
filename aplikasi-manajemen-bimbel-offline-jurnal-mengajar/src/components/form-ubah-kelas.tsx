@@ -1,24 +1,16 @@
 "use client";
 
-import {
-  useEffect,
-  useMemo,
-  useState,
-  useSyncExternalStore,
-  type FormEvent,
-} from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { IsianPilih, IsianTeks } from "@/components/isian-form";
-import {
-  langgananCabang,
-  siapkanCabang,
-  snapshotCabang,
-} from "@/lib/cabang-store";
+import type { Cabang } from "@/lib/mock-cabang";
 import { GURU_KELAS, type Kelas } from "@/lib/mock-kelas";
 
 type FormUbahKelasProps = {
   kelas: Kelas;
+  /** Semua cabang dari layanan cabang, urut nama. */
+  daftarCabang: Cabang[];
   onSimpan: (perubahan: {
     namaKelas: string;
     cabang: string;
@@ -37,18 +29,14 @@ type Galat = { namaKelas?: string; cabang?: string };
  */
 export function FormUbahKelas({
   kelas,
+  daftarCabang,
   onSimpan,
   onBatal,
 }: FormUbahKelasProps) {
-  // Pilihan cabang ikut data cabang di halaman /app/cabang. Untuk formulir
-  // ubah, cabang nonaktif tidak ditawarkan lagi sebagai tujuan baru, tetapi
-  // cabang kelas yang sedang dibuka tetap disertakan (ditandai nonaktif) agar
-  // menyimpan perubahan lain tidak diam-diam memindahkan kelasnya.
-  const daftarCabang = useSyncExternalStore(
-    langgananCabang,
-    snapshotCabang,
-    snapshotCabang,
-  );
+  // Untuk formulir ubah, cabang nonaktif tidak ditawarkan lagi sebagai tujuan
+  // baru, tetapi cabang kelas yang sedang dibuka tetap disertakan (ditandai
+  // nonaktif) agar menyimpan perubahan lain tidak diam-diam memindahkan
+  // kelasnya.
   const pilihanCabang = useMemo(
     () => daftarCabang.filter((baris) => baris.statusAktif),
     [daftarCabang],
@@ -64,10 +52,6 @@ export function FormUbahKelas({
   const [cabang, setCabang] = useState(kelas.cabang);
   const [guruNama, setGuruNama] = useState(kelas.guruNama);
   const [galat, setGalat] = useState<Galat>({});
-
-  useEffect(() => {
-    siapkanCabang();
-  }, []);
 
   function simpan(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

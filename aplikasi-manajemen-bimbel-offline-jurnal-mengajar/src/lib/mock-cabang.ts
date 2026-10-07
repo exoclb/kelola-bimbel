@@ -42,9 +42,7 @@ const CABANG: Cabang[] = [
 
 // --- Penyimpanan proses -----------------------------------------------------
 // Dipakai layanan cabang (`src/services/cabang.service.ts`) supaya penambahan
-// dan penyuntingan bertahan selama server hidup. Ini penyimpanan tingkat
-// proses Node, bukan `localStorage` (itu hanya untuk sisi peramban, lewat
-// `src/lib/cabang-store.ts`). Nanti diganti tabel database.
+// dan penyuntingan bertahan selama server hidup. Nanti diganti tabel database.
 //
 // Daftar kerjanya sengaja ditaruh di `globalThis`, bukan variabel tingkat
 // modul: Next.js bisa memberi setiap lapisan (halaman server, route handler

@@ -23,6 +23,7 @@ import {
 } from "@/components/panel-penempatan";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import type { Cabang } from "@/lib/mock-cabang";
 import type { JadwalKelas, Kelas } from "@/lib/mock-kelas";
 import type { Murid } from "@/lib/mock-murid";
 import type { Penempatan } from "@/lib/mock-penempatan";
@@ -30,6 +31,8 @@ import { tanggalISO, urutkanJadwal } from "@/lib/tanggal";
 
 type DaftarKelasProps = {
   daftarAwal: Kelas[];
+  /** Semua cabang dari layanan cabang, dipakai isian cabang di formulir kelas. */
+  daftarCabang: Cabang[];
   daftarMurid: Murid[];
   penempatanAwal: Penempatan[];
 };
@@ -41,6 +44,7 @@ type DaftarKelasProps = {
  */
 export function DaftarKelas({
   daftarAwal,
+  daftarCabang,
   daftarMurid,
   penempatanAwal,
 }: DaftarKelasProps) {
@@ -246,7 +250,7 @@ export function DaftarKelas({
             {cari.trim()}”.
           </p>
         )}
-        <FormTambahKelas onTambah={tambahKelas} />
+        <FormTambahKelas daftarCabang={daftarCabang} onTambah={tambahKelas} />
         <p role="status" className="text-sm text-muted-foreground">
           {pesan}
         </p>
@@ -369,6 +373,7 @@ export function DaftarKelas({
                   {ubahUntuk === kelas.id && (
                     <FormUbahKelas
                       kelas={kelas}
+                      daftarCabang={daftarCabang}
                       onSimpan={(perubahan) =>
                         simpanUbahKelas(kelas.id, perubahan)
                       }
