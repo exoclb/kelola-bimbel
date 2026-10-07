@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { Building2, CheckCircle2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,11 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { IsianPilih, IsianTeks } from "@/components/isian-form";
-import {
-  namaCabangDipakai,
-  tambahCabang,
-  type Cabang,
-} from "@/lib/cabang-store";
+import { type Cabang } from "@/lib/mock-cabang";
 
 type Galat = {
   nama?: string;
@@ -23,21 +20,46 @@ type Galat = {
   kontak?: string;
 };
 
+type FormTambahCabangProps = {
+  /** Daftar cabang yang sedang tampil di halaman, untuk cek nama kembar. */
+  daftarCabang: Cabang[];
+};
+
+/** Ambil pesan galat dari jawaban `/api/cabang`; `cadangan` untuk galat lain. */
+async function pesanGalatApi(jawaban: Response, cadangan: string) {
+  const isi = (await jawaban.json().catch(() => null)) as {
+    error?: { message?: string };
+  } | null;
+  return isi?.error?.message ?? cadangan;
+}
+
 /**
- * Formulir tambah cabang: nama, alamat, kontak, dan status aktifnya. Sesudah
- * disimpan muncul kartu konfirmasi berisi nilai yang tercatat, supaya owner
+ * Formulir tambah cabang: nama, alamat, kontak, dan status aktifnya. Datanya
+ * dikirim ke `POST /api/cabang`, lalu daftar di server disegarkan; sesudah
+ * tersimpan muncul kartu konfirmasi berisi nilai yang tercatat, supaya owner
  * bisa memastikan datanya benar sebelum menambah cabang lain.
  */
-export function FormTambahCabang() {
+export function FormTambahCabang({ daftarCabang }: FormTambahCabangProps) {
+  const router = useRouter();
+
   const [terbuka, setTerbuka] = useState(false);
   const [nama, setNama] = useState("");
   const [alamat, setAlamat] = useState("");
   const [kontak, setKontak] = useState("");
   const [aktif, setAktif] = useState(true);
   const [galat, setGalat] = useState<Galat>({});
+  const [galatUmum, setGalatUmum] = useState("");
+  const [pending, setPending] = useState(false);
   const [tersimpan, setTersimpan] = useState<Cabang | null>(null);
 
-  function simpan(event: FormEvent<HTMLFormElement>) {
+  function namaDipakai(namaBaru: string) {
+    const rapi = namaBaru.trim().toLocaleLowerCase("id");
+    return daftarCabang.some(
+      (baris) => baris.nama.trim().toLocaleLowerCase("id") === rapi,
+    );
+  }
+
+  async function simpan(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const namaRapi = nama.trim();
@@ -46,7 +68,7 @@ export function FormTambahCabang() {
       masalah.nama = "Nama cabang wajib diisi.";
     } else if (namaRapi.length > 80) {
       masalah.nama = "Nama cabang maksimal 80 karakter.";
-    } else if (namaCabangDipakai(namaRapi)) {
+    } else if (namaDipakai(namaRapi)) {
       masalah.nama = `Cabang "${namaRapi}" sudah terdaftar.`;
     }
     if (!alamat.trim()) masalah.alamat = "Alamat wajib diisi.";
@@ -57,25 +79,49 @@ export function FormTambahCabang() {
       return;
     }
 
-    const hasil = tambahCabang({
-      nama: namaRapi,
-      alamat: alamat.trim(),
-      kontak: kontak.trim(),
-      statusAktif: aktif,
-    });
+    setPending(true);
+    setGalatUmum("");
+    try {
+      const jawaban = await fetch("/api/cabang", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nama: namaRapi,
+          alamat: alamat.trim(),
+          kontak: kontak.trim(),
+          statusAktif: aktif,
+        }),
+      });
 
-    if (!hasil.ok) {
-      setGalat({ nama: hasil.pesan });
-      return;
+      if (!jawaban.ok) {
+        const pesanGalat = await pesanGalatApi(
+          jawaban,
+          `Cabang ${namaRapi} belum bisa disimpan. Coba lagi sebentar lagi.`,
+        );
+        if (jawaban.status === 409) {
+          setGalat({ nama: pesanGalat });
+        } else {
+          setGalatUmum(pesanGalat);
+        }
+        return;
+      }
+
+      const isi = (await jawaban.json()) as { data: Cabang };
+      setTersimpan(isi.data);
+      setNama("");
+      setAlamat("");
+      setKontak("");
+      setAktif(true);
+      setGalat({});
+      setTerbuka(false);
+      router.refresh();
+    } catch {
+      setGalatUmum(
+        `Cabang ${namaRapi} belum bisa disimpan. Coba lagi sebentar lagi.`,
+      );
+    } finally {
+      setPending(false);
     }
-
-    setTersimpan(hasil.baris);
-    setNama("");
-    setAlamat("");
-    setKontak("");
-    setAktif(true);
-    setGalat({});
-    setTerbuka(false);
   }
 
   function tambahLagi() {
@@ -212,8 +258,14 @@ export function FormTambahCabang() {
             </IsianPilih>
           </div>
 
+          {galatUmum && (
+            <p role="alert" className="text-sm text-destructive">
+              {galatUmum}
+            </p>
+          )}
+
           <div className="flex flex-wrap items-center gap-2">
-            <Button type="submit" size="sm">
+            <Button type="submit" size="sm" disabled={pending}>
               <Plus aria-hidden="true" />
               Simpan cabang
             </Button>
@@ -221,9 +273,11 @@ export function FormTambahCabang() {
               type="button"
               variant="ghost"
               size="sm"
+              disabled={pending}
               onClick={() => {
                 setTerbuka(false);
                 setGalat({});
+                setGalatUmum("");
               }}
             >
               Batal

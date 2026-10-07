@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   MapPin,
   PencilLine,
@@ -15,15 +16,30 @@ import { Card } from "@/components/ui/card";
 import { IsianPilih, IsianTeks } from "@/components/isian-form";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { getDaftarKelas } from "@/lib/mock-kelas";
-import {
-  langgananCabang,
-  namaCabangDipakai,
-  ringkasCabang,
-  siapkanCabang,
-  snapshotCabang,
-  ubahCabang,
-  type Cabang,
-} from "@/lib/cabang-store";
+import { type Cabang } from "@/lib/mock-cabang";
+
+/**
+ * Ambil pesan galat dari jawaban `/api/cabang` supaya pesan dari server (mis.
+ * nama yang sudah dipakai) tampil apa adanya; pakai `cadangan` untuk galat
+ * jaringan atau bentuk jawaban yang tidak terduga.
+ */
+async function pesanGalatApi(jawaban: Response, cadangan: string) {
+  const isi = (await jawaban.json().catch(() => null)) as {
+    error?: { message?: string };
+  } | null;
+  return isi?.error?.message ?? cadangan;
+}
+
+type RingkasanCabang = {
+  jumlahCabang: number;
+  jumlahAktif: number;
+  jumlahNonaktif: number;
+};
+
+type DaftarCabangProps = {
+  daftar: Cabang[];
+  ringkas: RingkasanCabang;
+};
 
 type DrafCabang = {
   nama: string;
@@ -40,30 +56,38 @@ type GalatCabang = {
 
 /**
  * Daftar cabang bimbel beserta alamat, kontak, statusnya, dan jumlah kelas
- * yang berjalan di sana. Datanya masih contoh; penambahan dan penyuntingan
- * cabang langsung terlihat selama aplikasi terbuka.
+ * yang berjalan di sana. Datanya dibaca server lewat `listCabang()`, sedangkan
+ * penambahan, penyuntingan, dan perubahan status dikirim ke `/api/cabang`
+ * supaya halaman ini dan API memakai satu sumber yang sama.
+ *
+ * PENTING: sumbernya masih data tiruan di memori server (lihat
+ * `src/services/cabang.service.ts`) — perubahan bertahan selama server hidup
+ * dan hilang saat server dimulai ulang. Nanti diganti tabel database.
  */
-export function DaftarCabang() {
-  const daftar = useSyncExternalStore(
-    langgananCabang,
-    snapshotCabang,
-    snapshotCabang,
-  );
+export function DaftarCabang({ daftar, ringkas }: DaftarCabangProps) {
   const kelas = getDaftarKelas();
-  const ringkas = ringkasCabang(daftar);
+  const router = useRouter();
 
   const [ubahId, setUbahId] = useState<string | null>(null);
   const [draf, setDraf] = useState<DrafCabang | null>(null);
   const [galat, setGalat] = useState<GalatCabang>({});
+  const [galatUmum, setGalatUmum] = useState("");
   const [pesan, setPesan] = useState("");
+  const [pending, setPending] = useState(false);
 
-  useEffect(() => {
-    siapkanCabang();
-  }, []);
+  function namaDipakai(nama: string, kecualiId?: string) {
+    const rapi = nama.trim().toLocaleLowerCase("id");
+    return daftar.some(
+      (baris) =>
+        baris.id !== kecualiId &&
+        baris.nama.trim().toLocaleLowerCase("id") === rapi,
+    );
+  }
 
   function mulaiUbah(baris: Cabang) {
     setUbahId(baris.id);
     setGalat({});
+    setGalatUmum("");
     setDraf({
       nama: baris.nama,
       alamat: baris.alamat,
@@ -78,7 +102,7 @@ export function DaftarCabang() {
     setGalat({});
   }
 
-  function simpanUbah(baris: Cabang) {
+  async function simpanUbah(baris: Cabang) {
     if (!draf) return;
     const namaRapi = draf.nama.trim();
     const masalah: GalatCabang = {};
@@ -86,7 +110,7 @@ export function DaftarCabang() {
       masalah.nama = "Nama cabang wajib diisi.";
     } else if (namaRapi.length > 80) {
       masalah.nama = "Nama cabang maksimal 80 karakter.";
-    } else if (namaCabangDipakai(namaRapi, baris.id)) {
+    } else if (namaDipakai(namaRapi, baris.id)) {
       masalah.nama = `Cabang "${namaRapi}" sudah terdaftar.`;
     }
     if (!draf.alamat.trim()) masalah.alamat = "Alamat wajib diisi.";
@@ -97,23 +121,76 @@ export function DaftarCabang() {
       return;
     }
 
-    ubahCabang({
-      ...baris,
-      nama: namaRapi,
-      alamat: draf.alamat.trim(),
-      kontak: draf.kontak.trim(),
-      statusAktif: draf.statusAktif,
-    });
-    setPesan(`Cabang ${namaRapi} diperbarui.`);
-    batal();
+    setPending(true);
+    setGalatUmum("");
+    try {
+      const jawaban = await fetch(`/api/cabang/${baris.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nama: namaRapi,
+          alamat: draf.alamat.trim(),
+          kontak: draf.kontak.trim(),
+          statusAktif: draf.statusAktif,
+        }),
+      });
+
+      if (!jawaban.ok) {
+        const pesanGalat = await pesanGalatApi(
+          jawaban,
+          `Cabang ${namaRapi} belum bisa diperbarui. Coba lagi sebentar lagi.`,
+        );
+        if (jawaban.status === 409) {
+          setGalat({ nama: pesanGalat });
+        } else {
+          setGalatUmum(pesanGalat);
+        }
+        return;
+      }
+
+      setPesan(`Cabang ${namaRapi} diperbarui.`);
+      batal();
+      router.refresh();
+    } catch {
+      setGalatUmum(
+        `Cabang ${namaRapi} belum bisa diperbarui. Coba lagi sebentar lagi.`,
+      );
+    } finally {
+      setPending(false);
+    }
   }
 
-  function gantiStatus(baris: Cabang) {
+  async function gantiStatus(baris: Cabang) {
     const statusBaru = !baris.statusAktif;
-    ubahCabang({ ...baris, statusAktif: statusBaru });
-    setPesan(
-      `Cabang ${baris.nama} ${statusBaru ? "diaktifkan" : "dinonaktifkan"}.`,
-    );
+    setPending(true);
+    setGalatUmum("");
+    try {
+      const jawaban = await fetch(`/api/cabang/${baris.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ statusAktif: statusBaru }),
+      });
+      if (!jawaban.ok) {
+        setGalatUmum(
+          await pesanGalatApi(
+            jawaban,
+            `Status cabang ${baris.nama} belum bisa diubah. Coba lagi sebentar lagi.`,
+          ),
+        );
+        return;
+      }
+
+      setPesan(
+        `Cabang ${baris.nama} ${statusBaru ? "diaktifkan" : "dinonaktifkan"}.`,
+      );
+      router.refresh();
+    } catch {
+      setGalatUmum(
+        `Status cabang ${baris.nama} belum bisa diubah. Coba lagi sebentar lagi.`,
+      );
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
@@ -129,12 +206,18 @@ export function DaftarCabang() {
       </p>
 
       <div className="mt-6">
-        <FormTambahCabang />
+        <FormTambahCabang daftarCabang={daftar} />
       </div>
 
       <p role="status" className="mt-4 text-sm text-muted-foreground">
         {pesan}
       </p>
+
+      {galatUmum && (
+        <p role="alert" className="mt-2 text-sm text-destructive">
+          {galatUmum}
+        </p>
+      )}
 
       {daftar.length === 0 ? (
         <PesanKosong
@@ -221,6 +304,7 @@ export function DaftarCabang() {
                         <Button
                           type="button"
                           size="sm"
+                          disabled={pending}
                           onClick={() => simpanUbah(cabang)}
                         >
                           Simpan perubahan
@@ -229,6 +313,7 @@ export function DaftarCabang() {
                           type="button"
                           variant="ghost"
                           size="sm"
+                          disabled={pending}
                           onClick={batal}
                         >
                           Batal
@@ -272,6 +357,7 @@ export function DaftarCabang() {
                           type="button"
                           variant="outline"
                           size="sm"
+                          disabled={pending}
                           onClick={() => mulaiUbah(cabang)}
                         >
                           <PencilLine aria-hidden="true" />
@@ -281,6 +367,7 @@ export function DaftarCabang() {
                           type="button"
                           variant="outline"
                           size="sm"
+                          disabled={pending}
                           title={`${cabang.statusAktif ? "Nonaktifkan" : "Aktifkan"} cabang ${cabang.nama}`}
                           aria-label={`${cabang.statusAktif ? "Nonaktifkan" : "Aktifkan"} cabang ${cabang.nama}`}
                           onClick={() => gantiStatus(cabang)}
@@ -303,8 +390,9 @@ export function DaftarCabang() {
       )}
 
       <p className="mt-6 text-xs leading-5 text-muted-foreground">
-        Catatan: cabang di halaman ini masih data tiruan — perubahan bertahan
-        selama aplikasi terbuka, lalu diganti penyimpanan database.
+        Catatan: cabang di halaman ini masih data tiruan yang disimpan di memori
+        server — perubahannya hilang bila server dimulai ulang, lalu diganti
+        penyimpanan database pada fase berikutnya.
       </p>
     </div>
   );

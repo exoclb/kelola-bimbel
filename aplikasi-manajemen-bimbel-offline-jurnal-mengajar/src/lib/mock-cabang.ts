@@ -40,24 +40,50 @@ const CABANG: Cabang[] = [
   },
 ];
 
-/** Semua cabang, diurutkan nama (dipakai halaman peramban dan layanan API). */
-export function getDaftarCabang(): Cabang[] {
-  return [...CABANG].sort((a, b) => a.nama.localeCompare(b.nama, "id"));
-}
-
 // --- Penyimpanan proses -----------------------------------------------------
-// Dipakai layanan API (`src/services/cabang.service.ts`) supaya penambahan dan
-// penyuntingan cabang bertahan selama server hidup. Ini penyimpanan tingkat
+// Dipakai layanan cabang (`src/services/cabang.service.ts`) supaya penambahan
+// dan penyuntingan bertahan selama server hidup. Ini penyimpanan tingkat
 // proses Node, bukan `localStorage` (itu hanya untuk sisi peramban, lewat
 // `src/lib/cabang-store.ts`). Nanti diganti tabel database.
+//
+// Daftar kerjanya sengaja ditaruh di `globalThis`, bukan variabel tingkat
+// modul: Next.js bisa memberi setiap lapisan (halaman server, route handler
+// API) salinan modulnya sendiri, sehingga variabel biasa justru membuat
+// halaman dan API membaca dua daftar yang berbeda. Satu kunci di `globalThis`
+// membuat keduanya berbagi satu salinan yang sama.
 
-let urutanBaru = CABANG.length;
+type PenyimpananCabang = { daftar: Cabang[]; urutanBaru: number };
+
+type WadahGlobal = typeof globalThis & {
+  __kelolaBimbelCabangTiruan?: PenyimpananCabang;
+};
+
+function penyimpananCabang(): PenyimpananCabang {
+  const wadah = globalThis as WadahGlobal;
+  const ada = wadah.__kelolaBimbelCabangTiruan;
+  if (ada) return ada;
+
+  const baru: PenyimpananCabang = {
+    daftar: CABANG.map((cabang) => ({ ...cabang })),
+    urutanBaru: CABANG.length,
+  };
+  wadah.__kelolaBimbelCabangTiruan = baru;
+  return baru;
+}
+
+/** Semua cabang, diurutkan nama (dipakai halaman peramban dan layanan API). */
+export function getDaftarCabang(): Cabang[] {
+  return [...penyimpananCabang().daftar].sort((a, b) =>
+    a.nama.localeCompare(b.nama, "id"),
+  );
+}
 
 /** Tambah satu cabang ke daftar proses; id dilanjutkan dari data contoh. */
 export function tambahCabangTiruan(baris: Omit<Cabang, "id">): Cabang {
-  urutanBaru += 1;
-  const cabang: Cabang = { id: `cbg-${urutanBaru}`, ...baris };
-  CABANG.push(cabang);
+  const simpanan = penyimpananCabang();
+  simpanan.urutanBaru += 1;
+  const cabang: Cabang = { id: `cbg-${simpanan.urutanBaru}`, ...baris };
+  simpanan.daftar.push(cabang);
   return { ...cabang };
 }
 
@@ -69,7 +95,7 @@ export function gantiCabangTiruan(
   id: string,
   perubahan: Partial<Omit<Cabang, "id">>,
 ): Cabang | null {
-  const baris = CABANG.find((cabang) => cabang.id === id);
+  const baris = penyimpananCabang().daftar.find((cabang) => cabang.id === id);
   if (!baris) return null;
   Object.assign(baris, perubahan);
   return { ...baris };
