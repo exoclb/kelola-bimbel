@@ -67,6 +67,17 @@ export function periodeDariTagihan(baris: Tagihan) {
 }
 
 /**
+ * Jatuh tempo satu tagihan. Tabel `student_invoices` belum menyimpan kolom
+ * jatuh tempo, jadi batasnya diturunkan dari aturan aplikasinya sendiri:
+ * tagihan dianggap menunggak begitu periodenya lewat (lihat `menunggak`),
+ * artinya jatuh temponya adalah hari terakhir bulan periode itu.
+ */
+export function jatuhTempoTagihan(baris: Tagihan) {
+  // Hari ke-0 bulan berikutnya = hari terakhir bulan periode.
+  return new Date(baris.periodeTahun, baris.periodeBulan, 0);
+}
+
+/**
  * Status pembayaran satu tagihan untuk penanda di Portal Wali:
  * - `lunas` — sudah dibayar,
  * - `terlambat` — belum dibayar dan periodenya sudah lewat,

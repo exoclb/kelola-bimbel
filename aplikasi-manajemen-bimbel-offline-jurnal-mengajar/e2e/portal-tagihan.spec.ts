@@ -168,6 +168,18 @@ test("layar Tagihan portal menampilkan ringkasan dan tiga status pembayaran", as
   await expect(page.getByText("Terlambat", { exact: true })).toHaveCount(1);
   await expect(page.getByText("Belum bayar", { exact: true })).toHaveCount(2);
 
+  // Jatuh tempo diturunkan dari periode: hari terakhir bulan periode itu.
+  const tanggal = new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const sekarang = new Date();
+  const akhirBulanIni = tanggal.format(
+    new Date(sekarang.getFullYear(), sekarang.getMonth() + 1, 0),
+  );
+  await expect(page.getByText(`Jatuh tempo ${akhirBulanIni}`)).toBeVisible();
+
   // Tab Tagihan aktif dan aksi cetak/unduh tersedia.
   await expect(
     page

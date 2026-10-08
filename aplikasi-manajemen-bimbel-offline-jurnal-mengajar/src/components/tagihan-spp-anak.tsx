@@ -19,6 +19,7 @@ import type { AnakWali, StatusJejakPortal } from "@/lib/portal-wali";
 import { periodeDariTagihan, type Tagihan } from "@/lib/tagihan";
 import {
   formatPeriodeTagihan,
+  jatuhTempoTagihan,
   periodeTagihan,
   statusPembayaran,
 } from "@/lib/tagihan";
@@ -155,7 +156,10 @@ export function TagihanSppAnak({
                             )}
                           </span>
                         ) : (
-                          <span>Belum dibayar</span>
+                          <span>
+                            Jatuh tempo{" "}
+                            {tanggalTampil.format(jatuhTempoTagihan(tagihan))}
+                          </span>
                         )}
                       </div>
                     </KartuPortal>
