@@ -229,6 +229,7 @@ export function DaftarPengeluaran({
           <div className="space-y-2">
             <Label htmlFor="saring-periode">Bulan</Label>
             <Input
+              className="h-[var(--target-sentuh-portal)] md:text-base"
               id="saring-periode"
               type="month"
               value={periodeSaring}
@@ -238,6 +239,7 @@ export function DaftarPengeluaran({
           <div className="space-y-2">
             <Label htmlFor="saring-kategori">Kategori</Label>
             <NativeSelect
+              className="h-[var(--target-sentuh-portal)] md:text-base"
               id="saring-kategori"
               value={kategoriSaring}
               onChange={(event) => setKategoriSaring(event.target.value)}
@@ -254,7 +256,7 @@ export function DaftarPengeluaran({
             <Button
               type="button"
               variant="ghost"
-              size="sm"
+              size="aksi"
               disabled={!adaSaringan}
               onClick={() => {
                 setPeriodeSaring(periode);
@@ -334,6 +336,7 @@ export function DaftarPengeluaran({
                             Nominal (rupiah)
                           </Label>
                           <Input
+                            className="h-[var(--target-sentuh-portal)] md:text-base"
                             id={`nominal-${baris.id}`}
                             type="number"
                             min={0}
@@ -348,6 +351,7 @@ export function DaftarPengeluaran({
                         <div className="space-y-2">
                           <Label htmlFor={`tanggal-${baris.id}`}>Tanggal</Label>
                           <Input
+                            className="h-[var(--target-sentuh-portal)] md:text-base"
                             id={`tanggal-${baris.id}`}
                             type="date"
                             value={draf.tanggal}
@@ -360,6 +364,7 @@ export function DaftarPengeluaran({
                       <div className="space-y-2">
                         <Label htmlFor={`kategori-${baris.id}`}>Kategori</Label>
                         <NativeSelect
+                          className="h-[var(--target-sentuh-portal)] md:text-base"
                           id={`kategori-${baris.id}`}
                           value={draf.kategoriId}
                           onChange={(event) =>
@@ -379,6 +384,7 @@ export function DaftarPengeluaran({
                       <div className="space-y-2">
                         <Label htmlFor={`catatan-${baris.id}`}>Catatan</Label>
                         <Textarea
+                          className="md:text-base"
                           id={`catatan-${baris.id}`}
                           rows={2}
                           value={draf.catatan}
@@ -395,7 +401,7 @@ export function DaftarPengeluaran({
                       <div className="flex flex-wrap items-center gap-2">
                         <Button
                           type="button"
-                          size="sm"
+                          size="aksi"
                           disabled={pending}
                           onClick={() => simpanUbah(baris)}
                         >
@@ -404,7 +410,7 @@ export function DaftarPengeluaran({
                         <Button
                           type="button"
                           variant="ghost"
-                          size="sm"
+                          size="aksi"
                           disabled={pending}
                           onClick={batal}
                         >
@@ -456,7 +462,7 @@ export function DaftarPengeluaran({
                             <Button
                               type="button"
                               variant="destructive"
-                              size="sm"
+                              size="aksi"
                               disabled={pending}
                               onClick={() => hapus(baris)}
                             >
@@ -465,7 +471,7 @@ export function DaftarPengeluaran({
                             <Button
                               type="button"
                               variant="ghost"
-                              size="sm"
+                              size="aksi"
                               disabled={pending}
                               onClick={batal}
                             >
@@ -478,7 +484,7 @@ export function DaftarPengeluaran({
                           <Button
                             type="button"
                             variant="outline"
-                            size="sm"
+                            size="aksi"
                             onClick={() => mulaiUbah(baris)}
                           >
                             <PencilLine aria-hidden="true" />
@@ -487,7 +493,7 @@ export function DaftarPengeluaran({
                           <Button
                             type="button"
                             variant="ghost"
-                            size="sm"
+                            size="aksi"
                             onClick={() => {
                               setHapusId(baris.id);
                               setUbahId(null);

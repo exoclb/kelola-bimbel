@@ -216,7 +216,7 @@ export function FormTambahPengeluaran({
           <Button
             type="button"
             variant="outline"
-            size="sm"
+            size="aksi"
             onClick={tambahLagi}
           >
             <Plus aria-hidden="true" />
@@ -229,7 +229,12 @@ export function FormTambahPengeluaran({
 
   if (!terbuka) {
     return (
-      <Button type="button" onClick={() => setTerbuka(true)}>
+      <Button
+        type="button"
+        size="aksi"
+        className="w-full sm:w-auto"
+        onClick={() => setTerbuka(true)}
+      >
         <Plus aria-hidden="true" />
         Tambah pengeluaran
       </Button>
@@ -257,6 +262,7 @@ export function FormTambahPengeluaran({
             <div className="space-y-2">
               <Label htmlFor="nominal-baru">Nominal (rupiah)</Label>
               <Input
+                className="h-[var(--target-sentuh-portal)] md:text-base"
                 id="nominal-baru"
                 type="number"
                 min={0}
@@ -282,6 +288,7 @@ export function FormTambahPengeluaran({
             <div className="space-y-2">
               <Label htmlFor="tanggal-baru">Tanggal</Label>
               <Input
+                className="h-[var(--target-sentuh-portal)] md:text-base"
                 id="tanggal-baru"
                 type="date"
                 value={tanggal}
@@ -306,9 +313,9 @@ export function FormTambahPengeluaran({
             <Label htmlFor="kategori-baru">Kategori</Label>
             <div className="flex flex-wrap items-center gap-2">
               <NativeSelect
+                className="h-[var(--target-sentuh-portal)] flex-1 md:text-base"
                 id="kategori-baru"
                 value={kategoriId}
-                className="flex-1"
                 onChange={(event) => setKategoriId(event.target.value)}
               >
                 {kategori.length === 0 && (
@@ -323,7 +330,7 @@ export function FormTambahPengeluaran({
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
+                size="aksi"
                 onClick={() => {
                   setKategoriTerbuka((sebelumnya) => !sebelumnya);
                   setGalatKategori("");
@@ -337,6 +344,7 @@ export function FormTambahPengeluaran({
           <div className="space-y-2">
             <Label htmlFor="catatan-baru">Catatan</Label>
             <Textarea
+              className="md:text-base"
               id="catatan-baru"
               rows={2}
               value={catatan}
@@ -351,14 +359,14 @@ export function FormTambahPengeluaran({
           )}
 
           <div className="flex flex-wrap items-center gap-2">
-            <Button type="submit" size="sm" disabled={pending}>
+            <Button type="submit" size="aksi" disabled={pending}>
               <Save aria-hidden="true" />
               Simpan pengeluaran
             </Button>
             <Button
               type="button"
               variant="ghost"
-              size="sm"
+              size="aksi"
               disabled={pending}
               onClick={() => {
                 setTerbuka(false);
@@ -380,6 +388,7 @@ export function FormTambahPengeluaran({
             <div className="space-y-2">
               <Label htmlFor="nama-kategori-baru">Nama kategori baru</Label>
               <Input
+                className="h-[var(--target-sentuh-portal)] md:text-base"
                 id="nama-kategori-baru"
                 value={namaKategori}
                 maxLength={80}
@@ -401,14 +410,14 @@ export function FormTambahPengeluaran({
               )}
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <Button type="submit" size="sm" disabled={pendingKategori}>
+              <Button type="submit" size="aksi" disabled={pendingKategori}>
                 <Save aria-hidden="true" />
                 Simpan kategori
               </Button>
               <Button
                 type="button"
                 variant="ghost"
-                size="sm"
+                size="aksi"
                 disabled={pendingKategori}
                 onClick={() => {
                   setKategoriTerbuka(false);
