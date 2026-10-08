@@ -875,3 +875,49 @@ test("cabang dijaga isinya dan namanya unik tak peka huruf besar-kecil", async (
 
   await dbJurnal.query("DELETE FROM cabang WHERE nama LIKE 'Cabang Invarian%'");
 });
+
+/**
+ * Seeder data awal cabang (`scripts/lib/seed-cabang.mjs`): menulis daftar
+ * contoh ke tabel `cabang`, dan karena dipakai `npm run db:seed:cabang` ia
+ * harus aman dijalankan berulang — sekali jalan mengisi semuanya, jalan
+ * berikutnya tidak menambah baris baru.
+ */
+test("seeder cabang mengisi sekali dan aman dijalankan ulang", async () => {
+  const { seedCabang } = await import("../scripts/lib/seed-cabang.mjs");
+  await siapkanJurnal();
+
+  // Tes ini yang memiliki seluruh isi tabel cabang di basis data uji.
+  await dbJurnal.query("DELETE FROM cabang");
+
+  const pertama = await seedCabang(dbJurnal);
+  assert.equal(pertama.dibuat, pertama.jumlah);
+  assert.equal(pertama.dilewati, 0);
+
+  const kedua = await seedCabang(dbJurnal);
+  assert.equal(kedua.dibuat, 0);
+  assert.equal(kedua.dilewati, kedua.jumlah);
+
+  const { rows } = await dbJurnal.query(
+    "SELECT count(*)::int AS jumlah FROM cabang",
+  );
+  assert.equal(rows[0].jumlah, kedua.jumlah);
+
+  // Nama yang sudah ada tidak ditambah walau beda huruf besar-kecil dan spasi.
+  const contoh = await seedCabang(dbJurnal, [
+    {
+      nama: `  ${"cABANG pUSAT"}  `,
+      alamat: "Jl. Uji No. 9",
+      kontak: "0800-9",
+      statusAktif: true,
+    },
+  ]);
+  assert.equal(contoh.dibuat, 0);
+  assert.equal(contoh.dilewati, 1);
+
+  const setelah = await dbJurnal.query(
+    "SELECT count(*)::int AS jumlah FROM cabang",
+  );
+  assert.equal(setelah.rows[0].jumlah, kedua.jumlah);
+
+  await dbJurnal.query("DELETE FROM cabang");
+});
