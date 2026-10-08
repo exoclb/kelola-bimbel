@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DaftarCabang } from "@/components/daftar-cabang";
+import { jumlahKelasPerCabang } from "@/lib/ringkasan-cabang";
 import { listCabang, ringkasCabang } from "@/services/cabang.service";
 import { requirePermission } from "@/lib/session";
 
@@ -10,7 +11,14 @@ export default async function CabangPage() {
   await requirePermission({ pengaturan: ["read"] });
 
   // Satu sumber untuk halaman ini dan `/api/cabang`: layanan cabang, yang
-  // membaca tabel `cabang` di basis data.
-  const [daftar, ringkas] = await Promise.all([listCabang(), ringkasCabang()]);
-  return <DaftarCabang daftar={daftar} ringkas={ringkas} />;
+  // membaca tabel `cabang` di basis data. Jumlah kelas tiap cabang ikut dibaca
+  // dari tabel `classes`, bukan dari data contoh kelas.
+  const [daftar, ringkas, jumlahKelas] = await Promise.all([
+    listCabang(),
+    ringkasCabang(),
+    jumlahKelasPerCabang(),
+  ]);
+  return (
+    <DaftarCabang daftar={daftar} ringkas={ringkas} jumlahKelas={jumlahKelas} />
+  );
 }

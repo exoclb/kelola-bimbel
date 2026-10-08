@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   MapPin,
@@ -15,7 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { IsianPilih, IsianTeks } from "@/components/isian-form";
 import { PesanKosong } from "@/components/status-antarmuka";
-import { getDaftarKelas } from "@/lib/mock-kelas";
 import { type Cabang } from "@/services/cabang.service";
 
 /**
@@ -39,7 +38,12 @@ type RingkasanCabang = {
 type DaftarCabangProps = {
   daftar: Cabang[];
   ringkas: RingkasanCabang;
+  /** Jumlah kelas per nama cabang, dibaca server dari tabel `classes`. */
+  jumlahKelas: Record<string, number>;
 };
+
+/** Kunci pembanding nama cabang, sama seperti di layanan cabang. */
+const rapi = (nama: string) => nama.trim().toLocaleLowerCase("id");
 
 type DrafCabang = {
   nama: string;
@@ -58,14 +62,18 @@ type GalatCabang = {
  * Daftar cabang bimbel beserta alamat, kontak, statusnya, dan jumlah kelas
  * yang berjalan di sana. Datanya dibaca server lewat `listCabang()`, sedangkan
  * penambahan, penyuntingan, dan perubahan status dikirim ke `/api/cabang`
- * supaya halaman ini dan API memakai satu sumber yang sama.
+ * supaya halaman ini dan API memakai satu sumber yang sama. Jumlah kelasnya
+ * juga dibaca server dari tabel `classes`, bukan dari data contoh kelas.
  *
  * PENTING: sumbernya tabel `cabang` di basis data (lihat
  * `src/services/cabang.service.ts`), jadi perubahannya bertahan walau server
  * dimulai ulang dan terbaca dari perangkat lain.
  */
-export function DaftarCabang({ daftar, ringkas }: DaftarCabangProps) {
-  const kelas = getDaftarKelas();
+export function DaftarCabang({
+  daftar,
+  ringkas,
+  jumlahKelas,
+}: DaftarCabangProps) {
   const router = useRouter();
 
   const [ubahId, setUbahId] = useState<string | null>(null);
@@ -74,6 +82,15 @@ export function DaftarCabang({ daftar, ringkas }: DaftarCabangProps) {
   const [galatUmum, setGalatUmum] = useState("");
   const [pesan, setPesan] = useState("");
   const [pending, setPending] = useState(false);
+
+  // Jumlah kelas per cabang dari basis data, dikunci dengan nama yang sudah
+  // dinormalkan supaya perbedaan huruf besar-kecil tidak membuatnya hilang.
+  const kelasPerCabang = useMemo(() => {
+    const peta = new Map<string, number>();
+    for (const [nama, jumlah] of Object.entries(jumlahKelas))
+      peta.set(rapi(nama), jumlah);
+    return peta;
+  }, [jumlahKelas]);
 
   function namaDipakai(nama: string, kecualiId?: string) {
     const rapi = nama.trim().toLocaleLowerCase("id");
@@ -228,9 +245,7 @@ export function DaftarCabang({ daftar, ringkas }: DaftarCabangProps) {
       ) : (
         <ul className="mt-6 space-y-3">
           {daftar.map((cabang) => {
-            const jumlahKelas = kelas.filter(
-              (baris) => baris.cabang === cabang.nama,
-            ).length;
+            const jumlahKelas = kelasPerCabang.get(rapi(cabang.nama)) ?? 0;
 
             return (
               <li key={cabang.id}>

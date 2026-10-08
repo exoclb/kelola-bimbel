@@ -36,6 +36,26 @@ type AngkaCabang = {
 };
 
 /**
+ * Jumlah kelas per nama cabang, dihitung langsung dari tabel `classes`. Dipakai
+ * halaman pengaturan cabang supaya angkanya sama dengan data kelas yang
+ * sebenarnya; nama cabang yang tidak terdaftar pun ikut terhitung, tetapi
+ * pemanggil tinggal mencocokkannya dengan daftar cabang.
+ */
+export async function jumlahKelasPerCabang(): Promise<Record<string, number>> {
+  const baris = await db
+    .select({
+      cabang: classes.cabang,
+      jumlahKelas: sql<number>`count(*)::int`.as("jumlah_kelas"),
+    })
+    .from(classes)
+    .groupBy(classes.cabang);
+
+  const hasil: Record<string, number> = {};
+  for (const satu of baris) hasil[satu.cabang] = satu.jumlahKelas;
+  return hasil;
+}
+
+/**
  * Ringkasan tiap cabang, urut nama seperti pilihan saringannya. Cabang nonaktif
  * dan cabang tanpa kelas tetap muncul dengan angka nol.
  */

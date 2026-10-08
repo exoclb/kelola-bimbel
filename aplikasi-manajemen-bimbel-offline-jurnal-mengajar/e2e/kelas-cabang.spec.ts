@@ -438,3 +438,47 @@ test("daftar kelas tetap menampilkan cabang, termasuk setelah cabangnya diganti 
     await bersih.end();
   }
 });
+
+/**
+ * Halaman pengaturan cabang menghitung jumlah kelas tiap cabang dari tabel
+ * `classes` (bukan lagi dari data contoh kelas), jadi angkanya cocok dengan
+ * kelas yang benar-benar ada.
+ */
+test("halaman cabang menghitung kelas dari basis data", async ({ page }) => {
+  await jadikanOwner();
+  const penanda = randomUUID().slice(0, 8);
+  const nama = `Cabang Hitung ${penanda}`;
+  await siapkanCabang(nama, true);
+
+  const db = await pool();
+  try {
+    for (const kelas of [
+      `Kelas Hitung A ${penanda}`,
+      `Kelas Hitung B ${penanda}`,
+    ])
+      await db.query(
+        "INSERT INTO classes (nama_kelas, cabang) VALUES ($1, $2)",
+        [kelas, nama],
+      );
+  } finally {
+    await db.end();
+  }
+
+  try {
+    await masukPeramban(page);
+    await page.goto("/app/cabang");
+    await expect(
+      page.locator("li", { hasText: nama }).getByText("2 kelas"),
+    ).toBeVisible();
+  } finally {
+    const bersih = await pool();
+    try {
+      await bersih.query("DELETE FROM classes WHERE nama_kelas LIKE $1", [
+        `Kelas Hitung %${penanda}`,
+      ]);
+      await bersih.query("DELETE FROM cabang WHERE nama = $1", [nama]);
+    } finally {
+      await bersih.end();
+    }
+  }
+});
