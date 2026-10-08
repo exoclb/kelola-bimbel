@@ -104,6 +104,16 @@ export function FormCatatanAnak({
       noValidate
       aria-label={`Catatan perkembangan ${namaMurid}`}
     >
+      {/* Nama anak ditulis di sini supaya jelas catatan ini untuk siapa,
+          terutama saat formulir dibuka dari daftar yang panjang. */}
+      <div className="space-y-0.5">
+        <p className="font-medium">
+          {catatanAwal ? "Ubah catatan" : "Catatan baru"} untuk {namaMurid}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Isi nilai, sikap, dan catatan singkat hasil pertemuan.
+        </p>
+      </div>
       <div className="grid gap-4 sm:grid-cols-3">
         <IsianTeks
           id={`${idForm}-tanggal`}
@@ -156,15 +166,20 @@ export function FormCatatanAnak({
         </IsianPilih>
       </div>
 
-      <IsianTeksPanjang
-        id={`${idForm}-catatan`}
-        label="Catatan (opsional)"
-        ukuran="sentuh"
-        value={catatan}
-        maxLength={500}
-        placeholder="Misalnya: sudah lancar perkalian, perlu latihan soal cerita."
-        onChange={(event) => setCatatan(event.target.value)}
-      />
+      <div className="space-y-1">
+        <IsianTeksPanjang
+          id={`${idForm}-catatan`}
+          label="Catatan (opsional)"
+          ukuran="sentuh"
+          value={catatan}
+          maxLength={500}
+          placeholder="Misalnya: sudah lancar perkalian, perlu latihan soal cerita."
+          onChange={(event) => setCatatan(event.target.value)}
+        />
+        <p className="text-right text-xs text-muted-foreground tabular-nums">
+          {catatan.length}/500
+        </p>
+      </div>
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <Button type="submit" size="aksi" className="w-full sm:w-auto">
