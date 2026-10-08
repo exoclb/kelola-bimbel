@@ -37,7 +37,7 @@ export default async function SlipGajiPage({
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-6 print:hidden">
-        <Button asChild variant="ghost" size="sm" className="-ml-3">
+        <Button asChild variant="ghost" size="aksi" className="-ml-3">
           <Link href={`/app/gaji?periode=${periode}`}>
             <ArrowLeft aria-hidden="true" />
             Kembali ke rekap gaji
@@ -48,7 +48,11 @@ export default async function SlipGajiPage({
       <SlipGaji baris={baris} periodeTampil={formatPeriode(periode)} />
 
       <div className="mt-6">
-        <TombolCetakUnduh targetId="slip-gaji" namaBerkas={namaBerkas} />
+        <TombolCetakUnduh
+          targetId="slip-gaji"
+          namaBerkas={namaBerkas}
+          ukuran="aksi"
+        />
       </div>
     </div>
   );

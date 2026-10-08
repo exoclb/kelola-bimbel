@@ -51,8 +51,12 @@ export function SlipGaji({ baris, periodeTampil }: SlipGajiProps) {
         </div>
 
         <div>
-          <p className="text-sm font-medium">Rincian jam mengajar</p>
-          <table className="mt-2 w-full text-left text-sm">
+          <table className="w-full text-left text-sm">
+            {/* Judul tabel jadi caption, bukan paragraf terpisah, supaya pembaca
+                layar mendapat nama tabelnya sekaligus. */}
+            <caption className="pb-2 text-left text-sm font-medium">
+              Rincian jam mengajar
+            </caption>
             <thead>
               <tr className="border-b text-muted-foreground">
                 <th scope="col" className="py-2 font-medium">
