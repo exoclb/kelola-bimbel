@@ -1069,3 +1069,88 @@ test("halaman cabang menampilkan data contoh hasil seeder", async ({
     await db.end();
   }
 });
+
+/**
+ * Validasi di sisi tampilan pada formulir tambah cabang: isian wajib diisi,
+ * nama dibatasi 80 karakter, dan pengiriman yang sah menampilkan ringkasan
+ * cabang tercatat lalu menyiapkan formulir kosong lagi.
+ */
+test("form tambah cabang memvalidasi isian di tampilan", async ({
+  page,
+  request,
+}) => {
+  await jadikanOwner();
+  const penanda = randomUUID().slice(0, 8);
+  const nama = `Cabang Validasi ${penanda}`;
+  const db = await pool();
+
+  try {
+    const { rows: sebelum } = await db.query<{ jumlah: number }>(
+      "SELECT count(*)::int AS jumlah FROM cabang",
+    );
+
+    await masukPeramban(page);
+    await page.goto("/app/cabang");
+    await page.getByRole("button", { name: "Tambah cabang" }).click();
+
+    // 1) Kosong: tiga pesan sekaligus, dan tidak ada baris yang ditulis.
+    await page.getByRole("button", { name: "Simpan cabang" }).click();
+    await expect(page.getByText("Nama cabang wajib diisi.")).toBeVisible();
+    await expect(page.getByText("Alamat wajib diisi.")).toBeVisible();
+    await expect(page.getByText("Kontak wajib diisi.")).toBeVisible();
+
+    // 2) Nama lebih dari 80 karakter tidak bisa diketik di formulir
+    //    (`maxlength`), jadi batas itu dijaga endpoint-nya.
+    await masukApi(request);
+    const kepanjangan = await request.post("/api/cabang", {
+      headers,
+      data: {
+        nama: "A".repeat(81),
+        alamat: "Jl. Uji e2e No. 5",
+        kontak: "0800-5",
+      },
+    });
+    expect(kepanjangan.status()).toBe(422);
+
+    const { rows: setelahGagal } = await db.query<{ jumlah: number }>(
+      "SELECT count(*)::int AS jumlah FROM cabang",
+    );
+    expect(setelahGagal[0].jumlah).toBe(sebelum[0].jumlah);
+
+    // 3) Isian sah: ringkasan cabang tercatat dan formulir siap diisi lagi.
+    await page.locator("#kontak-cabang-baru").fill("0800-5");
+    await page.locator("#alamat-cabang-baru").fill("Jl. Uji e2e No. 5");
+    await page.locator("#nama-cabang-baru").fill(nama);
+    await page.getByRole("button", { name: "Simpan cabang" }).click();
+    const ringkasan = page
+      .locator('[role="status"]')
+      .filter({ hasText: "Cabang tercatat" });
+    await expect(ringkasan.getByText("Cabang tercatat")).toBeVisible();
+    await expect(ringkasan.getByText(nama)).toBeVisible();
+    await expect(ringkasan.getByText("Jl. Uji e2e No. 5")).toBeVisible();
+    await expect(ringkasan.getByText("0800-5")).toBeVisible();
+
+    await page.getByRole("button", { name: "Tambah cabang lagi" }).click();
+    await expect(page.locator("#nama-cabang-baru")).toHaveValue("");
+    await expect(page.locator("#kontak-cabang-baru")).toHaveValue("");
+    await expect(page.locator("#alamat-cabang-baru")).toHaveValue("");
+    await expect(page.locator("#status-cabang-baru")).toHaveValue("aktif");
+
+    const { rows: sesudah } = await db.query<{
+      jumlah: number;
+      alamat: string;
+      kontak: string;
+    }>(
+      "SELECT count(*)::int AS jumlah, min(alamat) AS alamat, min(kontak) AS kontak FROM cabang WHERE nama = $1",
+      [nama],
+    );
+    expect(sesudah[0]).toMatchObject({
+      jumlah: 1,
+      alamat: "Jl. Uji e2e No. 5",
+      kontak: "0800-5",
+    });
+  } finally {
+    await db.query("DELETE FROM cabang WHERE nama = $1", [nama]);
+    await db.end();
+  }
+});
