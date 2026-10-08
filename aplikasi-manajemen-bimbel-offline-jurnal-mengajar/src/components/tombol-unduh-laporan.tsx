@@ -137,7 +137,10 @@ export function TombolUnduhLaporan({
           onClick={unduhPdf}
         >
           {sedangProses === "pdf" ? (
-            <LoaderCircle className="animate-spin" aria-hidden="true" />
+            <LoaderCircle
+              className="animate-spin motion-reduce:animate-none"
+              aria-hidden="true"
+            />
           ) : (
             <Printer aria-hidden="true" />
           )}
@@ -151,7 +154,10 @@ export function TombolUnduhLaporan({
           onClick={unduhExcel}
         >
           {sedangProses === "excel" ? (
-            <LoaderCircle className="animate-spin" aria-hidden="true" />
+            <LoaderCircle
+              className="animate-spin motion-reduce:animate-none"
+              aria-hidden="true"
+            />
           ) : (
             <FileSpreadsheet aria-hidden="true" />
           )}

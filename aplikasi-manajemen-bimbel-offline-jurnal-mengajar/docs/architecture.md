@@ -70,6 +70,8 @@ Spacing follows one rhythm: `--spacing` is 4px, so every Tailwind step (`p-1`, `
 
 Focus is part of the token system: `*:focus-visible` in `globals.css` draws a 2px `--primary` outline with a 2px offset for links and any element without its own ring, while the shadcn primitives keep their 3px ring in the (solid) `ring` colour. Both stay at or above 3:1 against the light and dark canvas, so keyboard focus is always visible.
 
+Motion stays within 150–200ms (Tailwind's default transition duration) and covers colour, shadow, and transform props rather than layout ones. `prefers-reduced-motion: reduce` collapses every CSS animation and transition through one rule in `globals.css`, and JS animation follows `MotionConfig reducedMotion="user"` in `src/components/providers.tsx`.
+
 The portal shell is the only place that opts into `viewport-fit=cover` (its own `viewport` metadata in `src/app/portal/layout.tsx`), which is what makes `env(safe-area-inset-*)` report the device insets. The bottom tab bar adds `env(safe-area-inset-bottom)` to its padding and the content adds the same value to its bottom padding, while the sticky header uses `env(safe-area-inset-top)`, so nothing sits under the home indicator or a notch. Other routes keep the default viewport.
 
 The core content column is `--lebar-konten-portal` (480px) in `globals.css`; the header, the page content, and the tabs' inner row all use it with `mx-auto`, so they stay perfectly aligned and centred from 768px upward while filling the screen on phones.

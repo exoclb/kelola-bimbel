@@ -216,4 +216,17 @@
   ::selection {
     background: color-mix(in oklab, var(--primary) 20%, transparent);
   }
+  /* Hormati preferensi gerak pengguna: animasi CSS dimatikan dan transisi
+     dijalankan seketika, jadi tidak ada gerakan tersisa. Animasi JavaScript
+     sudah mengikuti lewat `MotionConfig reducedMotion="user"`. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
