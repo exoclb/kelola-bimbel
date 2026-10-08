@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Download, FileSpreadsheet, LoaderCircle, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { lembarLaporanHtml, namaBerkasLembar } from "@/lib/lembar-laporan-html";
+import { lembarLaporanHtml, namaBerkasLembar } from "@/lib/dokumen-html";
 import type { ProfilBimbel } from "@/lib/mock-pengaturan";
 
 type TombolUnduhLaporanProps = {

@@ -1,10 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  kopLembarTeks,
   lembarLaporanHtml,
   namaBerkasLembar,
-} from "../src/lib/lembar-laporan-html.ts";
+} from "../src/lib/dokumen-html.ts";
+import {
+  NAMA_BIMBEL_CADANGAN,
+  kontakProfilDokumen,
+  namaProfilDokumen,
+} from "../src/lib/dokumen-html.ts";
 
 const profil = {
   nama: "Bimbel Cerdas Nusantara",
@@ -25,7 +29,7 @@ test("lembar laporan memuat kop profil dan tabel berjudul kolom", () => {
   });
 
   assert.match(html, /<h2 style="margin:0">Bimbel Cerdas Nusantara<\/h2>/);
-  assert.ok(html.includes(kopLembarTeks(profil)));
+  assert.ok(html.includes(kontakProfilDokumen(profil)));
   assert.ok(html.includes("Rekap Gaji Guru — Oktober 2026"));
   assert.equal((html.match(/<th align="left" scope="col">/g) ?? []).length, 2);
   // Angka ditulis apa adanya supaya masih bisa dijumlahkan di lembar kerja.
@@ -50,4 +54,22 @@ test("nama berkas lembar disusun dari judul dan periode", () => {
     namaBerkasLembar("Rekap Gaji Guru", "Oktober 2026", "xls"),
     "rekap-gaji-guru-oktober-2026.xls",
   );
+});
+
+// Profil bimbel bisa saja masih kosong; kop dokumen tidak boleh ikut kosong.
+test("kop memakai nama cadangan dan melewati kontak yang kosong", () => {
+  const kosong = { nama: "  ", alamat: "", telepon: "", email: "" };
+  const html = lembarLaporanHtml({
+    judul: "Rekap Gaji Guru",
+    periode: "Oktober 2026",
+    profil: kosong,
+    kolom: ["Guru"],
+    baris: [["Bu Sari"]],
+  });
+
+  assert.equal(namaProfilDokumen(kosong), NAMA_BIMBEL_CADANGAN);
+  assert.equal(kontakProfilDokumen(kosong), "");
+  assert.ok(html.includes(`<h2 style="margin:0">${NAMA_BIMBEL_CADANGAN}</h2>`));
+  // Tanpa kontak, tidak ada paragraf kop kosong yang ikut tercetak.
+  assert.ok(!html.includes('<p style="margin:2px 0"></p>'));
 });

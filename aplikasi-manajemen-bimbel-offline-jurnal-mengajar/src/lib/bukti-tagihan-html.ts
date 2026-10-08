@@ -3,6 +3,7 @@
 // dari portal wali. Dipakai endpoint unduh bukti tagihan.
 
 import { formatRupiah } from "@/lib/gaji";
+import { kontakProfilDokumen, namaProfilDokumen } from "@/lib/dokumen-html";
 import {
   formatPeriodeTagihan,
   jatuhTempoTagihan,
@@ -121,8 +122,8 @@ export function buktiTagihanHtml({
   <div class="bukti">
     <div class="kepala">
       <div>
-        <h1>${amanHtml(profil.nama || "Bukti tagihan SPP")}</h1>
-        <p class="periode">${amanHtml([profil.alamat, profil.telepon, profil.email].filter(Boolean).join(" · "))}</p>
+        <h1>${amanHtml(namaProfilDokumen(profil))}</h1>
+        <p class="periode">${amanHtml(kontakProfilDokumen(profil))}</p>
       </div>
       <p class="kanan">
         Bukti tagihan SPP<br>

@@ -1,5 +1,10 @@
 import type { ReactNode } from "react";
 import { getProfilBimbel, type ProfilBimbel } from "@/lib/mock-pengaturan";
+import {
+  kontakProfilDokumen,
+  namaProfilDokumen,
+  profilBelumLengkap,
+} from "@/lib/dokumen-html";
 
 type KopDokumenProps = {
   /** Baris judul dokumen di bawah identitas bimbel, mis. "Slip gaji guru · Oktober 2026". */
@@ -24,20 +29,27 @@ export function KopDokumen({
   kanan,
   profil = getProfilBimbel(),
 }: KopDokumenProps) {
-  const kontak = [profil.alamat, profil.telepon, profil.email]
-    .filter(Boolean)
-    .join(" · ");
+  const nama = namaProfilDokumen(profil);
+  const kontak = kontakProfilDokumen(profil);
 
   return (
     <div className="flex flex-wrap items-start justify-between gap-3 border-b pb-4">
       <div className="space-y-0.5">
-        <p className="text-lg font-semibold">{profil.nama}</p>
+        <p className="text-lg font-semibold">{nama}</p>
         {kontak && (
           <p className="text-muted-foreground text-xs leading-5">{kontak}</p>
         )}
         <p className="text-sm">{judul}</p>
       </div>
       {kanan && <div className="text-right text-sm">{kanan}</div>}
+      {profilBelumLengkap(profil) && (
+        // Catatan hanya untuk layar: dokumen yang dicetak tidak perlu memuat
+        // pengingat pengaturan.
+        <p className="text-muted-foreground w-full text-xs leading-5 print:hidden">
+          Profil bimbel belum lengkap — nama, alamat, dan telepon diisi di
+          Pengaturan · Profil Bimbel supaya kop dokumennya utuh.
+        </p>
+      )}
     </div>
   );
 }

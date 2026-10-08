@@ -5,6 +5,7 @@
 import { formatRupiah } from "@/lib/gaji";
 import { formatJam } from "@/lib/jurnal";
 import type { ProfilBimbel } from "@/lib/mock-pengaturan";
+import { kontakProfilDokumen, namaProfilDokumen } from "@/lib/dokumen-html";
 import { formatTanggalLengkap } from "@/lib/tanggal";
 import type { BarisGajiGuru } from "@/services/gaji.service";
 
@@ -99,8 +100,8 @@ export function slipGajiHtml({
   <div class="slip">
     <div class="kepala">
       <div>
-        <h1>${amanHtml(profil.nama)}</h1>
-        <p class="periode">${amanHtml([profil.alamat, profil.telepon, profil.email].filter(Boolean).join(" · "))}</p>
+        <h1>${amanHtml(namaProfilDokumen(profil))}</h1>
+        <p class="periode">${amanHtml(kontakProfilDokumen(profil))}</p>
         <p>Slip gaji guru · ${periodeTampil}</p>
       </div>
       <p class="status">
@@ -130,7 +131,7 @@ export function slipGajiHtml({
 
     <p class="catatan">
       Jam mengajar diambil dari jurnal yang dikirim guru. Slip ini dibuat otomatis
-      oleh ${amanHtml(profil.nama)}.
+      oleh ${amanHtml(namaProfilDokumen(profil))}.
     </p>
   </div>
 </body>
