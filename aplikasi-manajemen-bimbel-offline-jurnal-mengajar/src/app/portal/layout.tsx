@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Viewport } from "next";
 import { NavBawahPortal } from "@/components/nav-bawah-portal";
 import { PenandaPengguna } from "@/components/penanda-pengguna";
+import { TemaPortal } from "@/components/tema-portal";
 import { getProfilBimbel } from "@/lib/mock-pengaturan";
 import { peranDariRole } from "@/lib/peran";
 import { requirePermission } from "@/lib/session";
@@ -42,6 +43,14 @@ export default async function PortalLayout({
 
   return (
     <>
+      {/* Dipasang sebelum halaman dilukis supaya pilihan tema tidak berkedip. */}
+      <script
+        dangerouslySetInnerHTML={{
+          __html:
+            'try{var t=localStorage.getItem("portal-tema")||"sistem";var g=t==="gelap"||(t==="sistem"&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",g)}catch(e){}',
+        }}
+      />
+      <TemaPortal />
       <header className="bg-card sticky top-0 z-30 border-b pt-[env(safe-area-inset-top)] print:hidden">
         <div className="mx-auto flex max-w-[var(--lebar-konten-portal)] items-center justify-between gap-3 px-4 py-3">
           <Link href="/portal" className="flex min-w-0 items-center gap-2.5">

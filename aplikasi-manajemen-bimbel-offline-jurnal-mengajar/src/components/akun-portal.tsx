@@ -1,6 +1,7 @@
 import { UserRound } from "lucide-react";
 import { KartuPortal } from "@/components/kartu-portal";
 import { LayarPortal } from "@/components/layar-portal";
+import { PreferensiTampilanPortal } from "@/components/preferensi-tampilan-portal";
 import { SignOutButton } from "@/components/sign-out-button";
 import { TombolAksiLengket } from "@/components/tombol-aksi-lengket";
 import { labelPeran, type PeranPengguna } from "@/lib/peran";
@@ -66,6 +67,14 @@ export function AkunPortal({ nama, email, peran, anak }: AkunPortalProps) {
             ))}
           </ul>
         )}
+      </KartuPortal>
+
+      <KartuPortal
+        className="mt-4"
+        judul="Preferensi tampilan"
+        keterangan="Atur tampilan portal di perangkat ini."
+      >
+        <PreferensiTampilanPortal />
       </KartuPortal>
 
       <TombolAksiLengket>
