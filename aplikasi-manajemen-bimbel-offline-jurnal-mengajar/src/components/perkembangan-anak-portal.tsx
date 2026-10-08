@@ -117,6 +117,23 @@ export function PerkembanganAnakPortal({
     perPeriode.set(kunci, daftar);
   }
 
+  // Arah nilai dibanding catatan sebelumnya (yang lebih lama), supaya wali
+  // tidak perlu membandingkan angkanya sendiri. Catatan tertua tidak punya
+  // pembanding, jadi tidak diberi keterangan.
+  const arahNilai = new Map<string, { teks: string; naik: boolean | null }>();
+  daftarCatatan.forEach((baris, urutan) => {
+    const sebelumnya = daftarCatatan[urutan + 1];
+    if (!sebelumnya) return;
+    const selisih = baris.nilai - sebelumnya.nilai;
+    arahNilai.set(baris.id, {
+      teks:
+        selisih === 0
+          ? "Sama dengan catatan sebelumnya"
+          : `${selisih > 0 ? "Naik" : "Turun"} ${angkaTampil.format(Math.abs(selisih))} dari catatan sebelumnya`,
+      naik: selisih === 0 ? null : selisih > 0,
+    });
+  });
+
   return (
     <LayarPortal
       judul="Perkembangan Anak"
@@ -269,6 +286,21 @@ export function PerkembanganAnakPortal({
                               {formatTanggalLengkap(baris.tanggal)} ·{" "}
                               {baris.guruNama}
                             </p>
+                            {arahNilai.get(baris.id) && (
+                              <p
+                                className={cn(
+                                  "mt-1 text-xs font-medium",
+                                  arahNilai.get(baris.id)?.naik === true &&
+                                    "text-primary",
+                                  arahNilai.get(baris.id)?.naik === false &&
+                                    "text-destructive",
+                                  arahNilai.get(baris.id)?.naik === null &&
+                                    "text-muted-foreground",
+                                )}
+                              >
+                                {arahNilai.get(baris.id)?.teks}
+                              </p>
+                            )}
                             <p className="mt-2 text-sm">{baris.catatan}</p>
                           </li>
                         ))}
