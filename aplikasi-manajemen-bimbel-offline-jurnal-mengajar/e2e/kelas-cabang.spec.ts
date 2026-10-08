@@ -72,17 +72,25 @@ async function masukApi(client: APIRequestContext) {
   expect(response.status()).toBe(200);
 }
 
-/** Beri akun bersama peran owner supaya boleh membaca `/api/cabang`. */
-async function jadikanOwner() {
+/**
+ * Setel peran akun bersama. Peran dibaca ulang dari basis data pada tiap
+ * permintaan, jadi sesinya tidak perlu dibuat ulang.
+ */
+async function aturPeran(peran: string) {
   const db = await pool();
   try {
     await db.query('UPDATE "user" SET role = $1 WHERE email = $2', [
-      "owner",
+      peran,
       email,
     ]);
   } finally {
     await db.end();
   }
+}
+
+/** Beri akun bersama peran owner supaya boleh membaca `/api/cabang`. */
+async function jadikanOwner() {
+  await aturPeran("owner");
 }
 
 /** Masuk lewat layar masuk supaya sesi peramban ikut terpasang. */
@@ -931,6 +939,64 @@ test("ringkasan per cabang di pantauan dihitung dari basis data", async ({
       `Murid Pantau ${penanda}`,
     ]);
     await db.query("DELETE FROM cabang WHERE nama = $1", [nama]);
+    await db.end();
+  }
+});
+
+/**
+ * Route cabang menjaga kontrak aksesnya: tanpa sesi 401, sesi tanpa izin
+ * pengaturan 403, perubahan dari origin lain 403, dan owner 200/201.
+ */
+test("api cabang menjaga sesi, peran, dan origin", async ({ request }) => {
+  const penanda = randomUUID().slice(0, 8);
+  const nama = `Cabang Izin ${penanda}`;
+  const baru = `Cabang Izin Baru ${penanda}`;
+  await siapkanCabang(nama, true);
+
+  const db = await pool();
+  try {
+    const { rows } = await db.query<{ id: string }>(
+      "SELECT id FROM cabang WHERE nama = $1",
+      [nama],
+    );
+    const id = rows[0].id;
+
+    // 1) Tanpa sesi: 401, bukan 403.
+    const tanpaSesi = await request.get("/api/cabang", { headers });
+    expect(tanpaSesi.status()).toBe(401);
+    expect((await tanpaSesi.json()).error.code).toBe("UNAUTHORIZED");
+
+    // 2) Sesi guru tanpa izin pengaturan: 403 untuk baca maupun tulis.
+    await aturPeran("user");
+    await masukApi(request);
+    const bacaTanpaIzin = await request.get("/api/cabang", { headers });
+    expect(bacaTanpaIzin.status()).toBe(403);
+    expect((await bacaTanpaIzin.json()).error.code).toBe("FORBIDDEN");
+    const tulisTanpaIzin = await request.post("/api/cabang", {
+      headers,
+      data: { nama: baru, alamat: "Jl. Izin No. 1", kontak: "0800-1" },
+    });
+    expect(tulisTanpaIzin.status()).toBe(403);
+
+    // 3) Owner, tetapi perubahan dari origin lain: 403.
+    await aturPeran("owner");
+    const originAsing = await request.patch(`/api/cabang/${id}`, {
+      headers: { Origin: "https://jahat.example" },
+      data: { kontak: "0800-9" },
+    });
+    expect(originAsing.status()).toBe(403);
+    expect((await originAsing.json()).error.code).toBe("FORBIDDEN_ORIGIN");
+
+    // 4) Owner dengan origin aplikasi: baca 200 dan tulis 201.
+    const baca = await request.get("/api/cabang", { headers });
+    expect(baca.status()).toBe(200);
+    const tulis = await request.post("/api/cabang", {
+      headers,
+      data: { nama: baru, alamat: "Jl. Izin No. 2", kontak: "0800-2" },
+    });
+    expect(tulis.status()).toBe(201);
+  } finally {
+    await db.query("DELETE FROM cabang WHERE nama = ANY($1)", [[nama, baru]]);
     await db.end();
   }
 });
