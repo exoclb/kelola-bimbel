@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CalendarCheck, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { BarProgres } from "@/components/bar-progres";
 import { KartuPortal } from "@/components/kartu-portal";
 import { PemilihAnak } from "@/components/pemilih-anak";
 import { LayarPortal } from "@/components/layar-portal";
@@ -115,6 +116,14 @@ export function PerkembanganAnakPortal({
               <p className="text-xl font-semibold">
                 {hadir} dari {dipilih.kehadiran.sesi} sesi
               </p>
+              <BarProgres
+                nilai={
+                  dipilih.kehadiran.sesi > 0
+                    ? (hadir / dipilih.kehadiran.sesi) * 100
+                    : 0
+                }
+                ariaLabel={`Kehadiran ${dipilih.nama}`}
+              />
               <p className="text-muted-foreground text-xs">
                 {dipilih.kehadiran.terakhir
                   ? `terakhir ${formatTanggalLengkap(dipilih.kehadiran.terakhir)}`

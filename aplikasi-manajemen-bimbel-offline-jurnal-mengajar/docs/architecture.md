@@ -84,6 +84,8 @@ A screen's main action goes in `TombolAksiLengket` (`src/components/tombol-aksi-
 
 `PenandaStatus` (`src/components/penanda-status.tsx`) renders the pastel payment pills for `lunas`, `belum`, and `terlambat`, styled only from the `--status-*` tokens and always carrying the status word next to its icon. `statusPembayaran()` in `src/lib/tagihan.ts` decides which of the three applies to an invoice: paid, unpaid within the running period, or unpaid past its period.
 
+`BarProgres` (`src/components/bar-progres.tsx`) draws the 8px progress bar (`--tinggi-progres-portal`) with its percentage always spelled out, and exposes the value through `role="progressbar"`; values outside 0–100 are clamped.
+
 The base's welcome and blank app pages are replaceable. Reuse auth, setup, database, and UI when adding dashboard or chatbot features. Do not put feature conditionals throughout the base: create a derivative and implement that app directly.
 
 ## Dependency compatibility
