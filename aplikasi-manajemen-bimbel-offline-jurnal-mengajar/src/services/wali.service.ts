@@ -1,0 +1,254 @@
+import "server-only";
+import { and, asc, eq, ilike, inArray } from "drizzle-orm";
+import { db } from "@/db";
+import { students, user, waliMurid } from "@/db/schema";
+import { peranDariRole } from "@/lib/peran";
+
+// Layanan pengelolaan akun wali dan penautannya ke murid.
+//
+// Sumber kebenarannya tabel basis data, bukan data tiruan
+// `src/lib/mock-wali.ts`:
+//   - akun wali → baris `user` yang perannya `orang-tua` (aturan perannya sama
+//     dengan tampilan, lihat `peranDariRole`),
+//   - murid     → baris `students`,
+//   - tautan    → tabel `wali_murid`, dijaga indeks unik
+//     `wali_murid_wali_murid_idx` pada pasangan (wali, murid),
+//   - status akses portal → kolom `banned` milik Better Auth.
+//
+// Kenapa `banned`: skema tidak punya kolom khusus portal, sedangkan "akses
+// portal" untuk akun wali berarti "akun ini bisa masuk dan membuka /portal".
+// `banned` menyatakan tepat itu — akun yang di-ban ditolak saat masuk
+// (`POST /api/masuk`) dan sesi yang masih tersimpan langsung tidak berlaku
+// (`withApiSession`), jadi tidak ada celah masuk lewat alamat lain. Seeder
+// penautan (`scripts/seed-wali.mjs`) juga menuliskan nilai yang sama untuk wali
+// `aksesPortal: false`, sehingga `aksesPortal = !banned` bukan tafsiran baru
+// melainkan pembacaan data yang sudah ada.
+//
+// Semua fungsinya `async` karena menyentuh basis data, dan tidak ada keadaan
+// yang disimpan di instance modul — halaman (RSC) maupun route handler melihat
+// data yang sama.
+
+/** Satu murid yang tertaut ke akun wali. */
+export type MuridTertaut = {
+  muridId: string;
+  nama: string;
+  statusAktif: boolean;
+};
+
+/** Satu akun wali beserta murid tertaut dan status akses portalnya. */
+export type AkunWali = {
+  waliId: string;
+  nama: string;
+  email: string;
+  aksesPortal: boolean;
+  murid: MuridTertaut[];
+};
+
+type BarisAkun = {
+  waliId: string;
+  nama: string;
+  email: string;
+  banned: boolean | null;
+  role: string;
+};
+
+const kolomAkun = {
+  waliId: user.id,
+  nama: user.name,
+  email: user.email,
+  banned: user.banned,
+  role: user.role,
+};
+
+/**
+ * Murid tertaut tiap akun, berkunci `waliId`, urut waktu penautan lalu nama —
+ * jadi urutannya sama dengan urutan penautannya, bukan urutan id acak. Satu
+ * query untuk semua akun sekaligus supaya daftar tidak memicu N+1.
+ */
+async function tautanPerWali(waliIds: string[]) {
+  const peta = new Map<string, MuridTertaut[]>();
+  if (waliIds.length === 0) return peta;
+
+  const baris = await db
+    .select({
+      waliId: waliMurid.waliId,
+      muridId: waliMurid.muridId,
+      nama: students.nama,
+      statusAktif: students.statusAktif,
+    })
+    .from(waliMurid)
+    .innerJoin(students, eq(students.id, waliMurid.muridId))
+    .where(inArray(waliMurid.waliId, waliIds))
+    .orderBy(
+      asc(waliMurid.createdAt),
+      asc(students.nama),
+      asc(waliMurid.muridId),
+    );
+
+  for (const satu of baris) {
+    const daftar = peta.get(satu.waliId) ?? [];
+    daftar.push({
+      muridId: satu.muridId,
+      nama: satu.nama,
+      statusAktif: satu.statusAktif,
+    });
+    peta.set(satu.waliId, daftar);
+  }
+  return peta;
+}
+
+async function susunAkun(baris: BarisAkun[]): Promise<AkunWali[]> {
+  const peta = await tautanPerWali(baris.map((satu) => satu.waliId));
+  return baris.map((satu) => ({
+    waliId: satu.waliId,
+    nama: satu.nama,
+    email: satu.email,
+    aksesPortal: !satu.banned,
+    murid: peta.get(satu.waliId) ?? [],
+  }));
+}
+
+/** Semua akun wali beserta murid tertautnya, urut nama akun. */
+export async function listAkunWali(): Promise<AkunWali[]> {
+  const baris = await db
+    .select(kolomAkun)
+    .from(user)
+    .where(ilike(user.role, "%orang-tua%"))
+    .orderBy(asc(user.name), asc(user.id));
+
+  // Kolom `role` boleh berisi beberapa peran, jadi penyaring tepatnya dilakukan
+  // di sini memakai aturan peran yang sama dengan tampilan (`peranDariRole`):
+  // akun yang juga berperan owner/admin dilihat sebagai owner, bukan wali.
+  return susunAkun(
+    baris.filter((satu) => peranDariRole(satu.role) === "orang-tua"),
+  );
+}
+
+/** Satu akun wali beserta murid tertautnya, atau `null` kalau bukan akun wali. */
+export async function getAkunWali(waliId: string): Promise<AkunWali | null> {
+  const [baris] = await db
+    .select(kolomAkun)
+    .from(user)
+    .where(eq(user.id, waliId))
+    .limit(1);
+  if (!baris || peranDariRole(baris.role) !== "orang-tua") return null;
+
+  const [wali] = await susunAkun([baris]);
+  return wali ?? null;
+}
+
+/** Apakah id murid ini ada di `students`. */
+async function adaMurid(muridId: string) {
+  const [baris] = await db
+    .select({ id: students.id })
+    .from(students)
+    .where(eq(students.id, muridId))
+    .limit(1);
+  return baris !== undefined;
+}
+
+export type HasilTautkanMurid =
+  | { status: "wali_tidak_ada" }
+  | { status: "murid_tidak_ada" }
+  | { status: "dibuat"; wali: AkunWali }
+  | { status: "sudah_tertaut"; wali: AkunWali };
+
+/**
+ * Menautkan satu murid ke satu akun wali. Aman diulang: pasangan yang sudah
+ * ada tidak menambah baris — dijaga indeks unik `wali_murid_wali_murid_idx`,
+ * bukan pemeriksaan "sudah ada?" yang bisa kalah balapan. `status` membedakan
+ * baris yang baru dibuat dari yang memang sudah tertaut, supaya route bisa
+ * menjawab 201 atau 200.
+ */
+export async function tautkanMurid(
+  waliId: string,
+  muridId: string,
+): Promise<HasilTautkanMurid> {
+  if (!(await getAkunWali(waliId))) return { status: "wali_tidak_ada" };
+  if (!(await adaMurid(muridId))) return { status: "murid_tidak_ada" };
+
+  const dibuat = await db
+    .insert(waliMurid)
+    .values({ waliId, muridId })
+    .onConflictDoNothing({
+      target: [waliMurid.waliId, waliMurid.muridId],
+    })
+    .returning({ id: waliMurid.id });
+
+  const wali = await getAkunWali(waliId);
+  if (!wali) return { status: "wali_tidak_ada" };
+  return { status: dibuat.length > 0 ? "dibuat" : "sudah_tertaut", wali };
+}
+
+export type HasilLepasTautan =
+  | { status: "wali_tidak_ada" }
+  | { status: "murid_tidak_ada" }
+  | { status: "terlepas"; wali: AkunWali }
+  | { status: "belum_tertaut"; wali: AkunWali };
+
+/**
+ * Melepas tautan satu murid dari satu akun wali. Aman diulang: melepas tautan
+ * yang memang sudah tidak ada tetap berhasil (tidak ada baris yang dihapus),
+ * dan hasilnya dibedakan lewat `status`. Akun wali maupun muridnya sendiri
+ * tidak dihapus — hanya baris penautannya.
+ */
+export async function lepasTautan(
+  waliId: string,
+  muridId: string,
+): Promise<HasilLepasTautan> {
+  if (!(await getAkunWali(waliId))) return { status: "wali_tidak_ada" };
+  if (!(await adaMurid(muridId))) return { status: "murid_tidak_ada" };
+
+  const terhapus = await db
+    .delete(waliMurid)
+    .where(and(eq(waliMurid.waliId, waliId), eq(waliMurid.muridId, muridId)))
+    .returning({ id: waliMurid.id });
+
+  const wali = await getAkunWali(waliId);
+  if (!wali) return { status: "wali_tidak_ada" };
+  return {
+    status: terhapus.length > 0 ? "terlepas" : "belum_tertaut",
+    wali,
+  };
+}
+
+export type HasilAksesPortal =
+  | { status: "wali_tidak_ada" }
+  | { status: "tersimpan"; berubah: boolean; wali: AkunWali };
+
+// Alasan yang ikut tersimpan saat portal dimatikan, supaya jejaknya di tabel
+// akun menjelaskan kenapa akunnya tidak bisa masuk — sama seperti guru yang
+// dinonaktifkan lewat pengaturan guru.
+const ALASAN_PORTAL_DIMATIKAN = "Akses portal wali dimatikan";
+
+/**
+ * Menyalakan atau mematikan akses portal satu akun wali (lihat catatan
+ * `banned` di atas). Mematikan berarti akunnya tidak bisa masuk lagi dan sesi
+ * yang masih tersimpan langsung tidak berlaku, tetapi akun beserta tautan
+ * anaknya tetap utuh — hanya aksesnya yang dicabut. Aman diulang: mengirim
+ * nilai yang sudah berlaku tidak menyentuh barisnya (`berubah: false`).
+ */
+export async function setAksesPortal(
+  waliId: string,
+  aksesPortal: boolean,
+): Promise<HasilAksesPortal> {
+  const sekarang = await getAkunWali(waliId);
+  if (!sekarang) return { status: "wali_tidak_ada" };
+  if (sekarang.aksesPortal === aksesPortal)
+    return { status: "tersimpan", berubah: false, wali: sekarang };
+
+  const [baris] = await db
+    .update(user)
+    .set({
+      banned: !aksesPortal,
+      banReason: aksesPortal ? null : ALASAN_PORTAL_DIMATIKAN,
+      banExpires: null,
+    })
+    .where(eq(user.id, waliId))
+    .returning({ id: user.id });
+  if (!baris) return { status: "wali_tidak_ada" };
+
+  const wali = await getAkunWali(waliId);
+  if (!wali) return { status: "wali_tidak_ada" };
+  return { status: "tersimpan", berubah: true, wali };
+}

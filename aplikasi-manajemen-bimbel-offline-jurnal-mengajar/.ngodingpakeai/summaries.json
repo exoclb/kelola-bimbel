@@ -1306,5 +1306,23 @@
     },
     "scripts/seed-wali.mjs": {
         "summary": "Seeder tautan wali↔murid yang membaca `src/lib/mock-wali.ts` dan `src/lib/mock-murid.ts` langsung (lewat registerHooks yang menerjemahkan alias `@/`), lalu mengisi tabel `students` dan `wali_murid` secara idempoten dengan INSERT ... ON CONFLICT DO NOTHING. Akun wali dipetakan lewat email dan dibuat bila belum ada memakai sandi dari SEED_WALI_PASSWORD (tidak pernah dicetak; wali ber-aksesPortal false dibuat banned), mencetak laporan dibuat/dilewati per langkah dan keluar dengan kode non-nol saat gagal. Dijalankan lewat npm script `db:seed:wali`."
+    },
+    "src/validators/wali.ts": {
+        "summary": "Skema Zod untuk API pengelolaan wali: validasi id wali, `muridId` wajib UUID, dan badan PATCH hanya boleh berisi `aksesPortal` boolean (field lain ditolak 422)."
+    },
+    "src/services/wali.service.ts": {
+        "summary": "Layanan pengelolaan wali berbasis tabel (bukan data tiruan): daftar akun wali = baris `user` berperan orang-tua (disaring lewat aturan tampilan peranDariRole), murid = `students`, tautan = `wali_murid` — tabel yang sama yang dibaca portal dan /api/jejak-baca sehingga tautan di halaman pengaturan tidak bisa berbeda dari yang bisa dibuka wali. Menyediakan daftar/detail wali, tambah tautan (INSERT ... ON CONFLICT (waliId, muridId) DO NOTHING — idempoten, dijaga indeks unik), lepas tautan (DELETE tanpa syarat, 0 baris tetap sukses), dan ubah akses portal (aksesPortal = !user.banned; nilai yang sudah berlaku tidak menyentuh baris). Status akses portal sengaja memakai `banned` karena skema tidak punya kolom portal dan seeder sudah menuliskan pemetaan itu; mematikan portal tidak menghapus akun maupun tautannya. Tipe AkunWali/MuridTertaut diekspor untuk UI fase berikutnya."
+    },
+    "src/app/api/wali/route.ts": {
+        "summary": "Route API wali: `GET /api/wali` (izin pengaturan read) mengembalikan daftar akun wali beserta murid tertaut dan status akses portal. Pola withApiPermission + runtime nodejs."
+    },
+    "src/app/api/wali/[id]/route.ts": {
+        "summary": "Route API wali per id: `GET /api/wali/<id>` mengembalikan satu akun wali; `PATCH /api/wali/<id>` mengubah status akses portal (`{aksesPortal}`) dan mengembalikan akun terbaru dengan meta.berubah (false bila nilainya sudah berlaku). 404 bila id tidak ada, 422 untuk field lain."
+    },
+    "src/app/api/wali/[id]/murid/route.ts": {
+        "summary": "Route API tautan wali↔murid: `POST /api/wali/<id>/murid` dengan `{muridId}` menautkan murid ke akun wali — idempoten (ON CONFLICT DO NOTHING) dan mengembalikan meta.dibuat true/false sesuai apakah baris baru benar-benar dibuat. 404 bila wali/murid tidak ada, 422 bila muridId bukan UUID."
+    },
+    "src/app/api/wali/[id]/murid/[muridId]/route.ts": {
+        "summary": "Route API pelepasan tautan: `DELETE /api/wali/<id>/murid/<muridId>` melepas tautan wali↔murid — idempoten, 0 baris terhapus tetap sukses, dan meta.terlepas menunjukkan apakah ada baris yang benar-benar dihapus."
     }
 }
