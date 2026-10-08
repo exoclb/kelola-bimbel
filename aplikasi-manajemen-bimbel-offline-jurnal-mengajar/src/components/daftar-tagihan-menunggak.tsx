@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { ArrowRight, BellRing, Phone, TriangleAlert } from "lucide-react";
+import {
+  ArrowRight,
+  BellRing,
+  MessageCircle,
+  Phone,
+  TriangleAlert,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LabelStatusTagihan } from "@/components/label-status-tagihan";
@@ -66,6 +72,13 @@ export function DaftarTagihanMenunggak({
             const periode = periodeDariTagihan(tagihan);
             const terlambat = Math.abs(selisihBulan(periode, periodeBerjalan));
             const anak = wali.get(tagihan.muridId);
+            // Nomor wali disaring jadi angka saja untuk tautan tel: dan wa.me,
+            // dan awalan 0 diubah ke kode negara 62 karena wa.me menuntut
+            // format internasional.
+            const angka = (anak?.kontakOrangTua ?? "").replace(/\D/g, "");
+            const nomorWali = angka.startsWith("0")
+              ? `62${angka.slice(1)}`
+              : angka;
             return (
               <li key={tagihan.id}>
                 <Card className="gap-3 border-l-4 border-l-destructive/60 bg-destructive/5 px-5 py-4">
@@ -96,6 +109,30 @@ export function DaftarTagihanMenunggak({
                     )}
                   </div>
 
+                  {nomorWali && (
+                    // Halaman ini dipakai untuk mengejar tunggakan, jadi nomor
+                    // wali bisa langsung ditelepon atau dibuka di WhatsApp dari
+                    // ponsel yang sedang dipakai.
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button asChild variant="outline" size="aksi">
+                        <a href={`tel:${nomorWali}`}>
+                          <Phone aria-hidden="true" />
+                          Telepon wali
+                        </a>
+                      </Button>
+                      <Button asChild variant="outline" size="aksi">
+                        <a
+                          href={`https://wa.me/${nomorWali}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <MessageCircle aria-hidden="true" />
+                          WhatsApp wali
+                        </a>
+                      </Button>
+                    </div>
+                  )}
+
                   <span
                     className={
                       tagihan.sudahDiingatkan
@@ -116,13 +153,13 @@ export function DaftarTagihanMenunggak({
       )}
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="outline" size="aksi">
           <Link href="/app/tagihan">
             Lihat daftar tagihan
             <ArrowRight aria-hidden="true" />
           </Link>
         </Button>
-        <Button asChild variant="ghost" size="sm">
+        <Button asChild variant="ghost" size="aksi">
           <Link href="/app/tagihan/baru">Buat tagihan</Link>
         </Button>
       </div>
