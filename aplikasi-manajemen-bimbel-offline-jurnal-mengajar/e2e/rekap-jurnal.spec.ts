@@ -133,6 +133,13 @@ test("rekap jam mengajar, presensi guru, dan kehadiran murid sejalan", async ({
   expect(isiGaji.guru.rincian).toHaveLength(1);
   expect(isiGaji.guru.rincian[0].namaKelas).toBe("Kelas Rekap Uji");
   expect(isiGaji.guru.rincian[0].jamMengajar).toBe(1);
+  // Rincian tiap jurnal ikut menyebut kehadirannya, dan sifat tarifnya
+  // dilaporkan supaya layar bisa membedakan "tarif belum diatur".
+  expect(isiGaji.guru.rincian[0].jumlahHadir).toBe(1);
+  expect(isiGaji.guru.rincian[0].jumlahMurid).toBe(1);
+  expect(typeof isiGaji.guru.rincian[0].tanggal).toBe("string");
+  expect(typeof isiGaji.tarifDiatur).toBe("boolean");
+  expect(isiGaji.tarifPerJam).toBeGreaterThanOrEqual(0);
 
   // 2) Rekap presensi guru: sesi hari ini tercatat hadir.
   const rekapGuru = await request.get("/api/presensi-guru/rekap", { headers });
