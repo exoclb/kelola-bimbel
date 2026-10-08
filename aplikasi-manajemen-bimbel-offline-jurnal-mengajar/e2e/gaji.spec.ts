@@ -163,6 +163,60 @@ test("guru hanya menerima rekap gajinya sendiri", async ({ request }) => {
   expect(JSON.stringify(isi)).not.toContain(emailGuruLain);
 });
 
+test("riwayat gaji owner merangkum satu bulan dan setahun", async ({
+  request,
+}) => {
+  // Riwayat gaji seluruh guru hanya untuk owner, jadi akunnya disiapkan di sini.
+  const emailOwnerBaru = await signUp(request, "Owner Riwayat Gaji");
+  await setRole(emailOwnerBaru, "owner");
+  await masuk(request, emailOwnerBaru);
+  const tahun = bulan.slice(0, 4);
+  const bulanKe = bulan.slice(5);
+
+  // Tes ini tidak menandai pembayaran apa pun: status itu dipakai bersama
+  // berkas lain, jadi cukup diperiksa bentuk angkanya.
+
+  // Satu bulan: satu baris untuk periode itu, memuat jumlah guru, jam, dan
+  // total gaji dari jurnal yang sudah ada.
+  const satuBulan = await request.get(
+    `/api/admin/gaji/riwayat?tahun=${tahun}&bulan=${bulanKe}`,
+    { headers },
+  );
+  expect(satuBulan.status()).toBe(200);
+  const isiBulan = (await satuBulan.json()).data as {
+    daftar: {
+      periode: string;
+      jumlahGuru: number;
+      totalJam: number;
+      totalGaji: number;
+      jumlahDibayar: number;
+    }[];
+    tahunTersedia: string[];
+  };
+  expect(isiBulan.daftar).toHaveLength(1);
+  expect(isiBulan.tahunTersedia.map(String)).toContain(tahun);
+  expect(isiBulan.daftar[0].periode).toBe(bulan);
+  expect(isiBulan.daftar[0].jumlahGuru).toBeGreaterThanOrEqual(2);
+  expect(isiBulan.daftar[0].totalJam).toBeGreaterThan(0);
+  expect(isiBulan.daftar[0].totalGaji).toBeGreaterThan(0);
+  expect(isiBulan.daftar[0].jumlahDibayar).toBeGreaterThanOrEqual(0);
+
+  // Setahun: periode bulan ini ada di dalamnya.
+  const setahun = await request.get(`/api/admin/gaji/riwayat?tahun=${tahun}`, {
+    headers,
+  });
+  expect(setahun.status()).toBe(200);
+  const isiTahun = (await setahun.json()).data as {
+    daftar: { periode: string }[];
+  };
+  expect(isiTahun.daftar.some((baris) => baris.periode === bulan)).toBe(true);
+
+  // Tanpa `tahun`, permintaannya ditolak validasi.
+  expect(
+    (await request.get("/api/admin/gaji/riwayat", { headers })).status(),
+  ).toBe(422);
+});
+
 test("guru tidak bisa membuka jalur gaji milik owner", async ({ request }) => {
   await setRole(emailGuru, "user");
   await masuk(request, emailGuru);
