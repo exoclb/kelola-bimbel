@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Viewport } from "next";
 import { NavBawahPortal } from "@/components/nav-bawah-portal";
 import { PenandaPengguna } from "@/components/penanda-pengguna";
 import { SignOutButton } from "@/components/sign-out-button";
@@ -10,6 +11,14 @@ export const runtime = "nodejs";
 
 // Halaman portal membaca basis data saat diminta, sama seperti area /app.
 export const dynamic = "force-dynamic";
+
+/**
+ * Portal dipakai dari ponsel, jadi halamannya dibiarkan melebar sampai tepi
+ * layar (`viewport-fit=cover`) supaya `env(safe-area-inset-*)` berisi jarak
+ * aman perangkat — bilah tab dan kepala halaman memakainya. Area staf tidak
+ * ikut berubah karena metadata ini hanya berlaku untuk rute portal.
+ */
+export const viewport: Viewport = { viewportFit: "cover" };
 
 /**
  * Cangkang Portal Wali versi mobile-first: kepala ringkas berisi identitas
@@ -34,7 +43,7 @@ export default async function PortalLayout({
 
   return (
     <>
-      <header className="bg-card sticky top-0 z-30 border-b print:hidden">
+      <header className="bg-card sticky top-0 z-30 border-b pt-[env(safe-area-inset-top)] print:hidden">
         <div className="mx-auto flex max-w-[480px] items-center justify-between gap-3 px-4 py-3">
           <Link href="/portal" className="flex min-w-0 items-center gap-2.5">
             <span
@@ -65,7 +74,7 @@ export default async function PortalLayout({
       </header>
       <main
         id="main-content"
-        className="mx-auto w-full max-w-[480px] px-4 pt-6 pb-24"
+        className="mx-auto w-full max-w-[480px] px-4 pt-6 pb-[calc(6rem+env(safe-area-inset-bottom))]"
       >
         {children}
       </main>
