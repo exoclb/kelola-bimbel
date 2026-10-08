@@ -34,6 +34,8 @@ The agent can use `npm run predev` then `npm run doctor` when dependencies alrea
 | `npm run db:seed:kelas`  | Fill the example classes in `classes`, pointing at those branches (run `db:seed:cabang` first); idempotent, development only                                 |
 | `npm run doctor`         | Verify connection, auth tables, and project tooling files; note whether an example branch still has to be seeded with `npm run db:seed:cabang`               |
 
+Tes unit (`npm test`) dijalankan dengan `--conditions=react-server`, jadi modul ber-`server-only` seperti layanan di `src/services/` dan `src/db/` bisa diuji langsung tanpa peramban — contohnya `tests/cabang-service.test.mjs`. Pemeriksaan rantai migrasi ada di `npx drizzle-kit check`.
+
 Use these commands instead of bare `docker compose up`: the wrappers load Next.js environment files and the saved project name. The database listens only on `127.0.0.1`, using a generated high port recorded in `.env.local`. Each fresh derivative has its own project, password, port, and volume.
 
 Preserve `.env.local` across restarts. Do not delete the volume to fix a password or migration error. If a saved port becomes occupied, update both `POSTGRES_PORT` and the port in the managed `DATABASE_URL`, then run `db:up` again. Changing the environment password does not change an existing database role's password.

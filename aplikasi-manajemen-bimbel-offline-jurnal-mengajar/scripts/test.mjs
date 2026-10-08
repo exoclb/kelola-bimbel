@@ -83,7 +83,13 @@ try {
     const files = readdirSync(resolve(root, "tests"))
       .filter((file) => file.endsWith(".test.mjs"))
       .map((file) => `tests/${file}`);
-    await run(process.execPath, ["--test", ...files], testEnv);
+    // `react-server` membuat modul ber-"server-only" (layanan dan `src/db`)
+    // boleh diimpor tes unit, jadi perilaku layanan bisa diuji tanpa peramban.
+    await run(
+      process.execPath,
+      ["--conditions=react-server", "--test", ...files],
+      testEnv,
+    );
   } else {
     await run(
       process.execPath,

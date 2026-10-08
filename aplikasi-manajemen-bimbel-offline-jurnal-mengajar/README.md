@@ -89,6 +89,7 @@ Not every screen is wired to the database yet. Expenses, teacher attendance, and
 | `npm run check`               | Lint, typecheck, and tests against disposable PostgreSQL                             |
 | `npm run build` / `npm start` | Build and serve the production app                                                   |
 | `npm test`                    | Run setup, copying, and real PostgreSQL migration tests                              |
+| `npx drizzle-kit check`       | Verify the committed migrations and their journal stay consistent                    |
 | `npm run test:e2e`            | Run browser tests against a separate PostgreSQL container                            |
 | `npm run format`              | Format source and docs                                                               |
 
