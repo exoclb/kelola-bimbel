@@ -62,7 +62,7 @@ Schema updates use `db:generate` then `db:migrate`. SQL and metadata must travel
 
 Server Components are the default. Client components are small interactive boundaries. Tailwind v4 tokens live in `globals.css`; shadcn components are normal editable source files. Motion respects reduced-motion preferences. System fonts avoid a build-time dependency on a font CDN.
 
-The global theme owns the brand colour scale: `--brand-50` … `--brand-900` in `:root`, with a lighter `.dark` ramp for use on dark surfaces, exposed to Tailwind as `bg-brand-*`, `text-brand-*`, `border-brand-*`, and gradient steps. `--brand-500` is the brand green `#83B520`. Use `brand-700` or darker when brand-coloured text sits on a light surface, and `brand-300` … `brand-500` on dark surfaces; do not hard-code the hex values in components.
+The global theme owns two primitive ramps: brand green (`--brand-50` … `--brand-900`, where `--brand-500` is `#83B520`) and neutral slate (`--slate-50` … `--slate-900`). Both are absolute values shared by every theme and are exposed to Tailwind as `bg-brand-*`, `text-slate-*`, `border-slate-*`, and gradient steps. The light canvas is the slate-50 `#F8FAFC` mapped onto `--background`; dark mode re-points the semantic tokens (`--background`, `--card`, `--border`, `--muted-foreground`) at darker slate steps rather than redefining the ramps. Use `brand-700` or darker when brand-coloured text sits on a light surface and `brand-300` … `brand-500` on dark surfaces; do not hard-code the hex values in components.
 
 The base's welcome and blank app pages are replaceable. Reuse auth, setup, database, and UI when adding dashboard or chatbot features. Do not put feature conditionals throughout the base: create a derivative and implement that app directly.
 

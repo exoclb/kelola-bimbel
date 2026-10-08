@@ -33,6 +33,17 @@
   --color-brand-700: var(--brand-700);
   --color-brand-800: var(--brand-800);
   --color-brand-900: var(--brand-900);
+  /* Skala netral slate; dipakai kanvas, kartu, garis, dan teks sekunder. */
+  --color-slate-50: var(--slate-50);
+  --color-slate-100: var(--slate-100);
+  --color-slate-200: var(--slate-200);
+  --color-slate-300: var(--slate-300);
+  --color-slate-400: var(--slate-400);
+  --color-slate-500: var(--slate-500);
+  --color-slate-600: var(--slate-600);
+  --color-slate-700: var(--slate-700);
+  --color-slate-800: var(--slate-800);
+  --color-slate-900: var(--slate-900);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -43,16 +54,17 @@
 
 :root {
   --radius: 0.75rem;
-  --background: #fafafa;
-  --foreground: #191919;
+  /* Kanvas terang #F8FAFC (slate-50) dengan teks slate-900. */
+  --background: #f8fafc;
+  --foreground: #0f172a;
   --card: #ffffff;
-  --card-foreground: #191919;
+  --card-foreground: #0f172a;
   --primary: #bb371e;
   --primary-foreground: #ffffff;
-  --secondary: #f0f0ef;
-  --muted: #f4f4f3;
-  --muted-foreground: #656561;
-  --border: #e4e4e1;
+  --secondary: #f1f5f9;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --border: #e2e8f0;
   --destructive: #b91c1c;
 
   /* Skala hijau brand; #83B520 adalah langkah 500. Langkah 700 aman untuk
@@ -67,33 +79,33 @@
   --brand-700: #547413;
   --brand-800: #415b0e;
   --brand-900: #314609;
+
+  /* Skala netral slate: nilai tetap untuk kedua tema. Tema gelap memilih
+     langkah yang berbeda lewat token semantik di .dark. */
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1e293b;
+  --slate-900: #0f172a;
 }
 
 .dark {
-  --background: #161616;
-  --foreground: #f5f5f4;
-  --card: #202020;
-  --card-foreground: #f5f5f4;
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  --card: #1e293b;
+  --card-foreground: #f8fafc;
   --primary: #fb846b;
   --primary-foreground: #29100a;
-  --secondary: #2d2d2b;
-  --muted: #252525;
-  --muted-foreground: #b0b0aa;
-  --border: #3b3b37;
+  --secondary: #1e293b;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --border: #334155;
   --destructive: #ff8a8a;
-
-  /* Pada kanvas gelap, langkah terang dipakai untuk teks/ikon dan langkah
-     gelap tetap untuk latar. 300–600 memberi kontras >=4.5:1 di latar gelap. */
-  --brand-50: #eaf4d7;
-  --brand-100: #daecb6;
-  --brand-200: #c2e085;
-  --brand-300: #aad651;
-  --brand-400: #9bd42b;
-  --brand-500: #8dc322;
-  --brand-600: #78a71b;
-  --brand-700: #628a15;
-  --brand-800: #50700f;
-  --brand-900: #3d560b;
 }
 
 @layer base {
