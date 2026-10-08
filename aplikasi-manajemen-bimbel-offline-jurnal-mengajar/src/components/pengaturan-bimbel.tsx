@@ -21,11 +21,11 @@ import {
   getAturanGaji,
   getDaftarGuru,
   getPreferensiNotifikasi,
-  getProfilBimbel,
 } from "@/lib/mock-pengaturan";
 import { labelPeran } from "@/lib/peran";
 import { getDaftarWali, ringkasPenautan } from "@/lib/mock-wali";
 import { ambilStatusBackup } from "@/services/backup.service";
+import { ambilProfilBimbel } from "@/services/pengaturan.service";
 import { formatRupiah } from "@/lib/gaji";
 import { formatTanggalLengkap } from "@/lib/tanggal";
 
@@ -46,10 +46,11 @@ type PengaturanBimbelProps = {
 
 /**
  * Halaman utama Pengaturan Bimbel: ringkasan tiap bagian plus menu ke
- * halamannya. Nilainya masih data tiruan (lihat src/lib/mock-pengaturan.ts).
+ * halamannya. Profil bimbel dibaca dari tabel `bimbel_profile`; bagian lain
+ * masih data tiruan (lihat src/lib/mock-pengaturan.ts).
  */
 export async function PengaturanBimbel({ bolehKelola }: PengaturanBimbelProps) {
-  const profil = getProfilBimbel();
+  const profil = await ambilProfilBimbel();
   // Kartu backup hanya untuk owner/admin, jadi statusnya pun hanya diambil
   // kalau akunnya memang boleh melihatnya.
   const statusBackup = bolehKelola ? await ambilStatusBackup(1) : null;
@@ -68,7 +69,9 @@ export async function PengaturanBimbel({ bolehKelola }: PengaturanBimbelProps) {
       href: "/app/pengaturan/profil",
       ikon: Building2,
       judul: "Profil Bimbel",
-      ringkasan: `${profil.nama} · ${profil.alamat}`,
+      ringkasan:
+        [profil.nama, profil.alamat].filter(Boolean).join(" · ") ||
+        "Belum diisi",
       keterangan:
         "Nama, alamat, dan kontak yang muncul di laporan dan slip gaji.",
       tombol: "Atur profil",

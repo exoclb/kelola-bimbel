@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { getProfilBimbel } from "@/lib/mock-pengaturan";
 import { KopDokumen } from "@/components/kop-dokumen";
+import { namaProfilDokumen, type ProfilDokumen } from "@/lib/dokumen-html";
 import type { KehadiranTersimpan } from "@/services/kehadiran.service";
 import type { RiwayatPerkembangan } from "@/services/perkembangan.service";
 import { formatTanggalLengkap, hitungUsia } from "@/lib/tanggal";
@@ -10,6 +10,8 @@ type LaporanPerkembanganProps = {
   catatan: RiwayatPerkembangan["catatan"]["data"];
   kehadiran: KehadiranTersimpan[];
   tanggalCetak: string;
+  /** Identitas bimbel untuk kop dokumen, dibaca halaman dari tabel `bimbel_profile`. */
+  profil: ProfilDokumen;
 };
 
 /**
@@ -22,6 +24,7 @@ export function LaporanPerkembangan({
   catatan,
   kehadiran,
   tanggalCetak,
+  profil,
 }: LaporanPerkembanganProps) {
   const urut = [...catatan].sort((a, b) => b.tanggal.localeCompare(a.tanggal));
   const terbaru = urut[0];
@@ -46,6 +49,7 @@ export function LaporanPerkembangan({
       <CardContent className="space-y-6">
         <KopDokumen
           judul="Laporan perkembangan anak"
+          profil={profil}
           kanan={
             <>
               <p className="font-medium">{murid.nama}</p>
@@ -147,7 +151,7 @@ export function LaporanPerkembangan({
         )}
 
         <p className="text-muted-foreground border-t pt-4 text-xs leading-5">
-          Laporan dibuat otomatis oleh {getProfilBimbel().nama} pada{" "}
+          Laporan dibuat otomatis oleh {namaProfilDokumen(profil)} pada{" "}
           {formatTanggalLengkap(tanggalCetak)} dari catatan guru dan kehadiran
           yang tercatat. Total catatan: {urut.length}
           {urut.length > 0 ? ` · rata-rata nilai ${rataNilai}` : ""}.

@@ -2,10 +2,13 @@
 // dalam dokumen, dan ukurannya pas untuk dicetak di kertas A4. Dipakai endpoint
 // unduh slip supaya owner bisa menyimpan atau mengirimkannya ke guru.
 
+import {
+  kontakProfilDokumen,
+  namaProfilDokumen,
+  type ProfilDokumen,
+} from "@/lib/dokumen-html";
 import { formatRupiah } from "@/lib/gaji";
 import { formatJam } from "@/lib/jurnal";
-import type { ProfilBimbel } from "@/lib/mock-pengaturan";
-import { kontakProfilDokumen, namaProfilDokumen } from "@/lib/dokumen-html";
 import { formatTanggalLengkap } from "@/lib/tanggal";
 import type { BarisGajiGuru } from "@/services/gaji.service";
 
@@ -13,7 +16,7 @@ type SlipGajiHtmlProps = {
   baris: BarisGajiGuru;
   periodeTampil: string;
   /** Identitas bimbel untuk kop dokumen; sama dengan kop di pratinjau layar. */
-  profil: ProfilBimbel;
+  profil: ProfilDokumen;
 };
 
 /**

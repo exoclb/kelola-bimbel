@@ -5,6 +5,7 @@ import { PratinjauEkspor } from "@/components/pratinjau-ekspor";
 import { Button } from "@/components/ui/button";
 import { formatPeriode, periodeBulan } from "@/lib/gaji";
 import { rekapGajiAnyBulanan } from "@/services/gaji.service";
+import { ambilProfilBimbel } from "@/services/pengaturan.service";
 import { requirePermission } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Ekspor Dokumen" };
@@ -25,7 +26,10 @@ export default async function EksporDokumenPage({
     ? (query.periode ?? "")
     : periodeBulan(new Date());
 
-  const rekap = await rekapGajiAnyBulanan(periode);
+  const [rekap, profil] = await Promise.all([
+    rekapGajiAnyBulanan(periode),
+    ambilProfilBimbel(),
+  ]);
   // Guru yang dipilih hanya diterima kalau memang ada di rekap bulan itu.
   const terpilih =
     rekap.daftar.find((baris) => baris.guruId === query.guru) ??
@@ -52,6 +56,7 @@ export default async function EksporDokumenPage({
         periodeTampil={formatPeriode(periode)}
         daftar={rekap.daftar}
         terpilih={terpilih}
+        profil={profil}
       />
     </div>
   );

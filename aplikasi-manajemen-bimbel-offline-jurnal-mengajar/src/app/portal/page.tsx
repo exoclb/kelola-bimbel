@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { BerandaPortalWali } from "@/components/beranda-portal-wali";
-import { getProfilBimbel } from "@/lib/mock-pengaturan";
 import { statusSemuaAnak } from "@/services/jejak-baca.service";
+import { ambilProfilBimbel } from "@/services/pengaturan.service";
 import { muatIsiPortalWali } from "@/services/portal.service";
 import { requireSession } from "@/lib/session";
 
@@ -28,7 +28,7 @@ export default async function PortalWaliPage({
   return (
     <BerandaPortalWali
       anak={anak}
-      profil={getProfilBimbel()}
+      profil={await ambilProfilBimbel()}
       namaWali={session.user.name}
       muridIdAwal={params.anak?.trim() || undefined}
       statusAwal={statusAwal}

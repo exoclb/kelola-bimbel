@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
-import { getProfilBimbel, type ProfilBimbel } from "@/lib/mock-pengaturan";
 import {
   kontakProfilDokumen,
   namaProfilDokumen,
   profilBelumLengkap,
+  type ProfilDokumen,
 } from "@/lib/dokumen-html";
 
 type KopDokumenProps = {
@@ -11,8 +11,11 @@ type KopDokumenProps = {
   judul: string;
   /** Isi kolom kanan kop, mis. status pembayaran atau nama anak. */
   kanan?: ReactNode;
-  /** Profil bimbel; bawaan diambil dari `getProfilBimbel()`. */
-  profil?: ProfilBimbel;
+  /**
+   * Identitas bimbel untuk kop. Wajib: profilnya dibaca dari tabel
+   * `bimbel_profile` di halaman, bukan dari nilai bawaan yang bisa basi.
+   */
+  profil: ProfilDokumen;
 };
 
 /**
@@ -24,11 +27,7 @@ type KopDokumenProps = {
  * Komponennya presentasional (tanpa "use client"), jadi boleh dipakai dari
  * komponen server maupun klien.
  */
-export function KopDokumen({
-  judul,
-  kanan,
-  profil = getProfilBimbel(),
-}: KopDokumenProps) {
+export function KopDokumen({ judul, kanan, profil }: KopDokumenProps) {
   const nama = namaProfilDokumen(profil);
   const kontak = kontakProfilDokumen(profil);
   const logo = profil.logo?.trim();

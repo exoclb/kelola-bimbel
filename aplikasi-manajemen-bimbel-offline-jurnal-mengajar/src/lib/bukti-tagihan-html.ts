@@ -17,7 +17,7 @@ type BuktiTagihanHtmlProps = {
   /** Baris tagihan satu anak; baris pertama dipakai untuk identitas anak. */
   daftar: Tagihan[];
   periodeBerjalan: string;
-  /** Identitas bimbel untuk kop; bentuknya sama dengan `ProfilBimbel`. */
+  /** Identitas bimbel untuk kop; bentuknya sama dengan `ProfilDokumen`. */
   profil: { nama: string; alamat: string; telepon: string; email: string };
   /** Tanggal dokumen dibuat, untuk catatan kaki. */
   dibuatPada: Date;

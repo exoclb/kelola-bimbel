@@ -13,12 +13,15 @@ import { SlipGaji } from "@/components/slip-gaji";
 import { TombolCetakUnduh } from "@/components/tombol-cetak-unduh";
 import { formatRupiah } from "@/lib/gaji";
 import { formatJam } from "@/lib/jurnal";
+import type { ProfilDokumen } from "@/lib/dokumen-html";
 import type { BarisRekapGaji } from "@/lib/mock-gaji";
 
 type RekapGajiSayaProps = {
   baris: BarisRekapGaji;
   periodeTampil: string;
   namaBerkas: string;
+  /** Identitas bimbel untuk kop, dibaca halaman dari tabel `bimbel_profile`. */
+  profil: ProfilDokumen;
 };
 
 /**
@@ -29,6 +32,7 @@ export function RekapGajiSaya({
   baris,
   periodeTampil,
   namaBerkas,
+  profil,
 }: RekapGajiSayaProps) {
   const sudahDibayar = baris.statusPembayaran === "dibayar";
 
@@ -96,7 +100,7 @@ export function RekapGajiSaya({
       </Card>
 
       <div className="mt-6">
-        <SlipGaji baris={baris} periodeTampil={periodeTampil} />
+        <SlipGaji baris={baris} periodeTampil={periodeTampil} profil={profil} />
       </div>
 
       <div className="mt-6">

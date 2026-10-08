@@ -20,12 +20,13 @@ import {
 import { KonfirmasiPengaturan } from "@/components/konfirmasi-pengaturan";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { ProfilBimbel } from "@/lib/mock-pengaturan";
+import type { ProfilDokumen } from "@/lib/dokumen-html";
 
 const MAX_LOGO_BYTE = 1_000_000;
 
 type FormProfilBimbelProps = {
-  profilAwal: ProfilBimbel;
+  /** Identitas bimbel dari tabel `bimbel_profile`, hasil `ambilProfilBimbel()`. */
+  profilAwal: ProfilDokumen;
 };
 
 type Masalah = { field: string; pesan: string };
@@ -43,7 +44,7 @@ export function FormProfilBimbel({ profilAwal }: FormProfilBimbelProps) {
   const [email, setEmail] = useState(profilAwal.email);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [masalah, setMasalah] = useState<Masalah[]>([]);
-  const [tersimpan, setTersimpan] = useState<ProfilBimbel | null>(null);
+  const [tersimpan, setTersimpan] = useState<ProfilDokumen | null>(null);
   const berkas = useRef<HTMLInputElement>(null);
 
   // Pratinjau memakai URL objek; yang lama dilepas supaya tidak menumpuk.
@@ -143,7 +144,7 @@ export function FormProfilBimbel({ profilAwal }: FormProfilBimbelProps) {
             nilai: logoUrl ? "Logo baru dipakai" : "Belum ada logo",
           },
         ]}
-        catatan="Perubahannya belum dikirim ke server — halaman ini masih memakai data tiruan."
+        catatan="Perubahannya belum dikirim ke server."
         onUbahLagi={() => setTersimpan(null)}
       />
     );

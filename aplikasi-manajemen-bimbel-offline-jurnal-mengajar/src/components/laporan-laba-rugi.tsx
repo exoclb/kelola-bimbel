@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { cn } from "cn";
 import { formatRupiah, formatPeriode } from "@/lib/gaji";
-import { getProfilBimbel } from "@/lib/mock-pengaturan";
+import type { ProfilDokumen } from "@/lib/dokumen-html";
 import { rekapTagihanKosong, type RekapTagihanPeriode } from "@/lib/tagihan";
 
 const NAMA_BULAN = new Intl.DateTimeFormat("id-ID", { month: "long" });
@@ -38,6 +38,8 @@ type LaporanLabaRugiProps = {
   rekapPemasukan: RekapTagihanPeriode[];
   /** Total honor guru per periode (`YYYY-MM`) dari jurnal & pengaturan gaji. */
   rekapHonor: { periode: string; total: number }[];
+  /** Identitas bimbel untuk kop unduhan, dibaca halaman dari tabel `bimbel_profile`. */
+  profil: ProfilDokumen;
 };
 
 /**
@@ -49,6 +51,7 @@ export function LaporanLabaRugi({
   rekapPengeluaran,
   rekapPemasukan,
   rekapHonor,
+  profil,
 }: LaporanLabaRugiProps) {
   const biayaHonorPeriode = useMemo(
     () =>
@@ -233,7 +236,7 @@ export function LaporanLabaRugi({
         <TombolUnduhLaporan
           judul="Laporan Laba Rugi"
           periode={periodeTampil}
-          profil={getProfilBimbel()}
+          profil={profil}
           kolom={["Keterangan", "Jumlah (Rp)"]}
           baris={[
             ["Pemasukan SPP (lunas)", rekapTagihan.nominalLunas],

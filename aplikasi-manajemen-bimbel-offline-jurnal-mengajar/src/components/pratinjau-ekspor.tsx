@@ -18,7 +18,7 @@ import { TombolCetakUnduh } from "@/components/tombol-cetak-unduh";
 import { SlipGaji } from "@/components/slip-gaji";
 import { formatJam } from "@/lib/jurnal";
 import { formatRupiah } from "@/lib/gaji";
-import { getProfilBimbel } from "@/lib/mock-pengaturan";
+import type { ProfilDokumen } from "@/lib/dokumen-html";
 import type { BarisRekapGaji } from "@/lib/mock-gaji";
 
 type PratinjauEksporProps = {
@@ -30,6 +30,8 @@ type PratinjauEksporProps = {
   daftar: BarisRekapGaji[];
   /** Guru yang sedang dipratinjau. */
   terpilih: BarisRekapGaji | undefined;
+  /** Identitas bimbel untuk kop, dibaca halaman dari tabel `bimbel_profile`. */
+  profil: ProfilDokumen;
 };
 
 /**
@@ -46,6 +48,7 @@ export function PratinjauEkspor({
   periodeTampil,
   daftar,
   terpilih,
+  profil,
 }: PratinjauEksporProps) {
   // Lembar rekap memuat semua guru pada bulan itu — bukan hanya yang sedang
   // dipratinjau — supaya angkanya sama dengan unduhan Excel dari halaman gaji.
@@ -175,7 +178,11 @@ export function PratinjauEkspor({
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="rounded-[var(--radius-kartu-portal)] border bg-muted/40 p-3">
-                <SlipGaji baris={terpilih} periodeTampil={periodeTampil} />
+                <SlipGaji
+                  baris={terpilih}
+                  periodeTampil={periodeTampil}
+                  profil={profil}
+                />
               </div>
 
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center print:hidden">
@@ -208,7 +215,10 @@ export function PratinjauEkspor({
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-[var(--radius-kartu-portal)] border bg-muted/40 p-3">
-              <KopDokumen judul={`Rekap gaji guru · ${periodeTampil}`} />
+              <KopDokumen
+                judul={`Rekap gaji guru · ${periodeTampil}`}
+                profil={profil}
+              />
               {/* Tabelnya bisa digeser mendatar di ponsel tanpa membuat
                   halaman ikut melebar. */}
               <div className="mt-3 overflow-x-auto">
@@ -256,7 +266,7 @@ export function PratinjauEkspor({
             <TombolUnduhLaporan
               judul="Rekap Gaji Guru"
               periode={periodeTampil}
-              profil={getProfilBimbel()}
+              profil={profil}
               kolom={kolomLembar}
               baris={barisLembar}
             />

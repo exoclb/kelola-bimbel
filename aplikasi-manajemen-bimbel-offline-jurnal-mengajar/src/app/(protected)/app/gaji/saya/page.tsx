@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { RekapGajiSaya } from "@/components/rekap-gaji-saya";
 import { formatPeriode, periodeBulan } from "@/lib/gaji";
 import { getRekapGajiSaya } from "@/lib/mock-gaji";
+import { ambilProfilBimbel } from "@/services/pengaturan.service";
 import { requireSession } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Rekap Gaji Saya" };
@@ -31,6 +32,7 @@ export default async function RekapGajiSayaPage({
       baris={baris}
       periodeTampil={formatPeriode(periode)}
       namaBerkas={`slip-gaji-${periode}`}
+      profil={await ambilProfilBimbel()}
     />
   );
 }

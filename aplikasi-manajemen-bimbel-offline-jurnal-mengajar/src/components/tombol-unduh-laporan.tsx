@@ -3,8 +3,11 @@
 import { useState } from "react";
 import { Download, FileSpreadsheet, LoaderCircle, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { lembarLaporanHtml, namaBerkasLembar } from "@/lib/dokumen-html";
-import type { ProfilBimbel } from "@/lib/mock-pengaturan";
+import {
+  lembarLaporanHtml,
+  namaBerkasLembar,
+  type ProfilDokumen,
+} from "@/lib/dokumen-html";
 
 type TombolUnduhLaporanProps = {
   /** Judul laporan, dipakai di kop berkas and nama berkas. */
@@ -12,7 +15,7 @@ type TombolUnduhLaporanProps = {
   /** Periode laporan, mis. "Oktober 2026". */
   periode: string;
   /** Identitas bimbel untuk kop lembar; sama dengan kop dokumen lain. */
-  profil: ProfilBimbel;
+  profil: ProfilDokumen;
   kolom: string[];
   baris: (string | number)[][];
 };

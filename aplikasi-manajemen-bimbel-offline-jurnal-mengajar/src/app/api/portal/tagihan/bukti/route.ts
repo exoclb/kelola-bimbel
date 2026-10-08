@@ -3,9 +3,9 @@ import {
   buktiTagihanHtml,
   namaBerkasBuktiTagihan,
 } from "@/lib/bukti-tagihan-html";
-import { getProfilBimbel } from "@/lib/mock-pengaturan";
 import { periodeTagihan } from "@/lib/tagihan";
 import { muridTertaut } from "@/services/jejak-baca.service";
+import { ambilProfilBimbel } from "@/services/pengaturan.service";
 import { listTagihanWali } from "@/services/tagihan.service";
 import { anakPortalSchema } from "@/validators/portal";
 
@@ -18,9 +18,9 @@ export const runtime = "nodejs";
 // kuerinya memfilter `wali_murid`, dan anak lain dijawab 404. Anak tanpa
 // tagihan juga 404 — tidak ada rincian yang bisa dibuktikan.
 //
-// Identitas bimbel diambil dari `getProfilBimbel()`, sumber yang sama dengan
-// cangkang portal, supaya kop dokumen tidak berbeda dari yang dilihat wali;
-// keduanya bisa pindah ke profil basis data (`ambilProfilBimbel`) bersamaan.
+// Identitas bimbel diambil dari tabel `bimbel_profile` lewat
+// `ambilProfilBimbel()`, sumber yang sama dengan cangkang portal, supaya kop
+// dokumen tidak berbeda dari yang dilihat wali.
 export function GET(request: Request) {
   return withApiPermission(request, { portal: ["read"] }, async (session) => {
     const { anak } = anakPortalSchema.parse(
@@ -33,18 +33,13 @@ export function GET(request: Request) {
     if (daftar.length === 0)
       throw new ApiError(404, "NOT_FOUND", "Belum ada tagihan untuk anak ini.");
 
-    const profil = getProfilBimbel();
+    const profil = await ambilProfilBimbel();
     const periode = periodeTagihan(new Date());
     return new Response(
       buktiTagihanHtml({
         daftar,
         periodeBerjalan: periode,
-        profil: {
-          nama: profil.nama,
-          alamat: profil.alamat,
-          telepon: profil.telepon,
-          email: profil.email,
-        },
+        profil,
         dibuatPada: new Date(),
       }),
       {

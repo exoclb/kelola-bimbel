@@ -1,8 +1,8 @@
 import { ApiError, withApiPermission } from "@/lib/api";
-import { getProfilBimbel } from "@/lib/mock-pengaturan";
 import { formatPeriode, periodeBulan } from "@/lib/gaji";
 import { namaBerkasSlip, slipGajiHtml } from "@/lib/slip-gaji-html";
 import { rekapGajiAnyGuru } from "@/services/gaji.service";
+import { ambilProfilBimbel } from "@/services/pengaturan.service";
 import { slipGajiSchema } from "@/validators/gaji";
 
 export const runtime = "nodejs";
@@ -23,7 +23,7 @@ export function GET(request: Request) {
       slipGajiHtml({
         baris: rekap.guru,
         periodeTampil: formatPeriode(bulan),
-        profil: getProfilBimbel(),
+        profil: await ambilProfilBimbel(),
       }),
       {
         headers: {

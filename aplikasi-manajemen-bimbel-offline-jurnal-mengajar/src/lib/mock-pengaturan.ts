@@ -1,25 +1,13 @@
 // Data contoh Pengaturan Bimbel.
 //
-// Tabel `salary_settings` (tarif & skema) dan `notification_preferences` sudah
-// ada di database, tetapi profil bimbel belum punya tabelnya sendiri dan
-// API pengaturannya belum dibuat. Jadi halaman ini memakai data tiruan dulu;
-// bentuk tiap bagian mengikuti kolom tabel yang sudah ada (tarif_per_jam,
-// skema, berlaku_sejak, jenis_notifikasi, aktif, status_aktif) supaya nanti
-// tinggal diganti sumbernya.
+// Profil bimbel sudah punya tabelnya sendiri (`bimbel_profile`) dan halaman
+// pengaturannya membaca basis data langsung; sisa berkas ini adalah data tiruan
+// untuk bagian yang belum bermigrasi (tarif & skema gaji, daftar akun, dan
+// preferensi notifikasi). Bentuk tiap bagian mengikuti kolom tabel yang sudah
+// ada (tarif_per_jam, skema, berlaku_sejak, jenis_notifikasi, aktif,
+// status_aktif) supaya nanti tinggal diganti sumbernya.
 import { getDaftarAkun, type AkunMasuk } from "@/lib/mock-akun";
 import { JENIS_NOTIFIKASI, type JenisNotifikasi } from "@/lib/notifikasi";
-
-export type ProfilBimbel = {
-  nama: string;
-  alamat: string;
-  telepon: string;
-  email: string;
-  /**
-   * Logo bimbel (URL atau data URL). Kosong berarti kop memakai monogram dari
-   * huruf pertama nama bimbel; kolomnya sudah ada di tabel `bimbel_profile`.
-   */
-  logo?: string;
-};
 
 export type AturanGaji = {
   tarifPerJam: number;
@@ -33,15 +21,6 @@ export type PreferensiNotifikasi = {
   aktif: boolean;
 };
 
-const PROFIL: ProfilBimbel = {
-  nama: "Bimbel Cerdas Nusantara",
-  alamat: "Jl. Melati No. 12, Bandung",
-  telepon: "0812-3456-7890",
-  email: "admin@cerdasnusantara.test",
-  // Logo belum diunggah, jadi kop memakai monogram "B".
-  logo: "",
-};
-
 // Riwayat tarif: yang dipakai untuk sebuah jurnal adalah baris terbaru yang
 // `berlakuSejak`-nya tidak melewati tanggal jurnal itu, sama seperti aturan di
 // tabel `salary_settings`.
@@ -49,11 +28,6 @@ const RIWAYAT_TARIF: AturanGaji[] = [
   { tarifPerJam: 50000, skema: "per jam", berlakuSejak: "2026-01-01" },
   { tarifPerJam: 60000, skema: "per jam", berlakuSejak: "2026-07-01" },
 ];
-
-/** Profil bimbel yang dipakai laporan dan slip gaji. */
-export function getProfilBimbel(): ProfilBimbel {
-  return { ...PROFIL };
-}
 
 /** Riwayat tarif, yang terbaru lebih dulu. */
 export function getRiwayatTarif(): AturanGaji[] {

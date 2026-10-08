@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { KopDokumen } from "@/components/kop-dokumen";
+import type { ProfilDokumen } from "@/lib/dokumen-html";
 import { formatRupiah } from "@/lib/gaji";
 import { formatJam } from "@/lib/jurnal";
 import type { BarisRekapGaji } from "@/lib/mock-gaji";
@@ -8,13 +9,15 @@ import { formatTanggalLengkap } from "@/lib/tanggal";
 type SlipGajiProps = {
   baris: BarisRekapGaji;
   periodeTampil: string;
+  /** Identitas bimbel untuk kop, dibaca halaman dari tabel `bimbel_profile`. */
+  profil: ProfilDokumen;
 };
 
 /**
  * Slip gaji satu guru untuk satu bulan. Dipakai halaman slip dan menjadi
  * sumber isi yang ikut tercetak maupun terunduh.
  */
-export function SlipGaji({ baris, periodeTampil }: SlipGajiProps) {
+export function SlipGaji({ baris, periodeTampil, profil }: SlipGajiProps) {
   const sudahDibayar = baris.statusPembayaran === "dibayar";
 
   return (
@@ -22,6 +25,7 @@ export function SlipGaji({ baris, periodeTampil }: SlipGajiProps) {
       <CardContent className="space-y-6">
         <KopDokumen
           judul={`Slip gaji guru · ${periodeTampil}`}
+          profil={profil}
           kanan={
             <>
               <p className="font-medium">

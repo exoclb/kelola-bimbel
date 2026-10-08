@@ -125,3 +125,45 @@ test("simpan profil bimbel menimpa satu baris yang sama", async ({
   const dibacaLagi = await request.get("/api/pengaturan/profil", { headers });
   expect((await dibacaLagi.json()).data.nama).toBe("Bimbel Uji Profil Dua");
 });
+
+/**
+ * Kop dokumen ekspor mengambil identitas dari profil bimbel yang tersimpan:
+ * layar pratinjau dan berkas yang dihasilkan memakai nama, alamat, dan kontak
+ * yang sama.
+ */
+test("kop dokumen ekspor memakai profil bimbel yang tersimpan", async ({
+  page,
+  request,
+}) => {
+  const email = await daftar(request, "Owner Kop Ekspor");
+  await setRole(email, "owner");
+  await masuk(request, email);
+
+  const disimpan = await request.put("/api/pengaturan/profil", {
+    headers,
+    data: {
+      nama: "Bimbel Kop Ekspor",
+      alamat: "Jl. Kop Dokumen 9",
+      telepon: "081233334444",
+      email: "kop@bimbel.test",
+      logo: null,
+    },
+  });
+  expect(disimpan.status()).toBe(200);
+
+  await page.goto("/sign-in");
+  await page.getByLabel("Email", { exact: true }).fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(sandi);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.waitForURL((url) => !url.pathname.startsWith("/sign-in"));
+  await page.goto("/app/pengaturan/ekspor");
+
+  await expect(
+    page.getByText("Bimbel Kop Ekspor", { exact: true }).first(),
+  ).toBeVisible();
+  await expect(
+    page
+      .getByText("Jl. Kop Dokumen 9 · 081233334444 · kop@bimbel.test")
+      .first(),
+  ).toBeVisible();
+});

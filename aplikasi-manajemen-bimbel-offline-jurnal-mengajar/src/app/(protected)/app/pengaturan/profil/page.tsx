@@ -3,13 +3,14 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { FormProfilBimbel } from "@/components/form-profil-bimbel";
 import { Button } from "@/components/ui/button";
-import { getProfilBimbel } from "@/lib/mock-pengaturan";
+import { ambilProfilBimbel } from "@/services/pengaturan.service";
 import { requirePermission } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Profil Bimbel" };
 
 export default async function ProfilBimbelPage() {
   await requirePermission({ pengaturan: ["read"] });
+  const profil = await ambilProfilBimbel();
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -27,7 +28,7 @@ export default async function ProfilBimbelPage() {
         Profil Bimbel
       </h1>
 
-      <FormProfilBimbel profilAwal={getProfilBimbel()} />
+      <FormProfilBimbel profilAwal={profil} />
     </div>
   );
 }

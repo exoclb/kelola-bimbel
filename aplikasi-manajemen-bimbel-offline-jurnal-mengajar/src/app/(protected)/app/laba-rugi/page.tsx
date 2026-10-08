@@ -4,6 +4,7 @@ import { requirePermission } from "@/lib/session";
 import { rekapHonorBulanan } from "@/services/gaji.service";
 import { rekapPengeluaranBulanan } from "@/services/pengeluaran.service";
 import { rekapPemasukanPeriode } from "@/services/tagihan.service";
+import { ambilProfilBimbel } from "@/services/pengaturan.service";
 
 export const metadata: Metadata = { title: "Laporan Laba Rugi" };
 
@@ -19,11 +20,14 @@ export default async function LabaRugiPage() {
     rekapHonorBulanan(),
   ]);
 
+  const profil = await ambilProfilBimbel();
+
   return (
     <LaporanLabaRugi
       rekapPengeluaran={rekapPengeluaran}
       rekapPemasukan={rekapPemasukan}
       rekapHonor={rekapHonor}
+      profil={profil}
     />
   );
 }

@@ -6,6 +6,7 @@ import { LaporanPerkembangan } from "@/components/laporan-perkembangan";
 import { TombolCetakUnduh } from "@/components/tombol-cetak-unduh";
 import { Button } from "@/components/ui/button";
 import { getRiwayatPerkembangan } from "@/services/perkembangan.service";
+import { ambilProfilBimbel } from "@/services/pengaturan.service";
 import { tanggalISO } from "@/lib/tanggal";
 
 export const metadata: Metadata = { title: "Laporan Perkembangan" };
@@ -19,6 +20,8 @@ export default async function LaporanPerkembanganPage({
   const { muridId } = await params;
   const riwayat = await getRiwayatPerkembangan(muridId, 100, 0);
   if (!riwayat) notFound();
+
+  const profil = await ambilProfilBimbel();
 
   const namaBerkas = `laporan-perkembangan-${riwayat.murid.nama
     .toLowerCase()
@@ -41,6 +44,7 @@ export default async function LaporanPerkembanganPage({
         catatan={riwayat.catatan.data}
         kehadiran={riwayat.kehadiran.data}
         tanggalCetak={tanggalISO(new Date())}
+        profil={profil}
       />
 
       <div className="mt-6">

@@ -19,9 +19,9 @@ import { PemilihAnak } from "@/components/pemilih-anak";
 import { LayarPortal } from "@/components/layar-portal";
 import { PenandaStatus } from "@/components/penanda-status";
 import { LencanaBaru } from "@/components/lencana-baru";
+import type { ProfilDokumen } from "@/lib/dokumen-html";
 import { formatRupiah } from "@/lib/gaji";
 import type { AnakPortal, StatusJejakPortal } from "@/lib/portal-wali";
-import type { ProfilBimbel } from "@/lib/mock-pengaturan";
 import { periodeDariTagihan, type Tagihan } from "@/lib/tagihan";
 import {
   formatPeriodeTagihan,
@@ -34,7 +34,11 @@ import { formatTanggalLengkap } from "@/lib/tanggal";
 
 type BerandaPortalWaliProps = {
   anak: AnakPortal[];
-  profil: ProfilBimbel;
+  /**
+   * Identitas bimbel untuk kepala halaman, dibaca dari tabel
+   * `bimbel_profile`.
+   */
+  profil: ProfilDokumen;
   /** Nama wali yang sedang masuk, dipakai untuk sapaan di kepala halaman. */
   namaWali: string;
   /** Anak yang dipilih lewat alamat halaman (`?anak=`), bila ada. */

@@ -8,13 +8,27 @@
  */
 export const NAMA_BIMBEL_CADANGAN = "Bimbel";
 
+/**
+ * Identitas bimbel yang dipakai kop dokumen: bentuk kolom `bimbel_profile`
+ * seperlunya. Tipenya ditulis di sini supaya penolong dokumen tidak bergantung
+ * pada modul lain dan tetap bisa diuji `node --test`.
+ */
+export type ProfilDokumen = {
+  nama: string;
+  alamat: string;
+  telepon: string;
+  email: string;
+  /** Data URL logo; kosong atau null berarti kop memakai monogram. */
+  logo?: string | null;
+};
+
 /** Nama bimbel untuk kop dokumen, dengan cadangan kalau profilnya kosong. */
-export function namaProfilDokumen(profil: ProfilBimbel) {
+export function namaProfilDokumen(profil: ProfilDokumen) {
   return profil.nama.trim() || NAMA_BIMBEL_CADANGAN;
 }
 
 /** Kontak bimbel satu baris ("alamat · telepon · email"), melewati yang kosong. */
-export function kontakProfilDokumen(profil: ProfilBimbel) {
+export function kontakProfilDokumen(profil: ProfilDokumen) {
   return [profil.alamat, profil.telepon, profil.email]
     .map((bagian) => bagian.trim())
     .filter(Boolean)
@@ -22,11 +36,9 @@ export function kontakProfilDokumen(profil: ProfilBimbel) {
 }
 
 /** Benar kalau profil bimbel belum lengkap untuk kop dokumen. */
-export function profilBelumLengkap(profil: ProfilBimbel) {
+export function profilBelumLengkap(profil: ProfilDokumen) {
   return !profil.nama.trim() || !profil.alamat.trim() || !profil.telepon.trim();
 }
-
-import type { ProfilBimbel } from "@/lib/mock-pengaturan";
 
 /** Sel lembar laporan: angka ditulis apa adanya supaya bisa dijumlahkan lagi. */
 export type IsiSel = string | number;
@@ -37,7 +49,7 @@ type LembarLaporanHtmlProps = {
   /** Periode laporan, mis. "Oktober 2026". */
   periode: string;
   /** Identitas bimbel untuk kop; sama dengan kop dokumen lain. */
-  profil: ProfilBimbel;
+  profil: ProfilDokumen;
   /** Judul kolom, dipakai juga oleh pratinjau di layar. */
   kolom: string[];
   /** Isi tabel, satu larik per baris. */

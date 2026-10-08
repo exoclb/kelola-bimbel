@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { RekapGajiBulanan } from "@/components/rekap-gaji-bulanan";
 import { formatPeriode, periodeBulan } from "@/lib/gaji";
 import { getRekapGajiBulanan } from "@/lib/mock-gaji";
+import { ambilProfilBimbel } from "@/services/pengaturan.service";
 import { requirePermission } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Rekap Gaji Bulanan" };
@@ -20,12 +21,14 @@ export default async function RekapGajiPage({
   const periode = POLA_PERIODE.test(params.periode ?? "")
     ? (params.periode ?? "")
     : periodeBulan(new Date());
+  const profil = await ambilProfilBimbel();
 
   return (
     <RekapGajiBulanan
       rekap={getRekapGajiBulanan(periode)}
       periodeTampil={formatPeriode(periode)}
       namaOwner={user.name}
+      profil={profil}
     />
   );
 }

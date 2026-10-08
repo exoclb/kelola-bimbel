@@ -19,12 +19,14 @@ import { formatJam } from "@/lib/jurnal";
 import { formatRupiah } from "@/lib/gaji";
 import type { RekapGaji, StatusPembayaran } from "@/lib/mock-gaji";
 import { tanggalISO } from "@/lib/tanggal";
-import { getProfilBimbel } from "@/lib/mock-pengaturan";
+import type { ProfilDokumen } from "@/lib/dokumen-html";
 
 type RekapGajiBulananProps = {
   rekap: RekapGaji;
   periodeTampil: string;
   namaOwner: string;
+  /** Identitas bimbel untuk kop unduhan, dibaca halaman dari tabel `bimbel_profile`. */
+  profil: ProfilDokumen;
 };
 
 /**
@@ -35,6 +37,7 @@ export function RekapGajiBulanan({
   rekap,
   periodeTampil,
   namaOwner,
+  profil,
 }: RekapGajiBulananProps) {
   // Status pembayaran dipegang di sini, bukan di daftar, supaya kartu
   // ringkasan dan berkas unduhan ikut berubah begitu satu guru ditandai.
@@ -132,7 +135,7 @@ export function RekapGajiBulanan({
         <TombolUnduhLaporan
           judul="Rekap Gaji Guru"
           periode={periodeTampil}
-          profil={getProfilBimbel()}
+          profil={profil}
           kolom={[
             "Guru",
             "Jumlah Jurnal",

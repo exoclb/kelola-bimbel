@@ -3,9 +3,9 @@ import type { Viewport } from "next";
 import { NavBawahPortal } from "@/components/nav-bawah-portal";
 import { PenandaPengguna } from "@/components/penanda-pengguna";
 import { TemaPortal } from "@/components/tema-portal";
-import { getProfilBimbel } from "@/lib/mock-pengaturan";
 import { peranDariRole } from "@/lib/peran";
 import { requirePermission } from "@/lib/session";
+import { ambilProfilBimbel } from "@/services/pengaturan.service";
 
 export const runtime = "nodejs";
 
@@ -37,9 +37,10 @@ export default async function PortalLayout({
   const { user } = await requirePermission({ portal: ["read"] });
 
   // Label peran tetap mengikuti peran akun yang sedang membukanya, sedangkan
-  // identitas bimbel dipakai sebagai penanda halaman.
+  // identitas bimbel diambil dari tabel `bimbel_profile` sebagai penanda
+  // halaman.
   const peran = peranDariRole(user.role);
-  const profil = getProfilBimbel();
+  const profil = await ambilProfilBimbel();
 
   return (
     <>
