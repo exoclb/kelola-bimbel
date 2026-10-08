@@ -4,6 +4,7 @@ import { useMemo, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarCheck, CalendarDays, Clock3 } from "lucide-react";
 import { KartuPortal } from "@/components/kartu-portal";
+import { LencanaBaru } from "@/components/lencana-baru";
 import { LayarPortal } from "@/components/layar-portal";
 import { PemilihAnak } from "@/components/pemilih-anak";
 import { PesanKosong } from "@/components/status-antarmuka";
@@ -49,6 +50,7 @@ function PilSesi({ keadaan }: { keadaan: "berlangsung" | "berikutnya" }) {
 function DaftarSesi({
   daftar,
   menitSekarang,
+  awalPekan,
 }: {
   daftar: JadwalAnak[];
   /**
@@ -56,6 +58,12 @@ function DaftarSesi({
    * ini ditandai "Berlangsung" atau "Berikutnya"; kalau kosong, tidak ada pil.
    */
   menitSekarang?: number;
+  /**
+   * Tanggal awal pekan berjalan (`YYYY-MM-DD`). Sesi yang jadwalnya dibuat
+   * sejak tanggal itu ditandai "Baru" — `schedules` tidak menyimpan riwayat
+   * perubahan, jadi jadwal baru itulah tanda perubahan yang tersedia.
+   */
+  awalPekan?: string;
 }) {
   // Sesi terdekat yang belum mulai: hanya yang paling awal perlu pil.
   const jadwalBerikutnya =
@@ -94,6 +102,11 @@ function DaftarSesi({
               {keadaan && (
                 <span className="ml-auto">
                   <PilSesi keadaan={keadaan} />
+                </span>
+              )}
+              {awalPekan !== undefined && baris.dibuatPada >= awalPekan && (
+                <span className={keadaan ? undefined : "ml-auto"}>
+                  <LencanaBaru />
                 </span>
               )}
             </p>
@@ -218,6 +231,8 @@ export function JadwalAnakPortal({
   );
   const hariIni = namaHari(tanggalAcuan);
   const menitPerangkat = useMenitPerangkat(menitServer);
+  // Awal pekan berjalan dipakai menandai jadwal yang baru ditambahkan.
+  const awalPekan = tanggalISO(tanggalHari("Senin", tanggalAcuan));
 
   const sesiHariIni = perHari.get(hariIni) ?? [];
   // Hari ini sudah tampil di kartunya sendiri, jadi daftar pekan tidak
@@ -273,6 +288,7 @@ export function JadwalAnakPortal({
                   <DaftarSesi
                     daftar={sesiHariIni}
                     menitSekarang={menitPerangkat}
+                    awalPekan={awalPekan}
                   />
                 ) : (
                   <div className="space-y-1">
@@ -300,7 +316,10 @@ export function JadwalAnakPortal({
                     tanggalHari(hari, tanggalAcuan),
                   )}
                 >
-                  <DaftarSesi daftar={perHari.get(hari) ?? []} />
+                  <DaftarSesi
+                    daftar={perHari.get(hari) ?? []}
+                    awalPekan={awalPekan}
+                  />
                 </KartuPortal>
               ))}
             </>

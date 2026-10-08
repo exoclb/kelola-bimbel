@@ -183,6 +183,9 @@ export async function listJadwalAnak(
       jamSelesai: sql<string>`to_char(${schedules.jamSelesai}, 'HH24:MI')`.as(
         "jam_selesai",
       ),
+      dibuatPada: sql<string>`to_char(${schedules.createdAt}, 'YYYY-MM-DD')`.as(
+        "dibuat_pada",
+      ),
     })
     .from(studentEnrollments)
     .innerJoin(classes, eq(classes.id, studentEnrollments.classId))

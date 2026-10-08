@@ -55,6 +55,12 @@ export type JadwalAnak = {
   /** Jam dalam bentuk `HH:MM`. */
   jamMulai: string;
   jamSelesai: string;
+  /**
+   * Tanggal jadwal ini dibuat (`YYYY-MM-DD`). Dipakai layar Jadwal untuk
+   * menandai sesi yang baru ditambahkan; tabel `schedules` tidak menyimpan
+   * riwayat perubahan, jadi ini penanda yang tersedia.
+   */
+  dibuatPada: string;
 };
 
 /** Bagian portal yang punya penanda "baru" sendiri. */
