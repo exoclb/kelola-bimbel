@@ -166,7 +166,11 @@ export function PerkembanganAnakPortal({
             </KartuPortal>
           </div>
 
-          <KartuPortal className="mt-4" judul="Catatan Nilai &amp; Sikap">
+          <KartuPortal
+            className="mt-4"
+            judul="Catatan Evaluasi"
+            keterangan="Nilai, sikap, dan catatan guru tiap pertemuan, terbaru lebih dulu."
+          >
             {daftarCatatan.length === 0 ? (
               <PesanKosong
                 judul="Belum ada catatan"
@@ -175,21 +179,27 @@ export function PerkembanganAnakPortal({
             ) : (
               <ul className="space-y-3">
                 {daftarCatatan.map((baris) => (
-                  <li key={baris.id} className="rounded-lg border px-3 py-2">
-                    <div className="flex flex-wrap items-center gap-2 text-sm">
-                      <span className="font-medium">
-                        Nilai {angkaTampil.format(baris.nilai)}
-                      </span>
+                  <li
+                    key={baris.id}
+                    className="rounded-xl border px-3 py-3"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="flex items-baseline gap-1.5">
+                        <span className="text-muted-foreground text-xs">
+                          Nilai
+                        </span>
+                        <span className="text-xl font-semibold tabular-nums">
+                          {angkaTampil.format(baris.nilai)}
+                        </span>
+                      </p>
                       <span className="bg-muted text-muted-foreground rounded-full border px-2.5 py-0.5 text-xs">
                         Sikap {baris.sikap}
                       </span>
-                      <span className="text-muted-foreground text-xs">
-                        {formatTanggalLengkap(baris.tanggal)} · {baris.guruNama}
-                      </span>
                     </div>
-                    <p className="text-muted-foreground mt-1 text-sm">
-                      {baris.catatan}
+                    <p className="text-muted-foreground mt-1 text-xs">
+                      {formatTanggalLengkap(baris.tanggal)} · {baris.guruNama}
                     </p>
+                    <p className="mt-2 text-sm">{baris.catatan}</p>
                   </li>
                 ))}
               </ul>
