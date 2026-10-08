@@ -52,6 +52,7 @@ function DaftarSesi({
   daftar,
   menitSekarang,
   awalPekan,
+  lewat = false,
 }: {
   daftar: JadwalAnak[];
   /**
@@ -65,6 +66,8 @@ function DaftarSesi({
    * perubahan, jadi jadwal baru itulah tanda perubahan yang tersedia.
    */
   awalPekan?: string;
+  /** Benar untuk kartu hari yang tanggalnya sudah lewat pekan ini. */
+  lewat?: boolean;
 }) {
   // Sesi terdekat yang belum mulai: hanya yang paling awal perlu pil.
   const jadwalBerikutnya =
@@ -100,14 +103,19 @@ function DaftarSesi({
                   · {durasi}
                 </span>
               )}
-              {keadaan && (
-                <span className="ml-auto">
-                  <PilSesi keadaan={keadaan} />
-                </span>
-              )}
-              {awalPekan !== undefined && baris.dibuatPada >= awalPekan && (
-                <span className={keadaan ? undefined : "ml-auto"}>
-                  <LencanaBaru />
+              {(lewat ||
+                keadaan ||
+                (awalPekan !== undefined && baris.dibuatPada >= awalPekan)) && (
+                <span className="ml-auto flex items-center gap-1.5">
+                  {lewat && (
+                    <span className="text-muted-foreground text-xs">
+                      Sudah lewat
+                    </span>
+                  )}
+                  {keadaan && <PilSesi keadaan={keadaan} />}
+                  {awalPekan !== undefined && baris.dibuatPada >= awalPekan && (
+                    <LencanaBaru />
+                  )}
                 </span>
               )}
             </p>
@@ -319,6 +327,12 @@ export function JadwalAnakPortal({
                   <DaftarSesi
                     daftar={perHari.get(hari) ?? []}
                     awalPekan={awalPekan}
+                    // Hari yang tanggalnya sudah lewat ditandai supaya wali
+                    // tidak mengira sesi itu masih akan datang pekan ini.
+                    lewat={
+                      tanggalISO(tanggalHari(hari, tanggalAcuan)) <
+                      tanggalPerangkat
+                    }
                   />
                 </KartuPortal>
               ))}
