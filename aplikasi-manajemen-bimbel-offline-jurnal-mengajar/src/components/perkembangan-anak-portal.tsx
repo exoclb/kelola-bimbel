@@ -187,9 +187,10 @@ export function PerkembanganAnakPortal({
             keterangan={`Nilai ${dipilih.nama} tiap pertemuan, terbaru lebih dulu.`}
           >
             {grafik.length === 0 ? (
-              <p className="text-muted-foreground text-sm">
-                Grafik muncul setelah guru mencatat nilai anak.
-              </p>
+              <PesanKosong
+                judul="Belum ada nilai"
+                keterangan="Grafik muncul setelah guru mencatat nilai anak."
+              />
             ) : (
               <div className="space-y-4">
                 {grafik.map((baris) => (
