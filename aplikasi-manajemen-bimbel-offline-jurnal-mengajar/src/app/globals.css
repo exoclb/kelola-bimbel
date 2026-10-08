@@ -55,6 +55,7 @@
 }
 
 :root {
+  color-scheme: light;
   --radius: 0.75rem;
   /* Kanvas terang #F8FAFC (slate-50) dengan teks slate-900. */
   --background: #f8fafc;
@@ -65,7 +66,8 @@
   --primary-foreground: #ffffff;
   --secondary: #f1f5f9;
   --muted: #f1f5f9;
-  --muted-foreground: #64748b;
+  /* slate-600 tetap >=4.5:1 di atas kanvas, kartu, dan permukaan muted. */
+  --muted-foreground: #475569;
   --border: #e2e8f0;
   --destructive: #b91c1c;
 
@@ -97,15 +99,19 @@
 }
 
 .dark {
+  /* Kanvas gelap memakai langkah slate yang lebih gelap; langkah tetap
+     (--slate-*, --brand-*) dipakai lewat varian dark: bila perlu aksen. */
+  color-scheme: dark;
   --background: #0f172a;
   --foreground: #f8fafc;
   --card: #1e293b;
   --card-foreground: #f8fafc;
   --primary: #fb846b;
   --primary-foreground: #29100a;
-  --secondary: #1e293b;
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
+  --secondary: #334155;
+  --muted: #334155;
+  /* slate-300 tetap >=4.5:1 di atas kanvas, kartu, dan permukaan muted. */
+  --muted-foreground: #cbd5e1;
   --border: #334155;
   --destructive: #ff8a8a;
 }
@@ -129,6 +135,6 @@
     cursor: pointer;
   }
   ::selection {
-    background: #bb371e22;
+    background: color-mix(in oklab, var(--primary) 20%, transparent);
   }
 }
