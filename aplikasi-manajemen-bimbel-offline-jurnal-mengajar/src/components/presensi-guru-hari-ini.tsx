@@ -154,13 +154,13 @@ export function PresensiGuruHariIni({
       </p>
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="outline" size="aksi">
           <Link href="/app/jurnal">
             Isi jurnal hari ini
             <ArrowRight aria-hidden="true" />
           </Link>
         </Button>
-        <Button asChild variant="ghost" size="sm">
+        <Button asChild variant="ghost" size="aksi">
           <Link href="/app/presensi-guru/riwayat">
             Riwayat kehadiran
             <ArrowRight aria-hidden="true" />
@@ -218,7 +218,7 @@ export function PresensiGuruHariIni({
                       <Button
                         type="button"
                         variant="outline"
-                        size="sm"
+                        size="aksi"
                         disabled={pending}
                         onClick={() => batalkan(baris)}
                       >
@@ -228,7 +228,7 @@ export function PresensiGuruHariIni({
                     ) : (
                       <Button
                         type="button"
-                        size="sm"
+                        size="aksi"
                         disabled={pending}
                         onClick={() => tandaiHadir(baris)}
                       >
@@ -236,7 +236,7 @@ export function PresensiGuruHariIni({
                         Tandai hadir
                       </Button>
                     )}
-                    <Button asChild variant="ghost" size="sm">
+                    <Button asChild variant="ghost" size="aksi">
                       <Link href={`/app/presensi-guru/${baris.jadwalId}`}>
                         Buka sesi
                         <ArrowRight aria-hidden="true" />

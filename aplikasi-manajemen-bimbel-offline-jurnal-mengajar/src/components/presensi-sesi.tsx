@@ -123,13 +123,13 @@ export function PresensiSesi({
       </p>
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="outline" size="aksi">
           <Link href="/app/presensi-guru">
             <ArrowLeft aria-hidden="true" />
             Kembali ke presensi hari ini
           </Link>
         </Button>
-        <Button asChild variant="ghost" size="sm">
+        <Button asChild variant="ghost" size="aksi">
           <Link
             href={jurnalId ? `/app/jurnal/riwayat/${jurnalId}` : "/app/jurnal"}
           >
@@ -237,7 +237,8 @@ export function PresensiSesi({
           <div className="flex flex-wrap items-center gap-2">
             <Button
               type="button"
-              size="sm"
+              size="aksi"
+              className="w-full sm:w-auto"
               disabled={!pilihan || pilihan === tersimpan?.status || pending}
               onClick={simpan}
             >

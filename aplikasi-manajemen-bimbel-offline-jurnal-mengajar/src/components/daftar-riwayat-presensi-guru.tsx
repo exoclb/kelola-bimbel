@@ -62,7 +62,7 @@ export function DaftarRiwayatKehadiran({
               ).join(" · ")}.`
             : "Belum ada catatan kehadiran guru."}
         </p>
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="outline" size="aksi">
           <Link href="/app/presensi-guru">
             <CalendarCheck aria-hidden="true" />
             Presensi hari ini
