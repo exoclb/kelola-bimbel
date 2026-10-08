@@ -84,10 +84,10 @@ export function RekapGajiSaya({
                 name="periode"
                 type="month"
                 defaultValue={baris.rincian[0]?.tanggal.slice(0, 7) ?? ""}
-                className="w-44"
+                className="h-[var(--target-sentuh-portal)] w-44 md:text-base"
               />
             </div>
-            <Button type="submit" size="sm">
+            <Button type="submit" size="aksi">
               <Receipt aria-hidden="true" />
               Tampilkan
             </Button>
@@ -100,7 +100,11 @@ export function RekapGajiSaya({
       </div>
 
       <div className="mt-6">
-        <TombolCetakUnduh targetId="slip-gaji" namaBerkas={namaBerkas} />
+        <TombolCetakUnduh
+          targetId="slip-gaji"
+          namaBerkas={namaBerkas}
+          ukuran="aksi"
+        />
       </div>
     </div>
   );
