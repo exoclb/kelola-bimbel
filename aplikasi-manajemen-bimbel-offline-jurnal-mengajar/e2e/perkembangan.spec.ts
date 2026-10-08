@@ -120,6 +120,18 @@ test("catatan evaluasi dicatat, disaring, dan dijaga penulisnya", async ({
   expect(ubah.status()).toBe(200);
   expect((await ubah.json()).data.nilai).toBe(85);
 
+  // Perubahan tanpa kolom apa pun ditolak, dan id yang tidak ada dijawab 404.
+  const kosong = await request.patch(`/api/perkembangan/${catatanId}`, {
+    headers,
+    data: {},
+  });
+  expect(kosong.status()).toBe(422);
+  const tidakAda = await request.patch(`/api/perkembangan/${randomUUID()}`, {
+    headers,
+    data: { nilai: 70 },
+  });
+  expect(tidakAda.status()).toBe(404);
+
   const hapus = await request.delete(`/api/perkembangan/${catatanId}`, {
     headers,
   });
