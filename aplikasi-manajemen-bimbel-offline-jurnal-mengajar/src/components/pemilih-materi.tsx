@@ -76,7 +76,12 @@ export function PemilihMateri({
         )}
 
         <div className="space-y-2">
-          <Label htmlFor="topik">Topik spesifik (opsional)</Label>
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <Label htmlFor="topik">Topik spesifik (opsional)</Label>
+            <span className="text-muted-foreground text-xs tabular-nums">
+              {topik.length}/120
+            </span>
+          </div>
           <Input
             id="topik"
             className="h-[var(--target-sentuh-portal)] md:text-base"
@@ -87,6 +92,14 @@ export function PemilihMateri({
             onChange={(event) => onTopik(event.target.value)}
           />
         </div>
+
+        {/* Guru melihat persis kalimat yang akan tercatat di jurnal sebelum
+            mengirim, jadi tidak perlu menebak bagaimana materinya tersimpan. */}
+        <p aria-live="polite" className="text-muted-foreground text-sm">
+          {nilai
+            ? `Tercatat: ${nilai}${topik.trim() ? ` — ${topik.trim()}` : ""}`
+            : "Pilih satu jenis materi di atas."}
+        </p>
       </CardContent>
     </Card>
   );
