@@ -12,6 +12,10 @@
 // jurnal supaya jumlah kelas per cabang bisa dicocokkan, dan tidak boleh ada
 // dua nama yang sama (penyaringnya indeks unik tak peka huruf besar-kecil).
 // `tests/data-cabang.test.mjs` menjaga keduanya.
+//
+// Komponen UI tidak mengimpor berkas ini: mereka menerima daftar cabang lewat
+// prop dari halaman, yang membacanya dari `src/services/cabang.service.ts`.
+// Aturan ESLint menolak impor `@/lib/mock-cabang` dari `src/components/`.
 
 export type DataCabang = {
   nama: string;

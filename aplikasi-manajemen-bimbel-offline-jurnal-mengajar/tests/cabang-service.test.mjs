@@ -55,6 +55,45 @@ async function bersihkan() {
   await pool.query("DELETE FROM cabang WHERE nama LIKE $1", [`%${PENANDA}%`]);
 }
 
+/**
+ * Bentuk baris yang diterima komponen: layanan cabang mengembalikan persis
+ * kolom yang dirender tampilan — id, nama, alamat, kontak, dan statusAktif.
+ * Penanda waktu tabel tidak ikut, dan tidak ada kolom yang hilang.
+ */
+test("baris cabang memuat kolom yang dipakai komponen", async () => {
+  await bersihkan();
+  const nama = `${PENANDA} Bentuk`;
+  const dibuat = await tambahCabang({
+    nama,
+    alamat: "Jl. Uji No. 7",
+    kontak: "0800-7",
+    statusAktif: true,
+  });
+
+  const sumber = [
+    ["daftar", (await listCabang()).find((baris) => baris.nama === nama)],
+    ["id", await getCabang(dibuat.cabang.id)],
+    ["nama", await getCabangByNama(nama)],
+  ];
+  for (const [label, baris] of sumber) {
+    assert.deepEqual(
+      Object.keys(baris).sort(),
+      ["alamat", "id", "kontak", "nama", "statusAktif"],
+      `kolom dari ${label}`,
+    );
+    assert.equal(typeof baris.id, "string", `id dari ${label}`);
+    assert.equal(typeof baris.nama, "string", `nama dari ${label}`);
+    assert.equal(typeof baris.alamat, "string", `alamat dari ${label}`);
+    assert.equal(typeof baris.kontak, "string", `kontak dari ${label}`);
+    assert.equal(
+      typeof baris.statusAktif,
+      "boolean",
+      `statusAktif dari ${label}`,
+    );
+    assert.equal("createdAt" in baris, false, `penanda waktu dari ${label}`);
+  }
+});
+
 test.after(async () => {
   await bersihkan();
   await pool.end();
