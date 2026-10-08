@@ -28,6 +28,12 @@ export const profilBimbelSchema = z
 
 export type ProfilBimbelInput = z.infer<typeof profilBimbelSchema>;
 
+// Riwayat backup hanya dibaca; jumlah barisnya dibatasi supaya halaman
+// monitoring tidak menarik seluruh catatan sekaligus.
+export const listBackupSchema = z.object({ limit: skemaLimit(20) }).strict();
+
+export type ListBackupInput = z.infer<typeof listBackupSchema>;
+
 // Skema yang dikenal aplikasi; kolomnya varchar supaya bisa ditambah tanpa
 // migrasi, tetapi yang boleh masuk lewat API hanya yang benar-benar dipakai
 // perhitungan gaji.

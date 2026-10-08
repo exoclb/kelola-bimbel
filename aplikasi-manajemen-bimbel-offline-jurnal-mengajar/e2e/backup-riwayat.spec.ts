@@ -99,3 +99,69 @@ test("riwayat backup menampilkan status, lokasi, dan alasan kegagalan", async ({
   // 1 MB ditulis dalam satuan yang mudah dibaca.
   await expect(page.getByText(/1[.,]0 MB|1 MB/).first()).toBeVisible();
 });
+
+/**
+ * Endpoint riwayat backup: ringkasan status (jumlah per status dan backup
+ * terakhir yang berhasil) plus daftar catatan terbaru yang jumlahnya bisa
+ * dibatasi, hanya untuk akun berizin baca pengaturan.
+ */
+test("endpoint riwayat backup mengembalikan status dan batas jumlahnya", async ({
+  request,
+}) => {
+  const email = await daftar(request, "Owner Endpoint Backup");
+  await setRole(email, "owner");
+  await masuk(request, email);
+
+  const penanda = randomUUID().slice(0, 8);
+  const db = new Pool({
+    connectionString: process.env.STARTER_TEST_DATABASE_URL,
+    max: 1,
+  });
+  try {
+    await db.query(
+      "INSERT INTO backup_runs (mulai, selesai, status, ukuran_byte, lokasi) VALUES (now() - interval '1 hour', now() - interval '55 minutes', 'sukses', $1, $2)",
+      [4096, `/srv/backup/endpoint-${penanda}.dump`],
+    );
+    await db.query(
+      "INSERT INTO backup_runs (mulai, selesai, status, pesan) VALUES (now() - interval '30 minutes', now() - interval '29 minutes', 'gagal', $1)",
+      [`Gagal menyalin (${penanda})`],
+    );
+    await db.query(
+      "INSERT INTO backup_runs (mulai, status) VALUES (now() - interval '5 minutes', 'berjalan')",
+    );
+  } finally {
+    await db.end();
+  }
+
+  const jawaban = await request.get("/api/pengaturan/backup", { headers });
+  expect(jawaban.status()).toBe(200);
+  const { data } = await jawaban.json();
+  expect(data.jumlah.total).toBeGreaterThanOrEqual(3);
+  expect(data.jumlah.sukses).toBeGreaterThanOrEqual(1);
+  expect(data.jumlah.gagal).toBeGreaterThanOrEqual(1);
+  expect(data.jumlah.berjalan).toBeGreaterThanOrEqual(1);
+  expect(data.terakhirSukses.status).toBe("sukses");
+  expect(data.terakhirSukses.selesai).not.toBe(null);
+  // Yang masih berjalan tidak pernah dihitung sebagai backup terakhir berhasil.
+  expect(
+    data.terbaru.some((baris: { status: string }) => baris.status === "sukses"),
+  ).toBe(true);
+
+  const dibatasi = await request.get("/api/pengaturan/backup?limit=1", {
+    headers,
+  });
+  expect(dibatasi.status()).toBe(200);
+  expect((await dibatasi.json()).data.terbaru).toHaveLength(1);
+
+  const batasAneh = await request.get("/api/pengaturan/backup?limit=0", {
+    headers,
+  });
+  expect(batasAneh.status()).toBe(422);
+
+  const emailGuru = await daftar(request, "Guru Endpoint Backup");
+  await setRole(emailGuru, "user");
+  await masuk(request, emailGuru);
+  expect(
+    (await request.get("/api/pengaturan/backup", { headers })).status(),
+  ).toBe(403);
+});
