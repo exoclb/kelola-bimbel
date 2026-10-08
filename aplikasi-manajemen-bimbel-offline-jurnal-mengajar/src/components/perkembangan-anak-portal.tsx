@@ -3,7 +3,12 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, CalendarCheck, GraduationCap } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarCheck,
+  GraduationCap,
+  TrendingUp,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BarProgres } from "@/components/bar-progres";
 import { KartuPortal } from "@/components/kartu-portal";
@@ -25,6 +30,11 @@ type PerkembanganAnakPortalProps = {
 // Halaman ini memuat dua bagian sekaligus: rekap kehadiran dan catatan
 // perkembangan.
 const BAGIAN_HALAMAN = ["kehadiran", "perkembangan"] as const;
+
+const tanggalRingkas = new Intl.DateTimeFormat("id-ID", {
+  day: "numeric",
+  month: "long",
+});
 
 const angkaTampil = new Intl.NumberFormat("id-ID", {
   maximumFractionDigits: 0,
@@ -86,6 +96,10 @@ export function PerkembanganAnakPortal({
       ? daftarCatatan.reduce((jumlah, baris) => jumlah + baris.nilai, 0) /
         daftarCatatan.length
       : null;
+
+  // Grafik hanya memuat beberapa catatan terakhir supaya layar tetap ringkas;
+  // riwayat lengkapnya ada di daftar Catatan Evaluasi di bawahnya.
+  const grafik = daftarCatatan.slice(0, 6);
 
   return (
     <LayarPortal
@@ -165,6 +179,33 @@ export function PerkembanganAnakPortal({
               </p>
             </KartuPortal>
           </div>
+
+          <KartuPortal
+            className="mt-4"
+            judul="Grafik Perkembangan"
+            ikon={TrendingUp}
+            keterangan={`Nilai ${dipilih.nama} tiap pertemuan, terbaru lebih dulu.`}
+          >
+            {grafik.length === 0 ? (
+              <p className="text-muted-foreground text-sm">
+                Grafik muncul setelah guru mencatat nilai anak.
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {grafik.map((baris) => (
+                  <BarProgres
+                    key={baris.id}
+                    nilai={baris.nilai}
+                    label={tanggalRingkas.format(
+                      new Date(`${baris.tanggal}T00:00:00`),
+                    )}
+                    ariaLabel={`Nilai ${dipilih.nama} pada ${formatTanggalLengkap(baris.tanggal)}`}
+                    keterangan={`Sikap ${baris.sikap} · ${baris.guruNama}`}
+                  />
+                ))}
+              </div>
+            )}
+          </KartuPortal>
 
           <KartuPortal
             className="mt-4"
