@@ -1149,3 +1149,26 @@ test("migrasi relasi memetakan cabang kelas lama ke cabang resmi", async () => {
     ]);
   }
 });
+
+/**
+ * Urutan data contoh cabang (`getDaftarCabang()`) harus sama dengan urutan yang
+ * dipakai layanan basis data (`order by lower(btrim(nama))`), supaya daftar
+ * hasil seeder dan daftar dari tabel tidak pernah tampil berbeda urutan.
+ */
+test("urutan data contoh cabang sama dengan urutan dari basis data", async () => {
+  const { getDaftarCabang } = await import("../src/lib/mock-cabang.ts");
+  const { seedCabang } = await import("../scripts/lib/seed-cabang.mjs");
+  await siapkanJurnal();
+
+  await seedCabang(dbJurnal);
+  const contoh = getDaftarCabang().map((cabang) => cabang.nama);
+  const { rows } = await dbJurnal.query(
+    "SELECT nama FROM cabang WHERE nama = ANY($1) ORDER BY lower(btrim(nama))",
+    [contoh],
+  );
+
+  assert.deepEqual(
+    rows.map((baris) => baris.nama),
+    contoh,
+  );
+});

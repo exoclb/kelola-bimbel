@@ -42,7 +42,16 @@ const CABANG: DataCabang[] = [
   },
 ];
 
-/** Data awal cabang, diurutkan nama. */
+/** Kunci pembanding nama, sama dengan `lower(btrim(nama))` di layanan cabang. */
+const rapi = (nama: string) => nama.trim().toLocaleLowerCase("id");
+
+/**
+ * Data awal cabang, diurutkan nama tanpa membedakan huruf besar-kecil — aturan
+ * urutan yang sama dengan `listCabang()` di `src/services/cabang.service.ts`,
+ * supaya daftar hasil seeder dan daftar dari basis data tidak berbeda urutan.
+ */
 export function getDaftarCabang(): DataCabang[] {
-  return [...CABANG].sort((a, b) => a.nama.localeCompare(b.nama, "id"));
+  return [...CABANG].sort((a, b) =>
+    rapi(a.nama).localeCompare(rapi(b.nama), "id"),
+  );
 }
