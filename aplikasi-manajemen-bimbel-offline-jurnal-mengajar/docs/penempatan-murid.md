@@ -27,7 +27,7 @@ persiapan ujian — dengan jadwal maupun guru pengampu yang berbeda.
 | `/app/kelas`      | Panel "Murid di kelas ini": pilih murid lalu "Masukkan ke kelas"; tombol "Keluarkan" per murid untuk kelas itu saja.                                                                    |
 | `/app/murid`      | Tiap kartu punya tautan "Detail murid".                                                                                                                                                 |
 | `/app/murid/<id>` | Daftar **kelas yang sedang diikuti** (dengan tombol "Keluarkan dari kelas ini"), pilihan **"Tambah ke kelas lain"** (kelas yang belum aktif), dan **riwayat kelas** yang sudah selesai. |
-| `/app/penempatan` | Daftar seluruh penempatan lintas kelas: ringkasan "N penempatan · M aktif · K murid aktif di lebih dari satu kelas", saringan status, dan pencarian nama murid/kelas/cabang/guru.       |
+| `/app/penempatan` | Daftar penempatan **dikelompokkan per kelas**: tiap kelas punya kepala (nama kelas, cabang, guru, jumlah murid) berisi daftar muridnya, termasuk baris berstatus `selesai` sebagai riwayat ("Pernah diikuti sejak …"). Ringkasan "N penempatan · M aktif · K murid aktif di lebih dari satu kelas", saringan status, dan pencarian nama murid/kelas/cabang/guru tetap di atas daftar; kelas yang tidak punya baris cocok ikut hilang. |
 
 ## API
 

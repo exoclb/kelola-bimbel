@@ -79,6 +79,19 @@ export function DaftarPenempatan({
       ).length > 1,
   ).length;
 
+  // Daftar dikelompokkan per kelas supaya halaman ini menjawab "siapa saja
+  // murid di kelas ini", sementara baris berstatus selesai tetap muncul
+  // sebagai riwayat di bawah kelasnya.
+  const kelompok: { kelas: Kelas; baris: typeof cocok }[] = [];
+  for (const item of cocok) {
+    const ada = kelompok.find((grup) => grup.kelas.id === item.kelas.id);
+    if (ada) ada.baris.push(item);
+    else kelompok.push({ kelas: item.kelas, baris: [item] });
+  }
+  kelompok.sort((a, b) =>
+    a.kelas.namaKelas.localeCompare(b.kelas.namaKelas, "id"),
+  );
+
   return (
     <div className="mx-auto max-w-3xl">
       <p className="mb-3 text-sm font-medium text-primary">
@@ -104,6 +117,7 @@ export function DaftarPenempatan({
           <div className="space-y-2">
             <Label htmlFor={idSaring}>Status penempatan</Label>
             <NativeSelect
+              className="h-[var(--target-sentuh-portal)] md:text-base"
               id={idSaring}
               value={saringan}
               onChange={(event) =>
@@ -130,49 +144,69 @@ export function DaftarPenempatan({
           keterangan="Coba kata kunci lain, atau ubah saringan statusnya."
         />
       ) : (
-        <ul className="mt-6 space-y-3">
-          {cocok.map((item) => (
-            <li key={`${item.muridId}-${item.kelasId}-${item.tanggalMulai}`}>
-              <Card className="gap-3 px-5 py-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <p className="font-medium">{item.murid.nama}</p>
-                    <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-                      <span className="inline-flex items-center gap-1.5">
-                        <CalendarDays className="size-4" aria-hidden="true" />
-                        {item.kelas.namaKelas} · {item.kelas.cabang}
-                      </span>
-                      <span className="inline-flex items-center gap-1.5">
-                        <UserRound className="size-4" aria-hidden="true" />
-                        {item.kelas.guruNama}
-                      </span>
-                    </p>
-                  </div>
-                  <span
-                    className={cn(
-                      "rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
-                      item.status === "aktif"
-                        ? "border-primary/30 bg-primary/10 text-primary"
-                        : "bg-muted text-muted-foreground",
-                    )}
-                  >
-                    {item.status === "aktif" ? "Aktif" : "Selesai"}
-                  </span>
-                </div>
-
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-sm text-muted-foreground">
-                    {item.status === "aktif" ? "Sejak" : "Pernah diikuti sejak"}{" "}
-                    {formatTanggalLengkap(item.tanggalMulai)}.
+        <ul className="mt-6 space-y-6">
+          {kelompok.map((grup) => (
+            <li key={grup.kelas.id}>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="space-y-0.5">
+                  <h2 className="text-base font-semibold">
+                    {grup.kelas.namaKelas}
+                  </h2>
+                  <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                    <span>{grup.kelas.cabang}</span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <UserRound className="size-4" aria-hidden="true" />
+                      {grup.kelas.guruNama}
+                    </span>
                   </p>
-                  <Button asChild variant="outline" size="sm">
-                    <Link href={`/app/murid/${item.murid.id}`}>
-                      Detail murid
-                      <ArrowRight aria-hidden="true" />
-                    </Link>
-                  </Button>
                 </div>
-              </Card>
+                <span className="rounded-full border bg-muted px-2.5 py-0.5 text-xs font-medium whitespace-nowrap text-muted-foreground">
+                  {grup.baris.length} murid
+                </span>
+              </div>
+
+              <ul className="mt-3 space-y-3">
+                {grup.baris.map((item) => (
+                  <li key={`${item.muridId}-${item.tanggalMulai}`}>
+                    <Card className="gap-3 px-5 py-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="space-y-1">
+                          <p className="font-medium">{item.murid.nama}</p>
+                          <p className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
+                            <CalendarDays
+                              className="size-4"
+                              aria-hidden="true"
+                            />
+                            {item.status === "aktif"
+                              ? "Sejak"
+                              : "Pernah diikuti sejak"}{" "}
+                            {formatTanggalLengkap(item.tanggalMulai)}.
+                          </p>
+                        </div>
+                        <span
+                          className={cn(
+                            "rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
+                            item.status === "aktif"
+                              ? "border-primary/30 bg-primary/10 text-primary"
+                              : "bg-muted text-muted-foreground",
+                          )}
+                        >
+                          {item.status === "aktif" ? "Aktif" : "Selesai"}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Button asChild variant="outline" size="aksi">
+                          <Link href={`/app/murid/${item.murid.id}`}>
+                            Detail murid
+                            <ArrowRight aria-hidden="true" />
+                          </Link>
+                        </Button>
+                      </div>
+                    </Card>
+                  </li>
+                ))}
+              </ul>
             </li>
           ))}
         </ul>
