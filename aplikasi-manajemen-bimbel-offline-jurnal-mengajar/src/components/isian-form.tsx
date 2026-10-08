@@ -19,8 +19,20 @@ type DasarIsian = {
   error?: string;
   /** Penjelasan singkat di bawah isian (disembunyikan kalau ada error). */
   keterangan?: string;
+  /** Tinggi kontrol: `sentuh` memakai 48px dan teks 16px untuk layar portal. */
+  ukuran?: UkuranIsian;
   className?: string;
 };
+
+/**
+ * Ukuran kontrol isian. `sentuh` dipakai Portal Wali supaya tingginya
+ * memenuhi target sentuh 48px (`--target-sentuh-portal`) dan teksnya tetap
+ * 16px — di ponsel ukuran itu mencegah peramban memperbesar halaman saat
+ * isian difokuskan.
+ */
+export type UkuranIsian = "biasa" | "sentuh";
+
+const GAYA_SENTUH = "h-[var(--target-sentuh-portal)] text-base md:text-base";
 
 function BungkusIsian({
   id,
@@ -57,10 +69,12 @@ export function IsianTeks({
   label,
   error,
   keterangan,
+  ukuran,
   className,
   ikon,
   ...input
 }: IsianTeksProps) {
+  const gaya = ukuran === "sentuh" ? GAYA_SENTUH : undefined;
   return (
     <BungkusIsian
       id={id}
@@ -79,7 +93,7 @@ export function IsianTeks({
           </span>
           <Input
             id={id}
-            className="pl-9"
+            className={cn("pl-9", gaya)}
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? `${id}-error` : undefined}
             {...input}
@@ -88,6 +102,7 @@ export function IsianTeks({
       ) : (
         <Input
           id={id}
+          className={gaya}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? `${id}-error` : undefined}
           {...input}
@@ -106,6 +121,7 @@ export function IsianTeksPanjang({
   label,
   error,
   keterangan,
+  ukuran,
   className,
   ...textarea
 }: IsianTeksPanjangProps) {
@@ -119,6 +135,7 @@ export function IsianTeksPanjang({
     >
       <Textarea
         id={id}
+        className={ukuran === "sentuh" ? "text-base md:text-base" : undefined}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${id}-error` : undefined}
         {...textarea}
@@ -139,6 +156,7 @@ export function IsianPilih({
   label,
   error,
   keterangan,
+  ukuran,
   className,
   children,
   ...select
@@ -153,6 +171,7 @@ export function IsianPilih({
     >
       <NativeSelect
         id={id}
+        className={ukuran === "sentuh" ? GAYA_SENTUH : undefined}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${id}-error` : undefined}
         {...select}

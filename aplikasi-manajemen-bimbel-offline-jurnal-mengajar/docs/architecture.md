@@ -86,6 +86,8 @@ A screen's main action goes in `TombolAksiLengket` (`src/components/tombol-aksi-
 
 `BarProgres` (`src/components/bar-progres.tsx`) draws the 8px progress bar (`--tinggi-progres-portal`) with its percentage always spelled out, and exposes the value through `role="progressbar"`; values outside 0–100 are clamped.
 
+Form fields keep the label above the control through `IsianTeks`, `IsianTeksPanjang`, and `IsianPilih` (`src/components/isian-form.tsx`). The portal passes `ukuran="sentuh"`, which lifts the control to the 48px touch target (`--target-sentuh-portal`) and keeps its text at 16px on every width so phones do not zoom when a field is focused; without it the staff forms keep their current 36px controls.
+
 The base's welcome and blank app pages are replaceable. Reuse auth, setup, database, and UI when adding dashboard or chatbot features. Do not put feature conditionals throughout the base: create a derivative and implement that app directly.
 
 ## Dependency compatibility
