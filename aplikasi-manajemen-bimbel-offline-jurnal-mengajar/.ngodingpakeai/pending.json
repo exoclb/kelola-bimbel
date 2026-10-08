@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "2ccc0b2cdf497b1efc00db8cf1f2bbc9889e9f61",
+  "generatedForCommit": "26f4cdb2cafa22c2ea0f9e7efc9c84525c2d3536",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -166,21 +166,21 @@
     },
     {
       "path": "docs/architecture.md",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "markdown",
-      "size": 8420
+      "size": 34049
     },
     {
       "path": "docs/backend.md",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "markdown",
-      "size": 63507
+      "size": 85364
     },
     {
       "path": "docs/deploy-coolify.md",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "markdown",
-      "size": 17568
+      "size": 18090
     },
     {
       "path": "docs/deployment.md",
@@ -204,7 +204,7 @@
       "path": "docs/penempatan-murid.md",
       "reason": "needs_summary",
       "language": "markdown",
-      "size": 4432
+      "size": 6102
     },
     {
       "path": "docs/peta-data-tiruan.md",
@@ -345,6 +345,48 @@
       "size": 98
     },
     {
+      "path": "drizzle/0020_catatan_evaluasi_nilai_rentang.sql",
+      "reason": "needs_summary",
+      "language": "sql",
+      "size": 157
+    },
+    {
+      "path": "drizzle/0021_tarif_honor_tidak_negatif.sql",
+      "reason": "needs_summary",
+      "language": "sql",
+      "size": 130
+    },
+    {
+      "path": "drizzle/0022_honor_terhitung_invarian.sql",
+      "reason": "needs_summary",
+      "language": "sql",
+      "size": 590
+    },
+    {
+      "path": "drizzle/0023_tagihan_spp_invarian.sql",
+      "reason": "needs_summary",
+      "language": "sql",
+      "size": 567
+    },
+    {
+      "path": "drizzle/0024_biaya_operasional_invarian.sql",
+      "reason": "needs_summary",
+      "language": "sql",
+      "size": 436
+    },
+    {
+      "path": "drizzle/0025_profil_bimbel_invarian.sql",
+      "reason": "needs_summary",
+      "language": "sql",
+      "size": 528
+    },
+    {
+      "path": "drizzle/0026_notifikasi_backup_invarian.sql",
+      "reason": "needs_summary",
+      "language": "sql",
+      "size": 822
+    },
+    {
       "path": "drizzle/meta/0000_snapshot.json",
       "reason": "needs_summary",
       "language": "json",
@@ -465,10 +507,52 @@
       "size": 68269
     },
     {
+      "path": "drizzle/meta/0020_snapshot.json",
+      "reason": "needs_summary",
+      "language": "json",
+      "size": 68481
+    },
+    {
+      "path": "drizzle/meta/0021_snapshot.json",
+      "reason": "needs_summary",
+      "language": "json",
+      "size": 68668
+    },
+    {
+      "path": "drizzle/meta/0022_snapshot.json",
+      "reason": "needs_summary",
+      "language": "json",
+      "size": 69380
+    },
+    {
+      "path": "drizzle/meta/0023_snapshot.json",
+      "reason": "needs_summary",
+      "language": "json",
+      "size": 70064
+    },
+    {
+      "path": "drizzle/meta/0024_snapshot.json",
+      "reason": "needs_summary",
+      "language": "json",
+      "size": 70608
+    },
+    {
+      "path": "drizzle/meta/0025_snapshot.json",
+      "reason": "needs_summary",
+      "language": "json",
+      "size": 71231
+    },
+    {
+      "path": "drizzle/meta/0026_snapshot.json",
+      "reason": "needs_summary",
+      "language": "json",
+      "size": 72211
+    },
+    {
       "path": "drizzle/meta/_journal.json",
       "reason": "needs_summary",
       "language": "json",
-      "size": 2888
+      "size": 3964
     },
     {
       "path": "drizzle.config.ts",
@@ -501,10 +585,40 @@
       "size": 6738
     },
     {
+      "path": "e2e/backup-riwayat.spec.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 6194
+    },
+    {
       "path": "e2e/gaji.spec.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 8556
+      "size": 12218
+    },
+    {
+      "path": "e2e/jadwal-bentrok.spec.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 4457
+    },
+    {
+      "path": "e2e/jurnal.spec.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 5200
+    },
+    {
+      "path": "e2e/kehadiran.spec.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 5731
+    },
+    {
+      "path": "e2e/laba-rugi.spec.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 4483
     },
     {
       "path": "e2e/lupa-sandi.spec.ts",
@@ -516,7 +630,7 @@
       "path": "e2e/masuk-per-peran.spec.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 4086
+      "size": 4883
     },
     {
       "path": "e2e/notes.spec.ts",
@@ -525,16 +639,76 @@
       "size": 7835
     },
     {
+      "path": "e2e/notifikasi.spec.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 12455
+    },
+    {
       "path": "e2e/pemantauan.spec.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 22835
+      "size": 23091
     },
     {
       "path": "e2e/penempatan.spec.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 4113
+      "size": 8043
+    },
+    {
+      "path": "e2e/pengeluaran.spec.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 5982
+    },
+    {
+      "path": "e2e/perkembangan.spec.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 4768
+    },
+    {
+      "path": "e2e/portal-akun-nonaktif.spec.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 4925
+    },
+    {
+      "path": "e2e/portal-akun.spec.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 2801
+    },
+    {
+      "path": "e2e/portal-isolasi.spec.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 9815
+    },
+    {
+      "path": "e2e/portal-tagihan.spec.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 11463
+    },
+    {
+      "path": "e2e/presensi-guru.spec.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 7085
+    },
+    {
+      "path": "e2e/profil-bimbel.spec.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 8837
+    },
+    {
+      "path": "e2e/rekap-jurnal.spec.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 6827
     },
     {
       "path": "e2e/roles.spec.ts",
@@ -547,6 +721,24 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 1307
+    },
+    {
+      "path": "e2e/tagihan-spp.spec.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 5519
+    },
+    {
+      "path": "e2e/tarif-honor.spec.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 3849
+    },
+    {
+      "path": "e2e/tunggakan.spec.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 4323
     },
     {
       "path": "eslint.config.mjs",
@@ -580,9 +772,9 @@
     },
     {
       "path": "package.json",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "json",
-      "size": 2196
+      "size": 2240
     },
     {
       "path": "playwright.config.ts",
@@ -601,6 +793,12 @@
       "reason": "needs_summary",
       "language": "markdown",
       "size": 10152
+    },
+    {
+      "path": "scripts/backup.mjs",
+      "reason": "new",
+      "language": "javascript",
+      "size": 3654
     },
     {
       "path": "scripts/coolify-db.mjs",
@@ -774,7 +972,7 @@
       "path": "src/app/(protected)/app/gaji/page.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 941
+      "size": 1074
     },
     {
       "path": "src/app/(protected)/app/gaji/riwayat/page.tsx",
@@ -786,13 +984,13 @@
       "path": "src/app/(protected)/app/gaji/saya/page.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 1036
+      "size": 1144
     },
     {
       "path": "src/app/(protected)/app/gaji/slip/[guruId]/page.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 1787
+      "size": 1973
     },
     {
       "path": "src/app/(protected)/app/jurnal/error.tsx",
@@ -846,7 +1044,7 @@
       "path": "src/app/(protected)/app/laba-rugi/page.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 1029
+      "size": 1163
     },
     {
       "path": "src/app/(protected)/app/murid/loading.tsx",
@@ -865,6 +1063,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 821
+    },
+    {
+      "path": "src/app/(protected)/app/notifikasi/page.tsx",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 1819
     },
     {
       "path": "src/app/(protected)/app/page.tsx",
@@ -900,13 +1104,19 @@
       "path": "src/app/(protected)/app/pengaturan/backup/page.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 5941
+      "size": 7907
+    },
+    {
+      "path": "src/app/(protected)/app/pengaturan/ekspor/page.tsx",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 2064
     },
     {
       "path": "src/app/(protected)/app/pengaturan/gaji/page.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 1101
+      "size": 1103
     },
     {
       "path": "src/app/(protected)/app/pengaturan/guru/page.tsx",
@@ -948,7 +1158,7 @@
       "path": "src/app/(protected)/app/pengaturan/profil/page.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 1092
+      "size": 1135
     },
     {
       "path": "src/app/(protected)/app/pengaturan/wali/loading.tsx",
@@ -996,13 +1206,13 @@
       "path": "src/app/(protected)/app/perkembangan/riwayat/page.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 1729
+      "size": 1845
     },
     {
       "path": "src/app/(protected)/app/perkembangan/[muridId]/page.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 1703
+      "size": 1865
     },
     {
       "path": "src/app/(protected)/app/presensi-guru/page.tsx",
@@ -1092,7 +1302,7 @@
       "path": "src/app/api/admin/gaji/slip/route.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 1377
+      "size": 1406
     },
     {
       "path": "src/app/api/admin/jurnal/route.ts",
@@ -1188,13 +1398,13 @@
       "path": "src/app/api/jurnal/route.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 1896
+      "size": 2204
     },
     {
       "path": "src/app/api/jurnal/[id]/route.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 1586
+      "size": 1926
     },
     {
       "path": "src/app/api/kehadiran/route.ts",
@@ -1206,7 +1416,7 @@
       "path": "src/app/api/kelas/route.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 1916
+      "size": 1973
     },
     {
       "path": "src/app/api/kelas/[id]/jadwal/route.ts",
@@ -1224,7 +1434,7 @@
       "path": "src/app/api/kelas/[id]/murid/route.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 1894
+      "size": 2426
     },
     {
       "path": "src/app/api/kelas/[id]/murid/[muridId]/route.ts",
@@ -1273,6 +1483,18 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 1046
+    },
+    {
+      "path": "src/app/api/penempatan/route.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 767
+    },
+    {
+      "path": "src/app/api/pengaturan/backup/route.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 726
     },
     {
       "path": "src/app/api/pengaturan/gaji/route.ts",
@@ -1353,6 +1575,36 @@
       "size": 2048
     },
     {
+      "path": "src/app/api/portal/beranda/route.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 1620
+    },
+    {
+      "path": "src/app/api/portal/jadwal/route.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 1446
+    },
+    {
+      "path": "src/app/api/portal/perkembangan/route.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 1837
+    },
+    {
+      "path": "src/app/api/portal/tagihan/bukti/route.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 2071
+    },
+    {
+      "path": "src/app/api/portal/tagihan/route.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 1696
+    },
+    {
       "path": "src/app/api/presensi-guru/rekap/route.ts",
       "reason": "needs_summary",
       "language": "typescript",
@@ -1362,7 +1614,7 @@
       "path": "src/app/api/presensi-guru/route.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 3000
+      "size": 3332
     },
     {
       "path": "src/app/api/presensi-guru/[id]/route.ts",
@@ -1420,15 +1672,15 @@
     },
     {
       "path": "src/app/globals.css",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "css",
-      "size": 5861
+      "size": 9194
     },
     {
       "path": "src/app/layout.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 1103
+      "size": 1159
     },
     {
       "path": "src/app/loading.tsx",
@@ -1449,10 +1701,22 @@
       "size": 823
     },
     {
+      "path": "src/app/portal/akun/page.tsx",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 776
+    },
+    {
+      "path": "src/app/portal/jadwal/page.tsx",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 1325
+    },
+    {
       "path": "src/app/portal/layout.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 2682
+      "size": 3714
     },
     {
       "path": "src/app/portal/loading.tsx",
@@ -1464,7 +1728,7 @@
       "path": "src/app/portal/page.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 1365
+      "size": 1418
     },
     {
       "path": "src/app/portal/perkembangan/loading.tsx",
@@ -1488,13 +1752,25 @@
       "path": "src/app/portal/tagihan/page.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 1045
+      "size": 1134
+    },
+    {
+      "path": "src/components/aksi-catatan-perkembangan.tsx",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 4668
     },
     {
       "path": "src/components/aksi-lepas-tautan-wali.tsx",
       "reason": "needs_summary",
       "language": "typescript",
       "size": 5133
+    },
+    {
+      "path": "src/components/akun-portal.tsx",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 2960
     },
     {
       "path": "src/components/app-nav.tsx",
@@ -1506,7 +1782,7 @@
       "path": "src/components/arus-kas.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 8330
+      "size": 8334
     },
     {
       "path": "src/components/auth-form.tsx",
@@ -1515,10 +1791,16 @@
       "size": 5824
     },
     {
+      "path": "src/components/bar-progres.tsx",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 1884
+    },
+    {
       "path": "src/components/beranda-portal-wali.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 11102
+      "size": 13037
     },
     {
       "path": "src/components/brand.tsx",
@@ -1554,7 +1836,7 @@
       "path": "src/components/daftar-gaji-guru.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 6077
+      "size": 5939
     },
     {
       "path": "src/components/daftar-guru.tsx",
@@ -1566,67 +1848,67 @@
       "path": "src/components/daftar-kehadiran.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 3744
+      "size": 4297
     },
     {
       "path": "src/components/daftar-kelas.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 13950
+      "size": 14649
     },
     {
       "path": "src/components/daftar-murid.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 6025
+      "size": 7461
     },
     {
       "path": "src/components/daftar-notifikasi.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 3314
+      "size": 3746
     },
     {
       "path": "src/components/daftar-penempatan.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 7410
+      "size": 8945
     },
     {
       "path": "src/components/daftar-pengeluaran.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 18649
+      "size": 19109
     },
     {
       "path": "src/components/daftar-perkembangan.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 12886
+      "size": 12967
     },
     {
       "path": "src/components/daftar-riwayat-jurnal.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 6921
+      "size": 7154
     },
     {
       "path": "src/components/daftar-riwayat-presensi-guru.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 5240
+      "size": 5242
     },
     {
       "path": "src/components/daftar-tagihan-menunggak.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 5082
+      "size": 6579
     },
     {
       "path": "src/components/daftar-tagihan.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 10835
+      "size": 12857
     },
     {
       "path": "src/components/daftar-variabel-lingkungan.tsx",
@@ -1656,25 +1938,25 @@
       "path": "src/components/form-atur-ulang-sandi.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 6085
+      "size": 6101
     },
     {
       "path": "src/components/form-aturan-gaji.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 9844
+      "size": 10116
     },
     {
       "path": "src/components/form-catatan-anak.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 4705
+      "size": 5579
     },
     {
       "path": "src/components/form-jadwal-kelas.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 5426
+      "size": 6546
     },
     {
       "path": "src/components/form-lupa-sandi.tsx",
@@ -1686,13 +1968,13 @@
       "path": "src/components/form-profil-bimbel.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 9749
+      "size": 9791
     },
     {
       "path": "src/components/form-tagihan-bulanan.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 11558
+      "size": 12028
     },
     {
       "path": "src/components/form-tambah-cabang.tsx",
@@ -1710,19 +1992,19 @@
       "path": "src/components/form-tambah-kelas.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 7112
+      "size": 7124
     },
     {
       "path": "src/components/form-tambah-murid.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 4749
+      "size": 4761
     },
     {
       "path": "src/components/form-tambah-pengeluaran.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 13932
+      "size": 14935
     },
     {
       "path": "src/components/form-tambah-tautan-wali.tsx",
@@ -1752,31 +2034,49 @@
       "path": "src/components/isian-form.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 3911
+      "size": 4670
+    },
+    {
+      "path": "src/components/jadwal-anak-portal.tsx",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 11147
     },
     {
       "path": "src/components/jurnal-form.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 9816
+      "size": 9820
+    },
+    {
+      "path": "src/components/kartu-portal.tsx",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 2008
     },
     {
       "path": "src/components/kolom-pencarian.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 1108
+      "size": 1153
     },
     {
       "path": "src/components/konfirmasi-jurnal.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 5064
+      "size": 5184
     },
     {
       "path": "src/components/konfirmasi-pengaturan.tsx",
       "reason": "needs_summary",
       "language": "typescript",
       "size": 2291
+    },
+    {
+      "path": "src/components/kop-dokumen.tsx",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 2937
     },
     {
       "path": "src/components/label-status-jurnal.tsx",
@@ -1800,25 +2100,37 @@
       "path": "src/components/laporan-laba-rugi.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 10309
+      "size": 10573
     },
     {
       "path": "src/components/laporan-perkembangan.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 5926
+      "size": 5936
+    },
+    {
+      "path": "src/components/layar-portal.tsx",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 1450
     },
     {
       "path": "src/components/lencana-baru.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 597
+      "size": 612
     },
     {
       "path": "src/components/lencana-nilai.tsx",
       "reason": "needs_summary",
       "language": "typescript",
       "size": 797
+    },
+    {
+      "path": "src/components/nav-bawah-portal.tsx",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 2749
     },
     {
       "path": "src/components/panel-jurnal.tsx",
@@ -1836,19 +2148,25 @@
       "path": "src/components/panel-penempatan.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 5740
+      "size": 6613
     },
     {
       "path": "src/components/panel-rincian-jam.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 2787
+      "size": 2789
     },
     {
       "path": "src/components/pemantauan-harian.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 7252
+      "size": 7254
+    },
+    {
+      "path": "src/components/pemberitahuan-anak-nonaktif.tsx",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 1097
     },
     {
       "path": "src/components/pemilih-anak.tsx",
@@ -1866,19 +2184,25 @@
       "path": "src/components/pemilih-materi.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 2372
+      "size": 3062
     },
     {
       "path": "src/components/penanda-pengguna.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 1168
+      "size": 2015
+    },
+    {
+      "path": "src/components/penanda-status.tsx",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 1632
     },
     {
       "path": "src/components/pengaturan-bimbel.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 7793
+      "size": 8398
     },
     {
       "path": "src/components/penjaga-izin.tsx",
@@ -1890,7 +2214,19 @@
       "path": "src/components/perkembangan-anak-portal.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 10237
+      "size": 16226
+    },
+    {
+      "path": "src/components/pil-portal.tsx",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 870
+    },
+    {
+      "path": "src/components/pratinjau-ekspor.tsx",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 10169
     },
     {
       "path": "src/components/preferensi-notifikasi.tsx",
@@ -1899,16 +2235,22 @@
       "size": 3155
     },
     {
+      "path": "src/components/preferensi-tampilan-portal.tsx",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 2098
+    },
+    {
       "path": "src/components/presensi-guru-hari-ini.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 9089
+      "size": 9099
     },
     {
       "path": "src/components/presensi-sesi.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 9291
+      "size": 9340
     },
     {
       "path": "src/components/providers.tsx",
@@ -1920,19 +2262,19 @@
       "path": "src/components/rekap-gaji-bulanan.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 5274
+      "size": 6445
     },
     {
       "path": "src/components/rekap-gaji-saya.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 3306
+      "size": 3594
     },
     {
       "path": "src/components/rekap-pemasukan.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 7356
+      "size": 7508
     },
     {
       "path": "src/components/ringkasan-cabang.tsx",
@@ -1941,16 +2283,22 @@
       "size": 2313
     },
     {
+      "path": "src/components/ringkasan-tagihan-anak.tsx",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 2631
+    },
+    {
       "path": "src/components/riwayat-gaji.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 6519
+      "size": 6675
     },
     {
       "path": "src/components/riwayat-perkembangan.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 6646
+      "size": 8590
     },
     {
       "path": "src/components/riwayat-status-wali.tsx",
@@ -1968,19 +2316,19 @@
       "path": "src/components/saring-pemantauan.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 3558
+      "size": 3781
     },
     {
       "path": "src/components/sign-out-button.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 1264
+      "size": 1580
     },
     {
       "path": "src/components/slip-gaji.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 3930
+      "size": 4100
     },
     {
       "path": "src/components/starter-intro.tsx",
@@ -2004,31 +2352,43 @@
       "path": "src/components/tagihan-spp-anak.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 6955
+      "size": 9552
+    },
+    {
+      "path": "src/components/tema-portal.tsx",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 1165
+    },
+    {
+      "path": "src/components/tombol-aksi-lengket.tsx",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 1262
     },
     {
       "path": "src/components/tombol-cetak-unduh.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 2270
+      "size": 2689
     },
     {
       "path": "src/components/tombol-tandai-baca.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 1935
+      "size": 2060
     },
     {
       "path": "src/components/tombol-unduh-laporan.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 5391
+      "size": 4294
     },
     {
       "path": "src/components/ui/button.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
-      "size": 2452
+      "size": 2571
     },
     {
       "path": "src/components/ui/card.tsx",
@@ -2038,15 +2398,15 @@
     },
     {
       "path": "src/components/ui/checkbox.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
-      "size": 1240
+      "size": 1209
     },
     {
       "path": "src/components/ui/input.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
-      "size": 974
+      "size": 954
     },
     {
       "path": "src/components/ui/label.tsx",
@@ -2056,15 +2416,15 @@
     },
     {
       "path": "src/components/ui/native-select.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
-      "size": 930
+      "size": 907
     },
     {
       "path": "src/components/ui/textarea.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
-      "size": 768
+      "size": 751
     },
     {
       "path": "src/config/site.ts",
@@ -2088,13 +2448,13 @@
       "path": "src/db/schema/backup-runs.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 1309
+      "size": 1774
     },
     {
       "path": "src/db/schema/bimbel-profile.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 1280
+      "size": 1944
     },
     {
       "path": "src/db/schema/classes.ts",
@@ -2106,13 +2466,13 @@
       "path": "src/db/schema/expense-categories.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 648
+      "size": 875
     },
     {
       "path": "src/db/schema/expenses.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 1325
+      "size": 1746
     },
     {
       "path": "src/db/schema/index.ts",
@@ -2142,25 +2502,25 @@
       "path": "src/db/schema/notification-preferences.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 962
+      "size": 1258
     },
     {
       "path": "src/db/schema/notifications.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 1144
+      "size": 1479
     },
     {
       "path": "src/db/schema/salary-recaps.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 1899
+      "size": 2627
     },
     {
       "path": "src/db/schema/salary-settings.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 1199
+      "size": 1484
     },
     {
       "path": "src/db/schema/schedules.ts",
@@ -2184,13 +2544,13 @@
       "path": "src/db/schema/student-invoices.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 1949
+      "size": 2636
     },
     {
       "path": "src/db/schema/student-progress.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 1619
+      "size": 1921
     },
     {
       "path": "src/db/schema/students.ts",
@@ -2247,10 +2607,22 @@
       "size": 2380
     },
     {
+      "path": "src/lib/bukti-tagihan-html.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 5933
+    },
+    {
       "path": "src/lib/db-error.ts",
       "reason": "needs_summary",
       "language": "typescript",
       "size": 559
+    },
+    {
+      "path": "src/lib/dokumen-html.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 3875
     },
     {
       "path": "src/lib/env.ts",
@@ -2322,7 +2694,7 @@
       "path": "src/lib/mock-menu.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 3076
+      "size": 2681
     },
     {
       "path": "src/lib/mock-murid.ts",
@@ -2340,13 +2712,19 @@
       "path": "src/lib/mock-pengaturan.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 2564
+      "size": 2175
     },
     {
       "path": "src/lib/mock-wali.ts",
       "reason": "needs_summary",
       "language": "typescript",
       "size": 3958
+    },
+    {
+      "path": "src/lib/nav-portal.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 694
     },
     {
       "path": "src/lib/notifikasi.ts",
@@ -2382,7 +2760,7 @@
       "path": "src/lib/portal-wali.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 3717
+      "size": 4306
     },
     {
       "path": "src/lib/presensi-guru.ts",
@@ -2406,19 +2784,31 @@
       "path": "src/lib/slip-gaji-html.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 4739
+      "size": 5283
     },
     {
       "path": "src/lib/tagihan.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 3931
+      "size": 4969
+    },
+    {
+      "path": "src/lib/tanggal-perangkat.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 1045
     },
     {
       "path": "src/lib/tanggal.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 2353
+      "size": 4028
+    },
+    {
+      "path": "src/lib/tema-portal.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 2269
     },
     {
       "path": "src/lib/utils.ts",
@@ -2448,7 +2838,7 @@
       "path": "src/services/gaji.service.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 16167
+      "size": 16907
     },
     {
       "path": "src/services/jadwal.service.ts",
@@ -2466,7 +2856,7 @@
       "path": "src/services/jurnal.service.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 13037
+      "size": 14558
     },
     {
       "path": "src/services/kehadiran.service.ts",
@@ -2478,13 +2868,13 @@
       "path": "src/services/kelas.service.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 16002
+      "size": 21375
     },
     {
       "path": "src/services/murid.service.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 2391
+      "size": 3327
     },
     {
       "path": "src/services/notes.service.ts",
@@ -2496,7 +2886,7 @@
       "path": "src/services/notifikasi.service.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 2497
+      "size": 4466
     },
     {
       "path": "src/services/pemantauan.service.ts",
@@ -2526,19 +2916,19 @@
       "path": "src/services/portal.service.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 7965
+      "size": 10089
     },
     {
       "path": "src/services/presensi-guru.service.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 14233
+      "size": 14583
     },
     {
       "path": "src/services/tagihan.service.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 8632
+      "size": 9591
     },
     {
       "path": "src/services/wali.service.ts",
@@ -2598,13 +2988,13 @@
       "path": "src/validators/kelas.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 2925
+      "size": 3732
     },
     {
       "path": "src/validators/murid.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 900
+      "size": 1554
     },
     {
       "path": "src/validators/notes.ts",
@@ -2616,13 +3006,13 @@
       "path": "src/validators/notifikasi.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 855
+      "size": 996
     },
     {
       "path": "src/validators/pengaturan.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 3946
+      "size": 4217
     },
     {
       "path": "src/validators/pengeluaran.ts",
@@ -2635,6 +3025,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 2114
+    },
+    {
+      "path": "src/validators/portal.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 371
     },
     {
       "path": "src/validators/presensi-guru.ts",
@@ -2658,7 +3054,7 @@
       "path": "src/validators/tagihan.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 1360
+      "size": 1521
     },
     {
       "path": "src/validators/tanggal.ts",
@@ -2679,10 +3075,28 @@
       "size": 179
     },
     {
+      "path": "tests/beda-hari.test.mjs",
+      "reason": "needs_summary",
+      "language": "javascript",
+      "size": 787
+    },
+    {
       "path": "tests/database.test.mjs",
       "reason": "needs_summary",
       "language": "javascript",
-      "size": 2921
+      "size": 30181
+    },
+    {
+      "path": "tests/lembar-laporan.test.mjs",
+      "reason": "needs_summary",
+      "language": "javascript",
+      "size": 2474
+    },
+    {
+      "path": "tests/nav-portal.test.mjs",
+      "reason": "needs_summary",
+      "language": "javascript",
+      "size": 1331
     },
     {
       "path": "tests/setup.test.mjs",
