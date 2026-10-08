@@ -86,6 +86,7 @@ export function RekapPemasukan({
             <div className="space-y-2">
               <Label htmlFor="bulan">Bulan</Label>
               <NativeSelect
+                className="h-[var(--target-sentuh-portal)] md:text-base"
                 id="bulan"
                 name="bulan"
                 defaultValue={bulanTerpilih}
@@ -102,6 +103,7 @@ export function RekapPemasukan({
             <div className="space-y-2">
               <Label htmlFor="tahun">Tahun</Label>
               <NativeSelect
+                className="h-[var(--target-sentuh-portal)] md:text-base"
                 id="tahun"
                 name="tahun"
                 defaultValue={tahunTerpilih}
@@ -117,7 +119,7 @@ export function RekapPemasukan({
               </NativeSelect>
             </div>
             <div className="sm:col-span-2">
-              <Button type="submit" size="sm">
+              <Button type="submit" size="aksi">
                 Tampilkan
               </Button>
             </div>
@@ -200,13 +202,13 @@ export function RekapPemasukan({
       </Card>
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="outline" size="aksi">
           <Link href="/app/tagihan">
             Lihat daftar tagihan
             <ArrowRight aria-hidden="true" />
           </Link>
         </Button>
-        <Button asChild variant="ghost" size="sm">
+        <Button asChild variant="ghost" size="aksi">
           <Link href="/app/tagihan/baru">Buat tagihan</Link>
         </Button>
       </div>

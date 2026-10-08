@@ -81,7 +81,7 @@ export function TombolUnduhLaporan({
   ${kop.telepon ? `<p style="margin:2px 0">${lolosTeks(kop.telepon)}</p>` : ""}
   <h3 style="margin:12px 0 4px">${lolosTeks(judul)} — ${lolosTeks(periode)}</h3>
   <table border="1" cellspacing="0" cellpadding="4">
-    <thead><tr>${kolom.map((judulKolom) => `<th align="left">${lolosTeks(judulKolom)}</th>`).join("")}</tr></thead>
+    <thead><tr>${kolom.map((judulKolom) => `<th align="left" scope="col">${lolosTeks(judulKolom)}</th>`).join("")}</tr></thead>
     <tbody>${baris
       .map(
         (isi) =>

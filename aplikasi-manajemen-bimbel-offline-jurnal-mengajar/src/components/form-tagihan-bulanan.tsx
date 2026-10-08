@@ -169,6 +169,7 @@ export function FormTagihanBulanan({
           <div className="space-y-2">
             <Label htmlFor="bulan">Bulan</Label>
             <NativeSelect
+              className="h-[var(--target-sentuh-portal)] md:text-base"
               id="bulan"
               value={bulan}
               onChange={(event) => setBulan(Number(event.target.value))}
@@ -185,6 +186,7 @@ export function FormTagihanBulanan({
           <div className="space-y-2">
             <Label htmlFor="tahun">Tahun</Label>
             <NativeSelect
+              className="h-[var(--target-sentuh-portal)] md:text-base"
               id="tahun"
               value={tahun}
               onChange={(event) => setTahun(Number(event.target.value))}
@@ -206,6 +208,7 @@ export function FormTagihanBulanan({
             min={0}
             step={1000}
             inputMode="numeric"
+            ukuran="sentuh"
             value={nominal}
             onChange={(event) => setNominal(event.target.value)}
             keterangan="Rupiah, tanpa titik. Contoh: 400000."
@@ -231,6 +234,7 @@ export function FormTagihanBulanan({
             <div className="max-w-xs space-y-2">
               <Label htmlFor="saring-kelas">Saring kelas</Label>
               <NativeSelect
+                className="h-[var(--target-sentuh-portal)] md:text-base"
                 id="saring-kelas"
                 value={kelas}
                 onChange={(event) => setKelas(event.target.value)}
@@ -261,6 +265,7 @@ export function FormTagihanBulanan({
                   className="flex flex-wrap items-center gap-3 rounded-lg border px-3 py-2"
                 >
                   <Checkbox
+                    className="size-6 shrink-0"
                     id={`tagih-${anak.id}`}
                     checked={centang}
                     disabled={sudah}
@@ -273,7 +278,12 @@ export function FormTagihanBulanan({
                     }
                   />
                   <div className="min-w-0 flex-1">
-                    <Label htmlFor={`tagih-${anak.id}`}>{anak.nama}</Label>
+                    <Label
+                      className="flex min-h-12 cursor-pointer items-center font-normal"
+                      htmlFor={`tagih-${anak.id}`}
+                    >
+                      {anak.nama}
+                    </Label>
                     <p className="truncate text-xs text-muted-foreground">
                       {anak.kelasNama}
                       {anak.namaOrangTua ? ` · wali: ${anak.namaOrangTua}` : ""}
@@ -313,14 +323,14 @@ export function FormTagihanBulanan({
           <div className="flex flex-wrap items-center gap-2">
             <Button
               type="button"
-              size="sm"
+              size="aksi"
               disabled={terpilih.length === 0 || !nominalSah || pending}
               onClick={() => void simpan()}
             >
               <CalendarPlus aria-hidden="true" />
               Buat tagihan
             </Button>
-            <Button asChild variant="ghost" size="sm">
+            <Button asChild variant="ghost" size="aksi">
               <Link href="/app/tagihan">
                 Lihat daftar tagihan
                 <ArrowRight aria-hidden="true" />
