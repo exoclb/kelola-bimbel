@@ -1,10 +1,11 @@
 import { UserRound } from "lucide-react";
 import { KartuPortal } from "@/components/kartu-portal";
 import { LayarPortal } from "@/components/layar-portal";
+import { PenandaPengguna } from "@/components/penanda-pengguna";
 import { PreferensiTampilanPortal } from "@/components/preferensi-tampilan-portal";
 import { SignOutButton } from "@/components/sign-out-button";
 import { TombolAksiLengket } from "@/components/tombol-aksi-lengket";
-import { labelPeran, type PeranPengguna } from "@/lib/peran";
+import type { PeranPengguna } from "@/lib/peran";
 import type { AnakWali } from "@/lib/portal-wali";
 
 type AkunPortalProps = {
@@ -27,14 +28,9 @@ export function AkunPortal({ nama, email, peran, anak }: AkunPortalProps) {
       keterangan="Identitas akun wali yang sedang masuk dan anak yang tertaut ke akun ini."
     >
       <KartuPortal className="mt-6" judul="Akun yang masuk" ikon={UserRound}>
-        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-          <dt className="text-muted-foreground">Nama</dt>
-          <dd className="font-medium">{nama}</dd>
-          <dt className="text-muted-foreground">Email</dt>
-          <dd className="break-all">{email}</dd>
-          <dt className="text-muted-foreground">Peran</dt>
-          <dd>{labelPeran(peran)}</dd>
-        </dl>
+        {/* Kartu identitas memakai penanda pengguna yang sama dengan kepala
+            halaman, jadi inisial, nama, email, dan lencana perannya konsisten. */}
+        <PenandaPengguna nama={nama} email={email} peran={peran} />
       </KartuPortal>
 
       <KartuPortal
