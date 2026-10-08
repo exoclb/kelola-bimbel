@@ -86,7 +86,7 @@ The five portal screens are `/portal` (Beranda), `/portal/jadwal`, `/portal/tagi
 
 `PenandaStatus` (`src/components/penanda-status.tsx`) renders the pastel payment pills for `lunas`, `belum`, and `terlambat`, styled only from the `--status-*` tokens and always carrying the status word next to its icon. `statusPembayaran()` in `src/lib/tagihan.ts` decides which of the three applies to an invoice: paid, unpaid within the running period, or unpaid past its period.
 
-`BarProgres` (`src/components/bar-progres.tsx`) draws the 8px progress bar (`--tinggi-progres-portal`) with its percentage always spelled out, and exposes the value through `role="progressbar"`; values outside 0–100 are clamped.
+`BarProgres` (`src/components/bar-progres.tsx`) draws the 8px progress bar (`--tinggi-progres-portal`) with its percentage always spelled out, and exposes the value through `role="progressbar"`; values outside 0–100 are clamped. The Progres screen uses it for attendance (sessions attended) and the average score, each paired with its figure.
 
 Form fields keep the label above the control through `IsianTeks`, `IsianTeksPanjang`, and `IsianPilih` (`src/components/isian-form.tsx`). The portal passes `ukuran="sentuh"`, which lifts the control to the 48px touch target (`--target-sentuh-portal`) and keeps its text at 16px on every width so phones do not zoom when a field is focused; without it the staff forms keep their current 36px controls.
 

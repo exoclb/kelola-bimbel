@@ -80,6 +80,13 @@ export function PerkembanganAnakPortal({
   const daftarCatatan = dipilih?.catatan ?? [];
   const hadir = dipilih?.kehadiran.hadir ?? 0;
 
+  // Rata-rata nilai dipakai dua kali (angka dan barnya), jadi dihitung sekali.
+  const rataRata =
+    daftarCatatan.length > 0
+      ? daftarCatatan.reduce((jumlah, baris) => jumlah + baris.nilai, 0) /
+        daftarCatatan.length
+      : null;
+
   return (
     <LayarPortal
       judul="Perkembangan Anak"
@@ -147,15 +154,12 @@ export function PerkembanganAnakPortal({
             <KartuPortal ringkas>
               <p className="text-muted-foreground text-sm">Rata-rata nilai</p>
               <p className="text-xl font-semibold">
-                {daftarCatatan.length > 0
-                  ? angkaTampil.format(
-                      daftarCatatan.reduce(
-                        (jumlah, baris) => jumlah + baris.nilai,
-                        0,
-                      ) / daftarCatatan.length,
-                    )
-                  : "—"}
+                {rataRata === null ? "—" : angkaTampil.format(rataRata)}
               </p>
+              <BarProgres
+                nilai={rataRata ?? 0}
+                ariaLabel={`Rata-rata nilai ${dipilih.nama}`}
+              />
               <p className="text-muted-foreground text-xs">
                 dari {daftarCatatan.length} catatan
               </p>
