@@ -13,6 +13,7 @@ import type {
   StatusJejakPortal,
 } from "@/lib/portal-wali";
 import {
+  durasiSesi,
   HARI_DALAM_SEMINGGU,
   indeksHari,
   namaHari,
@@ -20,22 +21,34 @@ import {
   urutkanJadwal,
 } from "@/lib/tanggal";
 
-/** Daftar sesi satu hari: jam, kelas beserta cabangnya, dan guru pengajar. */
+/** Detail satu sesi: jam beserta lamanya, kelas, ruang, dan guru pengajar. */
 function DaftarSesi({ daftar }: { daftar: JadwalAnak[] }) {
   return (
     <ul className="space-y-3">
-      {daftar.map((baris) => (
-        <li key={baris.jadwalId} className="rounded-lg border px-3 py-2">
-          <p className="flex items-center gap-1.5 text-sm font-medium">
-            <Clock3 className="size-4" aria-hidden="true" />
-            {baris.jamMulai}–{baris.jamSelesai}
-          </p>
-          <p className="text-muted-foreground mt-1 text-sm">
-            {baris.kelasNama} · {baris.cabang}
-          </p>
-          <p className="text-muted-foreground text-xs">Guru {baris.guruNama}</p>
-        </li>
-      ))}
+      {daftar.map((baris) => {
+        const durasi = durasiSesi(baris.jamMulai, baris.jamSelesai);
+        return (
+          <li key={baris.jadwalId} className="rounded-lg border px-3 py-2">
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm font-medium">
+              <Clock3 className="size-4 shrink-0" aria-hidden="true" />
+              {baris.jamMulai}–{baris.jamSelesai}
+              {durasi && (
+                <span className="text-muted-foreground font-normal">
+                  · {durasi}
+                </span>
+              )}
+            </p>
+            <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-sm">
+              <dt className="text-muted-foreground">Kelas</dt>
+              <dd>{baris.kelasNama}</dd>
+              <dt className="text-muted-foreground">Ruang</dt>
+              <dd>{baris.cabang}</dd>
+              <dt className="text-muted-foreground">Guru</dt>
+              <dd>{baris.guruNama}</dd>
+            </dl>
+          </li>
+        );
+      })}
     </ul>
   );
 }

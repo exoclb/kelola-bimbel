@@ -72,3 +72,21 @@ export function urutkanJadwal(
   const bedaHari = indeksHari(a.hari) - indeksHari(b.hari);
   return bedaHari !== 0 ? bedaHari : a.jamMulai.localeCompare(b.jamMulai);
 }
+
+/**
+ * Lama satu sesi dari jam mulai dan jam selesai (`HH:MM`), mis. "1 jam 30
+ * menit". String kosong dipakai bila jamnya tidak masuk akal (selesai sebelum
+ * mulai), supaya tampilan tidak menampilkan angka negatif.
+ */
+export function durasiSesi(jamMulai: string, jamSelesai: string) {
+  const [jam1, menit1] = jamMulai.split(":").map(Number);
+  const [jam2, menit2] = jamSelesai.split(":").map(Number);
+  const total = jam2 * 60 + menit2 - (jam1 * 60 + menit1);
+  if (!Number.isFinite(total) || total <= 0) return "";
+
+  const jam = Math.floor(total / 60);
+  const menit = total % 60;
+  return [jam > 0 ? `${jam} jam` : null, menit > 0 ? `${menit} menit` : null]
+    .filter(Boolean)
+    .join(" ");
+}
