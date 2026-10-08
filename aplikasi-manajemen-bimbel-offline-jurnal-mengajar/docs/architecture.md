@@ -68,6 +68,8 @@ The type scale is declared in full in `globals.css` so every page shares one set
 
 Spacing follows one rhythm: `--spacing` is 4px, so every Tailwind step (`p-1`, `gap-2`, `mt-4`, …) is a multiple of it across both the staff area and the portal. The radius tokens carry the design roles rather than raw values — `rounded-lg` is the 12px control/CTA radius and `rounded-xl` is the 16px card radius.
 
+Focus is part of the token system: `*:focus-visible` in `globals.css` draws a 2px `--primary` outline with a 2px offset for links and any element without its own ring, while the shadcn primitives keep their 3px ring in the (solid) `ring` colour. Both stay at or above 3:1 against the light and dark canvas, so keyboard focus is always visible.
+
 The base's welcome and blank app pages are replaceable. Reuse auth, setup, database, and UI when adding dashboard or chatbot features. Do not put feature conditionals throughout the base: create a derivative and implement that app directly.
 
 ## Dependency compatibility

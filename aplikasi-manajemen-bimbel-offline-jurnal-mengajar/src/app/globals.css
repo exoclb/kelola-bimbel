@@ -165,6 +165,14 @@
   a {
     cursor: pointer;
   }
+  /* Garis fokus yang jelas untuk semua elemen yang bisa difokus lewat papan
+     ketik. Tombol dan isian punya ring sendiri di komponennya; aturan ini
+     menangkap sisanya (mis. tautan navigasi) dan memakai warna aksi --primary
+     (sama dengan --color-ring). */
+  *:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
   ::selection {
     background: color-mix(in oklab, var(--primary) 20%, transparent);
   }
