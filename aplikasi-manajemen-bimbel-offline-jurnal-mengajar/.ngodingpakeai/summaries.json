@@ -1327,5 +1327,11 @@
     },
     "src/components/form-tambah-tautan-wali.tsx": {
         "summary": "Formulir klien untuk aksi \"Tambah tautan\" di halaman pengaturan wali: tombol pembuka, pilihan akun wali + murid (murid yang sudah tertaut ke akun itu ditandai \"— sudah tertaut\"), lalu POST ke /api/wali/:id/murid dan router.refresh(). Membedakan hasil idempoten: meta.dibuat=false ditampilkan sebagai keterangan \"sudah tertaut\" (role=status), bukan galat; kegagalan server/jaringan tampil di role=alert."
+    },
+    "src/components/aksi-lepas-tautan-wali.tsx": {
+        "summary": "Komponen klien untuk melepas tautan wali↔murid di halaman pengaturan wali: menampilkan chip murid beserta tombol Lepas, kotak konfirmasi (pola daftar-pengeluaran), lalu DELETE /api/wali/:id/murid/:muridId dan router.refresh(). Keadaan konfirmasi/pesan sengaja hidup per KARTU (bukan per chip) karena chip-nya ter-unmount setelah refresh sehingga pesan role=status bisa ikut hilang; flag pending menonaktifkan tombol agar tidak klik ganda. Respons idempoten meta.terlepas=false dilaporkan sebagai \"sudah tidak tertaut\", bukan galat."
+    },
+    "src/components/saklar-akses-portal-wali.tsx": {
+        "summary": "Komponen klien saklar akses portal per akun wali: tombol Matikan/Nyalakan portal memanggil PATCH /api/wali/:id {aksesPortal} lalu router.refresh(); lencana server-rendered jadi acuan setelah refresh. Respons meta.berubah=false ditampilkan sebagai keterangan (\"memang sudah aktif/nonaktif\"), bukan galat; efeknya memakai status banned akun sehingga tidak bisa masuk/membuka portal tanpa menghapus akun maupun tautannya."
     }
 }

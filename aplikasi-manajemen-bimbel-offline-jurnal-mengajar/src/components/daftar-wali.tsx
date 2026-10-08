@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { ArrowRight, Mail, Power, UserRound, Users } from "lucide-react";
+import { AksiLepasTautanWali } from "@/components/aksi-lepas-tautan-wali";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FormTambahTautanWali } from "@/components/form-tambah-tautan-wali";
 import { PesanKosong } from "@/components/status-antarmuka";
+import { SaklarAksesPortalWali } from "@/components/saklar-akses-portal-wali";
 import type { AkunWali, MuridRingkas } from "@/services/wali.service";
 
 type DaftarWaliProps = {
@@ -28,6 +30,8 @@ function ringkasPenautan(daftar: AkunWali[]) {
  * Daftar akun wali beserta murid yang tertaut padanya, dibaca dari basis data
  * lewat `listAkunWali()`. Taulannya ditambah lewat formulir di atas daftar,
  * yang mengirim ke `POST /api/wali/:id/murid` lalu menyegarkan halaman ini.
+ * Pencabutan satu tautan dan saklar akses portal dikerjakan komponen klien di
+ * dalam tiap kartu, yang menyegarkan halaman yang sama.
  */
 export function DaftarWali({ daftar, daftarMurid }: DaftarWaliProps) {
   const ringkas = ringkasPenautan(daftar);
@@ -106,26 +110,19 @@ export function DaftarWali({ daftar, daftarMurid }: DaftarWaliProps) {
                       <Power className="size-3.5" aria-hidden="true" />
                       {wali.aksesPortal ? "Portal aktif" : "Portal nonaktif"}
                     </span>
+                    <SaklarAksesPortalWali
+                      waliId={wali.waliId}
+                      namaWali={wali.nama}
+                      aksesPortal={wali.aksesPortal}
+                    />
                   </div>
                 </div>
 
-                {wali.murid.length > 0 ? (
-                  <ul className="flex flex-wrap gap-1.5">
-                    {wali.murid.map((anak) => (
-                      <li
-                        key={anak.muridId}
-                        className="rounded-full border bg-muted px-2.5 py-0.5 text-xs text-muted-foreground"
-                      >
-                        {anak.nama}
-                        {anak.statusAktif ? "" : " · tidak aktif"}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Akun ini belum ditautkan ke murid mana pun.
-                  </p>
-                )}
+                <AksiLepasTautanWali
+                  waliId={wali.waliId}
+                  namaWali={wali.nama}
+                  murid={wali.murid}
+                />
               </Card>
             </li>
           ))}
@@ -134,8 +131,10 @@ export function DaftarWali({ daftar, daftarMurid }: DaftarWaliProps) {
 
       <p className="mt-6 text-xs leading-5 text-muted-foreground">
         Catatan: akun wali, murid, dan penautannya dibaca langsung dari basis
-        data. Pencabutan tautan dan pengaturan akses portal menyusul di fase
-        berikutnya.
+        data. Tombol Lepas pada chip murid mencabut satu tautan tanpa menghapus
+        akun atau muridnya. Saklar akses portal memakai status nonaktif akun:
+        akun yang portalnya dimatikan tidak bisa masuk atau membuka portal,
+        tetapi akun beserta tautannya tetap tersimpan.
       </p>
     </div>
   );
