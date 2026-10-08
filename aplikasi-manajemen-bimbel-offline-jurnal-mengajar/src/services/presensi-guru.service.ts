@@ -19,6 +19,7 @@ import {
   type SesiPresensiGuru,
   type StatusPresensiGuru,
 } from "@/lib/presensi-guru";
+import { peranDariRole } from "@/lib/peran";
 import { namaHari, tanggalISO } from "@/lib/tanggal";
 import type {
   RekapPresensiGuruInput,
@@ -228,7 +229,8 @@ export type HasilSimpanPresensi =
   | { status: "tersimpan"; presensi: PresensiGuru; baru: boolean }
   | { status: "jadwal_tidak_ada" }
   | { status: "bukan_hari_ini" }
-  | { status: "pengganti_tidak_ada" };
+  | { status: "pengganti_tidak_ada" }
+  | { status: "pengganti_bukan_guru" };
 
 /**
  * Menyimpan (atau mengganti) presensi guru untuk satu sesi hari ini.
@@ -256,11 +258,15 @@ export async function simpanPresensiGuru(
 
   if (input.guruPenggantiId) {
     const [calon] = await db
-      .select({ id: user.id })
+      .select({ id: user.id, role: user.role })
       .from(user)
       .where(eq(user.id, input.guruPenggantiId))
       .limit(1);
     if (!calon) return { status: "pengganti_tidak_ada" };
+    // Pengganti harus akun bimbel; akun wali tidak boleh tercatat menggantikan
+    // sesi mengajar karena namanya ikut muncul di laporan presensi.
+    if (peranDariRole(calon.role) === "orang-tua")
+      return { status: "pengganti_bukan_guru" };
   }
 
   const [sudahAda] = await db

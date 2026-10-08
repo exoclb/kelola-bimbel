@@ -73,6 +73,18 @@ export function POST(request: Request) {
         "BUKAN_HARI_INI",
         "Sesi itu bukan jadwal hari ini, jadi presensinya belum bisa dicatat.",
       );
+    if (hasil.status === "pengganti_bukan_guru")
+      throw new ApiError(
+        422,
+        "PENGGANTI_BUKAN_GURU",
+        "Guru pengganti harus akun bimbel, bukan akun wali.",
+        [
+          {
+            field: "guruPenggantiId",
+            message: "Akun ini bukan akun guru bimbel.",
+          },
+        ],
+      );
     if (hasil.status === "pengganti_tidak_ada")
       throw new ApiError(
         422,
