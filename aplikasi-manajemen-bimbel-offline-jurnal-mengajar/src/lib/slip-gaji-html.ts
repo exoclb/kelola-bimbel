@@ -66,24 +66,31 @@ export function slipGajiHtml({
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Slip gaji ${amanHtml(baris.guruNama)} — ${periodeTampil}</title>
 <style>
-  :root { color-scheme: light; }
-  body { font-family: Arial, Helvetica, sans-serif; color: #191919; margin: 0; padding: 32px; background: #fafafa; }
-  .slip { max-width: 720px; margin: 0 auto; background: #fff; border: 1px solid #e4e4e1; border-radius: 12px; padding: 32px; }
+  :root {
+    color-scheme: light;
+    --kanvas: #f8fafc;
+    --permukaan: #ffffff;
+    --tinta: #0f172a;
+    --tinta-redup: #475569;
+    --garis: #e2e8f0;
+  }
+  body { font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, Arial, Helvetica, sans-serif; color: var(--tinta); margin: 0; padding: 32px; background: var(--kanvas); }
+  .slip { max-width: 720px; margin: 0 auto; background: var(--permukaan); border: 1px solid var(--garis); border-radius: 12px; padding: 32px; }
   h1 { font-size: 20px; margin: 0 0 4px; }
-  .periode { color: #656561; margin: 0 0 24px; }
-  .kepala { display: flex; justify-content: space-between; gap: 16px; border-bottom: 1px solid #e4e4e1; padding-bottom: 16px; margin-bottom: 24px; }
+  .periode { color: var(--tinta-redup); margin: 0 0 24px; }
+  .kepala { display: flex; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--garis); padding-bottom: 16px; margin-bottom: 24px; }
   .status { font-weight: 600; text-align: right; }
   dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 0 0 24px; }
-  dt { color: #656561; }
+  dt { color: var(--tinta-redup); }
   dd { margin: 0; font-weight: 500; }
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  th, td { padding: 8px 0; border-bottom: 1px solid #e4e4e1; text-align: left; }
-  th { color: #656561; font-weight: 500; }
+  th, td { padding: 8px 0; border-bottom: 1px solid var(--garis); text-align: left; }
+  th { color: var(--tinta-redup); font-weight: 500; }
   .angka { text-align: right; }
   .total { margin-top: 16px; font-size: 16px; display: flex; justify-content: space-between; }
   .total strong { font-size: 18px; }
-  .catatan { margin-top: 24px; font-size: 12px; color: #656561; }
-  @media print { body { background: #fff; padding: 0; } .slip { border: 0; border-radius: 0; padding: 0; } }
+  .catatan { margin-top: 24px; font-size: 12px; color: var(--tinta-redup); }
+  @media print { body { background: var(--permukaan); padding: 0; } .slip { border: 0; border-radius: 0; padding: 0; } }
 </style>
 </head>
 <body>
