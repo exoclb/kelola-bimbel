@@ -20,12 +20,6 @@ import { formatRupiah, formatPeriode } from "@/lib/gaji";
 import { getRekapGajiBulanan } from "@/lib/mock-gaji";
 import { getProfilBimbel } from "@/lib/mock-pengaturan";
 import {
-  langgananPengeluaran,
-  siapkanPengeluaran,
-  snapshotPengeluaran,
-} from "@/lib/pengeluaran-store";
-import { hitungTotalPengeluaran, pengeluaranPeriode } from "@/lib/pengeluaran";
-import {
   langgananTagihan,
   siapkanTagihan,
   snapshotTagihan,
@@ -43,21 +37,30 @@ function nilaiTampil(nilai: number) {
   return nilai < 0 ? `−${formatRupiah(-nilai)}` : formatRupiah(nilai);
 }
 
+type LaporanLabaRugiProps = {
+  /** Total pengeluaran operasional per periode (`YYYY-MM`) dari tabel `expenses`. */
+  rekapPengeluaran: { periode: string; total: number }[];
+};
+
 /**
  * Laporan laba rugi bulanan: pemasukan SPP yang sudah lunas dikurangi biaya
- * honor guru dan pengeluaran operasional. Semua angkanya hanya membaca modul
- * yang sudah ada (tagihan, gaji, pengeluaran); datanya masih tiruan.
+ * honor guru dan pengeluaran operasional. Pengeluaran operasional dibaca dari
+ * database lewat prop server; pemasukan SPP dan honor guru masih membaca modul
+ * tiruan.
  */
-export function LaporanLabaRugi() {
+export function LaporanLabaRugi({ rekapPengeluaran }: LaporanLabaRugiProps) {
   const tagihan = useSyncExternalStore(
     langgananTagihan,
     snapshotTagihan,
     snapshotTagihan,
   );
-  const pengeluaran = useSyncExternalStore(
-    langgananPengeluaran,
-    snapshotPengeluaran,
-    snapshotPengeluaran,
+
+  const totalOperasional = useMemo(
+    () =>
+      new Map(
+        rekapPengeluaran.map((baris) => [baris.periode, baris.total] as const),
+      ),
+    [rekapPengeluaran],
   );
 
   const [bulan, setBulan] = useState(sekarang.getMonth() + 1);
@@ -65,7 +68,6 @@ export function LaporanLabaRugi() {
 
   useEffect(() => {
     siapkanTagihan();
-    siapkanPengeluaran();
   }, []);
 
   const periode = `${tahun}-${String(bulan).padStart(2, "0")}`;
@@ -92,8 +94,8 @@ export function LaporanLabaRugi() {
   );
 
   const biayaOperasional = useMemo(
-    () => hitungTotalPengeluaran(pengeluaranPeriode(pengeluaran, periode)),
-    [pengeluaran, periode],
+    () => totalOperasional.get(periode) ?? 0,
+    [totalOperasional, periode],
   );
 
   const labaBersih = rekapTagihan.nominalLunas - biayaHonor - biayaOperasional;
@@ -305,9 +307,8 @@ export function LaporanLabaRugi() {
       </div>
 
       <p className="mt-6 text-xs leading-5 text-muted-foreground">
-        Catatan: laporan ini masih data tiruan — angkanya dijumlahkan dari modul
-        tagihan SPP, rekap gaji, dan pengeluaran yang sudah ada, tanpa mengubah
-        modul tersebut.
+        Catatan: pengeluaran operasional sudah dibaca dari database. Pemasukan
+        SPP dan honor guru masih dijumlahkan dari modul tiruan.
       </p>
     </div>
   );

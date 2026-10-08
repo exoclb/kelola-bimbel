@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { CalendarDays, PencilLine, Receipt, Trash2 } from "lucide-react";
 import { FormTambahPengeluaran } from "@/components/form-tambah-pengeluaran";
 import { Button } from "@/components/ui/button";
@@ -11,23 +12,28 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { formatPeriode, formatRupiah } from "@/lib/gaji";
-import { getKategoriPengeluaran } from "@/lib/mock-pengeluaran";
-import {
-  hapusPengeluaran,
-  langgananPengeluaran,
-  siapkanPengeluaran,
-  snapshotPengeluaran,
-  tambahPengeluaran,
-  ubahPengeluaran,
-} from "@/lib/pengeluaran-store";
 import {
   hitungTotalPengeluaran,
   pengeluaranPeriode,
   totalPerKategori,
+  type KategoriPengeluaran,
   type Pengeluaran,
 } from "@/lib/pengeluaran";
 
+/** Ambil pesan galat dari jawaban API; `cadangan` untuk galat jaringan. */
+async function pesanGalatApi(jawaban: Response, cadangan: string) {
+  const isi = (await jawaban.json().catch(() => null)) as {
+    error?: { message?: string };
+  } | null;
+  return isi?.error?.message ?? cadangan;
+}
+
 type DaftarPengeluaranProps = {
+  /** Seluruh pengeluaran dari database, terbaru lebih dulu. */
+  daftar: Pengeluaran[];
+  /** Kategori dari tabel `expense_categories`, diurutkan nama. */
+  kategori: KategoriPengeluaran[];
+  /** Periode berjalan (`YYYY-MM`), dipakai sebagai saringan awal. */
   periode: string;
 };
 
@@ -47,30 +53,40 @@ const tanggalTampil = new Intl.DateTimeFormat("id-ID", {
 /**
  * Halaman kelola pengeluaran operasional: daftar pengeluaran periode terpilih
  * (terbaru dulu) beserta totalnya, dan aksi ubah atau hapus pada tiap baris.
- * Hapus memakai konfirmasi lebih dulu supaya tidak keliru. Datanya masih
- * contoh dan hanya berlaku selama aplikasi terbuka.
+ * Seluruh baris dibaca server dari tabel `expenses`, saringan bulan/kategori
+ * mengolah daftar itu di peramban, dan setiap perubahan dikirim ke
+ * `/api/pengeluaran` lalu daftarnya disegarkan dari database lewat
+ * `router.refresh()` — jadi datanya tidak lagi hilang saat halaman dimuat ulang.
  */
-export function DaftarPengeluaran({ periode }: DaftarPengeluaranProps) {
-  const semua = useSyncExternalStore(
-    langgananPengeluaran,
-    snapshotPengeluaran,
-    snapshotPengeluaran,
-  );
-  const kategori = getKategoriPengeluaran();
+export function DaftarPengeluaran({
+  daftar: semua,
+  kategori: kategoriAwal,
+  periode,
+}: DaftarPengeluaranProps) {
+  const router = useRouter();
+
+  // Kategori hasil tambahan dari form, digabung dengan yang datang dari server
+  // supaya pilihannya langsung tersedia tanpa menunggu penyegaran selesai.
+  const [kategoriBaru, setKategoriBaru] = useState<KategoriPengeluaran[]>([]);
+  const kategori = useMemo(() => {
+    const peta = new Map<string, KategoriPengeluaran>();
+    for (const baris of [...kategoriAwal, ...kategoriBaru])
+      peta.set(baris.id, baris);
+    return [...peta.values()].sort((a, b) =>
+      a.nama.localeCompare(b.nama, "id"),
+    );
+  }, [kategoriAwal, kategoriBaru]);
 
   const [ubahId, setUbahId] = useState<string | null>(null);
   const [hapusId, setHapusId] = useState<string | null>(null);
   const [draf, setDraf] = useState<Draf | null>(null);
   const [galat, setGalat] = useState("");
   const [pesan, setPesan] = useState("");
+  const [pending, setPending] = useState(false);
   // Saringan daftar: periode (YYYY-MM) dan kategori. Bawaannya periode yang
   // dikirim halaman, yaitu bulan berjalan.
   const [periodeSaring, setPeriodeSaring] = useState(periode);
   const [kategoriSaring, setKategoriSaring] = useState("");
-
-  useEffect(() => {
-    siapkanPengeluaran();
-  }, []);
 
   const daftar = useMemo(
     () =>
@@ -103,7 +119,7 @@ export function DaftarPengeluaran({ periode }: DaftarPengeluaranProps) {
     setGalat("");
   }
 
-  function simpanUbah(baris: Pengeluaran) {
+  async function simpanUbah(baris: Pengeluaran) {
     if (!draf) return;
     const nominal = Number(draf.nominal);
     if (
@@ -118,25 +134,68 @@ export function DaftarPengeluaran({ periode }: DaftarPengeluaranProps) {
       setGalat("Tanggal wajib diisi.");
       return;
     }
+
     const namaKategori =
       kategori.find((item) => item.id === draf.kategoriId)?.nama ??
       baris.kategoriNama;
-    ubahPengeluaran({
-      ...baris,
-      nominal: Math.round(nominal),
-      tanggal: draf.tanggal,
-      kategoriId: draf.kategoriId,
-      kategoriNama: namaKategori,
-      catatan: draf.catatan.trim(),
-    });
-    setPesan(`Pengeluaran ${namaKategori} diperbarui.`);
-    batal();
+
+    setPending(true);
+    setGalat("");
+    try {
+      const jawaban = await fetch(`/api/pengeluaran/${baris.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kategoriId: draf.kategoriId,
+          nominal: Math.round(nominal),
+          tanggal: draf.tanggal,
+          catatan: draf.catatan.trim(),
+        }),
+      });
+
+      if (!jawaban.ok) {
+        setGalat(
+          await pesanGalatApi(
+            jawaban,
+            "Perubahan belum bisa disimpan. Coba lagi sebentar lagi.",
+          ),
+        );
+        return;
+      }
+
+      setPesan(`Pengeluaran ${namaKategori} diperbarui.`);
+      batal();
+      router.refresh();
+    } catch {
+      setGalat("Perubahan belum bisa disimpan. Coba lagi sebentar lagi.");
+    } finally {
+      setPending(false);
+    }
   }
 
-  function hapus(baris: Pengeluaran) {
-    hapusPengeluaran(baris.id);
-    setPesan(`Pengeluaran ${baris.kategoriNama} dihapus.`);
-    batal();
+  async function hapus(baris: Pengeluaran) {
+    setPending(true);
+    try {
+      const jawaban = await fetch(`/api/pengeluaran/${baris.id}`, {
+        method: "DELETE",
+      });
+      if (!jawaban.ok) {
+        setGalat(
+          await pesanGalatApi(
+            jawaban,
+            "Pengeluaran belum bisa dihapus. Coba lagi sebentar lagi.",
+          ),
+        );
+        return;
+      }
+      setPesan(`Pengeluaran ${baris.kategoriNama} dihapus.`);
+      batal();
+      router.refresh();
+    } catch {
+      setGalat("Pengeluaran belum bisa dihapus. Coba lagi sebentar lagi.");
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
@@ -153,13 +212,15 @@ export function DaftarPengeluaran({ periode }: DaftarPengeluaranProps) {
 
       <div className="mt-6">
         <FormTambahPengeluaran
-          onTambah={(baris) => {
-            const lengkap = tambahPengeluaran(baris);
+          kategori={kategori}
+          onKategoriBaru={(kategoriBaru) =>
+            setKategoriBaru((sebelumnya) => [...sebelumnya, kategoriBaru])
+          }
+          onTersimpan={(baris) =>
             setPesan(
-              `Pengeluaran ${lengkap.kategoriNama} ${formatRupiah(lengkap.nominal)} dicatat.`,
-            );
-            return lengkap;
-          }}
+              `Pengeluaran ${baris.kategoriNama} ${formatRupiah(baris.nominal)} dicatat.`,
+            )
+          }
         />
       </div>
 
@@ -237,6 +298,11 @@ export function DaftarPengeluaran({ periode }: DaftarPengeluaranProps) {
       <p role="status" className="mt-4 text-sm text-muted-foreground">
         {pesan}
       </p>
+      {galat && !ubahId && (
+        <p role="alert" className="mt-2 text-sm text-destructive">
+          {galat}
+        </p>
+      )}
 
       {daftar.length === 0 ? (
         <PesanKosong
@@ -330,6 +396,7 @@ export function DaftarPengeluaran({ periode }: DaftarPengeluaranProps) {
                         <Button
                           type="button"
                           size="sm"
+                          disabled={pending}
                           onClick={() => simpanUbah(baris)}
                         >
                           Simpan perubahan
@@ -338,6 +405,7 @@ export function DaftarPengeluaran({ periode }: DaftarPengeluaranProps) {
                           type="button"
                           variant="ghost"
                           size="sm"
+                          disabled={pending}
                           onClick={batal}
                         >
                           Batal
@@ -389,6 +457,7 @@ export function DaftarPengeluaran({ periode }: DaftarPengeluaranProps) {
                               type="button"
                               variant="destructive"
                               size="sm"
+                              disabled={pending}
                               onClick={() => hapus(baris)}
                             >
                               Ya, hapus
@@ -397,6 +466,7 @@ export function DaftarPengeluaran({ periode }: DaftarPengeluaranProps) {
                               type="button"
                               variant="ghost"
                               size="sm"
+                              disabled={pending}
                               onClick={batal}
                             >
                               Batal
@@ -439,8 +509,8 @@ export function DaftarPengeluaran({ periode }: DaftarPengeluaranProps) {
       )}
 
       <p className="mt-6 text-xs leading-5 text-muted-foreground">
-        Catatan: pengeluaran di halaman ini masih data tiruan — perubahan
-        bertahan selama aplikasi terbuka, lalu diganti penyimpanan database.
+        Pengeluaran di halaman ini tersimpan di database dan ikut dipakai arus
+        kas serta laporan laba rugi.
       </p>
     </div>
   );

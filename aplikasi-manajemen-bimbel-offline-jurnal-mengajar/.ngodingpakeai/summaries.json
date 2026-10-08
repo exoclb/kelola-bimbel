@@ -1339,5 +1339,20 @@
     },
     "src/services/portal.service.ts": {
         "summary": "Layanan data anak Portal Wali dari basis data: `listAnakPortalWali(waliId)` menjalankan query `wali_murid JOIN students` (urut nama murid) sehingga wali hanya melihat anak yang benar-benar tertaut ke akunnya, lengkap dengan nama orang tua, kontak, dan status aktif; nama kelas diambil dari `student_enrollments JOIN classes` berstatus aktif dan bernilai null bila belum ada penempatan (tidak mengarang nama kelas). Menggantikan pembacaan data tiruan `getAnakPortal()` yang kini sudah dihapus."
+    },
+    "src/validators/pengeluaran.ts": {
+        "summary": "Skema Zod untuk API pengeluaran operasional: validasi buat/ubah pengeluaran (kategoriId uuid, nominal positif, tanggal YYYY-MM-DD, catatan opsional) dan validasi nama kategori; dipakai route /api/pengeluaran dan /api/pengeluaran/kategori."
+    },
+    "src/services/pengeluaran.service.ts": {
+        "summary": "Layanan pengeluaran operasional di atas tabel `expenses` + `expense_categories` (migrasi 0016): `listPengeluaran({periode?})` join kategori (urut tanggal lalu createdAt turun, catatan null menjadi string kosong), `listKategoriPengeluaran`, `getKategoriPengeluaran`, `tambahKategoriPengeluaran` (409 saat nama duplikat), `buatPengeluaran`, `ubahPengeluaran`, `hapusPengeluaran`, dan `rekapPengeluaranBulanan` (group by bulan) untuk halaman arus kas & laba rugi. Menggantikan penyimpanan peramban `pengeluaran-store` yang kini dihapus."
+    },
+    "src/app/api/pengeluaran/route.ts": {
+        "summary": "Route API pengeluaran: `GET /api/pengeluaran` (izin pengeluaran read-any) mengembalikan daftar pengeluaran beserta kategorinya, dan `POST` (izin write-any) membuat pengeluaran baru dengan validasi Zod — 201 saat berhasil, 422 saat validasi gagal. Runtime nodejs, pola withApiPermission."
+    },
+    "src/app/api/pengeluaran/[id]/route.ts": {
+        "summary": "Route API pengeluaran per id: `PATCH /api/pengeluaran/<id>` mengubah pengeluaran (parsial) dan `DELETE /api/pengeluaran/<id>` menghapusnya — izin pengeluaran write-any, 404 untuk id asing, 422 untuk input tidak sah. Runtime nodejs, params di-await."
+    },
+    "src/app/api/pengeluaran/kategori/route.ts": {
+        "summary": "Route API kategori pengeluaran: `POST /api/pengeluaran/kategori` menambah kategori baru (izin pengeluaran write-any) dengan 201 saat berhasil dan 409 saat nama kategori sudah ada."
     }
 }

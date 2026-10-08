@@ -1,8 +1,13 @@
 // Hitungan dan bentuk pengeluaran operasional bimbel.
 //
-// Modul ini melengkapi sisi pengeluaran: pemasukan SPP ada di `src/lib/tagihan.ts`
-// dan honor guru di `src/lib/gaji.ts`. Periode memakai bentuk `YYYY-MM` supaya
-// seragam dengan modul keuangan lain.
+// Modul ini melengkapi sisi pengeluaran: pemasukan SPP ada di
+// `src/lib/tagihan.ts` dan honor guru di `src/lib/gaji.ts`. Periode memakai
+// bentuk `YYYY-MM` supaya seragam dengan modul keuangan lain, dan nominal
+// selalu bilangan bulat rupiah.
+//
+// Sumber datanya tabel `expenses` + `expense_categories` (lihat
+// `src/services/pengeluaran.service.ts`). Berkas ini hanya tipe dan hitungan
+// murni, jadi aman dipakai di server maupun peramban.
 
 import { periodeBulan } from "@/lib/gaji";
 
@@ -11,6 +16,7 @@ export type KategoriPengeluaran = {
   nama: string;
 };
 
+/** Satu baris pengeluaran: bentuk kolomnya mengikuti tabel `expenses`. */
 export type Pengeluaran = {
   id: string;
   kategoriId: string;
@@ -18,6 +24,7 @@ export type Pengeluaran = {
   kategoriNama: string;
   nominal: number;
   tanggal: string;
+  /** Kosong kalau catatannya memang tidak diisi (kolomnya `null` di database). */
   catatan: string;
 };
 
@@ -27,7 +34,7 @@ export function periodePengeluaran(tanggal: Date) {
 }
 
 /** Periode satu baris pengeluaran (`YYYY-MM`). */
-export function periodeDariPengeluaran(baris: Pengeluaran) {
+function periodeDariPengeluaran(baris: { tanggal: string }) {
   return baris.tanggal.slice(0, 7);
 }
 

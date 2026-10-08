@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { CheckCircle2, Plus, Save } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { CheckCircle2, Plus, Save, Tags } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,13 +16,24 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { formatRupiah } from "@/lib/gaji";
-import { getKategoriPengeluaran } from "@/lib/mock-pengeluaran";
-import type { Pengeluaran } from "@/lib/pengeluaran";
+import type { KategoriPengeluaran, Pengeluaran } from "@/lib/pengeluaran";
 import { tanggalISO } from "@/lib/tanggal";
 
+/** Ambil pesan galat dari jawaban API; `cadangan` untuk galat jaringan. */
+async function pesanGalatApi(jawaban: Response, cadangan: string) {
+  const isi = (await jawaban.json().catch(() => null)) as {
+    error?: { message?: string };
+  } | null;
+  return isi?.error?.message ?? cadangan;
+}
+
 type FormTambahPengeluaranProps = {
-  /** Id baris dibuat oleh pemanggil (penyimpanan), bukan di komponen. */
-  onTambah: (baris: Omit<Pengeluaran, "id">) => Pengeluaran;
+  /** Kategori dari tabel `expense_categories`, diurutkan nama. */
+  kategori: KategoriPengeluaran[];
+  /** Dipanggil sesudah kategori baru tersimpan supaya pilihannya langsung ada. */
+  onKategoriBaru: (kategori: KategoriPengeluaran) => void;
+  /** Dipanggil sesudah pengeluaran tersimpan, untuk pesan status halaman. */
+  onTersimpan: (baris: Pengeluaran) => void;
 };
 
 type Galat = {
@@ -31,13 +43,20 @@ type Galat = {
 
 /**
  * Formulir tambah pengeluaran operasional: nominal, tanggal, kategori, dan
- * catatan. Sesudah disimpan muncul kartu konfirmasi berisi nilainya, supaya
+ * catatan. Datanya dikirim ke `POST /api/pengeluaran`, lalu daftar di server
+ * disegarkan. Sesudah tersimpan muncul kartu konfirmasi berisi nilainya, supaya
  * owner bisa memastikan catatannya benar sebelum menambah yang lain.
+ *
+ * Kategori juga dikelola dari sini (`POST /api/pengeluaran/kategori`) karena
+ * tabel kategorinya bisa saja masih kosong; tanpa kategori, pengeluaran tidak
+ * bisa dicatat.
  */
 export function FormTambahPengeluaran({
-  onTambah,
+  kategori,
+  onKategoriBaru,
+  onTersimpan,
 }: FormTambahPengeluaranProps) {
-  const kategori = getKategoriPengeluaran();
+  const router = useRouter();
 
   const [terbuka, setTerbuka] = useState(false);
   const [nominal, setNominal] = useState("");
@@ -45,9 +64,17 @@ export function FormTambahPengeluaran({
   const [kategoriId, setKategoriId] = useState(kategori[0]?.id ?? "");
   const [catatan, setCatatan] = useState("");
   const [galat, setGalat] = useState<Galat>({});
+  const [galatUmum, setGalatUmum] = useState("");
+  const [pending, setPending] = useState(false);
   const [tersimpan, setTersimpan] = useState<Pengeluaran | null>(null);
 
-  function simpan(event: FormEvent<HTMLFormElement>) {
+  // Pengelolaan kategori baru, dibuka dari tombol "Kategori baru".
+  const [kategoriTerbuka, setKategoriTerbuka] = useState(false);
+  const [namaKategori, setNamaKategori] = useState("");
+  const [galatKategori, setGalatKategori] = useState("");
+  const [pendingKategori, setPendingKategori] = useState(false);
+
+  async function simpan(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const angka = Number(nominal);
@@ -59,27 +86,92 @@ export function FormTambahPengeluaran({
     if (tanggal > tanggalISO(new Date())) {
       masalah.tanggal = "Tanggal tidak boleh melewati hari ini.";
     }
+    if (!kategoriId) masalah.tanggal = masalah.tanggal ?? "Pilih kategori.";
 
     if (Object.keys(masalah).length > 0) {
       setGalat(masalah);
       return;
     }
 
-    const namaKategori =
-      kategori.find((item) => item.id === kategoriId)?.nama ?? "Lain-lain";
-    const tersimpan = onTambah({
-      kategoriId,
-      kategoriNama: namaKategori,
-      nominal: Math.round(angka),
-      tanggal,
-      catatan: catatan.trim(),
-    });
+    setPending(true);
+    setGalatUmum("");
+    try {
+      const jawaban = await fetch("/api/pengeluaran", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kategoriId,
+          nominal: Math.round(angka),
+          tanggal,
+          catatan: catatan.trim(),
+        }),
+      });
 
-    setTersimpan(tersimpan);
-    setNominal("");
-    setCatatan("");
-    setGalat({});
-    setTerbuka(false);
+      if (!jawaban.ok) {
+        setGalatUmum(
+          await pesanGalatApi(
+            jawaban,
+            "Pengeluaran belum bisa disimpan. Coba lagi sebentar lagi.",
+          ),
+        );
+        return;
+      }
+
+      const isi = (await jawaban.json()) as { data: Pengeluaran };
+      setTersimpan(isi.data);
+      onTersimpan(isi.data);
+      setNominal("");
+      setCatatan("");
+      setGalat({});
+      setTerbuka(false);
+      router.refresh();
+    } catch {
+      setGalatUmum("Pengeluaran belum bisa disimpan. Coba lagi sebentar lagi.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function simpanKategori(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const nama = namaKategori.trim();
+    if (!nama) {
+      setGalatKategori("Nama kategori wajib diisi.");
+      return;
+    }
+
+    setPendingKategori(true);
+    setGalatKategori("");
+    try {
+      const jawaban = await fetch("/api/pengeluaran/kategori", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nama }),
+      });
+
+      if (!jawaban.ok) {
+        setGalatKategori(
+          await pesanGalatApi(
+            jawaban,
+            `Kategori "${nama}" belum bisa disimpan. Coba lagi sebentar lagi.`,
+          ),
+        );
+        return;
+      }
+
+      const isi = (await jawaban.json()) as { data: KategoriPengeluaran };
+      onKategoriBaru(isi.data);
+      setKategoriId(isi.data.id);
+      setNamaKategori("");
+      setKategoriTerbuka(false);
+      router.refresh();
+    } catch {
+      setGalatKategori(
+        `Kategori "${nama}" belum bisa disimpan. Coba lagi sebentar lagi.`,
+      );
+    } finally {
+      setPendingKategori(false);
+    }
   }
 
   function tambahLagi() {
@@ -152,7 +244,14 @@ export function FormTambahPengeluaran({
           Isi nominal, tanggal, kategori, dan catatan pengeluaran operasional.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
+        {kategori.length === 0 && (
+          <p className="rounded-lg border border-dashed px-3 py-2 text-sm text-muted-foreground">
+            Belum ada kategori. Tambah kategori dulu supaya pengeluaran bisa
+            dicatat.
+          </p>
+        )}
+
         <form onSubmit={simpan} className="space-y-4" noValidate>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
@@ -205,17 +304,35 @@ export function FormTambahPengeluaran({
           </div>
           <div className="space-y-2">
             <Label htmlFor="kategori-baru">Kategori</Label>
-            <NativeSelect
-              id="kategori-baru"
-              value={kategoriId}
-              onChange={(event) => setKategoriId(event.target.value)}
-            >
-              {kategori.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.nama}
-                </option>
-              ))}
-            </NativeSelect>
+            <div className="flex flex-wrap items-center gap-2">
+              <NativeSelect
+                id="kategori-baru"
+                value={kategoriId}
+                className="flex-1"
+                onChange={(event) => setKategoriId(event.target.value)}
+              >
+                {kategori.length === 0 && (
+                  <option value="">Belum ada kategori</option>
+                )}
+                {kategori.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.nama}
+                  </option>
+                ))}
+              </NativeSelect>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setKategoriTerbuka((sebelumnya) => !sebelumnya);
+                  setGalatKategori("");
+                }}
+              >
+                <Tags aria-hidden="true" />
+                Kategori baru
+              </Button>
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="catatan-baru">Catatan</Label>
@@ -226,8 +343,15 @@ export function FormTambahPengeluaran({
               onChange={(event) => setCatatan(event.target.value)}
             />
           </div>
+
+          {galatUmum && (
+            <p role="alert" className="text-sm text-destructive">
+              {galatUmum}
+            </p>
+          )}
+
           <div className="flex flex-wrap items-center gap-2">
-            <Button type="submit" size="sm">
+            <Button type="submit" size="sm" disabled={pending}>
               <Save aria-hidden="true" />
               Simpan pengeluaran
             </Button>
@@ -235,15 +359,68 @@ export function FormTambahPengeluaran({
               type="button"
               variant="ghost"
               size="sm"
+              disabled={pending}
               onClick={() => {
                 setTerbuka(false);
                 setGalat({});
+                setGalatUmum("");
               }}
             >
               Batal
             </Button>
           </div>
         </form>
+
+        {kategoriTerbuka && (
+          <form
+            onSubmit={simpanKategori}
+            className="space-y-3 rounded-lg border bg-muted/40 px-3 py-3"
+            noValidate
+          >
+            <div className="space-y-2">
+              <Label htmlFor="nama-kategori-baru">Nama kategori baru</Label>
+              <Input
+                id="nama-kategori-baru"
+                value={namaKategori}
+                maxLength={80}
+                placeholder="Misalnya: Sewa"
+                aria-invalid={galatKategori ? true : undefined}
+                aria-describedby={
+                  galatKategori ? "nama-kategori-baru-error" : undefined
+                }
+                onChange={(event) => setNamaKategori(event.target.value)}
+              />
+              {galatKategori && (
+                <p
+                  id="nama-kategori-baru-error"
+                  role="alert"
+                  className="text-sm text-destructive"
+                >
+                  {galatKategori}
+                </p>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button type="submit" size="sm" disabled={pendingKategori}>
+                <Save aria-hidden="true" />
+                Simpan kategori
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={pendingKategori}
+                onClick={() => {
+                  setKategoriTerbuka(false);
+                  setGalatKategori("");
+                  setNamaKategori("");
+                }}
+              >
+                Batal
+              </Button>
+            </div>
+          </form>
+        )}
       </CardContent>
     </Card>
   );
