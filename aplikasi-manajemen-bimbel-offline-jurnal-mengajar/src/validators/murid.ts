@@ -12,10 +12,28 @@ export const listMuridSchema = z
     offset: skemaOffset,
     // Kata kunci bebas: dicocokkan ke nama murid dan nama orang tuanya.
     cari: z.string().trim().max(120).optional(),
+    // Penyaringan status murid; dipakai pemilih penempatan supaya murid yang
+    // sudah dinonaktifkan tidak ikut ditawarkan.
+    status: z.enum(["semua", "aktif", "nonaktif"]).default("semua"),
+    // Id kelas yang muridnya tidak perlu ditampilkan lagi, karena sudah aktif
+    // di kelas itu.
+    tanpaKelas: z.string().uuid().optional(),
   })
   .strict();
 
 export type ListMuridInput = z.infer<typeof listMuridSchema>;
+
+/**
+ * Bentuk masukan untuk pemanggil internal (halaman dan layanan lain): sama
+ * dengan `ListMuridInput`, tetapi `status` dan `tanpaKelas` boleh dilewatkan.
+ */
+export type ListMuridFilter = {
+  limit: number;
+  offset: number;
+  cari?: string;
+  status?: ListMuridInput["status"];
+  tanpaKelas?: string;
+};
 
 export const createMuridSchema = z
   .object({

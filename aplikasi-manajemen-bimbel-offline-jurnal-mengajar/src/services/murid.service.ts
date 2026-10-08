@@ -1,8 +1,8 @@
 import "server-only";
-import { asc, eq, ilike, or, sql } from "drizzle-orm";
+import { and, asc, eq, ilike, notExists, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { students } from "@/db/schema";
-import type { CreateMuridInput, ListMuridInput } from "@/validators/murid";
+import { studentEnrollments, students } from "@/db/schema";
+import type { CreateMuridInput, ListMuridFilter } from "@/validators/murid";
 
 // Kolom yang dikirim ke klien; tidak ada data akun yang ikut keluar.
 const fields = {
@@ -20,16 +20,45 @@ const fields = {
  * tuanya, atau kontak orang tuanya sehingga guru bisa menemukan anak dengan
  * cepat — termasuk saat yang diketahui hanya nomor HP walinya.
  */
-export async function listMurid({ limit, offset, cari }: ListMuridInput) {
+export async function listMurid({
+  limit,
+  offset,
+  cari,
+  status,
+  tanpaKelas,
+}: ListMuridFilter) {
   // Tanda % dan _ pada kata kunci dianggap huruf biasa, bukan pola pencarian.
   const kataKunci = cari?.replaceAll(/[%_\\]/g, "\\$&");
-  const syarat = kataKunci
-    ? or(
-        ilike(students.nama, `%${kataKunci}%`),
-        ilike(students.namaOrangTua, `%${kataKunci}%`),
-        ilike(students.kontakOrangTua, `%${kataKunci}%`),
-      )
-    : undefined;
+  const syarat = and(
+    kataKunci
+      ? or(
+          ilike(students.nama, `%${kataKunci}%`),
+          ilike(students.namaOrangTua, `%${kataKunci}%`),
+          ilike(students.kontakOrangTua, `%${kataKunci}%`),
+        )
+      : undefined,
+    status === "aktif"
+      ? eq(students.statusAktif, true)
+      : status === "nonaktif"
+        ? eq(students.statusAktif, false)
+        : undefined,
+    // Murid yang sudah aktif di kelas itu tidak ditawarkan lagi untuk kelas
+    // yang sama; kelas lain tetap boleh.
+    tanpaKelas
+      ? notExists(
+          db
+            .select({ satu: sql`1` })
+            .from(studentEnrollments)
+            .where(
+              and(
+                eq(studentEnrollments.studentId, students.id),
+                eq(studentEnrollments.classId, tanpaKelas),
+                eq(studentEnrollments.status, "aktif"),
+              ),
+            ),
+        )
+      : undefined,
+  );
 
   const rows = await db
     .select(fields)
@@ -40,7 +69,13 @@ export async function listMurid({ limit, offset, cari }: ListMuridInput) {
     .offset(offset);
 
   const [jumlah] = await db
-    .select({ total: sql<number>`count(*)::int`.as("total") })
+    .select({
+      total: sql<number>`count(*)::int`.as("total"),
+      aktif:
+        sql<number>`count(*) filter (where ${students.statusAktif})::int`.as(
+          "aktif",
+        ),
+    })
     .from(students)
     .where(syarat);
 
@@ -51,6 +86,7 @@ export async function listMurid({ limit, offset, cari }: ListMuridInput) {
       offset,
       hasMore: rows.length > limit,
       total: jumlah?.total ?? 0,
+      aktif: jumlah?.aktif ?? 0,
     },
   };
 }

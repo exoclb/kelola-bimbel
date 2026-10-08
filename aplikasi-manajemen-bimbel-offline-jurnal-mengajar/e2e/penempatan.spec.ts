@@ -128,6 +128,67 @@ test("murid boleh aktif di beberapa kelas tanpa dobel di kelas yang sama", async
   });
   expect((await daftarBLagi.json()).data).toHaveLength(1);
 
+  // Daftar murid untuk penempatan baru: `status=aktif` menyembunyikan murid
+  // nonaktif, dan `tanpaKelas` menyembunyikan yang sudah ada di kelas itu.
+  const muridNonaktif = (
+    await (
+      await request.post("/api/murid", {
+        headers,
+        data: { nama: "Murid Nonaktif Penempatan", tanggalLahir: "2015-05-05" },
+      })
+    ).json()
+  ).data.id as string;
+  const dbNonaktif = await pool();
+  try {
+    await dbNonaktif.query(
+      "UPDATE students SET status_aktif = false WHERE id = $1",
+      [muridNonaktif],
+    );
+  } finally {
+    await dbNonaktif.end();
+  }
+
+  const aktifSaja = await request.get("/api/murid?status=aktif&limit=100", {
+    headers,
+  });
+  expect(aktifSaja.status()).toBe(200);
+  const isiAktif = await aktifSaja.json();
+  expect(
+    isiAktif.data.some((baris: { id: string }) => baris.id === muridNonaktif),
+  ).toBe(false);
+  expect(isiAktif.meta.aktif).toBeLessThanOrEqual(isiAktif.meta.total);
+
+  const nonaktifSaja = await request.get("/api/murid?status=nonaktif", {
+    headers,
+  });
+  expect(
+    (await nonaktifSaja.json()).data.some(
+      (baris: { id: string }) => baris.id === muridNonaktif,
+    ),
+  ).toBe(true);
+
+  // Saat ini muridnya aktif di kelas B (sudah keluar dari kelas A), jadi yang
+  // tersembunyi adalah daftar untuk kelas B.
+  const tanpaKelasB = await request.get(
+    `/api/murid?status=aktif&tanpaKelas=${kelasB}&limit=100`,
+    { headers },
+  );
+  expect(
+    (await tanpaKelasB.json()).data.some(
+      (baris: { id: string }) => baris.id === muridId,
+    ),
+  ).toBe(false);
+
+  const tanpaKelasA = await request.get(
+    `/api/murid?status=aktif&tanpaKelas=${kelasA}&limit=100`,
+    { headers },
+  );
+  expect(
+    (await tanpaKelasA.json()).data.some(
+      (baris: { id: string }) => baris.id === muridId,
+    ),
+  ).toBe(true);
+
   // Riwayat penempatan tetap terbaca: `?status=semua` memuat kelas yang sudah
   // ditinggalkan, dan endpoint penempatan lintas kelas menyebut statusnya.
   const riwayatKelas = await request.get(
