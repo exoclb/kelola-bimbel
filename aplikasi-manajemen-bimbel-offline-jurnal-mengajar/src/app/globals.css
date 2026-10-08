@@ -44,6 +44,11 @@
   --color-slate-700: var(--slate-700);
   --color-slate-800: var(--slate-800);
   --color-slate-900: var(--slate-900);
+  /* Irama spasi 4px: setiap langkah Tailwind (p-1, gap-2, mt-4, …) adalah
+     kelipatan nilai ini, jadi area staf dan portal memakai ritme yang sama. */
+  --spacing: 0.25rem;
+  /* Radius per peran: 8px (kecil), 10px (sedang), 12px (tombol/CTA),
+     16px (kartu, dari --radius-xl). */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);

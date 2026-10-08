@@ -66,6 +66,8 @@ The global theme owns two primitive ramps: brand green (`--brand-50` … `--bran
 
 The type scale is declared in full in `globals.css` so every page shares one set of steps: `--text-2xs` (11px, dense captions) through `--text-6xl`, with `xs`/`sm`/`base` for body copy. Pages follow the same roles — page titles use `text-3xl font-semibold tracking-tight sm:text-4xl` (30px, 36px from `sm`), page lead paragraphs use `text-base text-muted-foreground`, section headings use `text-xl`, and dense UI labels use `text-xs` or `text-2xs`. Avoid arbitrary sizes such as `text-[11px]`; add a scale step instead. The marketing landing page is the only place that may step up to the display sizes.
 
+Spacing follows one rhythm: `--spacing` is 4px, so every Tailwind step (`p-1`, `gap-2`, `mt-4`, …) is a multiple of it across both the staff area and the portal. The radius tokens carry the design roles rather than raw values — `rounded-lg` is the 12px control/CTA radius and `rounded-xl` is the 16px card radius.
+
 The base's welcome and blank app pages are replaceable. Reuse auth, setup, database, and UI when adding dashboard or chatbot features. Do not put feature conditionals throughout the base: create a derivative and implement that app directly.
 
 ## Dependency compatibility
