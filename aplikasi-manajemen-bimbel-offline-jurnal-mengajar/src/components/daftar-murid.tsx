@@ -117,7 +117,7 @@ export function DaftarMurid({ daftarAwal }: DaftarMuridProps) {
                   </span>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <Button asChild variant="outline" size="sm">
+                  <Button asChild variant="outline" size="aksi">
                     <Link href={`/app/murid/${murid.id}`}>
                       Detail murid
                       <ArrowRight aria-hidden="true" />

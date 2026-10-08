@@ -315,6 +315,7 @@ export function DaftarKelas({
                             type="button"
                             variant="ghost"
                             size="icon-xs"
+                            className="-m-2 size-11"
                             aria-label={`Hapus jadwal ${jadwal.hari} ${jadwal.jamMulai}`}
                             onClick={() =>
                               ubahJadwal(kelas.id, (jadwalLama) =>
@@ -360,7 +361,7 @@ export function DaftarKelas({
                     <Button
                       type="button"
                       variant="outline"
-                      size="sm"
+                      size="aksi"
                       onClick={() =>
                         setUbahUntuk(ubahUntuk === kelas.id ? null : kelas.id)
                       }

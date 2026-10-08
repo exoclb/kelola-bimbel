@@ -39,7 +39,7 @@ export function KolomPencarian({
           type="search"
           value={nilai}
           placeholder={placeholder}
-          className="pl-9"
+          className="h-[var(--target-sentuh-portal)] pl-9 md:text-base"
           onChange={(event) => onUbah(event.target.value)}
         />
       </div>

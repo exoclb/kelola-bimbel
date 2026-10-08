@@ -92,7 +92,7 @@ export function FormJadwalKelas({
       <Button
         type="button"
         variant="outline"
-        size="sm"
+        size="aksi"
         onClick={() => setTerbuka(true)}
       >
         <Plus aria-hidden="true" />

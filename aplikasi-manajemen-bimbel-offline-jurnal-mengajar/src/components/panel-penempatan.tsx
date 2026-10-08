@@ -57,7 +57,7 @@ export function PanelPenempatan({
         <Button
           type="button"
           variant="ghost"
-          size="sm"
+          size="aksi"
           aria-expanded={terbuka}
           onClick={() => setTerbuka((sebelumnya) => !sebelumnya)}
         >
@@ -97,7 +97,7 @@ export function PanelPenempatan({
                     <Button
                       type="button"
                       variant="ghost"
-                      size="sm"
+                      size="aksi"
                       onClick={() => onKeluarkan(murid.id)}
                     >
                       <UserMinus aria-hidden="true" />
@@ -133,6 +133,7 @@ export function PanelPenempatan({
               <div className="space-y-2">
                 <Label htmlFor={idSelect}>Tambah murid</Label>
                 <NativeSelect
+                  className="h-[var(--target-sentuh-portal)] md:text-base"
                   id={idSelect}
                   value={dipilih}
                   onChange={(event) => setPilihan(event.target.value)}
@@ -146,7 +147,7 @@ export function PanelPenempatan({
               </div>
               <Button
                 type="button"
-                size="sm"
+                size="aksi"
                 disabled={!dipilih}
                 onClick={() => {
                   onTambah(dipilih);

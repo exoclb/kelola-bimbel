@@ -86,7 +86,7 @@ export function FormTambahKelas({
 
   if (!terbuka) {
     return (
-      <Button type="button" onClick={() => setTerbuka(true)}>
+      <Button type="button" size="aksi" onClick={() => setTerbuka(true)}>
         <Plus aria-hidden="true" />
         Tambah kelas
       </Button>
