@@ -131,6 +131,7 @@ export function LaporanLabaRugi({
           <div className="space-y-2">
             <Label htmlFor="bulan">Bulan</Label>
             <NativeSelect
+              className="h-[var(--target-sentuh-portal)] md:text-base"
               id="bulan"
               value={bulan}
               onChange={(event) => setBulan(Number(event.target.value))}
@@ -147,6 +148,7 @@ export function LaporanLabaRugi({
           <div className="space-y-2">
             <Label htmlFor="tahun">Tahun</Label>
             <NativeSelect
+              className="h-[var(--target-sentuh-portal)] md:text-base"
               id="tahun"
               value={tahun}
               onChange={(event) => setTahun(Number(event.target.value))}
@@ -285,16 +287,16 @@ export function LaporanLabaRugi({
       </Card>
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="outline" size="aksi">
           <Link href="/app/tagihan">
             Tagihan murid
             <ArrowRight aria-hidden="true" />
           </Link>
         </Button>
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="outline" size="aksi">
           <Link href="/app/gaji">Rekap gaji</Link>
         </Button>
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="outline" size="aksi">
           <Link href="/app/pengeluaran">Pengeluaran</Link>
         </Button>
       </div>

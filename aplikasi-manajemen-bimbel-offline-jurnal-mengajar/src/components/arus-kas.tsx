@@ -216,13 +216,13 @@ export function ArusKas({
       </Card>
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="outline" size="aksi">
           <Link href="/app/laba-rugi">
             Laporan laba rugi
             <ArrowRight aria-hidden="true" />
           </Link>
         </Button>
-        <Button asChild variant="ghost" size="sm">
+        <Button asChild variant="ghost" size="aksi">
           <Link href="/app/pengeluaran">Pengeluaran</Link>
         </Button>
       </div>
