@@ -7,7 +7,7 @@ import { getProfilBimbel } from "@/lib/mock-pengaturan";
 import { periodeTagihan } from "@/lib/tagihan";
 import { muridTertaut } from "@/services/jejak-baca.service";
 import { listTagihanWali } from "@/services/tagihan.service";
-import { listTagihanAnakSchema } from "@/validators/tagihan";
+import { anakPortalSchema } from "@/validators/portal";
 
 export const runtime = "nodejs";
 
@@ -23,7 +23,7 @@ export const runtime = "nodejs";
 // keduanya bisa pindah ke profil basis data (`ambilProfilBimbel`) bersamaan.
 export function GET(request: Request) {
   return withApiPermission(request, { portal: ["read"] }, async (session) => {
-    const { anak } = listTagihanAnakSchema.parse(
+    const { anak } = anakPortalSchema.parse(
       Object.fromEntries(new URL(request.url).searchParams),
     );
     if (!(await muridTertaut(session.user.id, anak)))

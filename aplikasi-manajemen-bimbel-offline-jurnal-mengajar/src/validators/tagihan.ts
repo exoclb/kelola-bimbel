@@ -42,8 +42,3 @@ export const tagihanIdSchema = z
 
 // Kueri endpoint portal: tagihan milik satu anak yang tertaut ke akun wali.
 // Ketat seperti kueri lain supaya parameter tak dikenal ditolak, bukan diabaikan.
-export const listTagihanAnakSchema = z
-  .object({ anak: z.string().uuid("Id anak harus UUID yang sah.") })
-  .strict();
-
-export type ListTagihanAnakInput = z.infer<typeof listTagihanAnakSchema>;

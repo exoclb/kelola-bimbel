@@ -94,6 +94,13 @@ function tanggalTerbaruTagihan(daftar: Tagihan[]): string | null {
   );
 }
 
+/** Catatan evaluasi satu anak dalam bentuk tampilan portal wali. */
+export async function catatanPortalAnak(
+  muridId: string,
+): Promise<CatatanPerkembangan[]> {
+  return catatanTampil(await listCatatanPerkembanganAnak([muridId]));
+}
+
 /** Bentuk tampilan satu catatan perkembangan dari baris basis datanya. */
 function catatanTampil(
   baris: CatatanPerkembanganTersimpan[],

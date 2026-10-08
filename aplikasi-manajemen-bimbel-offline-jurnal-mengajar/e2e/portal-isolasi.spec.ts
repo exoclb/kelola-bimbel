@@ -110,6 +110,24 @@ test("wali hanya melihat anak yang tertaut ke akunnya", async ({
     expect(tagihan.status()).toBe(201);
   }
 
+  // Satu catatan evaluasi untuk tiap anak, supaya endpoint portal punya isi.
+  for (const [muridId, sikap] of [
+    [muridA, "Baik"],
+    [muridB, "Sangat baik"],
+  ] as const) {
+    const catatan = await request.post("/api/perkembangan", {
+      headers,
+      data: {
+        muridId,
+        tanggal: "2026-04-06",
+        nilai: 80,
+        sikap,
+        catatanPerkembangan: "Catatan isolasi",
+      },
+    });
+    expect(catatan.status()).toBe(201);
+  }
+
   // Dua akun wali: satu untuk tiap murid.
   const buatWali = async (nama: string, awalan: string, muridId: string) => {
     const email = await signUp(request, nama, awalan);
@@ -155,11 +173,25 @@ test("wali hanya melihat anak yang tertaut ke akunnya", async ({
       await page.request.get(`/api/portal/tagihan/bukti?anak=${muridA}`)
     ).status(),
   ).toBe(404);
+  expect(
+    (
+      await page.request.get(`/api/portal/perkembangan?anak=${muridA}`)
+    ).status(),
+  ).toBe(404);
 
   // Anak sendiri tetap terbaca, baik lewat layar maupun endpoint.
   expect(
     (await page.request.get(`/api/portal/tagihan?anak=${muridB}`)).status(),
   ).toBe(200);
+  const catatanB = await page.request.get(
+    `/api/portal/perkembangan?anak=${muridB}`,
+  );
+  expect(catatanB.status()).toBe(200);
+  const isiCatatanB = await catatanB.json();
+  expect(isiCatatanB.meta.muridId).toBe(muridB);
+  expect(isiCatatanB.data).toHaveLength(1);
+  expect(isiCatatanB.data[0].sikap).toBe("Sangat baik");
+  expect(isiCatatanB.data[0].guruNama).toBe("Owner Isolasi Portal");
   await page.goto(`/portal/jadwal?anak=${muridA}`);
   await expect(page.getByText("Jadwal kelas Anak Isolasi B")).toBeVisible();
   await expect(page.getByText("Anak Isolasi A")).toHaveCount(0);
