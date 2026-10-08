@@ -110,6 +110,7 @@ export function FormCatatanAnak({
           label="Tanggal"
           type="date"
           required
+          ukuran="sentuh"
           value={tanggal}
           max={tanggalISO(new Date())}
           error={galatTanggal}
@@ -124,6 +125,7 @@ export function FormCatatanAnak({
           type="number"
           required
           inputMode="numeric"
+          ukuran="sentuh"
           min={0}
           max={100}
           value={nilai}
@@ -138,6 +140,7 @@ export function FormCatatanAnak({
           id={`${idForm}-sikap`}
           label="Sikap"
           required
+          ukuran="sentuh"
           value={sikap}
           error={galatSikap}
           onChange={(event) => {
@@ -156,14 +159,15 @@ export function FormCatatanAnak({
       <IsianTeksPanjang
         id={`${idForm}-catatan`}
         label="Catatan (opsional)"
+        ukuran="sentuh"
         value={catatan}
         maxLength={500}
         placeholder="Misalnya: sudah lancar perkalian, perlu latihan soal cerita."
         onChange={(event) => setCatatan(event.target.value)}
       />
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Button type="submit" size="sm">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <Button type="submit" size="aksi" className="w-full sm:w-auto">
           {catatanAwal ? (
             <Save aria-hidden="true" />
           ) : (
@@ -171,7 +175,13 @@ export function FormCatatanAnak({
           )}
           {catatanAwal ? "Simpan perubahan" : "Simpan catatan"}
         </Button>
-        <Button type="button" variant="ghost" size="sm" onClick={onBatal}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="aksi"
+          className="w-full sm:w-auto"
+          onClick={onBatal}
+        >
           Batal
         </Button>
       </div>

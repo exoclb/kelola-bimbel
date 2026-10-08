@@ -126,7 +126,7 @@ export function DaftarPerkembangan({
         <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
-            size="sm"
+            size="aksi"
             disabled={pending || daftarMurid.length === 0}
             onClick={() => {
               const murid =
@@ -143,7 +143,7 @@ export function DaftarPerkembangan({
             <Plus aria-hidden="true" />
             Tambah catatan
           </Button>
-          <Button asChild variant="outline" size="sm">
+          <Button asChild variant="outline" size="aksi">
             <Link href="/app/perkembangan/riwayat">
               <History aria-hidden="true" />
               Riwayat perkembangan
@@ -166,6 +166,7 @@ export function DaftarPerkembangan({
           <div className="space-y-2">
             <Label htmlFor="murid-catatan-baru">Murid</Label>
             <NativeSelect
+              className="h-[var(--target-sentuh-portal)] md:text-base"
               id="murid-catatan-baru"
               value={formUntuk.muridId}
               onChange={(event) => {
@@ -299,7 +300,7 @@ export function DaftarPerkembangan({
                     <div className="flex flex-wrap items-center gap-2">
                       <Button
                         type="button"
-                        size="sm"
+                        size="aksi"
                         disabled={pending}
                         onClick={() =>
                           setFormUntuk({
@@ -323,7 +324,7 @@ export function DaftarPerkembangan({
                         <Button
                           type="button"
                           variant="outline"
-                          size="sm"
+                          size="aksi"
                           disabled={pending}
                           onClick={() =>
                             setFormUntuk({
@@ -337,7 +338,7 @@ export function DaftarPerkembangan({
                           Ubah catatan terbaru
                         </Button>
                       )}
-                      <Button asChild variant="outline" size="sm">
+                      <Button asChild variant="outline" size="aksi">
                         <Link href={`/app/perkembangan/${baris.muridId}`}>
                           <FileText aria-hidden="true" />
                           Laporan orang tua
