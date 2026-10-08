@@ -14,7 +14,7 @@ export default async function AturanGajiPage() {
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-6">
-        <Button asChild variant="ghost" size="sm" className="-ml-3">
+        <Button asChild variant="ghost" size="aksi" className="-ml-3">
           <Link href="/app/pengaturan">
             <ArrowLeft aria-hidden="true" />
             Kembali ke pengaturan

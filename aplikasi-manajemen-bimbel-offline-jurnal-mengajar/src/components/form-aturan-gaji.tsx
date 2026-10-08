@@ -160,6 +160,7 @@ export function FormAturanGaji({ riwayatAwal }: FormAturanGajiProps) {
                     inputMode="numeric"
                     min={0}
                     step={1000}
+                    className="h-[var(--target-sentuh-portal)] md:text-base"
                     placeholder="mis. 60000"
                     value={tarif}
                     onChange={(event) => setTarif(event.target.value)}
@@ -169,6 +170,7 @@ export function FormAturanGaji({ riwayatAwal }: FormAturanGajiProps) {
                 <div className="space-y-2">
                   <Label htmlFor={`${idForm}-skema`}>Skema</Label>
                   <NativeSelect
+                    className="h-[var(--target-sentuh-portal)] md:text-base"
                     id={`${idForm}-skema`}
                     name="skema"
                     value={skema}
@@ -188,6 +190,7 @@ export function FormAturanGaji({ riwayatAwal }: FormAturanGajiProps) {
                     id={`${idForm}-berlaku`}
                     name="berlakuSejak"
                     type="date"
+                    className="h-[var(--target-sentuh-portal)] md:text-base"
                     value={berlakuSejak}
                     onChange={(event) => setBerlakuSejak(event.target.value)}
                     aria-invalid={salah("berlakuSejak")}
@@ -212,7 +215,7 @@ export function FormAturanGaji({ riwayatAwal }: FormAturanGajiProps) {
                 </div>
               )}
 
-              <Button type="submit">
+              <Button type="submit" size="aksi" className="w-full sm:w-auto">
                 <Save aria-hidden="true" />
                 Simpan tarif
               </Button>
