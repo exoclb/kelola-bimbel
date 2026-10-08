@@ -176,6 +176,13 @@
       "when": 1791482762372,
       "tag": "0024_biaya_operasional_invarian",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1791483216252,
+      "tag": "0025_profil_bimbel_invarian",
+      "breakpoints": true
     }
   ]
 }

@@ -697,3 +697,50 @@ test("biaya operasional dijaga nominal, tanggal, dan kategorinya", async () => {
   );
   assert.equal(dihapus.code, "23503");
 });
+
+/**
+ * Invarian profil bimbel (`drizzle/0012_profil_bimbel.sql` dan
+ * `0025_profil_bimbel_invarian.sql`): hanya satu baris boleh ada, namanya
+ * terisi, emailnya berbentuk alamat kalau diisi, dan logonya harus data URL
+ * gambar.
+ */
+test("profil bimbel dijaga tunggal, namanya terisi, dan logonya data URL", async () => {
+  await siapkanJurnal();
+
+  const namaKosong = await ditolak(
+    "INSERT INTO bimbel_profile (nama) VALUES ($1)",
+    ["   "],
+  );
+  assert.equal(namaKosong.code, "23514");
+
+  const emailAneh = await ditolak(
+    "INSERT INTO bimbel_profile (nama, email) VALUES ($1, $2)",
+    ["Bimbel Uji", "bukan-email"],
+  );
+  assert.equal(emailAneh.code, "23514");
+
+  const logoAneh = await ditolak(
+    "INSERT INTO bimbel_profile (nama, logo) VALUES ($1, $2)",
+    ["Bimbel Uji", "https://contoh.test/logo.png"],
+  );
+  assert.equal(logoAneh.code, "23514");
+
+  // Satu baris sah boleh masuk, baris kedua ditolak indeks unik tunggal.
+  await dbJurnal.query("DELETE FROM bimbel_profile");
+  const sah = await dbJurnal.query(
+    "INSERT INTO bimbel_profile (nama, alamat, telepon, email, logo) VALUES ($1, $2, $3, $4, $5)",
+    [
+      "Bimbel Uji Invarian",
+      "Jl. Uji 1",
+      "08120000000",
+      "halo@bimbel.test",
+      "data:image/png;base64,iVBORw0KGgo=",
+    ],
+  );
+  assert.equal(sah.rowCount, 1);
+
+  const kedua = await ditolak("INSERT INTO bimbel_profile (nama) VALUES ($1)", [
+    "Bimbel Lain",
+  ]);
+  assert.equal(kedua.code, "23505");
+});

@@ -1,0 +1,3 @@
+ALTER TABLE "bimbel_profile" ADD CONSTRAINT "bimbel_profile_nama_terisi" CHECK (length(btrim("bimbel_profile"."nama")) > 0);--> statement-breakpoint
+ALTER TABLE "bimbel_profile" ADD CONSTRAINT "bimbel_profile_email_valid" CHECK ("bimbel_profile"."email" = '' or "bimbel_profile"."email" ~ '^[^@[:space:]]+@[^@[:space:]]+[.][^@[:space:]]+$');--> statement-breakpoint
+ALTER TABLE "bimbel_profile" ADD CONSTRAINT "bimbel_profile_logo_data_url" CHECK ("bimbel_profile"."logo" is null or "bimbel_profile"."logo" like 'data:image/%');
