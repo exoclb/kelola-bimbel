@@ -28,7 +28,7 @@ export default async function LaporanPerkembanganPage({
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-6 print:hidden">
-        <Button asChild variant="ghost" size="sm" className="-ml-3">
+        <Button asChild variant="ghost" size="aksi" className="-ml-3">
           <Link href="/app/perkembangan">
             <ArrowLeft aria-hidden="true" />
             Kembali ke perkembangan
@@ -47,6 +47,7 @@ export default async function LaporanPerkembanganPage({
         <TombolCetakUnduh
           targetId="laporan-perkembangan"
           namaBerkas={namaBerkas}
+          ukuran="aksi"
         />
       </div>
     </div>

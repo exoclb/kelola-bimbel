@@ -42,7 +42,7 @@ export function RiwayatPerkembangan({
 
   return (
     <div className="mx-auto max-w-3xl">
-      <Button asChild variant="ghost" size="sm" className="-ml-3 mb-4">
+      <Button asChild variant="ghost" size="aksi" className="-ml-3 mb-4">
         <Link href="/app/perkembangan">
           <ArrowLeft aria-hidden="true" />
           Perkembangan anak
@@ -73,6 +73,7 @@ export function RiwayatPerkembangan({
             <div className="space-y-2">
               <Label htmlFor="murid">Murid</Label>
               <NativeSelect
+                className="h-[var(--target-sentuh-portal)] md:text-base"
                 id="murid"
                 name="murid"
                 defaultValue={muridTerpilih.id}
@@ -84,7 +85,7 @@ export function RiwayatPerkembangan({
                 ))}
               </NativeSelect>
             </div>
-            <Button type="submit" size="sm">
+            <Button type="submit" size="aksi">
               Tampilkan riwayat
             </Button>
           </form>

@@ -240,3 +240,26 @@
     }
   }
 }
+
+/* Dokumen yang bisa dicetak atau disimpan sebagai PDF — slip gaji, laporan
+   perkembangan, dan bukti tagihan — memakai margin kertas yang sama supaya isi
+   dokumen tidak menempel ke tepi kertas. */
+@page {
+  margin: 16mm;
+}
+
+@media print {
+  /* Satu baris tabel atau satu butir daftar tidak dipotong di batas halaman;
+     lebih baik pindah utuh ke halaman berikutnya. */
+  tr,
+  li,
+  dd,
+  dt {
+    break-inside: avoid;
+  }
+  /* Lencana dan pil memakai latar berwarna; tanpa ini browser mencetaknya
+     putih. */
+  * {
+    print-color-adjust: exact;
+  }
+}
