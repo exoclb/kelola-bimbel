@@ -80,7 +80,7 @@ Every portal screen starts with `LayarPortal` (`src/components/layar-portal.tsx`
 
 The portal component sizes and the payment-status pastels are tokens in `globals.css` too (`--tinggi-bilah-tab`, `--ukuran-ikon-tab`, `--radius-kartu-portal`, `--tinggi-aksi-portal`, `--radius-aksi-portal`, `--target-sentuh-portal`, `--tinggi-progres-portal`, and `--status-lunas|belum|terlambat-latar|garis|teks`). The status colours are `color-mix` blends over `--card`/`--primary`/`--muted`, so they follow light and dark automatically and keep at least 4.5:1 for their label text; change the component metrics here rather than in each screen.
 
-Portal content sits in `KartuPortal` (`src/components/kartu-portal.tsx`): a section with the 16px radius token, the shared padding, an optional `h2` title with icon and badge, and an optional description. `ringkas` tightens the inner spacing for single-figure cards. The staff area keeps using the shadcn `Card`.
+Portal content sits in `KartuPortal` (`src/components/kartu-portal.tsx`): a section named after its title, so screen readers can jump between the cards as regions, with the 16px radius token, the shared padding, an optional `h2` title with icon and badge, and an optional description. `ringkas` tightens the inner spacing for single-figure cards. The staff area keeps using the shadcn `Card`.
 
 A screen's main action goes in `TombolAksiLengket` (`src/components/tombol-aksi-lengket.tsx`) with `<Button size="aksi">`: a strip pinned just above the tab bar that stays visible on short and long pages alike and reserves its own height at the end of the content, so it never hides the last card. The `aksi` button size is the 48px / 12px-radius token pair.
 

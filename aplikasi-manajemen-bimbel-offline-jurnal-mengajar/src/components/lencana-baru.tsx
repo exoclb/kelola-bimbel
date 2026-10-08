@@ -10,7 +10,7 @@ export function LencanaBaru({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary",
+        "border-primary/30 bg-primary/10 text-brand-800 dark:text-primary inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium",
         className,
       )}
     >

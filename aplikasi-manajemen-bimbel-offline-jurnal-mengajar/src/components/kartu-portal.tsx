@@ -35,6 +35,7 @@ export function KartuPortal({
 }: KartuPortalProps) {
   return (
     <section
+      aria-label={typeof judul === "string" ? judul : undefined}
       className={cn(
         "bg-card text-card-foreground rounded-[var(--radius-kartu-portal)] border px-5 py-4 shadow-sm",
         className,
