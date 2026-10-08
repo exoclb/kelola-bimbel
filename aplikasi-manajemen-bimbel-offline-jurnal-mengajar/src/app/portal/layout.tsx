@@ -78,6 +78,7 @@ export default async function PortalLayout({
               email={user.email}
               peran={peran}
               ringkas
+              lencana={false}
             />
           </div>
         </div>

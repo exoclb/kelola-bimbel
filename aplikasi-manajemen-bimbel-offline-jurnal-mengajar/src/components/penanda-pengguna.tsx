@@ -6,6 +6,12 @@ type PenandaPenggunaProps = {
   peran: PeranPengguna;
   /** Versi ringkas: hanya inisial dan lencana peran, untuk kepala halaman sempit. */
   ringkas?: boolean;
+  /**
+   * Tampilkan lencana perannya. Dimatikan di kepala portal yang sempit supaya
+   * nama bimbel tidak terpotong; perannya tetap terbaca di kartu identitas
+   * layar Akun.
+   */
+  lencana?: boolean;
 };
 
 /**
@@ -18,6 +24,7 @@ export function PenandaPengguna({
   email,
   peran,
   ringkas = false,
+  lencana = true,
 }: PenandaPenggunaProps) {
   const inisial = nama.trim().charAt(0).toUpperCase() || "?";
 
@@ -25,21 +32,23 @@ export function PenandaPengguna({
     <div className="flex items-center gap-2.5">
       <span
         aria-hidden="true"
-        className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-semibold text-primary"
+        className="bg-primary/10 text-primary grid size-9 shrink-0 place-items-center rounded-full text-sm font-semibold"
       >
         {inisial}
       </span>
       {!ringkas && (
         <span className="leading-tight">
           <span className="block text-sm font-medium">{nama}</span>
-          <span className="hidden text-xs text-muted-foreground sm:block">
+          <span className="text-muted-foreground hidden text-xs sm:block">
             {email}
           </span>
         </span>
       )}
-      <span className="rounded-full border bg-muted px-2.5 py-0.5 text-xs font-medium whitespace-nowrap">
-        {labelPeran(peran)}
-      </span>
+      {lencana && (
+        <span className="bg-muted rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap">
+          {labelPeran(peran)}
+        </span>
+      )}
     </div>
   );
 }

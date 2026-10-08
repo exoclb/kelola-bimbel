@@ -91,7 +91,6 @@ test("wali masuk lewat halaman masuk dan mendarat di portal", async ({
   await expect(page).toHaveURL(/\/portal$/);
   await expect(page.getByRole("heading", { name: /^Halo, / })).toBeVisible();
   await expect(page.getByText("Portal Wali").first()).toBeVisible();
-  await expect(page.getByText("Orang tua", { exact: true })).toBeVisible();
   // Akun wali ini belum ditautkan ke murid mana pun, jadi beranda menjelaskan
   // keadaannya alih-alih menampilkan kartu anak.
   await expect(
