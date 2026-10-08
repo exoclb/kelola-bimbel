@@ -19,6 +19,7 @@
   --color-accent: var(--secondary);
   --color-accent-foreground: var(--foreground);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--border);
   --color-ring: var(--primary);
@@ -138,6 +139,7 @@
   --muted-foreground: #475569;
   --border: #e2e8f0;
   --destructive: #b91c1c;
+  --destructive-foreground: #ffffff;
 
   /* Skala hijau brand; #83B520 adalah langkah 500. Langkah 700 aman untuk
      teks di atas putih (kontras 5.4:1), 800/900 untuk latar/aksen gelap. */
@@ -182,6 +184,7 @@
   --muted-foreground: #cbd5e1;
   --border: #334155;
   --destructive: #ff8a8a;
+  --destructive-foreground: #ffffff;
 }
 
 @layer base {
