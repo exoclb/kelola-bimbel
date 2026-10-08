@@ -56,7 +56,7 @@ export function DaftarRiwayatJurnal({
               ? "Tidak ada jurnal yang cocok dengan saringan ini."
               : "Semua jurnal yang pernah kamu isi muncul di sini."}
         </p>
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="outline" size="aksi">
           <Link href="/app/jurnal">
             <NotebookPen aria-hidden="true" />
             Isi Jurnal Hari Ini
@@ -77,6 +77,7 @@ export function DaftarRiwayatJurnal({
               <div className="space-y-2">
                 <Label htmlFor="kelas">Kelas</Label>
                 <NativeSelect
+                  className="h-[var(--target-sentuh-portal)] md:text-base"
                   id="kelas"
                   name="kelas"
                   defaultValue={filter.kelas}
@@ -92,6 +93,7 @@ export function DaftarRiwayatJurnal({
               <div className="space-y-2">
                 <Label htmlFor="dari">Dari tanggal</Label>
                 <Input
+                  className="h-[var(--target-sentuh-portal)] md:text-base"
                   id="dari"
                   name="dari"
                   type="date"
@@ -101,6 +103,7 @@ export function DaftarRiwayatJurnal({
               <div className="space-y-2">
                 <Label htmlFor="sampai">Sampai tanggal</Label>
                 <Input
+                  className="h-[var(--target-sentuh-portal)] md:text-base"
                   id="sampai"
                   name="sampai"
                   type="date"
@@ -114,12 +117,12 @@ export function DaftarRiwayatJurnal({
               </p>
             )}
             <div className="flex flex-wrap items-center gap-2">
-              <Button type="submit" size="sm">
+              <Button type="submit" size="aksi">
                 <Filter aria-hidden="true" />
                 Terapkan saringan
               </Button>
               {adaSaringan && (
-                <Button asChild variant="ghost" size="sm">
+                <Button asChild variant="ghost" size="aksi">
                   <Link href="/app/jurnal/riwayat">Hapus saringan</Link>
                 </Button>
               )}
@@ -173,7 +176,7 @@ export function DaftarRiwayatJurnal({
                     </span>
                     <span>{jurnal.cabang}</span>
                   </div>
-                  <Button asChild variant="outline" size="sm">
+                  <Button asChild variant="outline" size="aksi">
                     <Link href={`/app/jurnal/riwayat/${jurnal.id}`}>
                       Buka &amp; koreksi
                     </Link>

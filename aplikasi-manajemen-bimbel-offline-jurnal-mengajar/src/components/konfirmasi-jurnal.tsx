@@ -139,7 +139,12 @@ export function KonfirmasiJurnal({
                 <Clock className="size-4" aria-hidden="true" />
                 Dikirim pukul {ringkasan.waktuKirim}
               </p>
-              <Button type="button" onClick={onIsiLain}>
+              <Button
+                type="button"
+                size="aksi"
+                className="w-full sm:w-auto"
+                onClick={onIsiLain}
+              >
                 <Send aria-hidden="true" />
                 Isi jurnal kelas lain
               </Button>
