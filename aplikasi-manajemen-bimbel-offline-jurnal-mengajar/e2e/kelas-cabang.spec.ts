@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import { Pool } from "pg";
@@ -997,6 +998,74 @@ test("api cabang menjaga sesi, peran, dan origin", async ({ request }) => {
     expect(tulis.status()).toBe(201);
   } finally {
     await db.query("DELETE FROM cabang WHERE nama = ANY($1)", [[nama, baru]]);
+    await db.end();
+  }
+});
+
+/**
+ * Halaman cabang dirender di atas data contoh hasil seeder: menjalankan
+ * `scripts/seed-cabang.mjs` (perintah yang sama dengan `npm run db:seed:cabang`,
+ * tetapi menunjuk basis data uji) lalu memeriksa setiap cabang contohnya muncul
+ * dengan alamat, kontak, dan statusnya.
+ */
+test("halaman cabang menampilkan data contoh hasil seeder", async ({
+  page,
+}) => {
+  await jadikanOwner();
+  const { getDaftarCabang } = await import("../src/lib/mock-cabang");
+  const contoh = getDaftarCabang();
+
+  // Cabang contoh yang sudah ada di basis data uji (mis. dibuat berkas uji lain)
+  // tidak ditimpa seeder, jadi isinya hanya diperiksa untuk yang benar-benar
+  // baru ditulis di sini.
+  const db = await pool();
+  const { rows: adaSebelum } = await db.query<{ nama: string }>(
+    "SELECT nama FROM cabang WHERE nama = ANY($1)",
+    [contoh.map((cabang) => cabang.nama)],
+  );
+  const namaSebelum = new Set(adaSebelum.map((baris) => baris.nama));
+
+  const seeder = spawnSync(process.execPath, ["scripts/seed-cabang.mjs"], {
+    cwd: process.cwd(),
+    env: {
+      ...process.env,
+      DATABASE_URL: process.env.STARTER_TEST_DATABASE_URL,
+      MIGRATION_DATABASE_URL: process.env.STARTER_TEST_DATABASE_URL,
+    },
+    encoding: "utf8",
+  });
+  expect(seeder.status, seeder.stderr).toBe(0);
+
+  const segar = contoh.filter((cabang) => !namaSebelum.has(cabang.nama));
+  expect(segar.length).toBeGreaterThan(0);
+
+  try {
+    await masukPeramban(page);
+    await page.goto("/app/cabang");
+
+    for (const cabang of contoh) {
+      const kartu = page.locator("li").filter({
+        has: page.getByRole("button", { name: `Detail cabang ${cabang.nama}` }),
+      });
+      await expect(kartu).toContainText(cabang.nama);
+      // Baris yang baru ditulis seeder tampil lengkap dengan isi data contohnya.
+      if (segar.includes(cabang)) {
+        await expect(kartu).toContainText(cabang.alamat);
+        await expect(kartu).toContainText(cabang.kontak);
+        await expect(kartu).toContainText(
+          cabang.statusAktif ? "Aktif" : "Nonaktif",
+        );
+      }
+    }
+  } finally {
+    // Baris contoh yang tidak dipakai kelas mana pun dihapus lagi supaya
+    // berkas uji lain melihat basis data seperti sebelumnya.
+    await db.query(
+      `DELETE FROM cabang
+        WHERE nama = ANY($1)
+          AND nama NOT IN (SELECT DISTINCT cabang FROM classes)`,
+      [contoh.map((cabang) => cabang.nama)],
+    );
     await db.end();
   }
 });
