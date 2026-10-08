@@ -94,7 +94,7 @@ The five portal screens are `/portal` (Beranda), `/portal/jadwal`, `/portal/tagi
 
 Form fields keep the label above the control through `IsianTeks`, `IsianTeksPanjang`, and `IsianPilih` (`src/components/isian-form.tsx`). The portal passes `ukuran="sentuh"`, which lifts the control to the 48px touch target (`--target-sentuh-portal`) and keeps its text at 16px on every width so phones do not zoom when a field is focused; without it the staff forms keep their current 36px controls.
 
-Every portal control — tab, action strip, card action, form field, and header link — is at least 48px tall, and the screens were checked from 360px to 1024px in both themes for horizontal overflow, contrast, and tap size.
+Every portal control — tab, action strip, card action, form field, and header link — is at least 48px tall, and the screens were checked in both themes for horizontal overflow, contrast, and tap size from 320px (below the 360px target, to catch narrow phones) up to 1024px.
 
 The Akun screen's display preference stores `portal-tema` (`sistem`, `terang`, or `gelap`) in the browser through `src/lib/tema-portal.ts`. A small inline script in the portal layout applies the stored choice before the first paint, `TemaPortal` keeps `sistem` in step with the device and clears `dark` when the visitor leaves the portal, so the staff area keeps its current appearance.
 
