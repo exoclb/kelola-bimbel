@@ -647,3 +647,53 @@ test("tagihan SPP dijaga periode, nominal, dan tanggal bayarnya", async () => {
   const lunas = await tulis(5, 2099, 350000, "lunas", "2099-05-10");
   assert.equal(lunas.rowCount, 1);
 });
+
+/**
+ * Invarian skema biaya operasional (`drizzle/0016_pengeluaran_operasional.sql`
+ * dan `0024_biaya_operasional_invarian.sql`): nominal tidak negatif, tanggal
+ * masuk akal, nama kategori terisi dan unik, serta kategori yang masih dipakai
+ * tidak boleh dihapus.
+ */
+test("biaya operasional dijaga nominal, tanggal, dan kategorinya", async () => {
+  const kategori = await dbJurnal.query(
+    "INSERT INTO expense_categories (nama) VALUES ($1) RETURNING id",
+    ["Sewa Uji Invarian"],
+  );
+  const kategoriId = kategori.rows[0].id;
+
+  const kembar = await ditolak(
+    "INSERT INTO expense_categories (nama) VALUES ($1)",
+    ["Sewa Uji Invarian"],
+  );
+  assert.equal(kembar.code, "23505");
+
+  const namaKosong = await ditolak(
+    "INSERT INTO expense_categories (nama) VALUES ($1)",
+    ["   "],
+  );
+  assert.equal(namaKosong.code, "23514");
+
+  await dbJurnal.query(
+    "INSERT INTO expenses (kategori_id, nominal, tanggal, catatan) VALUES ($1, $2, $3, $4)",
+    [kategoriId, 150000, "2099-02-10", "Uji invarian"],
+  );
+
+  const nominalNegatif = await ditolak(
+    "INSERT INTO expenses (kategori_id, nominal, tanggal) VALUES ($1, $2, $3)",
+    [kategoriId, -1, "2099-02-10"],
+  );
+  assert.equal(nominalNegatif.code, "23514");
+
+  const tanggalAneh = await ditolak(
+    "INSERT INTO expenses (kategori_id, nominal, tanggal) VALUES ($1, $2, $3)",
+    [kategoriId, 150000, "1999-12-31"],
+  );
+  assert.equal(tanggalAneh.code, "23514");
+
+  // Kategori yang masih dipakai pengeluaran tidak boleh hilang: `restrict`.
+  const dihapus = await ditolak(
+    "DELETE FROM expense_categories WHERE id = $1",
+    [kategoriId],
+  );
+  assert.equal(dihapus.code, "23503");
+});

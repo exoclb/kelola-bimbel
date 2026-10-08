@@ -1,4 +1,6 @@
+import { sql } from "drizzle-orm";
 import {
+  check,
   pgTable,
   timestamp,
   uniqueIndex,
@@ -18,5 +20,12 @@ export const expenseCategories = pgTable(
       .defaultNow()
       .notNull(),
   },
-  (table) => [uniqueIndex("expense_categories_nama_idx").on(table.nama)],
+  (table) => [
+    uniqueIndex("expense_categories_nama_idx").on(table.nama),
+    // Nama kosong (atau hanya spasi) tidak berguna di daftar pilihan.
+    check(
+      "expense_categories_nama_terisi",
+      sql`length(btrim(${table.nama})) > 0`,
+    ),
+  ],
 );

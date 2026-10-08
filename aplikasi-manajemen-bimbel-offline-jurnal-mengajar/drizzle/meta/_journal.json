@@ -169,6 +169,13 @@
       "when": 1791481854828,
       "tag": "0023_tagihan_spp_invarian",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1791482762372,
+      "tag": "0024_biaya_operasional_invarian",
+      "breakpoints": true
     }
   ]
 }

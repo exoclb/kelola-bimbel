@@ -1,0 +1,3 @@
+ALTER TABLE "expense_categories" ADD CONSTRAINT "expense_categories_nama_terisi" CHECK (length(btrim("expense_categories"."nama")) > 0);--> statement-breakpoint
+ALTER TABLE "expenses" ADD CONSTRAINT "expenses_nominal_tidak_negatif" CHECK ("expenses"."nominal" >= 0);--> statement-breakpoint
+ALTER TABLE "expenses" ADD CONSTRAINT "expenses_tanggal_masuk_akal" CHECK ("expenses"."tanggal" between date '2000-01-01' and date '2100-12-31');

@@ -1,4 +1,6 @@
+import { sql } from "drizzle-orm";
 import {
+  check,
   date,
   index,
   numeric,
@@ -40,5 +42,13 @@ export const expenses = pgTable(
     index("expenses_tanggal_idx").on(table.tanggal),
     // Dipakai saringan per kategori dan penjagaan relasi.
     index("expenses_kategori_idx").on(table.kategoriId),
+    // Nominal pengeluaran tidak boleh negatif.
+    check("expenses_nominal_tidak_negatif", sql`${table.nominal} >= 0`),
+    // Tanggalnya harus masuk akal; salah tulis tahun membuat pengeluaran
+    // hilang dari rekap periode yang sebenarnya.
+    check(
+      "expenses_tanggal_masuk_akal",
+      sql`${table.tanggal} between date '2000-01-01' and date '2100-12-31'`,
+    ),
   ],
 );
