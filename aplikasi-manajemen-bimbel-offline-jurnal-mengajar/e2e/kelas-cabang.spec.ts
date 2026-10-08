@@ -597,3 +597,88 @@ test("form tambah cabang dan API menolak nama yang sudah dipakai", async ({
     }
   }
 });
+
+/**
+ * Form ubah cabang dan saklar status aktif di halaman pengaturan cabang:
+ * perubahan tersimpan di basis data, nama yang sudah dipakai cabang lain
+ * ditolak, dan status aktif bisa dibolak-balik.
+ */
+test("form ubah cabang dan toggle status aktif bekerja", async ({ page }) => {
+  await jadikanOwner();
+  const penanda = randomUUID().slice(0, 8);
+  const nama = `Cabang Ubah ${penanda}`;
+  const lain = `Cabang Ubah Lain ${penanda}`;
+  await siapkanCabang(nama, true);
+  await siapkanCabang(lain, true);
+
+  const db = await pool();
+  try {
+    const { rows } = await db.query<{ id: string }>(
+      "SELECT id FROM cabang WHERE nama = $1",
+      [nama],
+    );
+    const id = rows[0].id;
+
+    await masukPeramban(page);
+    await page.goto("/app/cabang");
+    // Kartu cabang ini dikenali dari tombol saklar statusnya, karena saat
+    // formulir ubah terbuka namanya berpindah ke dalam isian.
+    const kartu = page.locator("li").filter({
+      has: page.getByRole("button", {
+        name: new RegExp(`cabang ${nama}$`),
+      }),
+    });
+
+    // 1) Ubah alamat dan kontak: nilainya tersimpan.
+    await kartu.getByRole("button", { name: "Ubah", exact: true }).click();
+    await page.locator(`#alamat-${id}`).fill("Jl. Ubah e2e No. 7");
+    await page.locator(`#kontak-${id}`).fill("0800-7777");
+    await page.getByRole("button", { name: "Simpan perubahan" }).click();
+    await expect(kartu.getByText("Jl. Ubah e2e No. 7")).toBeVisible();
+    await expect(kartu.getByText("0800-7777")).toBeVisible();
+    const tersimpan = await db.query<{
+      alamat: string;
+      kontak: string;
+      status_aktif: boolean;
+    }>("SELECT alamat, kontak, status_aktif FROM cabang WHERE id = $1", [id]);
+    expect(tersimpan.rows[0]).toEqual({
+      alamat: "Jl. Ubah e2e No. 7",
+      kontak: "0800-7777",
+      status_aktif: true,
+    });
+
+    // 2) Mengganti nama menjadi nama cabang lain ditolak.
+    await kartu.getByRole("button", { name: "Ubah", exact: true }).click();
+    await page.locator(`#nama-${id}`).fill(lain);
+    await page.getByRole("button", { name: "Simpan perubahan" }).click();
+    await expect(
+      page.getByText(`Cabang "${lain}" sudah terdaftar.`),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Batal" }).click();
+    await expect(kartu.getByText(nama)).toBeVisible();
+
+    // 3) Saklar status aktif: nonaktif lalu aktif lagi.
+    await kartu
+      .getByRole("button", { name: `Nonaktifkan cabang ${nama}` })
+      .click();
+    await expect(kartu.getByText("Nonaktif", { exact: true })).toBeVisible();
+    const nonaktif = await db.query<{ status_aktif: boolean }>(
+      "SELECT status_aktif FROM cabang WHERE id = $1",
+      [id],
+    );
+    expect(nonaktif.rows[0].status_aktif).toBe(false);
+
+    await kartu
+      .getByRole("button", { name: `Aktifkan cabang ${nama}` })
+      .click();
+    await expect(kartu.getByText("Aktif", { exact: true })).toBeVisible();
+    const aktif = await db.query<{ status_aktif: boolean }>(
+      "SELECT status_aktif FROM cabang WHERE id = $1",
+      [id],
+    );
+    expect(aktif.rows[0].status_aktif).toBe(true);
+  } finally {
+    await db.query("DELETE FROM cabang WHERE nama = ANY($1)", [[nama, lain]]);
+    await db.end();
+  }
+});
