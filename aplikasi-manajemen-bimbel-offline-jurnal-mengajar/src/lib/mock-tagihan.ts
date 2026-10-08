@@ -1,10 +1,13 @@
 // Data contoh tagihan bulanan murid.
 //
-// Tabel `student_invoices` belum ada, jadi daftarnya masih tiruan. Bentuk
-// `Tagihan` mengikuti rencana kolom tabelnya (murid, periode bulan/tahun,
-// nominal, status, tanggal bayar, penanda sudah diingatkan, jejak waktu),
-// sehingga nanti tinggal diganti sumbernya. `kelasNama` hanya untuk tampilan,
-// diambil dari penempatan murid.
+// Tagihan sungguhan sudah pindah ke tabel `student_invoices` dan dibaca
+// `src/services/tagihan.service.ts` — dipakai halaman `/app/tagihan`, arus kas,
+// laporan laba rugi, dan portal wali. Berkas ini tersisa untuk satu pemakai:
+// penanda "Baru" bagian tagihan di portal wali (`src/lib/mock-portal-wali.ts`),
+// yang menghitung tanggal tagihan terbaru tiap anak contoh dari daftar ini.
+// Bentuk `Tagihan` mengikuti kolom tabelnya (murid, periode bulan/tahun,
+// nominal, status, tanggal bayar, penanda sudah diingatkan, jejak waktu).
+// `kelasNama` hanya untuk tampilan, diambil dari penempatan murid.
 
 import {
   periodeDariTagihan,

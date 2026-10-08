@@ -88,3 +88,30 @@ export function hitungRekapTagihan(
     ),
   };
 }
+
+/**
+ * Ringkasan satu periode (`YYYY-MM`) dengan bentuk yang sama seperti
+ * `hitungRekapTagihan`, ditambah periodenya. Dipakai rekap pemasukan yang
+ * dihitung basis data (`src/services/tagihan.service.ts`), supaya arus kas dan
+ * laporan laba rugi menerima angka siap pakai, bukan seluruh baris tagihan.
+ */
+export type RekapTagihanPeriode = {
+  periode: string;
+  jumlah: number;
+  jumlahLunas: number;
+  nominalLunas: number;
+  jumlahBelumLunas: number;
+  nominalBelumLunas: number;
+};
+
+/** Rekap periode tanpa tagihan: semua nol, supaya pemanggil tak perlu bercabang. */
+export function rekapTagihanKosong(periode: string): RekapTagihanPeriode {
+  return {
+    periode,
+    jumlah: 0,
+    jumlahLunas: 0,
+    nominalLunas: 0,
+    jumlahBelumLunas: 0,
+    nominalBelumLunas: 0,
+  };
+}

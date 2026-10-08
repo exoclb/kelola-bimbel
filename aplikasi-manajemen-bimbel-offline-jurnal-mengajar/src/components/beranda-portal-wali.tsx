@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -17,12 +17,7 @@ import { LencanaBaru } from "@/components/lencana-baru";
 import { formatRupiah } from "@/lib/gaji";
 import type { AnakPortal, StatusJejakPortal } from "@/lib/mock-portal-wali";
 import type { ProfilBimbel } from "@/lib/mock-pengaturan";
-import { periodeDariTagihan } from "@/lib/tagihan";
-import {
-  langgananTagihan,
-  siapkanTagihan,
-  snapshotTagihan,
-} from "@/lib/tagihan-store";
+import { periodeDariTagihan, type Tagihan } from "@/lib/tagihan";
 import {
   formatPeriodeTagihan,
   menunggak,
@@ -38,6 +33,8 @@ type BerandaPortalWaliProps = {
   muridIdAwal?: string;
   /** Status baca wali ini per anak, dihitung server (lihat jejak-baca.service). */
   statusAwal: StatusJejakPortal;
+  /** Tagihan seluruh anak yang tertaut ke wali ini, dari tabel `student_invoices`. */
+  tagihan: Tagihan[];
 };
 
 const nilaiTampil = new Intl.NumberFormat("id-ID", {
@@ -53,30 +50,24 @@ const namaHariBulan = new Intl.DateTimeFormat("id-ID", {
 /**
  * Beranda Portal Wali: identitas bimbel, pemilih anak, ringkasan tagihan anak
  * yang dipilih, dan sorotan perkembangan terbarunya. Semuanya hanya baca.
- * Daftar anak datang dari basis data (lihat `portal.service`), sedangkan isi
- * per anak — catatan, kehadiran, tagihan — masih tiruan.
+ * Daftar anak dan tagihan datang dari basis data (lihat `portal.service` dan
+ * `tagihan.service`), sedangkan catatan dan kehadiran per anak masih tiruan.
  */
 export function BerandaPortalWali({
   anak,
   profil,
   muridIdAwal,
   statusAwal,
+  tagihan,
 }: BerandaPortalWaliProps) {
-  const tagihan = useSyncExternalStore(
-    langgananTagihan,
-    snapshotTagihan,
-    snapshotTagihan,
-  );
-
   const [muridId, setMuridId] = useState(
     muridIdAwal || (anak[0]?.muridId ?? ""),
   );
 
-  useEffect(() => {
-    siapkanTagihan();
-  }, []);
-
-  const dipilih = anak.find((baris) => baris.muridId === muridId) ?? anak[0];
+  // Anak hanya ditemukan kalau idnya memang tertaut ke wali ini. `?anak=` milik
+  // akun lain jadi tidak terpilih, bukan jatuh ke anak pertama, sehingga
+  // tagihan siapa pun tidak tampil.
+  const dipilih = anak.find((baris) => baris.muridId === muridId);
 
   // Lencana "Baru" per bagian anak yang sedang dibuka, diambil dari status yang
   // dihitung server untuk wali ini. Anak lain tidak terpengaruh karena
@@ -89,11 +80,11 @@ export function BerandaPortalWali({
   const tagihanAnak = useMemo(
     () =>
       tagihan
-        .filter((baris) => baris.muridId === dipilih?.sumberTiruan)
+        .filter((baris) => baris.muridId === dipilih?.muridId)
         .sort((a, b) =>
           periodeDariTagihan(b).localeCompare(periodeDariTagihan(a)),
         ),
-    [tagihan, dipilih?.sumberTiruan],
+    [tagihan, dipilih?.muridId],
   );
 
   const periodeBerjalan = periodeTagihan(new Date());
@@ -105,9 +96,25 @@ export function BerandaPortalWali({
   if (!dipilih) {
     return (
       <div className="mx-auto max-w-3xl">
-        <p className="text-base text-muted-foreground">
-          Akun ini belum tertaut ke murid mana pun.
+        <p className="mt-6 mb-3 text-sm font-medium text-primary">
+          Portal Wali
         </p>
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+          Beranda
+        </h1>
+        <p className="mt-3 text-base leading-7 text-muted-foreground">
+          {anak.length === 0
+            ? "Akun ini belum tertaut ke murid mana pun."
+            : "Anak yang diminta tidak tertaut ke akun Anda."}
+        </p>
+        <div className="mt-6">
+          <PemilihAnak
+            anak={anak}
+            nilai={muridId}
+            status={statusAwal}
+            onPilih={setMuridId}
+          />
+        </div>
       </div>
     );
   }
@@ -306,9 +313,9 @@ export function BerandaPortalWali({
       </Card>
 
       <p className="mt-6 text-xs leading-5 text-muted-foreground">
-        Catatan: daftar anak sudah diambil dari database, sedangkan tagihan dan
-        catatan perkembangan masih data contoh sampai sumber keduanya
-        tersambung.
+        Catatan: daftar anak dan tagihannya sudah diambil dari database,
+        sedangkan catatan perkembangan dan kehadiran masih data contoh sampai
+        sumber keduanya tersambung.
       </p>
     </div>
   );

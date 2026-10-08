@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -19,12 +19,7 @@ import { cn } from "cn";
 import { formatRupiah, formatPeriode } from "@/lib/gaji";
 import { getRekapGajiBulanan } from "@/lib/mock-gaji";
 import { getProfilBimbel } from "@/lib/mock-pengaturan";
-import {
-  langgananTagihan,
-  siapkanTagihan,
-  snapshotTagihan,
-} from "@/lib/tagihan-store";
-import { hitungRekapTagihan } from "@/lib/tagihan";
+import { rekapTagihanKosong, type RekapTagihanPeriode } from "@/lib/tagihan";
 
 const NAMA_BULAN = new Intl.DateTimeFormat("id-ID", { month: "long" });
 const bulanTampil = (bulan: number) =>
@@ -40,21 +35,20 @@ function nilaiTampil(nilai: number) {
 type LaporanLabaRugiProps = {
   /** Total pengeluaran operasional per periode (`YYYY-MM`) dari tabel `expenses`. */
   rekapPengeluaran: { periode: string; total: number }[];
+  /** Ringkasan tagihan per periode (`YYYY-MM`) dari tabel `student_invoices`. */
+  rekapPemasukan: RekapTagihanPeriode[];
 };
 
 /**
  * Laporan laba rugi bulanan: pemasukan SPP yang sudah lunas dikurangi biaya
- * honor guru dan pengeluaran operasional. Pengeluaran operasional dibaca dari
- * database lewat prop server; pemasukan SPP dan honor guru masih membaca modul
- * tiruan.
+ * honor guru dan pengeluaran operasional. Pemasukan SPP dan pengeluaran
+ * operasional dibaca dari basis data lewat prop server; honor guru masih
+ * membaca modul tiruan.
  */
-export function LaporanLabaRugi({ rekapPengeluaran }: LaporanLabaRugiProps) {
-  const tagihan = useSyncExternalStore(
-    langgananTagihan,
-    snapshotTagihan,
-    snapshotTagihan,
-  );
-
+export function LaporanLabaRugi({
+  rekapPengeluaran,
+  rekapPemasukan,
+}: LaporanLabaRugiProps) {
   const totalOperasional = useMemo(
     () =>
       new Map(
@@ -63,25 +57,21 @@ export function LaporanLabaRugi({ rekapPengeluaran }: LaporanLabaRugiProps) {
     [rekapPengeluaran],
   );
 
+  const pemasukanPeriode = useMemo(
+    () =>
+      new Map(rekapPemasukan.map((baris) => [baris.periode, baris] as const)),
+    [rekapPemasukan],
+  );
+
   const [bulan, setBulan] = useState(sekarang.getMonth() + 1);
   const [tahun, setTahun] = useState(sekarang.getFullYear());
-
-  useEffect(() => {
-    siapkanTagihan();
-  }, []);
 
   const periode = `${tahun}-${String(bulan).padStart(2, "0")}`;
   const periodeTampil = formatPeriode(periode);
 
   const rekapTagihan = useMemo(
-    () =>
-      hitungRekapTagihan(
-        tagihan.filter(
-          (baris) =>
-            baris.periodeBulan === bulan && baris.periodeTahun === tahun,
-        ),
-      ),
-    [tagihan, bulan, tahun],
+    () => pemasukanPeriode.get(periode) ?? rekapTagihanKosong(periode),
+    [pemasukanPeriode, periode],
   );
 
   const biayaHonor = useMemo(
@@ -307,8 +297,8 @@ export function LaporanLabaRugi({ rekapPengeluaran }: LaporanLabaRugiProps) {
       </div>
 
       <p className="mt-6 text-xs leading-5 text-muted-foreground">
-        Catatan: pengeluaran operasional sudah dibaca dari database. Pemasukan
-        SPP dan honor guru masih dijumlahkan dari modul tiruan.
+        Catatan: pemasukan SPP dan pengeluaran operasional sudah dibaca dari
+        database. Honor guru masih dijumlahkan dari modul tiruan.
       </p>
     </div>
   );

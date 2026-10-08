@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useSyncExternalStore } from "react";
+import { useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Receipt } from "lucide-react";
@@ -12,19 +12,17 @@ import { PesanKosong } from "@/components/status-antarmuka";
 import { formatRupiah } from "@/lib/gaji";
 import { tandaiTerbaca } from "@/lib/jejak-baca-portal-store";
 import type { AnakWali, StatusJejakPortal } from "@/lib/mock-portal-wali";
-import { periodeDariTagihan } from "@/lib/tagihan";
-import {
-  langgananTagihan,
-  siapkanTagihan,
-  snapshotTagihan,
-} from "@/lib/tagihan-store";
+import { periodeDariTagihan, type Tagihan } from "@/lib/tagihan";
 import { formatPeriodeTagihan, hitungRekapTagihan } from "@/lib/tagihan";
 
 type TagihanSppAnakProps = {
   anak: AnakWali[];
+  /** Id anak dari alamat halaman (`?anak=`); kosong berarti anak pertama. */
   muridId: string;
   /** Status baca wali ini per anak, dihitung server (lihat jejak-baca.service). */
   statusAwal: StatusJejakPortal;
+  /** Tagihan seluruh anak yang tertaut ke wali ini, dari tabel `student_invoices`. */
+  tagihan: Tagihan[];
 };
 
 const tanggalTampil = new Intl.DateTimeFormat("id-ID", {
@@ -36,25 +34,23 @@ const tanggalTampil = new Intl.DateTimeFormat("id-ID", {
 /**
  * Daftar tagihan SPP anak untuk wali, hanya baca. Anak yang dipilih mengikuti
  * alamat halaman (`?anak=`), jadi pilihan yang sama terbawa saat wali pindah
- * ke halaman portal lain.
+ * ke halaman portal lain. Tagihannya dibaca dari basis data dan hanya anak yang
+ * tertaut ke akun wali ini yang bisa tampil; `?anak=` milik akun lain tidak
+ * menampilkan tagihan siapa pun.
  */
 export function TagihanSppAnak({
   anak,
   muridId,
   statusAwal,
+  tagihan,
 }: TagihanSppAnakProps) {
   const router = useRouter();
-  const semua = useSyncExternalStore(
-    langgananTagihan,
-    snapshotTagihan,
-    snapshotTagihan,
-  );
 
-  useEffect(() => {
-    siapkanTagihan();
-  }, []);
-
-  const dipilih = anak.find((baris) => baris.muridId === muridId) ?? anak[0];
+  // Tanpa id dari alamat, tampil anak pertama milik wali ini; id yang tidak
+  // tertaut tidak jatuh ke anak lain, jadi tidak ada tagihan yang bocor.
+  const dipilih = muridId
+    ? anak.find((baris) => baris.muridId === muridId)
+    : anak[0];
 
   // Bagian tagihan ditandai terbaca begitu halaman ini dibuka (lewat API), lalu
   // halaman disegarkan supaya status dari server diperbarui — lencana "Baru"
@@ -75,12 +71,12 @@ export function TagihanSppAnak({
 
   const daftar = useMemo(
     () =>
-      semua
-        .filter((baris) => baris.muridId === dipilih?.sumberTiruan)
+      tagihan
+        .filter((baris) => baris.muridId === dipilih?.muridId)
         .sort((a, b) =>
           periodeDariTagihan(b).localeCompare(periodeDariTagihan(a)),
         ),
-    [semua, dipilih?.sumberTiruan],
+    [tagihan, dipilih?.muridId],
   );
 
   const rekap = hitungRekapTagihan(daftar);
@@ -94,7 +90,9 @@ export function TagihanSppAnak({
       <p className="mt-3 text-base leading-7 text-muted-foreground">
         {dipilih
           ? `Tagihan ${dipilih.nama} — hanya untuk dilihat, tanpa pembayaran di portal.`
-          : "Akun ini belum tertaut ke murid mana pun."}
+          : anak.length > 0
+            ? "Anak yang diminta tidak tertaut ke akun Anda."
+            : "Akun ini belum tertaut ke murid mana pun."}
       </p>
 
       <p
@@ -179,8 +177,8 @@ export function TagihanSppAnak({
       </div>
 
       <p className="mt-6 text-xs leading-5 text-muted-foreground">
-        Catatan: daftar tagihan ini masih data tiruan — data diambil dari modul
-        tagihan yang sama dengan yang dipakai owner.
+        Catatan: daftar tagihan ini dibaca dari database (tabel
+        student_invoices) — sumber yang sama dengan yang dipakai owner.
       </p>
     </div>
   );

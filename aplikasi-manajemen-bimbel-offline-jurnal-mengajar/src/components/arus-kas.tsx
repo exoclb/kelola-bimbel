@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useSyncExternalStore } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { ArrowRight, TrendingDown, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,14 +9,10 @@ import { cn } from "cn";
 import { formatPeriode, formatRupiah } from "@/lib/gaji";
 import { getRekapGajiBulanan } from "@/lib/mock-gaji";
 import {
-  langgananTagihan,
-  siapkanTagihan,
-  snapshotTagihan,
-} from "@/lib/tagihan-store";
-import {
   geserPeriode,
-  hitungRekapTagihan,
   periodeTagihan,
+  rekapTagihanKosong,
+  type RekapTagihanPeriode,
 } from "@/lib/tagihan";
 
 // Berapa bulan yang ditampilkan pada tren.
@@ -34,21 +30,17 @@ type BarisArusKas = {
 type ArusKasProps = {
   /** Total pengeluaran operasional per periode (`YYYY-MM`) dari tabel `expenses`. */
   rekapPengeluaran: { periode: string; total: number }[];
+  /** Ringkasan tagihan per periode (`YYYY-MM`) dari tabel `student_invoices`. */
+  rekapPemasukan: RekapTagihanPeriode[];
 };
 
 /**
  * Arus kas bimbel: tren bulanan pemasukan SPP, pengeluaran (honor guru +
- * operasional), dan laba bersih dalam satu tampilan. Pengeluaran operasional
- * datang dari database lewat prop server; pemasukan SPP dan honor guru masih
- * membaca modul tiruan.
+ * operasional), dan laba bersih dalam satu tampilan. Pemasukan SPP dan
+ * pengeluaran operasional datang dari basis data lewat prop server; honor guru
+ * masih membaca modul tiruan.
  */
-export function ArusKas({ rekapPengeluaran }: ArusKasProps) {
-  const tagihan = useSyncExternalStore(
-    langgananTagihan,
-    snapshotTagihan,
-    snapshotTagihan,
-  );
-
+export function ArusKas({ rekapPengeluaran, rekapPemasukan }: ArusKasProps) {
   const totalOperasional = useMemo(
     () =>
       new Map(
@@ -57,9 +49,11 @@ export function ArusKas({ rekapPengeluaran }: ArusKasProps) {
     [rekapPengeluaran],
   );
 
-  useEffect(() => {
-    siapkanTagihan();
-  }, []);
+  const pemasukanPeriode = useMemo(
+    () =>
+      new Map(rekapPemasukan.map((baris) => [baris.periode, baris] as const)),
+    [rekapPemasukan],
+  );
 
   const periodeBerjalan = periodeTagihan(new Date());
 
@@ -69,13 +63,8 @@ export function ArusKas({ rekapPengeluaran }: ArusKasProps) {
       geserPeriode(periodeBerjalan, urutan - (JUMLAH_BULAN - 1)),
     );
     return bulan.map((periode) => {
-      const [tahun, bulanKe] = periode.split("-").map(Number);
-      const rekap = hitungRekapTagihan(
-        tagihan.filter(
-          (baris) =>
-            baris.periodeBulan === bulanKe && baris.periodeTahun === tahun,
-        ),
-      );
+      const rekap =
+        pemasukanPeriode.get(periode) ?? rekapTagihanKosong(periode);
       const honor = getRekapGajiBulanan(periode).daftar.reduce(
         (jumlah, baris) => jumlah + baris.totalGaji,
         0,
@@ -90,7 +79,7 @@ export function ArusKas({ rekapPengeluaran }: ArusKasProps) {
         laba: rekap.nominalLunas - honor - operasional,
       };
     });
-  }, [tagihan, totalOperasional, periodeBerjalan]);
+  }, [pemasukanPeriode, totalOperasional, periodeBerjalan]);
 
   const maksimum = Math.max(
     1,
@@ -232,8 +221,8 @@ export function ArusKas({ rekapPengeluaran }: ArusKasProps) {
       </div>
 
       <p className="mt-6 text-xs leading-5 text-muted-foreground">
-        Catatan: pengeluaran operasional sudah dibaca dari database. Pemasukan
-        SPP dan honor guru masih dari modul tiruan, dan unduhan laporan
+        Catatan: pemasukan SPP dan pengeluaran operasional sudah dibaca dari
+        database. Honor guru masih dari modul tiruan, dan unduhan laporan
         menyusul.
       </p>
     </div>

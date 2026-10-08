@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, eq, inArray, type SQL } from "drizzle-orm";
+import { and, asc, eq, inArray, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import {
   classes,
@@ -7,7 +7,7 @@ import {
   studentInvoices,
   students,
 } from "@/db/schema";
-import type { Tagihan } from "@/lib/tagihan";
+import type { RekapTagihanPeriode, Tagihan } from "@/lib/tagihan";
 import { tanggalISO } from "@/lib/tanggal";
 import type {
   CreateTagihanInput,
@@ -107,6 +107,66 @@ export async function listTagihan({ periode }: ListTagihanInput) {
       eq(studentInvoices.periodeBulan, periodeBulan),
     ),
   );
+}
+
+/**
+ * Tagihan milik murid-murid tertentu, mis. anak yang tertaut ke satu akun wali.
+ * Daftar id yang kosong menghasilkan daftar kosong tanpa menyentuh basis data,
+ * jadi pemanggil tidak perlu bercabang.
+ */
+export async function listTagihanMurid(muridIds: string[]): Promise<Tagihan[]> {
+  if (muridIds.length === 0) return [];
+  return ambilTagihan(inArray(studentInvoices.studentId, muridIds));
+}
+
+/**
+ * Ringkasan tagihan per periode (`YYYY-MM`) untuk rekap pemasukan arus kas dan
+ * laporan laba rugi, dihitung di basis data supaya halaman tidak memuat seluruh
+ * baris tagihan. Nominal lunas adalah pemasukan nyata; sisanya dicatat sebagai
+ * tagihan berjalan. Periode tanpa tagihan tidak muncul; pemanggil
+ * memperlakukannya sebagai nol (`rekapTagihanKosong`).
+ */
+export async function rekapPemasukanPeriode(): Promise<RekapTagihanPeriode[]> {
+  const baris = await db
+    .select({
+      periodeTahun: studentInvoices.periodeTahun,
+      periodeBulan: studentInvoices.periodeBulan,
+      status: studentInvoices.status,
+      jumlah: sql<number>`count(*)::int`,
+      total: sql<number>`coalesce(sum(${studentInvoices.nominal}), 0)::float8`,
+    })
+    .from(studentInvoices)
+    .groupBy(
+      studentInvoices.periodeTahun,
+      studentInvoices.periodeBulan,
+      studentInvoices.status,
+    );
+
+  const peta = new Map<string, RekapTagihanPeriode>();
+  for (const catatan of baris) {
+    const periode = `${catatan.periodeTahun}-${String(catatan.periodeBulan).padStart(2, "0")}`;
+    const rekap = peta.get(periode) ?? {
+      periode,
+      jumlah: 0,
+      jumlahLunas: 0,
+      nominalLunas: 0,
+      jumlahBelumLunas: 0,
+      nominalBelumLunas: 0,
+    };
+    const jumlah = Number(catatan.jumlah);
+    const total = Number(catatan.total);
+    rekap.jumlah += jumlah;
+    if (catatan.status === "lunas") {
+      rekap.jumlahLunas += jumlah;
+      rekap.nominalLunas += total;
+    } else {
+      rekap.jumlahBelumLunas += jumlah;
+      rekap.nominalBelumLunas += total;
+    }
+    peta.set(periode, rekap);
+  }
+
+  return [...peta.values()].sort((a, b) => b.periode.localeCompare(a.periode));
 }
 
 /** Id murid yang sudah punya tagihan di periode itu, untuk menandai pilihan. */
