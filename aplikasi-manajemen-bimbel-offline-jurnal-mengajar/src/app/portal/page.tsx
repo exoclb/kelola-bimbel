@@ -29,6 +29,7 @@ export default async function PortalWaliPage({
     <BerandaPortalWali
       anak={anak}
       profil={getProfilBimbel()}
+      namaWali={session.user.name}
       muridIdAwal={params.anak?.trim() || undefined}
       statusAwal={statusAwal}
       tagihan={tagihan}

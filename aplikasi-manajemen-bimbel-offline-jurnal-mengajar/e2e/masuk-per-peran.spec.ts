@@ -86,11 +86,17 @@ test("wali masuk lewat halaman masuk dan mendarat di portal", async ({
   await page.getByLabel("Password", { exact: true }).fill(sandi);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
 
-  // Wali mendarat di portalnya, bukan di area guru atau owner.
+  // Wali mendarat di portalnya, bukan di area guru atau owner. Beranda dibuka
+  // dengan sapaan wali, lalu ringkasan anaknya.
   await expect(page).toHaveURL(/\/portal$/);
-  await expect(page.getByRole("heading", { name: "Beranda" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^Halo, / })).toBeVisible();
   await expect(page.getByText("Portal Wali").first()).toBeVisible();
   await expect(page.getByText("Orang tua", { exact: true })).toBeVisible();
+  // Akun wali ini belum ditautkan ke murid mana pun, jadi beranda menjelaskan
+  // keadaannya alih-alih menampilkan kartu anak.
+  await expect(
+    page.getByText("Akun ini belum tertaut ke murid mana pun."),
+  ).toBeVisible();
 
   // Tab bawah portal tersedia lengkap, sedangkan menu guru/owner tidak bocor.
   const navigasiPortal = page.getByRole("navigation", { name: "Navigasi portal" });

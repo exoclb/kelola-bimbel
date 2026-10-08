@@ -5,6 +5,8 @@ import Link from "next/link";
 import {
   ArrowRight,
   CalendarCheck,
+  CalendarDays,
+  Compass,
   GraduationCap,
   Receipt,
   Users,
@@ -31,6 +33,8 @@ import { formatTanggalLengkap } from "@/lib/tanggal";
 type BerandaPortalWaliProps = {
   anak: AnakPortal[];
   profil: ProfilBimbel;
+  /** Nama wali yang sedang masuk, dipakai untuk sapaan di kepala halaman. */
+  namaWali: string;
   /** Anak yang dipilih lewat alamat halaman (`?anak=`), bila ada. */
   muridIdAwal?: string;
   /** Status baca wali ini per anak, dihitung server (lihat jejak-baca.service). */
@@ -57,6 +61,7 @@ const namaHariBulan = new Intl.DateTimeFormat("id-ID", {
 export function BerandaPortalWali({
   anak,
   profil,
+  namaWali,
   muridIdAwal,
   statusAwal,
   tagihan,
@@ -97,7 +102,7 @@ export function BerandaPortalWali({
   if (!dipilih) {
     return (
       <LayarPortal
-        judul="Beranda"
+        judul={`Halo, ${namaWali}`}
         keterangan={
           anak.length === 0
             ? "Akun ini belum tertaut ke murid mana pun."
@@ -125,8 +130,8 @@ export function BerandaPortalWali({
 
   return (
     <LayarPortal
-      judul="Beranda"
-      keterangan="Pantauan tagihan dan perkembangan anak Anda. Portal ini hanya untuk melihat, dan hanya menampilkan anak yang tertaut ke akun Anda."
+      judul={`Halo, ${namaWali}`}
+      keterangan={`Ringkasan kehadiran, tagihan, dan perkembangan ${dipilih.nama}. Portal ini hanya untuk melihat.`}
       atas={
         <div className="flex flex-wrap items-center gap-3">
           <span
@@ -165,6 +170,40 @@ export function BerandaPortalWali({
           .filter(Boolean)
           .join(" · ")}
       />
+
+      <KartuPortal
+        className="mt-4"
+        judul="Pintasan"
+        ikon={Compass}
+        keterangan={`Langsung menuju bagian ${dipilih.nama} yang paling sering dibuka.`}
+      >
+        <div className="grid gap-2">
+          {[
+            {
+              href: `/portal/jadwal?anak=${dipilih.muridId}`,
+              label: "Jadwal belajar",
+              Ikon: CalendarDays,
+            },
+            {
+              href: `/portal/tagihan?anak=${dipilih.muridId}`,
+              label: "Tagihan SPP",
+              Ikon: Receipt,
+            },
+            {
+              href: `/portal/perkembangan?anak=${dipilih.muridId}`,
+              label: "Progres belajar",
+              Ikon: GraduationCap,
+            },
+          ].map(({ href, label, Ikon }) => (
+            <Button key={href} asChild variant="outline" size="aksi">
+              <Link href={href} className="justify-start">
+                <Ikon aria-hidden="true" />
+                {label}
+              </Link>
+            </Button>
+          ))}
+        </div>
+      </KartuPortal>
 
       <KartuPortal
         className="mt-4"
