@@ -206,7 +206,75 @@ test("berkas Excel laporan memuat kop profil bimbel yang tersimpan", async ({
   ]);
   expect(unduhan.suggestedFilename()).toMatch(/\.xls$/);
 
+  // Nama berkas mengikuti judul dan periode yang sedang tampil.
+  const bulan = [
+    "Januari",
+    "Februari",
+    "Maret",
+    "April",
+    "Mei",
+    "Juni",
+    "Juli",
+    "Agustus",
+    "September",
+    "Oktober",
+    "November",
+    "Desember",
+  ][new Date().getMonth()];
+  expect(unduhan.suggestedFilename()).toBe(
+    `laporan-laba-rugi-${bulan.toLowerCase()}-${new Date().getFullYear()}.xls`,
+  );
+
+  // Berkasnya dokumen tabel yang utuh, bukan potongan HTML.
   const isi = await readFile((await unduhan.path())!, "utf8");
+  expect(isi.startsWith("<!doctype html>")).toBe(true);
+  expect(isi.trimEnd().endsWith("</html>")).toBe(true);
+  expect(isi).toContain("<table border=");
   expect(isi).toContain("Bimbel Berkas Excel");
   expect(isi).toContain("Jl. Berkas 21 · 081255556666 · berkas@bimbel.test");
+});
+
+/**
+ * Kop mengikuti profil yang baru disimpan: setelah disimpan ulang, halaman
+ * dokumen menampilkan identitas terbaru (tidak menyajikan hasil render lama).
+ */
+test("halaman dokumen memakai profil terbaru setelah disimpan ulang", async ({
+  page,
+  request,
+}) => {
+  const email = await daftar(request, "Owner Profil Terbaru");
+  await setRole(email, "owner");
+  await masuk(request, email);
+
+  const simpan = (nama: string) =>
+    request.put("/api/pengaturan/profil", {
+      headers,
+      data: {
+        nama,
+        alamat: "Jl. Segar 1",
+        telepon: "081277778888",
+        email: "",
+        logo: null,
+      },
+    });
+
+  expect((await simpan("Bimbel Profil Lama")).status()).toBe(200);
+
+  await page.goto("/sign-in");
+  await page.getByLabel("Email", { exact: true }).fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(sandi);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.waitForURL((url) => !url.pathname.startsWith("/sign-in"));
+  await page.goto("/app/pengaturan/ekspor");
+  await expect(
+    page.getByText("Bimbel Profil Lama", { exact: true }).first(),
+  ).toBeVisible();
+
+  expect((await simpan("Bimbel Profil Baru")).status()).toBe(200);
+  await page.reload();
+
+  await expect(
+    page.getByText("Bimbel Profil Baru", { exact: true }).first(),
+  ).toBeVisible();
+  await expect(page.getByText("Bimbel Profil Lama")).toHaveCount(0);
 });
