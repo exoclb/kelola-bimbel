@@ -211,6 +211,13 @@
       "when": 1791497695452,
       "tag": "0029_relasi_cabang_kelas",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1791500377203,
+      "tag": "0030_indeks_cabang_kelas",
+      "breakpoints": true
     }
   ]
 }

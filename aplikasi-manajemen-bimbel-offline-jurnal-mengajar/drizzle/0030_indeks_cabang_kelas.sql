@@ -1,0 +1,1 @@
+CREATE INDEX "classes_cabang_idx" ON "classes" USING btree ("cabang");

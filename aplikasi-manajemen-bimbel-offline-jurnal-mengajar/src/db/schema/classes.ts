@@ -34,5 +34,12 @@ export const classes = pgTable(
       .defaultNow()
       .notNull(),
   },
-  (table) => [index("classes_guru_id_idx").on(table.guruId)],
+  (table) => [
+    index("classes_guru_id_idx").on(table.guruId),
+    // Wajib ada untuk kolom yang jadi sasaran foreign key: setiap kali nama
+    // cabang diganti atau barisnya dihapus, PostgreSQL memeriksa kelas yang
+    // menunjuknya (`on update cascade` / `on delete restrict`) — tanpa indeks
+    // ini pemeriksaannya memindai seluruh tabel `classes`.
+    index("classes_cabang_idx").on(table.cabang),
+  ],
 );
