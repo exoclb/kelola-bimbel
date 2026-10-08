@@ -1,8 +1,7 @@
 import { z } from "zod";
 
-// Cabang bimbel masih data tiruan (lihat `src/lib/mock-cabang.ts`), jadi bentuk
-// kolomnya mengikuti rencana tabelnya: nama, alamat, kontak, status aktif.
-// Idnya juga belum UUID, misalnya `cbg-1`.
+// Bentuk kolom cabang bimbel: nama, alamat, kontak, status aktif. Idnya UUID
+// dari tabel `cabang` (lihat `src/db/schema/cabang.ts`).
 
 const nama = z
   .string()
@@ -43,6 +42,5 @@ export const ubahCabangSchema = z
 
 export type UbahCabangInput = z.infer<typeof ubahCabangSchema>;
 
-// Id cabang dibuat penyimpanan tiruan (bukan UUID), bentuknya menyerupai
-// `guruIdSchema`.
-export const cabangIdSchema = z.string().trim().min(1).max(64);
+// Id cabang dari tabel basis data, sama bentuknya dengan `kelasIdSchema`.
+export const cabangIdSchema = z.string().uuid();

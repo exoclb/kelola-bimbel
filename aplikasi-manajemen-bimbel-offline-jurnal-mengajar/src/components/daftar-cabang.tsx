@@ -16,7 +16,7 @@ import { Card } from "@/components/ui/card";
 import { IsianPilih, IsianTeks } from "@/components/isian-form";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { getDaftarKelas } from "@/lib/mock-kelas";
-import { type Cabang } from "@/lib/mock-cabang";
+import { type Cabang } from "@/services/cabang.service";
 
 /**
  * Ambil pesan galat dari jawaban `/api/cabang` supaya pesan dari server (mis.
@@ -60,9 +60,9 @@ type GalatCabang = {
  * penambahan, penyuntingan, dan perubahan status dikirim ke `/api/cabang`
  * supaya halaman ini dan API memakai satu sumber yang sama.
  *
- * PENTING: sumbernya masih data tiruan di memori server (lihat
- * `src/services/cabang.service.ts`) — perubahan bertahan selama server hidup
- * dan hilang saat server dimulai ulang. Nanti diganti tabel database.
+ * PENTING: sumbernya tabel `cabang` di basis data (lihat
+ * `src/services/cabang.service.ts`), jadi perubahannya bertahan walau server
+ * dimulai ulang dan terbaca dari perangkat lain.
  */
 export function DaftarCabang({ daftar, ringkas }: DaftarCabangProps) {
   const kelas = getDaftarKelas();
@@ -390,9 +390,8 @@ export function DaftarCabang({ daftar, ringkas }: DaftarCabangProps) {
       )}
 
       <p className="mt-6 text-xs leading-5 text-muted-foreground">
-        Catatan: cabang di halaman ini masih data tiruan yang disimpan di memori
-        server — perubahannya hilang bila server dimulai ulang, lalu diganti
-        penyimpanan database pada fase berikutnya.
+        Catatan: cabang di halaman ini tersimpan di basis data, jadi
+        perubahannya tetap ada setelah server dimulai ulang.
       </p>
     </div>
   );

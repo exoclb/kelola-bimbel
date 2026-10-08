@@ -9,7 +9,7 @@ type Context = { params: Promise<{ id: string }> };
 export function GET(request: Request, context: Context) {
   return withApiPermission(request, { pengaturan: ["read"] }, async () => {
     const id = cabangIdSchema.parse((await context.params).id);
-    const cabang = getCabang(id);
+    const cabang = await getCabang(id);
     if (!cabang)
       throw new ApiError(404, "NOT_FOUND", "Cabang tidak ditemukan.");
     return Response.json({ data: cabang });
@@ -22,7 +22,7 @@ export function PATCH(request: Request, context: Context) {
   return withApiPermission(request, { pengaturan: ["write"] }, async () => {
     const id = cabangIdSchema.parse((await context.params).id);
     const input = ubahCabangSchema.parse(await readJson(request));
-    const hasil = ubahCabang(id, input);
+    const hasil = await ubahCabang(id, input);
 
     if (!hasil.ok) {
       if (hasil.kode === "TIDAK_ADA")

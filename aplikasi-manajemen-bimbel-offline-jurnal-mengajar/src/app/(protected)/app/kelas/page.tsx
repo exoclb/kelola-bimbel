@@ -16,7 +16,7 @@ export default async function KelasPage() {
       daftarAwal={getDaftarKelas()}
       // Opsi cabang di formulir kelas dibaca di server dari layanan cabang,
       // jadi satu sumber dengan halaman cabang dan API.
-      daftarCabang={listCabang()}
+      daftarCabang={await listCabang()}
       daftarMurid={getDaftarMurid()}
       penempatanAwal={getPenempatanAwal()}
     />

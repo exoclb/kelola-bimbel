@@ -4,7 +4,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { IsianPilih, IsianTeks } from "@/components/isian-form";
-import type { Cabang } from "@/lib/mock-cabang";
+import type { Cabang } from "@/services/cabang.service";
 import { GURU_KELAS, type Kelas } from "@/lib/mock-kelas";
 
 type FormUbahKelasProps = {

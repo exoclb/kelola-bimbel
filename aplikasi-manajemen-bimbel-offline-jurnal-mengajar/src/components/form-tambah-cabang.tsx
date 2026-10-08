@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { IsianPilih, IsianTeks } from "@/components/isian-form";
-import { type Cabang } from "@/lib/mock-cabang";
+import { type Cabang } from "@/services/cabang.service";
 
 type Galat = {
   nama?: string;

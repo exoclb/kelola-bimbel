@@ -1,12 +1,8 @@
-// Ringkasan pantauan per cabang dari data contoh yang sudah ada.
-//
-// Tabel `cabang` belum ada di database, dan jurnal hari ini baru sebagian
-// terisi. Supaya owner tetap bisa melihat gambaran tiap cabang, ringkasan di
-// halaman pemantauan dihitung dari data tiruan yang sudah dipakai halaman
-// lain: cabang, kelas, penempatan murid, dan riwayat jurnal. Daftar cabangnya
-// diambil dari layanan cabang supaya ikut cabang yang baru ditambah atau
-// dinonaktifkan lewat halaman cabang. Saat backend siap, fungsi ini menjadi
-// satu query agregat per cabang.
+// Ringkasan pantauan per cabang. Daftar cabangnya dibaca dari tabel `cabang`
+// lewat layanan cabang, sedangkan angka kelas, murid, dan jurnalnya masih
+// dihitung dari data tiruan yang dipakai halaman lain (kelas, penempatan,
+// riwayat jurnal). Saat jurnal dan akademik ikut pindah ke basis data, fungsi
+// ini menjadi satu query agregat per cabang.
 
 import "server-only";
 
@@ -32,12 +28,13 @@ export type RingkasanCabang = {
  * Ringkasan tiap cabang tiruan, urut nama seperti pilihan saringannya.
  * Cabang nonaktif dan cabang tanpa kelas tetap muncul dengan angka nol.
  */
-export function ringkasanPerCabang(): RingkasanCabang[] {
+export async function ringkasanPerCabang(): Promise<RingkasanCabang[]> {
   const kelas = getDaftarKelas();
   const penempatan = getPenempatanAwal();
   const jurnal = getRiwayatJurnal();
+  const daftarCabang = await listCabang();
 
-  return listCabang().map((cabang) => {
+  return daftarCabang.map((cabang) => {
     const kelasCabang = kelas.filter((baris) => baris.cabang === cabang.nama);
     const idKelas = new Set(kelasCabang.map((baris) => baris.id));
     const murid = new Set(

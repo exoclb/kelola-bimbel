@@ -23,7 +23,7 @@ import {
 } from "@/components/panel-penempatan";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import type { Cabang } from "@/lib/mock-cabang";
+import type { Cabang } from "@/services/cabang.service";
 import type { JadwalKelas, Kelas } from "@/lib/mock-kelas";
 import type { Murid } from "@/lib/mock-murid";
 import type { Penempatan } from "@/lib/mock-penempatan";

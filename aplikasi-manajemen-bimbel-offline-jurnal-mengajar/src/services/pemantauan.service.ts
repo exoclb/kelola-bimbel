@@ -232,12 +232,10 @@ export async function opsiSaringPemantauan() {
   return {
     daftarKelas,
     daftarGuru,
-    // Tabel `cabang` belum ada di database, jadi pilihannya mengikuti daftar
-    // cabang yang sedang berlaku di layanan cabang (termasuk cabang yang baru
-    // ditambah atau dinonaktifkan lewat halaman cabang). Cabang nonaktif pun
-    // tetap muncul supaya bisa ditandai dan dipilih saat menelusuri arsip.
-    // Nanti diganti query ke tabel cabang.
-    daftarCabang: listCabang().map(({ nama, statusAktif }) => ({
+    // Pilihan cabang diambil dari tabel `cabang` lewat layanan cabang, jadi
+    // sama dengan halaman cabang dan formulir kelas. Cabang nonaktif pun tetap
+    // muncul supaya bisa ditandai dan dipilih saat menelusuri arsip.
+    daftarCabang: (await listCabang()).map(({ nama, statusAktif }) => ({
       nama,
       statusAktif,
     })),

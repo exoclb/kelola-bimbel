@@ -34,7 +34,7 @@ export default async function PemantauanPage({
   const tanggal = tanggalISO(sekarang);
   const params = await searchParams;
   const opsi = await opsiSaringPemantauan();
-  const ringkasanCabang = ringkasanPerCabang();
+  const ringkasanCabang = await ringkasanPerCabang();
 
   // Saringan hanya diterima kalau nilainya memang ada di daftar pilihan, jadi
   // nilai asing dari URL tidak pernah ikut menyaring apa pun.
