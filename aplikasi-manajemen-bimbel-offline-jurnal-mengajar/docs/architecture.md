@@ -76,6 +76,8 @@ The core content column is `--lebar-konten-portal` (480px) in `globals.css`; the
 
 Every portal screen starts with `LayarPortal` (`src/components/layar-portal.tsx`): the "Portal Wali" label, the page title, a short description, and a `role="status"` line that announces what changed, plus an optional slot above the title. Screens add only their own content below it.
 
+The portal component sizes and the payment-status pastels are tokens in `globals.css` too (`--tinggi-bilah-tab`, `--ukuran-ikon-tab`, `--radius-kartu-portal`, `--tinggi-aksi-portal`, `--radius-aksi-portal`, `--target-sentuh-portal`, `--tinggi-progres-portal`, and `--status-lunas|belum|terlambat-latar|garis|teks`). The status colours are `color-mix` blends over `--card`/`--primary`/`--muted`, so they follow light and dark automatically and keep at least 4.5:1 for their label text; change the component metrics here rather than in each screen.
+
 The base's welcome and blank app pages are replaceable. Reuse auth, setup, database, and UI when adding dashboard or chatbot features. Do not put feature conditionals throughout the base: create a derivative and implement that app directly.
 
 ## Dependency compatibility

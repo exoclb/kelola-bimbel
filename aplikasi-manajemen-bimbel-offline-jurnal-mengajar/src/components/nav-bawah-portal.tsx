@@ -52,11 +52,14 @@ export function NavBawahPortal() {
                 href={href}
                 aria-current={aktif ? "page" : undefined}
                 className={cn(
-                  "flex min-h-14 flex-col items-center justify-center gap-1 px-1 py-1.5 text-3xs font-medium transition-colors",
+                  "flex min-h-[var(--tinggi-bilah-tab)] flex-col items-center justify-center gap-1 px-1 py-1.5 text-3xs font-medium transition-colors",
                   aktif ? "text-primary" : "text-muted-foreground",
                 )}
               >
-                <Ikon className="size-5" aria-hidden="true" />
+                <Ikon
+                  className="size-[var(--ukuran-ikon-tab)]"
+                  aria-hidden="true"
+                />
                 <span>{label}</span>
               </Link>
             </li>

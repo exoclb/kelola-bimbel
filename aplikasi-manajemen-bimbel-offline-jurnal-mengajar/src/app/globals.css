@@ -91,10 +91,40 @@
 :root {
   color-scheme: light;
   --radius: 0.75rem;
-  /* Lebar konten inti Portal Wali: 480px, terpusat di layar lebar dan selebar
-     layar di ponsel. Dipakai kepala halaman, isi, dan bilah tab bawah supaya
-     ketiganya selalu sejajar. */
-  --lebar-konten-portal: 30rem;
+
+  /* ── Token desain Portal Wali (mobile-first) ───────────────────────────
+     Layar portal dipakai dari ponsel, jadi ukuran komponennya ditulis di satu
+     tempat: lebar kolom, bilah tab, kartu, tombol aksi, bar progres, target
+     sentuh, dan penanda status pastel. Warnanya memakai `color-mix` di atas
+     permukaan tema (--card, --primary, --muted) supaya pastelnya otomatis ikut
+     mode terang dan gelap tanpa nilai terpisah per tema. */
+  --lebar-konten-portal: 30rem; /* 480px */
+  --tinggi-bilah-tab: 3.5rem; /* 56px */
+  --ukuran-ikon-tab: 1.25rem; /* 20px */
+  --radius-kartu-portal: 1rem; /* 16px */
+  --tinggi-aksi-portal: 3rem; /* 48px */
+  --radius-aksi-portal: 0.75rem; /* 12px */
+  --target-sentuh-portal: 3rem; /* 48px */
+  --tinggi-progres-portal: 0.5rem; /* 8px */
+
+  /* Penanda status pembayaran: LUNAS, BELUM BAYAR, TERLAMBAT. */
+  --status-lunas-latar: color-mix(in oklab, var(--primary) 12%, var(--card));
+  --status-lunas-garis: color-mix(in oklab, var(--primary) 32%, var(--card));
+  --status-lunas-teks: var(--primary);
+  --status-belum-latar: var(--muted);
+  --status-belum-garis: var(--border);
+  --status-belum-teks: var(--muted-foreground);
+  --status-terlambat-latar: color-mix(
+    in oklab,
+    var(--destructive) 12%,
+    var(--card)
+  );
+  --status-terlambat-garis: color-mix(
+    in oklab,
+    var(--destructive) 32%,
+    var(--card)
+  );
+  --status-terlambat-teks: var(--destructive);
   /* Kanvas terang #F8FAFC (slate-50) dengan teks slate-900. */
   --background: #f8fafc;
   --foreground: #0f172a;

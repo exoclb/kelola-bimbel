@@ -74,7 +74,7 @@ export default async function PortalLayout({
       </header>
       <main
         id="main-content"
-        className="mx-auto w-full max-w-[var(--lebar-konten-portal)] px-4 pt-6 pb-[calc(6rem+env(safe-area-inset-bottom))]"
+        className="mx-auto w-full max-w-[var(--lebar-konten-portal)] px-4 pt-6 pb-[calc(var(--tinggi-bilah-tab)+2.5rem+env(safe-area-inset-bottom))]"
       >
         {children}
       </main>
