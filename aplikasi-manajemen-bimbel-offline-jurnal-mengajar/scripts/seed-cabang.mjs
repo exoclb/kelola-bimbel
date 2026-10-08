@@ -83,6 +83,17 @@ try {
   pool.on("error", () => {});
 
   const daftar = getDaftarCabang();
+  // Nama kembar tidak akan terlihat sebagai kegagalan: `ON CONFLICT` cuma
+  // melewatinya, jadi jumlah cabang yang masuk diam-diam lebih sedikit.
+  // Diperiksa lebih dulu supaya yang diperbaiki datanya.
+  const namaUnik = new Set(
+    daftar.map((satu) => satu.nama.trim().toLocaleLowerCase("id")),
+  );
+  if (namaUnik.size !== daftar.length)
+    throw new Error(
+      "Data contoh cabang memuat nama yang kembar; hapus duplikatnya di src/lib/mock-cabang.ts (nama cabang unik tanpa membedakan huruf besar-kecil).",
+    );
+
   const sebelum = await jumlahBaris(pool);
 
   const klien = await pool.connect();

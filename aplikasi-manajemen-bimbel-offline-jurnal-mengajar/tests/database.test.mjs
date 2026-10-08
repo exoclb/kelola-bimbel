@@ -819,3 +819,59 @@ test("notifikasi dan backup dijaga isi, keunikan, dan statusnya", async () => {
   );
   assert.equal(selesai.rowCount, 1);
 });
+
+/**
+ * Invarian tabel cabang (`drizzle/0027_tabel_cabang.sql` dan
+ * `0028_cabang_nama_unik.sql`): nama, alamat, dan kontak harus terisi, dan nama
+ * cabang unik tanpa membedakan huruf besar-kecil maupun spasi tepi. Penjaga di
+ * basis data ini yang membuat dua cabang tidak pernah tertukar saat kelas
+ * menyebut cabangnya hanya dengan nama.
+ */
+test("cabang dijaga isinya dan namanya unik tak peka huruf besar-kecil", async () => {
+  const namaKosong = await ditolak(
+    "INSERT INTO cabang (nama, alamat, kontak) VALUES ($1, $2, $3)",
+    ["   ", "Jl. Uji No. 1", "0800-1"],
+  );
+  assert.equal(namaKosong.code, "23514");
+
+  const alamatKosong = await ditolak(
+    "INSERT INTO cabang (nama, alamat, kontak) VALUES ($1, $2, $3)",
+    ["Cabang Invarian Alamat", "   ", "0800-1"],
+  );
+  assert.equal(alamatKosong.code, "23514");
+
+  const kontakKosong = await ditolak(
+    "INSERT INTO cabang (nama, alamat, kontak) VALUES ($1, $2, $3)",
+    ["Cabang Invarian Kontak", "Jl. Uji No. 1", "   "],
+  );
+  assert.equal(kontakKosong.code, "23514");
+
+  const utama = await dbJurnal.query(
+    "INSERT INTO cabang (nama, alamat, kontak) VALUES ($1, $2, $3) RETURNING id",
+    ["Cabang Invarian Utama", "Jl. Uji No. 1", "0800-1"],
+  );
+  assert.equal(utama.rowCount, 1);
+
+  // Beda huruf besar-kecil dan spasi tepi tetap dianggap nama yang sama.
+  const kembar = await ditolak(
+    "INSERT INTO cabang (nama, alamat, kontak) VALUES ($1, $2, $3)",
+    ["  cabang invarian utama ", "Jl. Uji No. 2", "0800-2"],
+  );
+  assert.equal(kembar.code, "23505");
+
+  // Mengubah baris yang sama (mis. menonaktifkannya) tetap boleh, dan nama
+  // yang benar-benar berbeda tetap bisa masuk.
+  const dinonaktifkan = await dbJurnal.query(
+    "UPDATE cabang SET nama = $1, status_aktif = false WHERE id = $2",
+    ["Cabang Invarian Utama", utama.rows[0].id],
+  );
+  assert.equal(dinonaktifkan.rowCount, 1);
+
+  const lain = await dbJurnal.query(
+    "INSERT INTO cabang (nama, alamat, kontak) VALUES ($1, $2, $3)",
+    ["Cabang Invarian Lain", "Jl. Uji No. 3", "0800-3"],
+  );
+  assert.equal(lain.rowCount, 1);
+
+  await dbJurnal.query("DELETE FROM cabang WHERE nama LIKE 'Cabang Invarian%'");
+});
