@@ -547,3 +547,46 @@ test("tarif honor satu per tanggal dan tidak boleh negatif", async () => {
   const nol = await tulis(0, "2099-03-01");
   assert.equal(nol.rowCount, 1);
 });
+
+/**
+ * Invarian skema honor terhitung (`drizzle/0007_rekap_gaji.sql` dan
+ * `0022_honor_terhitung_invarian.sql`): satu catatan per guru per bulan,
+ * periodenya berbentuk `YYYY-MM`, angkanya tidak negatif, dan status "dibayar"
+ * selalu punya tanggal bayar.
+ */
+test("catatan honor terhitung dijaga periode, angka, dan tanggal bayarnya", async () => {
+  const { guru } = await siapkanJurnal();
+  const tulis = (periode, status = "belum_dibayar", tanggalDibayar = null) =>
+    dbJurnal.query(
+      "INSERT INTO salary_recaps (guru_id, periode_bulan, total_jam, tarif_per_jam, total_gaji, status_pembayaran, tanggal_dibayar) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+      [guru, periode, 10, 50000, 500000, status, tanggalDibayar],
+    );
+
+  await tulis("2099-01");
+  const kembar = await ditolak(
+    "INSERT INTO salary_recaps (guru_id, periode_bulan, total_jam, tarif_per_jam, total_gaji, status_pembayaran, tanggal_dibayar) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+    [guru, "2099-01", 10, 50000, 500000, "belum_dibayar", null],
+  );
+  assert.equal(kembar.code, "23505");
+
+  const periodeAneh = await ditolak(
+    "INSERT INTO salary_recaps (guru_id, periode_bulan, total_jam, tarif_per_jam, total_gaji, status_pembayaran, tanggal_dibayar) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+    [guru, "2099-13", 10, 50000, 500000, "belum_dibayar", null],
+  );
+  assert.equal(periodeAneh.code, "23514");
+
+  const negatif = await ditolak(
+    "INSERT INTO salary_recaps (guru_id, periode_bulan, total_jam, tarif_per_jam, total_gaji, status_pembayaran, tanggal_dibayar) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+    [guru, "2099-02", -1, 50000, -50000, "belum_dibayar", null],
+  );
+  assert.equal(negatif.code, "23514");
+
+  const dibayarTanpaTanggal = await ditolak(
+    "INSERT INTO salary_recaps (guru_id, periode_bulan, total_jam, tarif_per_jam, total_gaji, status_pembayaran, tanggal_dibayar) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+    [guru, "2099-03", 10, 50000, 500000, "dibayar", null],
+  );
+  assert.equal(dibayarTanpaTanggal.code, "23514");
+
+  const dibayarDenganTanggal = await tulis("2099-04", "dibayar", "2099-05-01");
+  assert.equal(dibayarDenganTanggal.rowCount, 1);
+});

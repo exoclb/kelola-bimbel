@@ -1,4 +1,6 @@
+import { sql } from "drizzle-orm";
 import {
+  check,
   date,
   index,
   numeric,
@@ -64,5 +66,21 @@ export const salaryRecaps = pgTable(
       table.periodeBulan,
     ),
     index("salary_recaps_periode_idx").on(table.periodeBulan),
+    // Periode selalu `YYYY-MM` (bulan 01–12); salah tulis di sini membuat rekap
+    // gaji bulan itu tidak pernah ketemu.
+    check(
+      "salary_recaps_periode_format",
+      sql`${table.periodeBulan} ~ '^[0-9]{4}-(0[1-9]|1[0-2])$'`,
+    ),
+    // Salinan angka saat pembayaran ditandai tidak boleh negatif.
+    check(
+      "salary_recaps_angka_tidak_negatif",
+      sql`${table.totalJam} >= 0 and ${table.tarifPerJam} >= 0 and ${table.totalGaji} >= 0`,
+    ),
+    // Status "dibayar" wajib punya tanggal bayarnya.
+    check(
+      "salary_recaps_tanggal_dibayar_konsisten",
+      sql`${table.statusPembayaran} = 'belum_dibayar' or ${table.tanggalDibayar} is not null`,
+    ),
   ],
 );

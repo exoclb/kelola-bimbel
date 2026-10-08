@@ -155,6 +155,13 @@
       "when": 1791480322992,
       "tag": "0021_tarif_honor_tidak_negatif",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1791480483434,
+      "tag": "0022_honor_terhitung_invarian",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,3 @@
+ALTER TABLE "salary_recaps" ADD CONSTRAINT "salary_recaps_periode_format" CHECK ("salary_recaps"."periode_bulan" ~ '^[0-9]{4}-(0[1-9]|1[0-2])$');--> statement-breakpoint
+ALTER TABLE "salary_recaps" ADD CONSTRAINT "salary_recaps_angka_tidak_negatif" CHECK ("salary_recaps"."total_jam" >= 0 and "salary_recaps"."tarif_per_jam" >= 0 and "salary_recaps"."total_gaji" >= 0);--> statement-breakpoint
+ALTER TABLE "salary_recaps" ADD CONSTRAINT "salary_recaps_tanggal_dibayar_konsisten" CHECK ("salary_recaps"."status_pembayaran" = 'belum_dibayar' or "salary_recaps"."tanggal_dibayar" is not null);
