@@ -94,3 +94,161 @@ test("PostgreSQL migrations preserve rows on rerun and enforce auth constraints"
     await db.end();
   }
 });
+
+/**
+ * Invarian skema jurnal mengajar (`drizzle/0003_jurnal.sql`,
+ * `0004_jurnal_idempoten.sql`): jurnal tidak boleh dobel untuk guru + jadwal +
+ * tanggal yang sama, kehadiran murid tidak boleh dobel di satu jurnal, dan
+ * pilihan `on delete` tiap relasi harus benar.
+ *
+ * Datanya disiapkan saat tes pertama dijalankan (bukan di `before`), supaya
+ * jumlah baris `user` yang diperiksa tes di atas tetap utuh.
+ */
+let dbJurnal;
+let dataJurnal;
+
+async function siapkanJurnal() {
+  if (dataJurnal) return dataJurnal;
+  dbJurnal = new Pool({
+    connectionString: process.env.STARTER_TEST_DATABASE_URL,
+    max: 1,
+    connectionTimeoutMillis: 5000,
+  });
+  const guru = (
+    await dbJurnal.query(
+      `INSERT INTO "user" (id, name, email) VALUES ($1, $2, $3) RETURNING id`,
+      ["guru-jurnal-skema", "Guru Skema", "guru-skema@example.test"],
+    )
+  ).rows[0].id;
+  const kelas = (
+    await dbJurnal.query(
+      "INSERT INTO classes (nama_kelas, cabang, guru_id) VALUES ($1, $2, $3) RETURNING id",
+      ["Kelas Skema", "Cabang Uji", guru],
+    )
+  ).rows[0].id;
+  const jadwal = async (hari) =>
+    (
+      await dbJurnal.query(
+        "INSERT INTO schedules (class_id, guru_id, hari, jam_mulai, jam_selesai) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+        [kelas, guru, hari, "09:00", "10:30"],
+      )
+    ).rows[0].id;
+  dataJurnal = {
+    guru,
+    kelas,
+    jadwalA: await jadwal("Senin"),
+    jadwalB: await jadwal("Rabu"),
+    murid: (
+      await dbJurnal.query(
+        "INSERT INTO students (nama) VALUES ($1) RETURNING id",
+        ["Murid Skema"],
+      )
+    ).rows[0].id,
+  };
+  return dataJurnal;
+}
+
+test.after(async () => {
+  await dbJurnal?.end();
+});
+
+/** Menulis satu jurnal; dipakai berulang dengan jadwal/tanggal berbeda. */
+async function tulisJurnal(scheduleId, tanggal, jam = 1.5) {
+  const { guru, kelas } = await siapkanJurnal();
+  return dbJurnal.query(
+    `INSERT INTO teaching_journals (guru_id, class_id, schedule_id, tanggal, materi, jam_mengajar)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+    [guru, kelas, scheduleId, tanggal, "Materi uji", jam],
+  );
+}
+
+/** Jalankan kueri yang memang harus ditolak, lalu kembalikan galatnya. */
+async function ditolak(kueri, params) {
+  try {
+    await dbJurnal.query(kueri, params);
+  } catch (galat) {
+    return galat;
+  }
+  assert.fail("Kueri seharusnya ditolak database.");
+}
+
+test("jurnal tidak boleh dobel untuk guru + jadwal + tanggal yang sama", async () => {
+  const { jadwalA, jadwalB, guru, kelas } = await siapkanJurnal();
+
+  assert.ok((await tulisJurnal(jadwalA, "2026-10-05")).rows[0].id);
+  // Jadwal lain pada tanggal yang sama tetap boleh.
+  assert.ok((await tulisJurnal(jadwalB, "2026-10-05")).rows[0].id);
+  // Jadwal yang sama pada tanggal lain juga boleh.
+  assert.ok((await tulisJurnal(jadwalA, "2026-10-06")).rows[0].id);
+
+  // Kirim ulang jurnal yang sama (dobel klik / ulang setelah koneksi putus)
+  // ditolak database, bukan hanya oleh API.
+  const galat = await ditolak(
+    `INSERT INTO teaching_journals (guru_id, class_id, schedule_id, tanggal, materi, jam_mengajar)
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    [guru, kelas, jadwalA, "2026-10-05", "Materi uji", 1.5],
+  );
+  assert.equal(galat.code, "23505");
+});
+
+test("kehadiran murid tidak boleh dobel di satu jurnal", async () => {
+  const { jadwalA, murid } = await siapkanJurnal();
+  const jurnal = (await tulisJurnal(jadwalA, "2026-10-07")).rows[0].id;
+  await dbJurnal.query(
+    "INSERT INTO journal_attendances (journal_id, student_id, hadir) VALUES ($1, $2, $3)",
+    [jurnal, murid, true],
+  );
+
+  const galat = await ditolak(
+    "INSERT INTO journal_attendances (journal_id, student_id, hadir) VALUES ($1, $2, $3)",
+    [jurnal, murid, false],
+  );
+  assert.equal(galat.code, "23505");
+});
+
+test("menghapus jurnal ikut menghapus kehadirannya", async () => {
+  const { jadwalA, murid } = await siapkanJurnal();
+  const jurnal = (await tulisJurnal(jadwalA, "2026-10-08")).rows[0].id;
+  await dbJurnal.query(
+    "INSERT INTO journal_attendances (journal_id, student_id, hadir) VALUES ($1, $2, $3)",
+    [jurnal, murid, true],
+  );
+
+  await dbJurnal.query("DELETE FROM teaching_journals WHERE id = $1", [jurnal]);
+  const sisa = await dbJurnal.query(
+    "SELECT count(*)::int AS jumlah FROM journal_attendances WHERE journal_id = $1",
+    [jurnal],
+  );
+  assert.equal(sisa.rows[0].jumlah, 0);
+});
+
+test("murid yang masih punya kehadiran tidak bisa dihapus", async () => {
+  const { jadwalA, murid } = await siapkanJurnal();
+  const jurnal = (await tulisJurnal(jadwalA, "2026-10-09")).rows[0].id;
+  await dbJurnal.query(
+    "INSERT INTO journal_attendances (journal_id, student_id, hadir) VALUES ($1, $2, $3)",
+    [jurnal, murid, true],
+  );
+
+  const galat = await ditolak("DELETE FROM students WHERE id = $1", [murid]);
+  assert.equal(galat.code, "23503");
+});
+
+test("jam mengajar dan status jurnal dibatasi tipe kolomnya", async () => {
+  const { jadwalA, guru, kelas } = await siapkanJurnal();
+
+  // numeric(4,2) hanya menampung sampai 99,99 jam.
+  const terlaluBesar = await ditolak(
+    `INSERT INTO teaching_journals (guru_id, class_id, schedule_id, tanggal, materi, jam_mengajar)
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    [guru, kelas, jadwalA, "2026-10-10", "Materi uji", 123.45],
+  );
+  assert.equal(terlaluBesar.code, "22003");
+
+  const statusAneh = await ditolak(
+    `INSERT INTO teaching_journals (guru_id, class_id, schedule_id, tanggal, materi, jam_mengajar, status)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [guru, kelas, jadwalA, "2026-10-11", "Materi uji", 1.5, "draft"],
+  );
+  assert.equal(statusAneh.code, "22P02");
+});
