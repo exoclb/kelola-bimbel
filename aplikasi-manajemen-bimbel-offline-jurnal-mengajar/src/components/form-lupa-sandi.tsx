@@ -62,7 +62,7 @@ export function FormLupaSandi() {
   return (
     <div className="w-full max-w-sm">
       <p className="mb-3 text-sm font-medium text-primary">Lupa sandi</p>
-      <h1 className="text-3xl font-semibold tracking-tight">
+      <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
         Atur ulang sandi
       </h1>
       <p className="mt-3 text-base leading-7 text-muted-foreground">

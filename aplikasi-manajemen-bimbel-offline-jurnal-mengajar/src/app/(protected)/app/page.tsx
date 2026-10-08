@@ -38,7 +38,7 @@ export default async function AppPage() {
       <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
         Welcome, {user.name}.
       </h1>
-      <p className="mt-3 text-lg leading-7 text-muted-foreground">
+      <p className="mt-3 text-base text-muted-foreground">
         This is your app. Let’s give it something to do.
       </p>
       <Card className="mt-9 flex-row flex-wrap items-center justify-between gap-4 px-6 py-5">

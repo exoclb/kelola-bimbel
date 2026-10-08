@@ -62,7 +62,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
       <p className="mb-3 text-sm font-medium text-primary">
         {signingUp ? "A place to begin" : "Good to see you"}
       </p>
-      <h1 className="text-3xl font-semibold tracking-tight">
+      <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
         {signingUp ? "Create your account" : "Welcome back"}
       </h1>
       <p className="mt-3 text-base leading-7 text-muted-foreground">

@@ -90,14 +90,14 @@ export function RiwayatStatusWali({ wali }: RiwayatStatusWaliProps) {
               </li>
             ))}
           </ul>
-          <p className="mt-1.5 text-[11px] leading-4 text-muted-foreground">
+          <p className="mt-1.5 text-2xs text-muted-foreground">
             Bagian terpisah dari status portal — ini waktu penautannya, bukan
             perubahan status akses.
           </p>
         </div>
       )}
 
-      <p className="mt-2.5 text-[11px] leading-4 text-muted-foreground">
+      <p className="mt-2.5 text-2xs text-muted-foreground">
         Catatan terakhir, bukan riwayat lengkap: aplikasi hanya menyimpan
         keadaan akun saat ini, bukan tiap perubahan status. Waktu di atas adalah
         perubahan data akun terakhir yang tercatat — belum tentu khusus saklar

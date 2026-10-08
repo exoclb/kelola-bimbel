@@ -21,7 +21,7 @@ export default async function AdminPage() {
       <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
         Every account’s notes
       </h1>
-      <p className="mt-3 text-lg leading-7 text-muted-foreground">
+      <p className="mt-3 text-base text-muted-foreground">
         {user.name}, your role grants <code>notes: read-any</code>. Regular
         accounts only ever see their own rows.
       </p>
