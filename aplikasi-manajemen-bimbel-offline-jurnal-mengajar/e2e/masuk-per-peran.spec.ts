@@ -104,6 +104,17 @@ test("wali masuk lewat halaman masuk dan mendarat di portal", async ({
   ).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Isi Jurnal" })).toHaveCount(0);
 
+  // Di lebar ponsel tab bawah tetap terlihat dan halaman tidak melebar.
+  await page.setViewportSize({ width: 360, height: 740 });
+  await expect(
+    navigasiPortal.getByRole("link", { name: "Tagihan", exact: true }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > window.innerWidth,
+    ),
+  ).toBe(false);
+
   // Area guru dan pemantauan tetap terkunci: wali dikembalikan ke portal.
   await page.goto("/app");
   await expect(page).toHaveURL(/\/portal$/);
