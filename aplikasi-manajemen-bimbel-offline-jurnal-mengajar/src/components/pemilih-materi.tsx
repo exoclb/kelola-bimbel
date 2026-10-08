@@ -54,7 +54,7 @@ export function PemilihMateri({
               <Button
                 key={pilihan}
                 type="button"
-                size="sm"
+                size="aksi"
                 variant={terpilih ? "default" : "outline"}
                 aria-pressed={terpilih}
                 disabled={disabled}
@@ -79,6 +79,7 @@ export function PemilihMateri({
           <Label htmlFor="topik">Topik spesifik (opsional)</Label>
           <Input
             id="topik"
+            className="h-[var(--target-sentuh-portal)] md:text-base"
             value={topik}
             maxLength={120}
             disabled={disabled}

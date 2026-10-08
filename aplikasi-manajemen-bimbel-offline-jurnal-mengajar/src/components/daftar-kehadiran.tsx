@@ -51,7 +51,7 @@ export function DaftarKehadiran({
           <Button
             type="button"
             variant="outline"
-            size="sm"
+            size="aksi"
             disabled={disabled || semuaHadir}
             onClick={() => murid.forEach((anak) => onHadir(anak.id, true))}
           >
@@ -69,8 +69,9 @@ export function DaftarKehadiran({
                 key={anak.id}
                 className="flex flex-col gap-3 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex min-h-12 items-center gap-3">
                   <Checkbox
+                    className="size-6 shrink-0"
                     id={`hadir-${anak.id}`}
                     checked={hadir}
                     disabled={disabled}
@@ -80,7 +81,7 @@ export function DaftarKehadiran({
                   />
                   <Label
                     htmlFor={`hadir-${anak.id}`}
-                    className="cursor-pointer font-normal"
+                    className="flex min-h-12 flex-1 cursor-pointer items-center font-normal"
                   >
                     {anak.nama}
                   </Label>
@@ -98,6 +99,7 @@ export function DaftarKehadiran({
                       Keterangan {anak.nama}
                     </Label>
                     <Input
+                      className="h-[var(--target-sentuh-portal)] md:text-base"
                       id={`keterangan-${anak.id}`}
                       value={keterangan[anak.id] ?? ""}
                       maxLength={200}

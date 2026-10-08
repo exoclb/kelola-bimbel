@@ -166,7 +166,7 @@ export function JurnalForm({
           <span aria-hidden="true">·</span>
           <span>Guru: {namaGuru}</span>
         </p>
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="outline" size="aksi">
           <Link href="/app/jurnal/riwayat">
             <History aria-hidden="true" />
             Riwayat Jurnal
@@ -267,7 +267,7 @@ export function JurnalForm({
                 </p>
                 <Button
                   type="submit"
-                  size="lg"
+                  size="aksi"
                   disabled={pending || !siapKirim}
                   aria-busy={pending}
                   className="w-full sm:w-auto"
