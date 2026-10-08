@@ -59,8 +59,11 @@
   --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 
   /* Skala huruf aplikasi. Nilainya sama dengan skala bawaan Tailwind, kecuali
-     --text-2xs (11px) yang dipakai label rapat; ditulis eksplisit supaya
-     langkah huruf yang boleh dipakai satu sumber dan tidak melenceng. */
+     --text-3xs (10.5px) untuk label tab dan --text-2xs (11px) untuk label
+     rapat; ditulis eksplisit supaya langkah huruf yang boleh dipakai satu
+     sumber dan tidak melenceng. */
+  --text-3xs: 0.65625rem;
+  --text-3xs--line-height: calc(1 / 0.65625);
   --text-2xs: 0.6875rem;
   --text-2xs--line-height: calc(1 / 0.6875);
   --text-xs: 0.75rem;

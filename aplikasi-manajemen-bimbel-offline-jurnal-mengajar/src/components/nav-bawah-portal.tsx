@@ -52,7 +52,7 @@ export function NavBawahPortal() {
                 href={href}
                 aria-current={aktif ? "page" : undefined}
                 className={cn(
-                  "flex min-h-14 flex-col items-center justify-center gap-1 px-1 py-1.5 text-xs font-medium transition-colors",
+                  "flex min-h-14 flex-col items-center justify-center gap-1 px-1 py-1.5 text-3xs font-medium transition-colors",
                   aktif ? "text-primary" : "text-muted-foreground",
                 )}
               >
