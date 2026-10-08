@@ -501,6 +501,8 @@ export type MuridDiKelasTersimpan = {
   kontakOrangTua: string | null;
   statusAktif: boolean;
   tanggalMulai: string;
+  /** `aktif` atau `selesai`; `selesai` berarti penempatan lama yang jadi riwayat. */
+  statusPenempatan: string;
 };
 
 /** Benar kalau kelas dengan id itu ada. */
@@ -519,6 +521,7 @@ export async function adaKelas(kelasId: string) {
  */
 export async function listMuridKelas(
   kelasId: string,
+  { sertakanRiwayat = false }: { sertakanRiwayat?: boolean } = {},
 ): Promise<MuridDiKelasTersimpan[]> {
   return db
     .select({
@@ -529,16 +532,19 @@ export async function listMuridKelas(
       kontakOrangTua: students.kontakOrangTua,
       statusAktif: students.statusAktif,
       tanggalMulai: studentEnrollments.tanggalMulai,
+      statusPenempatan: studentEnrollments.status,
     })
     .from(studentEnrollments)
     .innerJoin(students, eq(studentEnrollments.studentId, students.id))
     .where(
-      and(
-        eq(studentEnrollments.classId, kelasId),
-        eq(studentEnrollments.status, "aktif"),
-      ),
+      sertakanRiwayat
+        ? eq(studentEnrollments.classId, kelasId)
+        : and(
+            eq(studentEnrollments.classId, kelasId),
+            eq(studentEnrollments.status, "aktif"),
+          ),
     )
-    .orderBy(asc(students.nama));
+    .orderBy(asc(studentEnrollments.status), asc(students.nama));
 }
 
 export type HasilTempatkanMurid =
@@ -612,4 +618,92 @@ export async function keluarkanMurid(kelasId: string, muridId: string) {
     )
     .returning({ id: studentEnrollments.id });
   return diubah.length > 0;
+}
+
+export type PenempatanTersimpan = {
+  id: string;
+  muridId: string;
+  muridNama: string;
+  kelasId: string;
+  kelasNama: string;
+  cabang: string;
+  guruNama: string | null;
+  tanggalMulai: string;
+  status: "aktif" | "selesai";
+};
+
+export type DaftarPenempatan = {
+  data: PenempatanTersimpan[];
+  meta: { limit: number; offset: number; total: number; aktif: number };
+};
+
+/**
+ * Daftar penempatan murid lintas kelas, lengkap dengan riwayatnya: penempatan
+ * yang sudah ditandai `selesai` tetap muncul supaya kelas yang pernah diikuti
+ * seorang anak bisa ditelusuri. Saringan `muridId`, `kelasId`, dan `status`
+ * dikerjakan di database.
+ */
+export async function listPenempatan(filter: {
+  limit: number;
+  offset: number;
+  muridId?: string;
+  kelasId?: string;
+  status?: "aktif" | "selesai";
+}): Promise<DaftarPenempatan> {
+  const syarat = and(
+    filter.muridId
+      ? eq(studentEnrollments.studentId, filter.muridId)
+      : undefined,
+    filter.kelasId ? eq(studentEnrollments.classId, filter.kelasId) : undefined,
+    filter.status ? eq(studentEnrollments.status, filter.status) : undefined,
+  );
+
+  const baris = await db
+    .select({
+      id: studentEnrollments.id,
+      muridId: studentEnrollments.studentId,
+      muridNama: students.nama,
+      kelasId: studentEnrollments.classId,
+      kelasNama: classes.namaKelas,
+      cabang: classes.cabang,
+      guruNama: user.name,
+      tanggalMulai: studentEnrollments.tanggalMulai,
+      status: studentEnrollments.status,
+    })
+    .from(studentEnrollments)
+    .innerJoin(students, eq(studentEnrollments.studentId, students.id))
+    .innerJoin(classes, eq(studentEnrollments.classId, classes.id))
+    .leftJoin(user, eq(classes.guruId, user.id))
+    .where(syarat)
+    .orderBy(
+      asc(studentEnrollments.status),
+      asc(classes.namaKelas),
+      asc(students.nama),
+    )
+    .limit(filter.limit + 1)
+    .offset(filter.offset);
+
+  const adaLagi = baris.length > filter.limit;
+  const data = adaLagi ? baris.slice(0, filter.limit) : baris;
+
+  const [jumlah] = await db
+    .select({
+      total: sql<number>`count(*)::int`.as("total"),
+      aktif:
+        sql<number>`count(*) filter (where ${studentEnrollments.status} = 'aktif')::int`.as(
+          "aktif",
+        ),
+    })
+    .from(studentEnrollments)
+    .where(syarat);
+
+  return {
+    data: data as PenempatanTersimpan[],
+    meta: {
+      limit: filter.limit,
+      offset: filter.offset,
+      total: jumlah?.total ?? 0,
+      aktif: jumlah?.aktif ?? 0,
+    },
+  };
 }

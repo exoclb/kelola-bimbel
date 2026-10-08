@@ -38,6 +38,9 @@ persiapan ujian — dengan jadwal maupun guru pengampu yang berbeda.
   (404 kalau murid memang tidak sedang di kelas itu).
 - `GET /api/kelas` — setiap kelas memuat `jumlahMurid` (penempatan aktifnya).
 
+- `GET /api/kelas/:id/murid?status=semua` — daftar kelas itu termasuk penempatan yang sudah `selesai`.
+- `GET /api/penempatan?muridId=&kelasId=&status=` — riwayat penempatan lintas kelas; `meta.aktif` menghitung yang masih berjalan.
+
 ## Dampak ke laporan
 
 Karena kehadiran dan perkembangan melekat pada murid (bukan pada satu kelas),

@@ -128,6 +128,40 @@ test("murid boleh aktif di beberapa kelas tanpa dobel di kelas yang sama", async
   });
   expect((await daftarBLagi.json()).data).toHaveLength(1);
 
+  // Riwayat penempatan tetap terbaca: `?status=semua` memuat kelas yang sudah
+  // ditinggalkan, dan endpoint penempatan lintas kelas menyebut statusnya.
+  const riwayatKelas = await request.get(
+    `/api/kelas/${kelasA}/murid?status=semua`,
+    { headers },
+  );
+  expect(riwayatKelas.status()).toBe(200);
+  const isiRiwayat = (await riwayatKelas.json()).data as {
+    muridId: string;
+    statusPenempatan: string;
+  }[];
+  expect(isiRiwayat.some((baris) => baris.statusPenempatan === "selesai")).toBe(
+    true,
+  );
+
+  const penempatan = await request.get(`/api/penempatan?muridId=${muridId}`, {
+    headers,
+  });
+  expect(penempatan.status()).toBe(200);
+  const isiPenempatan = await penempatan.json();
+  expect(isiPenempatan.meta.total).toBeGreaterThanOrEqual(1);
+  expect(isiPenempatan.data[0].muridNama).toBe("Murid Multi Kelas");
+  expect(
+    isiPenempatan.data.every(
+      (baris: { muridId: string }) => baris.muridId === muridId,
+    ),
+  ).toBe(true);
+  const selesai = await request.get(
+    `/api/penempatan?muridId=${muridId}&status=selesai`,
+    { headers },
+  );
+  expect(selesai.status()).toBe(200);
+  expect((await selesai.json()).meta.aktif).toBe(0);
+
   // Setelah keluar, murid yang sama boleh ditempatkan lagi di kelas A.
   expect((await tempatkan(kelasA)).status()).toBe(201);
 

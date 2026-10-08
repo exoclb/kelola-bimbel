@@ -92,3 +92,29 @@ export const tempatkanMuridSchema = z
 export type TempatkanMuridInput = z.infer<typeof tempatkanMuridSchema>;
 
 export const muridIdSchema = z.string().uuid();
+
+/**
+ * Daftar murid satu kelas. `status=aktif` (bawaan) hanya murid yang sedang
+ * belajar di kelas itu; `status=semua` menambahkan penempatan lama yang sudah
+ * ditandai `selesai` sebagai riwayat.
+ */
+export const listMuridKelasSchema = z
+  .object({
+    status: z.enum(["aktif", "semua"]).default("aktif"),
+  })
+  .strict();
+
+export type ListMuridKelasInput = z.infer<typeof listMuridKelasSchema>;
+
+/** Daftar penempatan lintas kelas: saringan anak, kelas, dan status. */
+export const listPenempatanSchema = z
+  .object({
+    limit: skemaLimit(50),
+    offset: skemaOffset,
+    muridId: z.string().uuid().optional(),
+    kelasId: z.string().uuid().optional(),
+    status: z.enum(["aktif", "selesai"]).optional(),
+  })
+  .strict();
+
+export type ListPenempatanInput = z.infer<typeof listPenempatanSchema>;

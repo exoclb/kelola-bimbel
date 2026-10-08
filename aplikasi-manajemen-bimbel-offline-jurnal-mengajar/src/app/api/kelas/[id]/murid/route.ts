@@ -5,18 +5,30 @@ import {
   tempatkanMurid,
 } from "@/services/kelas.service";
 import { tanggalISO } from "@/lib/tanggal";
-import { kelasIdSchema, tempatkanMuridSchema } from "@/validators/kelas";
+import {
+  kelasIdSchema,
+  listMuridKelasSchema,
+  tempatkanMuridSchema,
+} from "@/validators/kelas";
 
 export const runtime = "nodejs";
 type Context = { params: Promise<{ id: string }> };
 
-// Daftar murid yang sedang belajar di satu kelas.
+// Daftar murid yang sedang belajar di satu kelas. `?status=semua`
+// menyertakan penempatan lama yang sudah selesai sebagai riwayat kelas itu.
 export function GET(request: Request, context: Context) {
   return withApiSession(request, async () => {
     const id = kelasIdSchema.parse((await context.params).id);
     if (!(await adaKelas(id)))
       throw new ApiError(404, "NOT_FOUND", "Kelas tidak ditemukan.");
-    return Response.json({ data: await listMuridKelas(id) });
+    const { status } = listMuridKelasSchema.parse(
+      Object.fromEntries(new URL(request.url).searchParams),
+    );
+    return Response.json({
+      data: await listMuridKelas(id, {
+        sertakanRiwayat: status === "semua",
+      }),
+    });
   });
 }
 
