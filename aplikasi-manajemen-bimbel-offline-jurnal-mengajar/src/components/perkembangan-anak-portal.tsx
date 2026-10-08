@@ -14,6 +14,7 @@ import { BarProgres } from "@/components/bar-progres";
 import { KartuPortal } from "@/components/kartu-portal";
 import { PemilihAnak } from "@/components/pemilih-anak";
 import { LayarPortal } from "@/components/layar-portal";
+import { PemberitahuanAnakNonaktif } from "@/components/pemberitahuan-anak-nonaktif";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { PilPortal } from "@/components/pil-portal";
 import { cn } from "cn";
@@ -160,6 +161,12 @@ export function PerkembanganAnakPortal({
               }
             />
           </div>
+
+          {!dipilih.statusAktif && (
+            <div className="mt-4">
+              <PemberitahuanAnakNonaktif nama={dipilih.nama} />
+            </div>
+          )}
 
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
             <KartuPortal ringkas>

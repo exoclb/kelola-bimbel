@@ -6,6 +6,7 @@ import { CalendarCheck, CalendarDays, Clock3 } from "lucide-react";
 import { KartuPortal } from "@/components/kartu-portal";
 import { LencanaBaru } from "@/components/lencana-baru";
 import { LayarPortal } from "@/components/layar-portal";
+import { PemberitahuanAnakNonaktif } from "@/components/pemberitahuan-anak-nonaktif";
 import { PemilihAnak } from "@/components/pemilih-anak";
 import { PesanKosong } from "@/components/status-antarmuka";
 import type {
@@ -250,6 +251,12 @@ export function JadwalAnakPortal({
               onPilih={(id) => router.replace(`/portal/jadwal?anak=${id}`)}
             />
           </div>
+
+          {!dipilih.statusAktif && (
+            <div className="mt-4">
+              <PemberitahuanAnakNonaktif nama={dipilih.nama} />
+            </div>
+          )}
 
           {perHari.size === 0 ? (
             <PesanKosong

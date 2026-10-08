@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { KartuPortal } from "@/components/kartu-portal";
 import { PemilihAnak } from "@/components/pemilih-anak";
 import { LayarPortal } from "@/components/layar-portal";
+import { PemberitahuanAnakNonaktif } from "@/components/pemberitahuan-anak-nonaktif";
 import { PenandaStatus } from "@/components/penanda-status";
 import { RingkasanTagihanAnak } from "@/components/ringkasan-tagihan-anak";
 import { TombolAksiLengket } from "@/components/tombol-aksi-lengket";
@@ -148,6 +149,10 @@ export function TagihanSppAnak({
       {dipilih && (
         <>
           <div id="bukti-tagihan-anak" className="mt-6 space-y-3">
+            {!dipilih.statusAktif && (
+              <PemberitahuanAnakNonaktif nama={dipilih.nama} />
+            )}
+
             <RingkasanTagihanAnak
               anak={dipilih}
               daftar={daftar}

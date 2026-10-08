@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { PilPortal } from "@/components/pil-portal";
 import { KartuPortal } from "@/components/kartu-portal";
+import { PemberitahuanAnakNonaktif } from "@/components/pemberitahuan-anak-nonaktif";
 import { PemilihAnak } from "@/components/pemilih-anak";
 import { LayarPortal } from "@/components/layar-portal";
 import { PenandaStatus } from "@/components/penanda-status";
@@ -195,6 +196,12 @@ export function BerandaPortalWali({
           </dd>
         </dl>
       </KartuPortal>
+
+      {!dipilih.statusAktif && (
+        <div className="mt-4">
+          <PemberitahuanAnakNonaktif nama={dipilih.nama} />
+        </div>
+      )}
 
       <KartuPortal
         className="mt-4"
