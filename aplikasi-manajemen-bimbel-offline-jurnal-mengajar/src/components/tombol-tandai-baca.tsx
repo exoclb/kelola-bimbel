@@ -10,7 +10,6 @@ type TombolTandaiBacaProps = {
   ids?: string[];
   semua?: boolean;
   label: string;
-  kecil?: boolean;
 };
 
 /**
@@ -21,7 +20,6 @@ export function TombolTandaiBaca({
   ids,
   semua = false,
   label,
-  kecil = true,
 }: TombolTandaiBacaProps) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
@@ -51,7 +49,7 @@ export function TombolTandaiBaca({
       <Button
         type="button"
         variant="outline"
-        size={kecil ? "sm" : "default"}
+        size="aksi"
         onClick={tandai}
         disabled={pending}
       >

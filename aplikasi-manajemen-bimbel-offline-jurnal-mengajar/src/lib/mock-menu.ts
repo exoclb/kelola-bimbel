@@ -25,6 +25,8 @@ const MENU_DASAR: MenuApp[] = [
   { href: "/app/kelas", label: "Kelas" },
   { href: "/app/penempatan", label: "Penempatan" },
   { href: "/app/perkembangan", label: "Perkembangan" },
+  // Halaman akun sendiri: kabar yang masuk ke pengguna, dengan penanda baca.
+  { href: "/app/notifikasi", label: "Notifikasi" },
   { href: "/app/pengaturan", label: "Pengaturan" },
 ];
 

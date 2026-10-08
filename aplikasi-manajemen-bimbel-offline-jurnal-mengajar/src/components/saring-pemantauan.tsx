@@ -46,6 +46,7 @@ export function SaringPemantauan({
             <div className="space-y-2">
               <Label htmlFor="cabang">Cabang</Label>
               <NativeSelect
+                className="h-[var(--target-sentuh-portal)] md:text-base"
                 id="cabang"
                 name="cabang"
                 defaultValue={nilai.cabang}
@@ -63,6 +64,7 @@ export function SaringPemantauan({
             <div className="space-y-2">
               <Label htmlFor="guruId">Guru</Label>
               <NativeSelect
+                className="h-[var(--target-sentuh-portal)] md:text-base"
                 id="guruId"
                 name="guruId"
                 defaultValue={nilai.guruId}
@@ -78,6 +80,7 @@ export function SaringPemantauan({
             <div className="space-y-2">
               <Label htmlFor="classId">Kelas</Label>
               <NativeSelect
+                className="h-[var(--target-sentuh-portal)] md:text-base"
                 id="classId"
                 name="classId"
                 defaultValue={nilai.classId}
@@ -92,12 +95,12 @@ export function SaringPemantauan({
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button type="submit" size="sm">
+            <Button type="submit" size="aksi">
               <Filter aria-hidden="true" />
               Terapkan saringan
             </Button>
             {adaSaringan && (
-              <Button asChild variant="ghost" size="sm">
+              <Button asChild variant="ghost" size="aksi">
                 <Link href="/app/pemantauan">Hapus saringan</Link>
               </Button>
             )}

@@ -225,7 +225,7 @@ export function PemantauanHarian({
       )}
 
       <div className="mt-8">
-        <Button asChild variant="ghost" size="sm" className="-ml-3">
+        <Button asChild variant="ghost" size="aksi" className="-ml-3">
           <Link href="/app">
             <ArrowLeft aria-hidden="true" />
             Kembali ke beranda

@@ -87,11 +87,7 @@ export function DaftarNotifikasi({
         )}
 
         {belumDibacaIds.length > 1 && (
-          <TombolTandaiBaca
-            semua
-            label="Tandai semua sudah dibaca"
-            kecil={false}
-          />
+          <TombolTandaiBaca semua label="Tandai semua sudah dibaca" />
         )}
       </CardContent>
     </Card>
