@@ -76,6 +76,7 @@ export function RiwayatGaji({
               <div className="space-y-2">
                 <Label htmlFor="tahun">Tahun</Label>
                 <NativeSelect
+                  className="h-[var(--target-sentuh-portal)] md:text-base"
                   id="tahun"
                   name="tahun"
                   defaultValue={String(nilai.tahun)}
@@ -90,6 +91,7 @@ export function RiwayatGaji({
               <div className="space-y-2">
                 <Label htmlFor="bulan">Bulan</Label>
                 <NativeSelect
+                  className="h-[var(--target-sentuh-portal)] md:text-base"
                   id="bulan"
                   name="bulan"
                   defaultValue={nilai.bulan}
@@ -104,12 +106,12 @@ export function RiwayatGaji({
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <Button type="submit" size="sm">
+              <Button type="submit" size="aksi">
                 <Filter aria-hidden="true" />
                 Terapkan saringan
               </Button>
               {adaSaringan && (
-                <Button asChild variant="ghost" size="sm">
+                <Button asChild variant="ghost" size="aksi">
                   <Link href="/app/gaji/riwayat">Hapus saringan</Link>
                 </Button>
               )}
@@ -161,7 +163,7 @@ export function RiwayatGaji({
                     </span>
                   </div>
                   <div>
-                    <Button asChild variant="outline" size="sm">
+                    <Button asChild variant="outline" size="aksi">
                       <Link href={`/app/gaji?periode=${baris.periode}`}>
                         <FileText aria-hidden="true" />
                         Lihat rekap bulan ini
