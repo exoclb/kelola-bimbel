@@ -74,6 +74,8 @@ The portal shell is the only place that opts into `viewport-fit=cover` (its own 
 
 The core content column is `--lebar-konten-portal` (480px) in `globals.css`; the header, the page content, and the tabs' inner row all use it with `mx-auto`, so they stay perfectly aligned and centred from 768px upward while filling the screen on phones.
 
+Every portal screen starts with `LayarPortal` (`src/components/layar-portal.tsx`): the "Portal Wali" label, the page title, a short description, and a `role="status"` line that announces what changed, plus an optional slot above the title. Screens add only their own content below it.
+
 The base's welcome and blank app pages are replaceable. Reuse auth, setup, database, and UI when adding dashboard or chatbot features. Do not put feature conditionals throughout the base: create a derivative and implement that app directly.
 
 ## Dependency compatibility

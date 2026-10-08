@@ -7,6 +7,7 @@ import { ArrowLeft, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PemilihAnak } from "@/components/pemilih-anak";
+import { LayarPortal } from "@/components/layar-portal";
 import { LabelStatusTagihan } from "@/components/label-status-tagihan";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { formatRupiah } from "@/lib/gaji";
@@ -82,25 +83,19 @@ export function TagihanSppAnak({
   const rekap = hitungRekapTagihan(daftar);
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <p className="mb-3 text-sm font-medium text-primary">Portal Wali</p>
-      <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-        Tagihan SPP Anak
-      </h1>
-      <p className="mt-3 text-base leading-7 text-muted-foreground">
-        {dipilih
+    <LayarPortal
+      judul="Tagihan SPP Anak"
+      keterangan={
+        dipilih
           ? `Tagihan ${dipilih.nama} — hanya untuk dilihat, tanpa pembayaran di portal.`
           : anak.length > 0
             ? "Anak yang diminta tidak tertaut ke akun Anda."
-            : "Akun ini belum tertaut ke murid mana pun."}
-      </p>
-
-      <p
-        role="status"
-        className="mt-3 text-sm text-muted-foreground empty:mt-0"
-      >
-        {tagihanTercatat ? "Bagian tagihan sudah ditandai dibaca." : null}
-      </p>
+            : "Akun ini belum tertaut ke murid mana pun."
+      }
+      pesanStatus={
+        tagihanTercatat ? "Bagian tagihan sudah ditandai dibaca." : undefined
+      }
+    >
 
       {dipilih && (
         <>
@@ -180,6 +175,6 @@ export function TagihanSppAnak({
         Catatan: daftar tagihan ini dibaca dari database (tabel
         student_invoices) — sumber yang sama dengan yang dipakai owner.
       </p>
-    </div>
+    </LayarPortal>
   );
 }

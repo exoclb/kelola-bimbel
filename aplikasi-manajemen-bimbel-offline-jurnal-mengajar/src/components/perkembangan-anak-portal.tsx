@@ -7,6 +7,7 @@ import { ArrowLeft, CalendarCheck, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PemilihAnak } from "@/components/pemilih-anak";
+import { LayarPortal } from "@/components/layar-portal";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { cn } from "cn";
 import { tandaiTerbacaBanyak } from "@/lib/jejak-baca-portal-store";
@@ -79,26 +80,19 @@ export function PerkembanganAnakPortal({
   const hadir = dipilih?.kehadiran.hadir ?? 0;
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <p className="mb-3 text-sm font-medium text-primary">Portal Wali</p>
-      <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-        Perkembangan Anak
-      </h1>
-      <p className="mt-3 text-base leading-7 text-muted-foreground">
-        {dipilih
+    <LayarPortal
+      judul="Perkembangan Anak"
+      keterangan={
+        dipilih
           ? `Catatan nilai, sikap, dan kehadiran ${dipilih.nama} dari guru.`
-          : "Akun ini belum tertaut ke murid mana pun."}
-      </p>
-
-      <p
-        role="status"
-        className="mt-3 text-sm text-muted-foreground empty:mt-0"
-      >
-        {labelDibaca.length > 0
+          : "Akun ini belum tertaut ke murid mana pun."
+      }
+      pesanStatus={
+        labelDibaca.length > 0
           ? `Bagian ${labelDibaca.join(" dan ")} sudah ditandai dibaca.`
-          : null}
-      </p>
-
+          : undefined
+      }
+    >
       {dipilih && (
         <>
           <div className="mt-6">
@@ -257,6 +251,6 @@ export function PerkembanganAnakPortal({
           </Link>
         </Button>
       </div>
-    </div>
+    </LayarPortal>
   );
 }

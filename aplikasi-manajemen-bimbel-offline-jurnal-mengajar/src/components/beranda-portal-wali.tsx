@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PemilihAnak } from "@/components/pemilih-anak";
+import { LayarPortal } from "@/components/layar-portal";
 import { LabelStatusTagihan } from "@/components/label-status-tagihan";
 import { LencanaBaru } from "@/components/lencana-baru";
 import { formatRupiah } from "@/lib/gaji";
@@ -94,18 +95,14 @@ export function BerandaPortalWali({
 
   if (!dipilih) {
     return (
-      <div className="mx-auto max-w-3xl">
-        <p className="mt-6 mb-3 text-sm font-medium text-primary">
-          Portal Wali
-        </p>
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-          Beranda
-        </h1>
-        <p className="mt-3 text-base leading-7 text-muted-foreground">
-          {anak.length === 0
+      <LayarPortal
+        judul="Beranda"
+        keterangan={
+          anak.length === 0
             ? "Akun ini belum tertaut ke murid mana pun."
-            : "Anak yang diminta tidak tertaut ke akun Anda."}
-        </p>
+            : "Anak yang diminta tidak tertaut ke akun Anda."
+        }
+      >
         <div className="mt-6">
           <PemilihAnak
             anak={anak}
@@ -114,7 +111,7 @@ export function BerandaPortalWali({
             onPilih={setMuridId}
           />
         </div>
-      </div>
+      </LayarPortal>
     );
   }
 
@@ -126,31 +123,26 @@ export function BerandaPortalWali({
     : 0;
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <div className="flex flex-wrap items-center gap-3">
-        <span
-          aria-hidden="true"
-          className="grid size-11 place-items-center rounded-xl bg-primary/10 text-lg font-semibold text-primary"
-        >
-          {profil.nama.slice(0, 1)}
-        </span>
-        <div>
-          <p className="font-semibold">{profil.nama}</p>
-          <p className="text-xs text-muted-foreground">
-            {[profil.alamat, profil.telepon].filter(Boolean).join(" · ")}
-          </p>
+    <LayarPortal
+      judul="Beranda"
+      keterangan="Pantauan tagihan dan perkembangan anak Anda. Portal ini hanya untuk melihat, dan hanya menampilkan anak yang tertaut ke akun Anda."
+      atas={
+        <div className="flex flex-wrap items-center gap-3">
+          <span
+            aria-hidden="true"
+            className="bg-primary/10 text-primary grid size-11 place-items-center rounded-xl text-lg font-semibold"
+          >
+            {profil.nama.slice(0, 1)}
+          </span>
+          <div>
+            <p className="font-semibold">{profil.nama}</p>
+            <p className="text-muted-foreground text-xs">
+              {[profil.alamat, profil.telepon].filter(Boolean).join(" · ")}
+            </p>
+          </div>
         </div>
-      </div>
-
-      <p className="mt-6 mb-3 text-sm font-medium text-primary">Portal Wali</p>
-      <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-        Beranda
-      </h1>
-      <p className="mt-3 text-base leading-7 text-muted-foreground">
-        Pantauan tagihan dan perkembangan anak Anda. Portal ini hanya untuk
-        melihat, dan hanya menampilkan anak yang tertaut ke akun Anda.
-      </p>
-
+      }
+    >
       <div className="mt-6">
         <PemilihAnak
           anak={anak}
@@ -310,6 +302,6 @@ export function BerandaPortalWali({
           </Button>
         </CardContent>
       </Card>
-    </div>
+    </LayarPortal>
   );
 }
