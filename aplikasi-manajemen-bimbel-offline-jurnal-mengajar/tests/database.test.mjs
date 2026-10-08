@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { Pool } from "pg";
 import { root } from "../scripts/lib.mjs";
 
@@ -1050,4 +1051,101 @@ test("kelas hanya boleh menunjuk cabang yang terdaftar", async () => {
     "Cabang Kelas Uji Baru",
   ]);
   assert.equal(hapus.rowCount, 1);
+});
+
+/**
+ * Pemetaan nama cabang lama ke cabang resmi
+ * (`drizzle/0029_relasi_cabang_kelas.sql`): basis data yang sudah berisi kelas
+ * dengan nama cabang beda huruf besar-kecil atau belum terdaftar tetap bisa
+ * dipasangi relasi tanpa kehilangan kelasnya. Langkah pengamannya dijalankan
+ * apa adanya dari berkas migrasinya, karena itulah yang dijalankan sekali di
+ * basis data pemilik.
+ */
+test("migrasi relasi memetakan cabang kelas lama ke cabang resmi", async () => {
+  await siapkanJurnal();
+  await pastikanCabang("Cabang Peta Uji");
+
+  // Keadaan sebelum migrasi: relasinya belum ada.
+  await dbJurnal.query(
+    'ALTER TABLE classes DROP CONSTRAINT "classes_cabang_cabang_nama_fk"',
+  );
+  await dbJurnal.query(
+    'ALTER TABLE cabang DROP CONSTRAINT "cabang_nama_unique"',
+  );
+
+  const kelasLama = async (namaKelas, cabang) =>
+    (
+      await dbJurnal.query(
+        "INSERT INTO classes (nama_kelas, cabang) VALUES ($1, $2) RETURNING id",
+        [namaKelas, cabang],
+      )
+    ).rows[0].id;
+  const bedaHuruf = await kelasLama(
+    "Kelas Peta Beda Huruf",
+    "  cabang peta uji ",
+  );
+  const belumTerdaftar = await kelasLama(
+    "Kelas Peta Baru",
+    "Cabang Peta Belum",
+  );
+  const varian = await kelasLama("Kelas Peta Varian", "cabang peta belum");
+
+  try {
+    const migrasi = readFileSync(
+      new URL("../drizzle/0029_relasi_cabang_kelas.sql", import.meta.url),
+      "utf8",
+    );
+    for (const bagian of migrasi.split("--> statement-breakpoint")) {
+      const sql = bagian
+        .split("\n")
+        .filter((baris) => !baris.trim().startsWith("--"))
+        .join("\n")
+        .trim();
+      if (sql) await dbJurnal.query(sql);
+    }
+
+    const cabangKelas = async (id) =>
+      (await dbJurnal.query("SELECT cabang FROM classes WHERE id = $1", [id]))
+        .rows[0].cabang;
+
+    // Nama yang cuma beda huruf besar-kecil/spasi disamakan dengan nama resmi.
+    assert.equal(await cabangKelas(bedaHuruf), "Cabang Peta Uji");
+
+    // Nama yang belum terdaftar didaftarkan sekali, dan kedua kelas variannya
+    // menunjuk baris yang sama.
+    const { rows: baru } = await dbJurnal.query(
+      "SELECT nama, alamat, kontak, status_aktif FROM cabang WHERE lower(btrim(nama)) = 'cabang peta belum'",
+    );
+    assert.deepEqual(baru, [
+      {
+        nama: "Cabang Peta Belum",
+        alamat: "Belum diisi",
+        kontak: "-",
+        status_aktif: true,
+      },
+    ]);
+    assert.equal(await cabangKelas(belumTerdaftar), "Cabang Peta Belum");
+    assert.equal(await cabangKelas(varian), "Cabang Peta Belum");
+
+    // Relasinya benar-benar terpasang kembali.
+    const { rows: relasi } = await dbJurnal.query(
+      "SELECT count(*)::int AS jumlah FROM pg_constraint WHERE conname = ANY($1)",
+      [["classes_cabang_cabang_nama_fk", "cabang_nama_unique"]],
+    );
+    assert.equal(relasi[0].jumlah, 2);
+
+    // Kelas dengan cabang yang benar-benar asing tetap ditolak sekarang.
+    const asing = await ditolak(
+      "INSERT INTO classes (nama_kelas, cabang) VALUES ($1, $2)",
+      ["Kelas Peta Asing", "Cabang Peta Entah"],
+    );
+    assert.equal(asing.code, "23503");
+  } finally {
+    await dbJurnal.query("DELETE FROM classes WHERE id = ANY($1)", [
+      [bedaHuruf, belumTerdaftar, varian],
+    ]);
+    await dbJurnal.query("DELETE FROM cabang WHERE nama = $1", [
+      "Cabang Peta Belum",
+    ]);
+  }
 });
