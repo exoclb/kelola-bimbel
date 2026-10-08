@@ -110,6 +110,25 @@ test("wali hanya melihat anak yang tertaut ke akunnya", async ({
     expect(tagihan.status()).toBe(201);
   }
 
+  // Anak B ditempatkan ke satu kelas aktif dengan jadwal, supaya endpoint
+  // jadwal portal punya isi nyata.
+  const kelas = await request.post("/api/kelas", {
+    headers,
+    data: {
+      namaKelas: "Kelas Isolasi Portal",
+      cabang: "Cabang Isolasi",
+      guruId: await idAkun(emailOwner),
+      jadwal: [{ hari: "Senin", jamMulai: "09:00", jamSelesai: "10:30" }],
+    },
+  });
+  expect(kelas.status()).toBe(201);
+  const kelasId = (await kelas.json()).data.id as string;
+  const tempatkan = await request.post(`/api/kelas/${kelasId}/murid`, {
+    headers,
+    data: { muridId: muridB },
+  });
+  expect(tempatkan.status()).toBe(201);
+
   // Satu catatan evaluasi untuk tiap anak, supaya endpoint portal punya isi.
   for (const [muridId, sikap] of [
     [muridA, "Baik"],
@@ -183,6 +202,14 @@ test("wali hanya melihat anak yang tertaut ke akunnya", async ({
   expect(
     (await page.request.get(`/api/portal/tagihan?anak=${muridB}`)).status(),
   ).toBe(200);
+  const jadwalB = await page.request.get(`/api/portal/jadwal?anak=${muridB}`);
+  expect(jadwalB.status()).toBe(200);
+  const isiJadwalB = await jadwalB.json();
+  expect(isiJadwalB.meta.muridId).toBe(muridB);
+  expect(isiJadwalB.data).toHaveLength(1);
+  expect(isiJadwalB.data[0].kelasNama).toBe("Kelas Isolasi Portal");
+  expect(isiJadwalB.data[0].jamMulai).toBe("09:00");
+
   const berandaB = await page.request.get(`/api/portal/beranda?anak=${muridB}`);
   expect(berandaB.status()).toBe(200);
   const isiBerandaB = await berandaB.json();
