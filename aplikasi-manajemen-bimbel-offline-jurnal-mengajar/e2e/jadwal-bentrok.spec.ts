@@ -102,7 +102,23 @@ test("bentrok jadwal ditolak untuk kelas dan guru yang sama", async ({
   );
   expect(seCabang.status()).toBe(201);
 
-  // 4) Tanpa irisan untuk guru yang sama: jam setelahnya diterima, dan hari
+  // 4) Dua jadwal yang beririsan di dalam satu permintaan pembuatan kelas juga
+  // ditolak, sebelum kelasnya sempat dibuat.
+  const diDaftar = await buatKelas(
+    "Kelas Bentrok Lima",
+    "Cabang Timur",
+    guruB,
+    [
+      { hari: "Senin", jamMulai: "15:00", jamSelesai: "16:00" },
+      { hari: "Senin", jamMulai: "15:30", jamSelesai: "17:00" },
+    ],
+  );
+  expect(diDaftar.status()).toBe(409);
+  const galatDiDaftar = await diDaftar.json();
+  expect(galatDiDaftar.error.code).toBe("JADWAL_BENTROK");
+  expect(galatDiDaftar.error.message).toContain("bentrok");
+
+  // 5) Tanpa irisan untuk guru yang sama: jam setelahnya diterima, dan hari
   // berbeda pada jam yang sama juga bukan bentrok.
   const aman = await buatKelas("Kelas Bentrok Empat", "Cabang Utara", guruA, [
     { hari: "Senin", jamMulai: "11:00", jamSelesai: "12:00" },
