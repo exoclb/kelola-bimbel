@@ -550,3 +550,50 @@ test("ringkasan halaman cabang cocok dengan isi tabel cabang", async ({
     await db.end();
   }
 });
+
+/**
+ * Nama cabang harus unik tanpa membedakan huruf besar-kecil maupun spasi tepi:
+ * formulir menolaknya lebih dulu, dan API-nya menjawab 409 supaya jalur lain
+ * tidak bisa membuat cabang kembar.
+ */
+test("form tambah cabang dan API menolak nama yang sudah dipakai", async ({
+  page,
+  request,
+}) => {
+  await jadikanOwner();
+  const penanda = randomUUID().slice(0, 8);
+  const nama = `Cabang Duplikat ${penanda}`;
+  await siapkanCabang(nama, true);
+
+  try {
+    await masukPeramban(page);
+    await page.goto("/app/cabang");
+    await page.getByRole("button", { name: "Tambah cabang" }).click();
+    await page.getByLabel("Nama cabang").fill(`  ${nama.toUpperCase()}  `);
+    await page.getByLabel("Kontak").fill("0800-9999");
+    await page.getByLabel("Alamat").fill("Jl. Uji e2e No. 3");
+    await page.getByRole("button", { name: "Simpan cabang" }).click();
+    await expect(
+      page.getByText(`Cabang "${nama.toUpperCase()}" sudah terdaftar.`),
+    ).toBeVisible();
+
+    await masukApi(request);
+    const api = await request.post("/api/cabang", {
+      headers,
+      data: {
+        nama: ` cabang duplikat ${penanda} `,
+        alamat: "Jl. Uji e2e No. 4",
+        kontak: "0800-8888",
+      },
+    });
+    expect(api.status()).toBe(409);
+    expect((await api.json()).error.code).toBe("NAMA_SUDAH_DIPAKAI");
+  } finally {
+    const db = await pool();
+    try {
+      await db.query("DELETE FROM cabang WHERE nama = $1", [nama]);
+    } finally {
+      await db.end();
+    }
+  }
+});
