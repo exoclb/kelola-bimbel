@@ -94,6 +94,13 @@ function tanggalTerbaruTagihan(daftar: Tagihan[]): string | null {
   );
 }
 
+/** Rekap kehadiran per sesi satu anak dalam bentuk tampilan portal wali. */
+export async function kehadiranPortalAnak(
+  muridId: string,
+): Promise<SesiKehadiran[]> {
+  return kehadiranTampil(await listKehadiranAnak([muridId]));
+}
+
 /** Catatan evaluasi satu anak dalam bentuk tampilan portal wali. */
 export async function catatanPortalAnak(
   muridId: string,

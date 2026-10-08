@@ -227,6 +227,11 @@ test("wali hanya melihat anak yang tertaut ke akunnya", async ({
   expect(isiCatatanB.data).toHaveLength(1);
   expect(isiCatatanB.data[0].sikap).toBe("Sangat baik");
   expect(isiCatatanB.data[0].guruNama).toBe("Owner Isolasi Portal");
+  // Ringkasan progres ikut dikirim: rata-rata nilai anak dan rekap kehadiran.
+  expect(isiCatatanB.meta.rataRata).toBe(80);
+  expect(isiCatatanB.meta.jumlahSesi).toBe(0);
+  expect(isiCatatanB.meta.hadir).toBe(0);
+  expect(Array.isArray(isiCatatanB.kehadiran)).toBe(true);
   await page.goto(`/portal/jadwal?anak=${muridA}`);
   await expect(page.getByText("Jadwal kelas Anak Isolasi B")).toBeVisible();
   await expect(page.getByText("Anak Isolasi A")).toHaveCount(0);
