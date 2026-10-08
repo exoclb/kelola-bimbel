@@ -209,8 +209,7 @@ export function JadwalAnakPortal({
   menitServer,
 }: JadwalAnakPortalProps) {
   const router = useRouter();
-  const dipilih =
-    anak.find((baris) => baris.muridId === muridId) ?? anak[0];
+  const dipilih = anak.find((baris) => baris.muridId === muridId) ?? anak[0];
 
   const perHari = useMemo(() => {
     const peta = new Map<string, JadwalAnak[]>();

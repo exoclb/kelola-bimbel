@@ -44,13 +44,7 @@ export function PenandaStatus({
   const Ikon = IKON[status];
 
   return (
-    <span
-      className={cn(
-        KELAS_PIL,
-        GAYA[status],
-        className,
-      )}
-    >
+    <span className={cn(KELAS_PIL, GAYA[status], className)}>
       <Ikon className="size-3.5 shrink-0" aria-hidden="true" />
       {TEKS[status]}
     </span>

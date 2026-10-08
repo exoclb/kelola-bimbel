@@ -34,7 +34,10 @@ export function LayarPortal({
         {judul}
       </h1>
       <p className="text-muted-foreground mt-3 text-base">{keterangan}</p>
-      <p role="status" className="text-muted-foreground mt-3 text-sm empty:mt-0">
+      <p
+        role="status"
+        className="text-muted-foreground mt-3 text-sm empty:mt-0"
+      >
         {pesanStatus}
       </p>
       {children}

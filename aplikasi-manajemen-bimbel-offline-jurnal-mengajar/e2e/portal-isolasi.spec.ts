@@ -80,7 +80,11 @@ test("wali hanya melihat anak yang tertaut ke akunnya", async ({
   const nominalB = 320000;
 
   // Owner menyiapkan dua murid, masing-masing dengan satu tagihan.
-  const emailOwner = await signUp(request, "Owner Isolasi Portal", "owner-isolasi");
+  const emailOwner = await signUp(
+    request,
+    "Owner Isolasi Portal",
+    "owner-isolasi",
+  );
   await setRole(emailOwner, "owner");
   await masuk(request, emailOwner);
 
@@ -130,9 +134,7 @@ test("wali hanya melihat anak yang tertaut ke akunnya", async ({
   await expect(page).toHaveURL(/\/portal$/);
 
   await page.goto("/portal/tagihan");
-  await expect(
-    page.getByText("Anak Isolasi B", { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByText("Anak Isolasi B", { exact: true })).toBeVisible();
   await expect(page.getByText("Anak Isolasi A")).toHaveCount(0);
   await expect(
     page.getByText(`Rp${nominalB.toLocaleString("id-ID")}`).first(),
@@ -149,7 +151,9 @@ test("wali hanya melihat anak yang tertaut ke akunnya", async ({
     (await page.request.get(`/api/portal/tagihan?anak=${muridA}`)).status(),
   ).toBe(404);
   expect(
-    (await page.request.get(`/api/portal/tagihan/bukti?anak=${muridA}`)).status(),
+    (
+      await page.request.get(`/api/portal/tagihan/bukti?anak=${muridA}`)
+    ).status(),
   ).toBe(404);
 
   // Anak sendiri tetap terbaca, baik lewat layar maupun endpoint.
@@ -162,15 +166,15 @@ test("wali hanya melihat anak yang tertaut ke akunnya", async ({
 
   // Wali A tetap melihat anaknya; isolasinya berlaku dua arah. Keluar dulu
   // supaya halaman masuk tidak memantul kembali ke portal wali B.
-  expect((await page.request.delete("/api/sesi", { headers })).status()).toBe(204);
+  expect((await page.request.delete("/api/sesi", { headers })).status()).toBe(
+    204,
+  );
   await page.goto("/sign-in");
   await page.getByLabel("Email", { exact: true }).fill(emailWaliA);
   await page.getByLabel("Password", { exact: true }).fill(sandi);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveURL(/\/portal$/);
   await page.goto("/portal/tagihan");
-  await expect(
-    page.getByText("Anak Isolasi A", { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByText("Anak Isolasi A", { exact: true })).toBeVisible();
   await expect(page.getByText("Anak Isolasi B")).toHaveCount(0);
 });

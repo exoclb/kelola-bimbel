@@ -197,7 +197,11 @@ export async function listJadwalAnak(
         eq(studentEnrollments.status, "aktif"),
       ),
     )
-    .orderBy(asc(schedules.jamMulai), asc(classes.namaKelas), asc(schedules.id));
+    .orderBy(
+      asc(schedules.jamMulai),
+      asc(classes.namaKelas),
+      asc(schedules.id),
+    );
 
   return baris.map((satu) => ({ ...satu, hari: satu.hari as NamaHari }));
 }

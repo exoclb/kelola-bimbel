@@ -94,7 +94,9 @@ export function FormAturUlangSandi({ token }: { token: string | null }) {
   return (
     <div className="w-full max-w-sm">
       <p className="mb-3 text-sm font-medium text-primary">Atur ulang sandi</p>
-      <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Sandi baru</h1>
+      <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+        Sandi baru
+      </h1>
       <p className="mt-3 text-base leading-7 text-muted-foreground">
         Tulis sandi baru untuk akunmu. Setelah tersimpan, masuk lagi memakai
         sandi itu.

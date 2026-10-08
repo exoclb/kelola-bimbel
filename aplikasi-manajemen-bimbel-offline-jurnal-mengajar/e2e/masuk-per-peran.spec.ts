@@ -98,7 +98,9 @@ test("wali masuk lewat halaman masuk dan mendarat di portal", async ({
   ).toBeVisible();
 
   // Tab bawah portal tersedia lengkap, sedangkan menu guru/owner tidak bocor.
-  const navigasiPortal = page.getByRole("navigation", { name: "Navigasi portal" });
+  const navigasiPortal = page.getByRole("navigation", {
+    name: "Navigasi portal",
+  });
   for (const tab of ["Beranda", "Jadwal", "Tagihan", "Progres", "Akun"]) {
     await expect(
       navigasiPortal.getByRole("link", { name: tab, exact: true }),

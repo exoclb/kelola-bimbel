@@ -160,7 +160,9 @@ test("layar Tagihan portal menampilkan ringkasan dan tiga status pembayaran", as
   await expect(
     ringkasan.getByText(`Rp${(nominal * 3).toLocaleString("id-ID")}`),
   ).toBeVisible();
-  await expect(ringkasan.getByText("3 tagihan · 1 lunas · 2 belum lunas")).toBeVisible();
+  await expect(
+    ringkasan.getByText("3 tagihan · 1 lunas · 2 belum lunas"),
+  ).toBeVisible();
 
   // Penanda status: satu Lunas, satu Terlambat, dan "Belum bayar" muncul di
   // ringkasan sekaligus di tagihan periode berjalan.
@@ -215,7 +217,11 @@ test("endpoint daftar tagihan per anak hanya melayani wali yang tertaut", async 
 }) => {
   // Data disiapkan seperti pada uji layar: owner membuat murid dan tiga tagihan,
   // lalu menautkannya ke akun wali.
-  const emailOwner = await signUp(request, "Owner Endpoint Tagihan", "owner-endpoint");
+  const emailOwner = await signUp(
+    request,
+    "Owner Endpoint Tagihan",
+    "owner-endpoint",
+  );
   await setRole(emailOwner, "owner");
   await masuk(request, emailOwner);
 
@@ -233,7 +239,11 @@ test("endpoint daftar tagihan per anak hanya melayani wali yang tertaut", async 
     expect(tagihan.status()).toBe(201);
   }
 
-  const emailWali = await signUp(request, "Wali Endpoint Tagihan", "wali-endpoint");
+  const emailWali = await signUp(
+    request,
+    "Wali Endpoint Tagihan",
+    "wali-endpoint",
+  );
   await setRole(emailWali, "orang-tua");
   const waliId = await idAkun(emailWali);
   await masuk(request, emailOwner);
@@ -266,21 +276,25 @@ test("endpoint daftar tagihan per anak hanya melayani wali yang tertaut", async 
   // Id anak yang tidak tertaut tidak membocorkan apa pun, dan kueri tanpa
   // parameter ditolak sebelum menyentuh layanan.
   expect(
-    (await page.request.get(`/api/portal/tagihan?anak=${randomUUID()}`)).status(),
+    (
+      await page.request.get(`/api/portal/tagihan?anak=${randomUUID()}`)
+    ).status(),
   ).toBe(404);
   expect((await page.request.get("/api/portal/tagihan")).status()).toBe(422);
-  expect((await page.request.get("/api/portal/tagihan?anak=bukan-uuid")).status()).toBe(
-    422,
-  );
+  expect(
+    (await page.request.get("/api/portal/tagihan?anak=bukan-uuid")).status(),
+  ).toBe(422);
 
   // Akun owner yang bukan wali anak itu juga ditolak, walau izin portalnya ada.
-  expect((await request.get(`/api/portal/tagihan?anak=${muridId}`)).status()).toBe(
-    404,
-  );
+  expect(
+    (await request.get(`/api/portal/tagihan?anak=${muridId}`)).status(),
+  ).toBe(404);
 
   // Unduh bukti tagihan: dokumen HTML mandiri, terlampir sebagai berkas, dan
   // hanya untuk anak yang tertaut.
-  const bukti = await page.request.get(`/api/portal/tagihan/bukti?anak=${muridId}`);
+  const bukti = await page.request.get(
+    `/api/portal/tagihan/bukti?anak=${muridId}`,
+  );
   expect(bukti.status()).toBe(200);
   expect(bukti.headers()["content-type"]).toContain("text/html");
   expect(bukti.headers()["content-disposition"]).toContain("attachment");
@@ -294,9 +308,7 @@ test("endpoint daftar tagihan per anak hanya melayani wali yang tertaut", async 
   expect(dokumen).toContain("Rp600.000");
   expect(
     (
-      await page.request.get(
-        `/api/portal/tagihan/bukti?anak=${randomUUID()}`,
-      )
+      await page.request.get(`/api/portal/tagihan/bukti?anak=${randomUUID()}`)
     ).status(),
   ).toBe(404);
 });

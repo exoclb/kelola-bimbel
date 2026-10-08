@@ -103,7 +103,6 @@ export function TagihanSppAnak({
         tagihanTercatat ? "Bagian tagihan sudah ditandai dibaca." : undefined
       }
     >
-
       <div className="mt-6 print:hidden">
         <PemilihAnak
           anak={anak}

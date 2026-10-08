@@ -270,7 +270,8 @@ export function BerandaPortalWali({
               />
             </div>
             <p className="text-muted-foreground text-sm">
-              Periode {formatPeriodeTagihan(periodeDariTagihan(tagihanTerdekat))}
+              Periode{" "}
+              {formatPeriodeTagihan(periodeDariTagihan(tagihanTerdekat))}
               {tagihanTerdekat.tanggalBayar
                 ? ` · dibayar ${namaHariBulan.format(
                     new Date(`${tagihanTerdekat.tanggalBayar}T00:00:00`),

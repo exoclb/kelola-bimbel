@@ -69,7 +69,12 @@ export function buktiTagihanHtml({
         status === "lunas" && baris.tanggalBayar
           ? `Dibayar ${tanggalTampil(new Date(`${baris.tanggalBayar}T00:00:00`))}`
           : `Jatuh tempo ${tanggalTampil(jatuhTempoTagihan(baris))}`;
-      const kata = status === "lunas" ? "Lunas" : status === "terlambat" ? "Terlambat" : "Belum bayar";
+      const kata =
+        status === "lunas"
+          ? "Lunas"
+          : status === "terlambat"
+            ? "Terlambat"
+            : "Belum bayar";
       return `<tr>
       <td>${amanHtml(formatPeriodeTagihan(periodeDariTagihan(baris)))}</td>
       <td class="angka">${amanHtml(formatRupiah(baris.nominal))}</td>

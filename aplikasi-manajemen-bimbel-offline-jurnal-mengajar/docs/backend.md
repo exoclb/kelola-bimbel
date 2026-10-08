@@ -45,58 +45,58 @@ App features follow the same structure as Notes: route → `withApiSession` → 
 
 Operasi jurnal milik guru ada di `src/services/jurnal.service.ts` (simpan, riwayat, detail, koreksi), pembacaan lintas akun untuk pantauan owner — ringkasan harian, deteksi kelas kosong, daftar jurnal harian, saringan — ada di `src/services/pemantauan.service.ts`, dan perhitungan gaji (jam mengajar × tarif yang berlaku) ada di `src/services/gaji.service.ts`. Fungsi yang menjangkau akun lain memakai akhiran `Any` dan hanya boleh dipanggil dari endpoint yang dijaga izin role.
 
-| Method | Path                           | Result                                                                  |
-| ------ | ------------------------------ | ----------------------------------------------------------------------- |
-| GET    | `/api/jadwal`                  | 200, jadwal mengajar guru yang sedang masuk pada satu hari              |
-| GET    | `/api/jadwal?hari=…`           | 200, jadwal pada hari lain (`Senin`–`Minggu`, huruf awal besar)         |
-| GET    | `/api/jurnal`                  | 200, riwayat jurnal guru (saring kelas & rentang tanggal, berhalaman)   |
-| GET    | `/api/murid`                   | 200, daftar murid (cari: nama murid, orang tua, atau kontaknya)         |
-| POST   | `/api/murid`                   | 201, menambah murid baru                                                |
-| GET    | `/api/kelas`                   | 200, daftar kelas beserta jadwal & jumlah muridnya                      |
-| POST   | `/api/kelas`                   | 201, membuat kelas baru (boleh sekaligus dengan jadwalnya)              |
-| GET    | `/api/kelas/:id`               | 200, satu kelas beserta jadwal & jumlah muridnya                        |
-| PATCH  | `/api/kelas/:id`               | 200, mengubah nama, cabang, dan/atau guru pengampu kelas                |
-| POST   | `/api/kelas/:id/jadwal`        | 200, menambah satu jadwal (tolak bentrok guru & jadwal kembar)          |
-| DELETE | `/api/kelas/:id/jadwal/:id`    | 204, menghapus satu jadwal milik kelas itu                              |
-| GET    | `/api/gaji`                    | 200, rekap & rincian jam ngajar milik guru yang sedang masuk            |
-| GET    | `/api/jurnal/:id`              | 200, detail satu jurnal beserta daftar muridnya                         |
-| GET    | `/api/admin/jurnal`            | 200, owner melihat jurnal semua guru pada satu tanggal                  |
-| GET    | `/api/admin/jurnal/:id`        | 200, owner membuka detail satu jurnal guru siapa pun                    |
-| GET    | `/api/admin/ringkasan-guru`    | 200, ringkasan harian: jadwal & status jurnal tiap guru                 |
-| GET    | `/api/admin/opsi-saring`       | 200, pilihan saringan pantauan: kelas, guru, dan cabang                 |
-| GET    | `/api/admin/status-pemantauan` | 200, angka ringkas pantauan untuk pembaruan berkala                     |
-| GET    | `/api/admin/gaji`              | 200, rekap gaji semua guru pada satu bulan (owner)                      |
-| PATCH  | `/api/admin/gaji`              | 200, tandai/batalkan pembayaran gaji satu guru pada satu bulan          |
-| GET    | `/api/admin/gaji/slip`         | 200, unduh slip gaji satu guru sebagai dokumen HTML                     |
-| GET    | `/api/admin/gaji/riwayat`      | 200, riwayat gaji per bulan (saringan tahun & bulan)                    |
-| GET    | `/api/notifikasi`              | 200, notifikasi milik akun yang sedang masuk (bisa saring belum dibaca) |
-| PATCH  | `/api/notifikasi`              | 200, tandai notifikasi tertentu atau semua sebagai sudah dibaca         |
-| POST   | `/api/jurnal`                  | 200, simpan & kirim jurnal mengajar (idempoten per jadwal + tanggal)    |
-| PATCH  | `/api/jurnal/:id`              | 200, koreksi isi jurnal (materi, catatan, dan/atau kehadiran)           |
-| GET    | `/api/pengaturan/notifikasi`   | 200, preferensi notifikasi milik akun yang sedang masuk                 |
-| PATCH  | `/api/pengaturan/notifikasi`   | 200, menyalakan/mematikan satu jenis pemberitahuan                      |
-| GET    | `/api/pengaturan/guru`         | 200, daftar akun guru & owner + status aktifnya (owner & admin)         |
-| POST   | `/api/pengaturan/guru`         | 201, menambah akun guru baru (selalu berperan guru)                     |
-| PATCH  | `/api/pengaturan/guru/:id`     | 200, mengaktifkan/menonaktifkan akun guru                               |
-| GET    | `/api/wali`                    | 200, daftar akun wali + murid tertaut & status portal (owner & admin)   |
-| GET    | `/api/wali/:id`                | 200, satu akun wali beserta murid tertautnya                            |
-| PATCH  | `/api/wali/:id`                | 200, menyalakan/mematikan akses portal satu akun wali                   |
-| POST   | `/api/wali/:id/murid`          | 201/200, menautkan murid ke akun wali (aman diulang)                    |
-| DELETE | `/api/wali/:id/murid/:muridId` | 200, melepas tautan murid dari akun wali (aman diulang)                 |
-| GET    | `/api/portal/tagihan?anak=…`   | 200, tagihan SPP satu anak untuk akun wali yang tertaut                 |
-| GET    | `/api/portal/tagihan/bukti?anak=…` | 200, bukti tagihan satu anak sebagai dokumen HTML yang diunduh      |
-| GET    | `/api/pengaturan/gaji`         | 200, aturan gaji yang berlaku pada satu tanggal + riwayatnya            |
-| POST   | `/api/pengaturan/gaji`         | 201, menambah aturan gaji bertanggal berlaku (owner & admin)            |
-| PATCH  | `/api/pengaturan/gaji/:id`     | 200, memperbaiki satu aturan gaji (tarif, skema, atau tanggalnya)       |
-| DELETE | `/api/pengaturan/gaji/:id`     | 204, menghapus satu aturan gaji                                         |
-| GET    | `/api/pengaturan/profil`       | 200, profil bimbel (kosong kalau belum diatur)                          |
-| PUT    | `/api/pengaturan/profil`       | 200, menyimpan profil bimbel + logo (owner & admin)                     |
-| POST   | `/api/akun`                    | 201, mendaftarkan akun guru baru (langsung masuk)                       |
-| POST   | `/api/masuk`                   | 200, masuk dengan email & sandi (membuat sesi)                          |
-| GET    | `/api/sesi`                    | 200, akun yang sedang masuk beserta perannya                            |
-| DELETE | `/api/sesi`                    | 204, keluar dan mencabut sesi di server                                 |
-| POST   | `/api/lupa-sandi`              | 200, meminta tautan atur ulang sandi (jawaban selalu sama)              |
-| POST   | `/api/atur-ulang-sandi`        | 200, mengganti sandi memakai token dari tautan                          |
+| Method | Path                               | Result                                                                  |
+| ------ | ---------------------------------- | ----------------------------------------------------------------------- |
+| GET    | `/api/jadwal`                      | 200, jadwal mengajar guru yang sedang masuk pada satu hari              |
+| GET    | `/api/jadwal?hari=…`               | 200, jadwal pada hari lain (`Senin`–`Minggu`, huruf awal besar)         |
+| GET    | `/api/jurnal`                      | 200, riwayat jurnal guru (saring kelas & rentang tanggal, berhalaman)   |
+| GET    | `/api/murid`                       | 200, daftar murid (cari: nama murid, orang tua, atau kontaknya)         |
+| POST   | `/api/murid`                       | 201, menambah murid baru                                                |
+| GET    | `/api/kelas`                       | 200, daftar kelas beserta jadwal & jumlah muridnya                      |
+| POST   | `/api/kelas`                       | 201, membuat kelas baru (boleh sekaligus dengan jadwalnya)              |
+| GET    | `/api/kelas/:id`                   | 200, satu kelas beserta jadwal & jumlah muridnya                        |
+| PATCH  | `/api/kelas/:id`                   | 200, mengubah nama, cabang, dan/atau guru pengampu kelas                |
+| POST   | `/api/kelas/:id/jadwal`            | 200, menambah satu jadwal (tolak bentrok guru & jadwal kembar)          |
+| DELETE | `/api/kelas/:id/jadwal/:id`        | 204, menghapus satu jadwal milik kelas itu                              |
+| GET    | `/api/gaji`                        | 200, rekap & rincian jam ngajar milik guru yang sedang masuk            |
+| GET    | `/api/jurnal/:id`                  | 200, detail satu jurnal beserta daftar muridnya                         |
+| GET    | `/api/admin/jurnal`                | 200, owner melihat jurnal semua guru pada satu tanggal                  |
+| GET    | `/api/admin/jurnal/:id`            | 200, owner membuka detail satu jurnal guru siapa pun                    |
+| GET    | `/api/admin/ringkasan-guru`        | 200, ringkasan harian: jadwal & status jurnal tiap guru                 |
+| GET    | `/api/admin/opsi-saring`           | 200, pilihan saringan pantauan: kelas, guru, dan cabang                 |
+| GET    | `/api/admin/status-pemantauan`     | 200, angka ringkas pantauan untuk pembaruan berkala                     |
+| GET    | `/api/admin/gaji`                  | 200, rekap gaji semua guru pada satu bulan (owner)                      |
+| PATCH  | `/api/admin/gaji`                  | 200, tandai/batalkan pembayaran gaji satu guru pada satu bulan          |
+| GET    | `/api/admin/gaji/slip`             | 200, unduh slip gaji satu guru sebagai dokumen HTML                     |
+| GET    | `/api/admin/gaji/riwayat`          | 200, riwayat gaji per bulan (saringan tahun & bulan)                    |
+| GET    | `/api/notifikasi`                  | 200, notifikasi milik akun yang sedang masuk (bisa saring belum dibaca) |
+| PATCH  | `/api/notifikasi`                  | 200, tandai notifikasi tertentu atau semua sebagai sudah dibaca         |
+| POST   | `/api/jurnal`                      | 200, simpan & kirim jurnal mengajar (idempoten per jadwal + tanggal)    |
+| PATCH  | `/api/jurnal/:id`                  | 200, koreksi isi jurnal (materi, catatan, dan/atau kehadiran)           |
+| GET    | `/api/pengaturan/notifikasi`       | 200, preferensi notifikasi milik akun yang sedang masuk                 |
+| PATCH  | `/api/pengaturan/notifikasi`       | 200, menyalakan/mematikan satu jenis pemberitahuan                      |
+| GET    | `/api/pengaturan/guru`             | 200, daftar akun guru & owner + status aktifnya (owner & admin)         |
+| POST   | `/api/pengaturan/guru`             | 201, menambah akun guru baru (selalu berperan guru)                     |
+| PATCH  | `/api/pengaturan/guru/:id`         | 200, mengaktifkan/menonaktifkan akun guru                               |
+| GET    | `/api/wali`                        | 200, daftar akun wali + murid tertaut & status portal (owner & admin)   |
+| GET    | `/api/wali/:id`                    | 200, satu akun wali beserta murid tertautnya                            |
+| PATCH  | `/api/wali/:id`                    | 200, menyalakan/mematikan akses portal satu akun wali                   |
+| POST   | `/api/wali/:id/murid`              | 201/200, menautkan murid ke akun wali (aman diulang)                    |
+| DELETE | `/api/wali/:id/murid/:muridId`     | 200, melepas tautan murid dari akun wali (aman diulang)                 |
+| GET    | `/api/portal/tagihan?anak=…`       | 200, tagihan SPP satu anak untuk akun wali yang tertaut                 |
+| GET    | `/api/portal/tagihan/bukti?anak=…` | 200, bukti tagihan satu anak sebagai dokumen HTML yang diunduh          |
+| GET    | `/api/pengaturan/gaji`             | 200, aturan gaji yang berlaku pada satu tanggal + riwayatnya            |
+| POST   | `/api/pengaturan/gaji`             | 201, menambah aturan gaji bertanggal berlaku (owner & admin)            |
+| PATCH  | `/api/pengaturan/gaji/:id`         | 200, memperbaiki satu aturan gaji (tarif, skema, atau tanggalnya)       |
+| DELETE | `/api/pengaturan/gaji/:id`         | 204, menghapus satu aturan gaji                                         |
+| GET    | `/api/pengaturan/profil`           | 200, profil bimbel (kosong kalau belum diatur)                          |
+| PUT    | `/api/pengaturan/profil`           | 200, menyimpan profil bimbel + logo (owner & admin)                     |
+| POST   | `/api/akun`                        | 201, mendaftarkan akun guru baru (langsung masuk)                       |
+| POST   | `/api/masuk`                       | 200, masuk dengan email & sandi (membuat sesi)                          |
+| GET    | `/api/sesi`                        | 200, akun yang sedang masuk beserta perannya                            |
+| DELETE | `/api/sesi`                        | 204, keluar dan mencabut sesi di server                                 |
+| POST   | `/api/lupa-sandi`                  | 200, meminta tautan atur ulang sandi (jawaban selalu sama)              |
+| POST   | `/api/atur-ulang-sandi`            | 200, mengganti sandi memakai token dari tautan                          |
 
 `hari` boleh dikosongkan; tanpa parameter itu server memakai hari ini menurut `src/lib/tanggal.ts`. Nilai di luar daftar hari ditolak dengan 422. Hasilnya `{ "data": [{ id, classId, namaKelas, cabang, jamMulai, jamSelesai }] }` dengan jam dalam bentuk `HH:MM`, diurutkan dari jam paling awal. Saringan `guru_id` selalu memakai id dari sesi, bukan dari permintaan, jadi satu guru tidak pernah melihat jadwal guru lain.
 

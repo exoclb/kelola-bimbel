@@ -22,7 +22,10 @@ test("tab aktif mengikuti layar portal yang sedang dibuka", () => {
 
 test("halaman anak menyalakan tab induknya, bukan tab lain", () => {
   assert.equal(tabAktifDari(TAB, "/portal/tagihan/2026-10"), "/portal/tagihan");
-  assert.equal(tabAktifDari(TAB, "/portal/perkembangan/anak-1"), "/portal/perkembangan");
+  assert.equal(
+    tabAktifDari(TAB, "/portal/perkembangan/anak-1"),
+    "/portal/perkembangan",
+  );
   assert.equal(tabAktifDari(TAB, "/portal/"), "/portal");
 });
 

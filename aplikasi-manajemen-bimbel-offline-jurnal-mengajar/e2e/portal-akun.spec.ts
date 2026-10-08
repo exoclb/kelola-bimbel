@@ -67,7 +67,9 @@ test("tombol keluar memakai pola autentikasi dan mencabut sesi", async ({
 
   // Identitas dan preferensi tampil, dan tombol keluar berukuran sentuh.
   await expect(page.getByText("Akun yang masuk")).toBeVisible();
-  await expect(page.getByText("Wali Akun Portal", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Wali Akun Portal", { exact: true }),
+  ).toBeVisible();
   await expect(page.getByText("Orang tua", { exact: true })).toBeVisible();
   const pilihanTema = page.getByLabel("Tampilan", { exact: true });
   await expect(pilihanTema).toBeVisible();
