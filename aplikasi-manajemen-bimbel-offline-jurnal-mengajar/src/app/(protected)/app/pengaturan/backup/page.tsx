@@ -2,7 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, CalendarClock, DatabaseBackup, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { requirePermission } from "@/lib/session";
 import { ambilStatusBackup } from "@/services/backup.service";
@@ -22,6 +28,21 @@ function umurBackup(waktu: Date, sekarang = new Date()) {
   if (hari <= 0) return "hari ini";
   if (hari === 1) return "kemarin";
   return `${hari} hari lalu`;
+}
+
+/** Lama satu proses backup, mis. "1 menit 12 detik"; null berarti belum selesai. */
+function lamaProses(mulai: Date, selesai: Date | null) {
+  if (!selesai) return null;
+  const detik = Math.max(
+    0,
+    Math.round((selesai.getTime() - mulai.getTime()) / 1000),
+  );
+  if (detik < 60) return `${detik} detik`;
+  const menit = Math.floor(detik / 60);
+  const sisaDetik = detik % 60;
+  return sisaDetik === 0
+    ? `${menit} menit`
+    : `${menit} menit ${sisaDetik} detik`;
 }
 
 function ukuranTeks(byte: number | null) {
@@ -68,7 +89,7 @@ export default async function BackupDatabasePage() {
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-6 print:hidden">
-        <Button asChild variant="ghost" size="sm" className="-ml-3">
+        <Button asChild variant="ghost" size="aksi" className="-ml-3">
           <Link href="/app/pengaturan">
             <ArrowLeft aria-hidden="true" />
             Kembali ke pengaturan
@@ -107,6 +128,13 @@ export default async function BackupDatabasePage() {
         />
       ) : (
         <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="text-base">Riwayat backup</CardTitle>
+            <CardDescription>
+              {status.terbaru.length} catatan terbaru dari {status.jumlah.total}{" "}
+              catatan.
+            </CardDescription>
+          </CardHeader>
           <CardContent className="divide-y">
             {status.terbaru.map((baris) => (
               <div
@@ -119,6 +147,9 @@ export default async function BackupDatabasePage() {
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {ukuranTeks(baris.ukuranByte)}
+                    {lamaProses(baris.mulai, baris.selesai)
+                      ? ` · ${lamaProses(baris.mulai, baris.selesai)}`
+                      : " · masih berjalan"}
                     {baris.lokasi ? ` · ${baris.lokasi}` : ""}
                   </p>
                   {baris.pesan && (
