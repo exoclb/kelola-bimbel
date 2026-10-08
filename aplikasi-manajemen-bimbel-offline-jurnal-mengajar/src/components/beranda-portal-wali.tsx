@@ -10,7 +10,7 @@ import {
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { KartuPortal } from "@/components/kartu-portal";
 import { PemilihAnak } from "@/components/pemilih-anak";
 import { LayarPortal } from "@/components/layar-portal";
 import { LabelStatusTagihan } from "@/components/label-status-tagihan";
@@ -152,156 +152,138 @@ export function BerandaPortalWali({
         />
       </div>
 
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="size-4" aria-hidden="true" />
-            {dipilih.nama}
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            {[
-              dipilih.kelasNama,
-              dipilih.namaOrangTua ? `wali: ${dipilih.namaOrangTua}` : null,
-              dipilih.statusAktif ? null : "Nonaktif",
-            ]
-              .filter(Boolean)
-              .join(" · ")}
-          </p>
-        </CardHeader>
-      </Card>
+      <KartuPortal
+        className="mt-6"
+        judul={dipilih.nama}
+        ikon={Users}
+        keterangan={[
+          dipilih.kelasNama,
+          dipilih.namaOrangTua ? `wali: ${dipilih.namaOrangTua}` : null,
+          dipilih.statusAktif ? null : "Nonaktif",
+        ]
+          .filter(Boolean)
+          .join(" · ")}
+      />
 
-      <Card className="mt-4">
-        <CardHeader>
-          <CardTitle className="flex flex-wrap items-center gap-2">
-            <CalendarCheck className="size-4" aria-hidden="true" />
-            Kehadiran
-            {kehadiranBaru && <LencanaBaru />}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Hadir {dipilih.kehadiran.hadir} dari {dipilih.kehadiran.sesi} sesi
-            tercatat
-            {dipilih.kehadiran.terakhir
-              ? ` · terakhir ${formatTanggalLengkap(dipilih.kehadiran.terakhir)}`
-              : ""}
-          </p>
-          <Button asChild variant="outline" size="sm">
-            <Link href={`/portal/perkembangan?anak=${dipilih.muridId}`}>
-              Lihat rekap kehadiran
-              <ArrowRight aria-hidden="true" />
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
+      <KartuPortal
+        className="mt-4"
+        judul="Kehadiran"
+        ikon={CalendarCheck}
+        penanda={kehadiranBaru ? <LencanaBaru /> : undefined}
+      >
+        <p className="text-muted-foreground text-sm">
+          Hadir {dipilih.kehadiran.hadir} dari {dipilih.kehadiran.sesi} sesi
+          tercatat
+          {dipilih.kehadiran.terakhir
+            ? ` · terakhir ${formatTanggalLengkap(dipilih.kehadiran.terakhir)}`
+            : ""}
+        </p>
+        <Button asChild variant="outline" size="sm">
+          <Link href={`/portal/perkembangan?anak=${dipilih.muridId}`}>
+            Lihat rekap kehadiran
+            <ArrowRight aria-hidden="true" />
+          </Link>
+        </Button>
+      </KartuPortal>
 
-      <Card className="mt-4">
-        <CardHeader>
-          <CardTitle className="flex flex-wrap items-center gap-2">
-            <Receipt className="size-4" aria-hidden="true" />
-            Tagihan Terdekat
-            {tagihanBaru && <LencanaBaru />}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {!tagihanTerdekat ? (
-            <p className="text-sm text-muted-foreground">
-              Belum ada tagihan untuk anak ini.
-            </p>
-          ) : (
-            <>
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-lg font-semibold">
-                  {formatRupiah(tagihanTerdekat.nominal)}
-                </p>
-                <LabelStatusTagihan status={tagihanTerdekat.status} />
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Periode{" "}
-                {formatPeriodeTagihan(periodeDariTagihan(tagihanTerdekat))}
-                {tagihanTerdekat.tanggalBayar
-                  ? ` · dibayar ${namaHariBulan.format(
-                      new Date(`${tagihanTerdekat.tanggalBayar}T00:00:00`),
-                    )}`
-                  : " · belum dibayar"}
+      <KartuPortal
+        className="mt-4"
+        judul="Tagihan Terdekat"
+        ikon={Receipt}
+        penanda={tagihanBaru ? <LencanaBaru /> : undefined}
+      >
+        {!tagihanTerdekat ? (
+          <p className="text-muted-foreground text-sm">
+            Belum ada tagihan untuk anak ini.
+          </p>
+        ) : (
+          <>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-lg font-semibold">
+                {formatRupiah(tagihanTerdekat.nominal)}
               </p>
-              {menunggak(
-                periodeDariTagihan(tagihanTerdekat),
-                periodeBerjalan,
-                tagihanTerdekat.status,
-              ) && (
-                <p className="text-sm text-destructive">
-                  Sudah lewat {terlambat} bulan dari periode tagihan ini.
-                </p>
-              )}
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                {tagihanAnak.length > 1 ? (
-                  <p className="text-xs text-muted-foreground">
-                    {tagihanAnak.length} tagihan tercatat untuk anak ini.
-                  </p>
-                ) : (
-                  <span />
-                )}
-                <Button asChild variant="outline" size="sm">
-                  <Link href={`/portal/tagihan?anak=${dipilih.muridId}`}>
-                    Lihat semua tagihan
-                    <ArrowRight aria-hidden="true" />
-                  </Link>
-                </Button>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className="mt-4">
-        <CardHeader>
-          <CardTitle className="flex flex-wrap items-center gap-2">
-            <GraduationCap className="size-4" aria-hidden="true" />
-            Sorotan Perkembangan
-            {perkembanganBaru && <LencanaBaru />}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {catatanTerbaru.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Belum ada catatan perkembangan untuk anak ini.
+              <LabelStatusTagihan status={tagihanTerdekat.status} />
+            </div>
+            <p className="text-muted-foreground text-sm">
+              Periode {formatPeriodeTagihan(periodeDariTagihan(tagihanTerdekat))}
+              {tagihanTerdekat.tanggalBayar
+                ? ` · dibayar ${namaHariBulan.format(
+                    new Date(`${tagihanTerdekat.tanggalBayar}T00:00:00`),
+                  )}`
+                : " · belum dibayar"}
             </p>
-          ) : (
-            <ul className="space-y-3">
-              {catatanTerbaru.map((catatan) => (
-                <li
-                  key={`${catatan.tanggal}-${catatan.nilai}-${catatan.sikap}`}
-                  className="rounded-lg border px-3 py-2"
-                >
-                  <div className="flex flex-wrap items-center gap-2 text-sm">
-                    <span className="font-medium">
-                      Nilai {nilaiTampil.format(catatan.nilai)}
-                    </span>
-                    <span className="rounded-full border bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
-                      Sikap {catatan.sikap}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {namaHariBulan.format(
-                        new Date(`${catatan.tanggal}T00:00:00`),
-                      )}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {catatan.catatan}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
-          <Button asChild variant="outline" size="sm">
-            <Link href={`/portal/perkembangan?anak=${dipilih.muridId}`}>
-              Lihat semua catatan
-              <ArrowRight aria-hidden="true" />
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
+            {menunggak(
+              periodeDariTagihan(tagihanTerdekat),
+              periodeBerjalan,
+              tagihanTerdekat.status,
+            ) && (
+              <p className="text-destructive text-sm">
+                Sudah lewat {terlambat} bulan dari periode tagihan ini.
+              </p>
+            )}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              {tagihanAnak.length > 1 ? (
+                <p className="text-muted-foreground text-xs">
+                  {tagihanAnak.length} tagihan tercatat untuk anak ini.
+                </p>
+              ) : (
+                <span />
+              )}
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/portal/tagihan?anak=${dipilih.muridId}`}>
+                  Lihat semua tagihan
+                  <ArrowRight aria-hidden="true" />
+                </Link>
+              </Button>
+            </div>
+          </>
+        )}
+      </KartuPortal>
+
+      <KartuPortal
+        className="mt-4"
+        judul="Sorotan Perkembangan"
+        ikon={GraduationCap}
+        penanda={perkembanganBaru ? <LencanaBaru /> : undefined}
+      >
+        {catatanTerbaru.length === 0 ? (
+          <p className="text-muted-foreground text-sm">
+            Belum ada catatan perkembangan untuk anak ini.
+          </p>
+        ) : (
+          <ul className="space-y-3">
+            {catatanTerbaru.map((catatan) => (
+              <li
+                key={`${catatan.tanggal}-${catatan.nilai}-${catatan.sikap}`}
+                className="rounded-lg border px-3 py-2"
+              >
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <span className="font-medium">
+                    Nilai {nilaiTampil.format(catatan.nilai)}
+                  </span>
+                  <span className="bg-muted text-muted-foreground rounded-full border px-2.5 py-0.5 text-xs">
+                    Sikap {catatan.sikap}
+                  </span>
+                  <span className="text-muted-foreground text-xs">
+                    {namaHariBulan.format(
+                      new Date(`${catatan.tanggal}T00:00:00`),
+                    )}
+                  </span>
+                </div>
+                <p className="text-muted-foreground mt-1 text-sm">
+                  {catatan.catatan}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+        <Button asChild variant="outline" size="sm">
+          <Link href={`/portal/perkembangan?anak=${dipilih.muridId}`}>
+            Lihat semua catatan
+            <ArrowRight aria-hidden="true" />
+          </Link>
+        </Button>
+      </KartuPortal>
     </LayarPortal>
   );
 }

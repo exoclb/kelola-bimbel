@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { KartuPortal } from "@/components/kartu-portal";
 import { PemilihAnak } from "@/components/pemilih-anak";
 import { LayarPortal } from "@/components/layar-portal";
 import { LabelStatusTagihan } from "@/components/label-status-tagihan";
@@ -124,23 +124,16 @@ export function TagihanSppAnak({
             <ul className="mt-6 space-y-3">
               {daftar.map((tagihan) => (
                 <li key={tagihan.id}>
-                  <Card className="gap-3 px-5 py-4">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="space-y-1">
-                        <p className="flex items-center gap-1.5 font-medium">
-                          <Receipt className="size-4" aria-hidden="true" />
-                          SPP{" "}
-                          {formatPeriodeTagihan(periodeDariTagihan(tagihan))}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {tagihan.kelasNama}
-                        </p>
-                      </div>
-                      <LabelStatusTagihan status={tagihan.status} />
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                      <span className="font-medium text-foreground">
+                  <KartuPortal
+                    judul={`SPP ${formatPeriodeTagihan(periodeDariTagihan(tagihan))}`}
+                    ikon={Receipt}
+                    penanda={<LabelStatusTagihan status={tagihan.status} />}
+                  >
+                    <p className="text-muted-foreground text-sm">
+                      {tagihan.kelasNama}
+                    </p>
+                    <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                      <span className="text-foreground font-medium">
                         {formatRupiah(tagihan.nominal)}
                       </span>
                       {tagihan.tanggalBayar ? (
@@ -154,7 +147,7 @@ export function TagihanSppAnak({
                         <span>Belum dibayar</span>
                       )}
                     </div>
-                  </Card>
+                  </KartuPortal>
                 </li>
               ))}
             </ul>
