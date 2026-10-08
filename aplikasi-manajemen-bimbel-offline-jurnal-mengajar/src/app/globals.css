@@ -62,7 +62,7 @@
   --foreground: #0f172a;
   --card: #ffffff;
   --card-foreground: #0f172a;
-  --primary: #bb371e;
+  --primary: var(--brand-700);
   --primary-foreground: #ffffff;
   --secondary: #f1f5f9;
   --muted: #f1f5f9;
@@ -106,8 +106,8 @@
   --foreground: #f8fafc;
   --card: #1e293b;
   --card-foreground: #f8fafc;
-  --primary: #fb846b;
-  --primary-foreground: #29100a;
+  --primary: var(--brand-500);
+  --primary-foreground: #0f172a;
   --secondary: #334155;
   --muted: #334155;
   /* slate-300 tetap >=4.5:1 di atas kanvas, kartu, dan permukaan muted. */

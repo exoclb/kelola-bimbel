@@ -20,7 +20,7 @@ export function LabelStatusTagihan({
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
         lunas
-          ? "border-border bg-secondary text-foreground"
+          ? "border-primary/30 bg-primary/10 text-primary"
           : "border-destructive/30 bg-destructive/10 text-destructive",
         className,
       )}
