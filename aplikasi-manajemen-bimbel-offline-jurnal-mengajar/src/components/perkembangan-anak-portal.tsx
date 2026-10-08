@@ -241,6 +241,29 @@ export function PerkembanganAnakPortal({
                     />
                   ))}
                 </div>
+                {/* Rentang dan rata-rata grafik ditulis di bawah batangnya,
+                    supaya wali tahu angka ini mewakili pertemuan yang mana. */}
+                <p className="text-muted-foreground mt-4 text-xs leading-5">
+                  {grafik.length} pertemuan terakhir
+                  {grafik.length > 1
+                    ? ` (${tanggalRingkas.format(
+                        new Date(
+                          `${grafik[grafik.length - 1].tanggal}T00:00:00`,
+                        ),
+                      )}–${tanggalRingkas.format(
+                        new Date(`${grafik[0].tanggal}T00:00:00`),
+                      )})`
+                    : ""}{" "}
+                  · rata-rata{" "}
+                  {angkaTampil.format(
+                    grafik.reduce((jumlah, baris) => jumlah + baris.nilai, 0) /
+                      grafik.length,
+                  )}
+                  {daftarCatatan.length > grafik.length
+                    ? ` · ${daftarCatatan.length - grafik.length} catatan lama ada di daftar bawah`
+                    : ""}
+                  .
+                </p>
               </KartuPortal>
 
               <KartuPortal
