@@ -9,6 +9,8 @@ import { KartuPortal } from "@/components/kartu-portal";
 import { PemilihAnak } from "@/components/pemilih-anak";
 import { LayarPortal } from "@/components/layar-portal";
 import { PenandaStatus } from "@/components/penanda-status";
+import { TombolAksiLengket } from "@/components/tombol-aksi-lengket";
+import { TombolCetakUnduh } from "@/components/tombol-cetak-unduh";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { formatRupiah } from "@/lib/gaji";
 import { tandaiTerbaca } from "@/lib/jejak-baca-portal-store";
@@ -114,54 +116,62 @@ export function TagihanSppAnak({
             />
           </div>
 
-          <p className="mt-6 text-base leading-7 text-muted-foreground">
-            {rekap.jumlah > 0
-              ? `${rekap.jumlah} tagihan · ${rekap.jumlahLunas} lunas · ${rekap.jumlahBelumLunas} belum lunas · total ${formatRupiah(rekap.nominalLunas + rekap.nominalBelumLunas)}.`
-              : "Belum ada tagihan yang tercatat untuk anak ini."}
-          </p>
+          <div id="bukti-tagihan-anak" className="mt-6 space-y-3">
+            <div>
+              <h2 className="text-lg font-semibold">{dipilih.nama}</h2>
+              <p className="text-muted-foreground text-sm">
+                Rincian tagihan SPP
+                {dipilih.kelasNama ? ` · ${dipilih.kelasNama}` : ""}
+              </p>
+            </div>
+            <p className="text-base leading-7 text-muted-foreground">
+              {rekap.jumlah > 0
+                ? `${rekap.jumlah} tagihan · ${rekap.jumlahLunas} lunas · ${rekap.jumlahBelumLunas} belum lunas · total ${formatRupiah(rekap.nominalLunas + rekap.nominalBelumLunas)}.`
+                : "Belum ada tagihan yang tercatat untuk anak ini."}
+            </p>
 
-          {daftar.length === 0 ? (
-            <PesanKosong
-              className="mt-6"
-              judul="Belum ada tagihan"
-              keterangan="Tagihan SPP yang diterbitkan bimbel akan muncul di sini."
-            />
-          ) : (
-            <ul className="mt-6 space-y-3">
-              {daftar.map((tagihan) => (
-                <li key={tagihan.id}>
-                  <KartuPortal
-                    judul={`SPP ${formatPeriodeTagihan(periodeDariTagihan(tagihan))}`}
-                    ikon={Receipt}
-                    penanda={
-                      <PenandaStatus
-                        status={statusPembayaran(tagihan, periodeBerjalan)}
-                      />
-                    }
-                  >
-                    <p className="text-muted-foreground text-sm">
-                      {tagihan.kelasNama}
-                    </p>
-                    <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                      <span className="text-foreground font-medium">
-                        {formatRupiah(tagihan.nominal)}
-                      </span>
-                      {tagihan.tanggalBayar ? (
-                        <span>
-                          Dibayar{" "}
-                          {tanggalTampil.format(
-                            new Date(`${tagihan.tanggalBayar}T00:00:00`),
-                          )}
+            {daftar.length === 0 ? (
+              <PesanKosong
+                judul="Belum ada tagihan"
+                keterangan="Tagihan SPP yang diterbitkan bimbel akan muncul di sini."
+              />
+            ) : (
+              <ul className="space-y-3">
+                {daftar.map((tagihan) => (
+                  <li key={tagihan.id}>
+                    <KartuPortal
+                      judul={`SPP ${formatPeriodeTagihan(periodeDariTagihan(tagihan))}`}
+                      ikon={Receipt}
+                      penanda={
+                        <PenandaStatus
+                          status={statusPembayaran(tagihan, periodeBerjalan)}
+                        />
+                      }
+                    >
+                      <p className="text-muted-foreground text-sm">
+                        {tagihan.kelasNama}
+                      </p>
+                      <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                        <span className="text-foreground font-medium">
+                          {formatRupiah(tagihan.nominal)}
                         </span>
-                      ) : (
-                        <span>Belum dibayar</span>
-                      )}
-                    </div>
-                  </KartuPortal>
-                </li>
-              ))}
-            </ul>
-          )}
+                        {tagihan.tanggalBayar ? (
+                          <span>
+                            Dibayar{" "}
+                            {tanggalTampil.format(
+                              new Date(`${tagihan.tanggalBayar}T00:00:00`),
+                            )}
+                          </span>
+                        ) : (
+                          <span>Belum dibayar</span>
+                        )}
+                      </div>
+                    </KartuPortal>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </>
       )}
 
@@ -178,6 +188,18 @@ export function TagihanSppAnak({
         Catatan: daftar tagihan ini dibaca dari database (tabel
         student_invoices) — sumber yang sama dengan yang dipakai owner.
       </p>
+      {dipilih && daftar.length > 0 && (
+        <TombolAksiLengket>
+          <TombolCetakUnduh
+            targetId="bukti-tagihan-anak"
+            namaBerkas={`tagihan-${dipilih.nama
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, "-")
+              .replace(/^-|-$/g, "")}`}
+            ukuran="aksi"
+          />
+        </TombolAksiLengket>
+      )}
     </LayarPortal>
   );
 }

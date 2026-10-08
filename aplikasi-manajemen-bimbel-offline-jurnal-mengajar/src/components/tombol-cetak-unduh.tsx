@@ -9,6 +9,8 @@ type TombolCetakUnduhProps = {
   targetId: string;
   /** Nama berkas tanpa ekstensi. */
   namaBerkas: string;
+  /** `aksi` memakai tombol setinggi 48px milik Portal Wali. */
+  ukuran?: "biasa" | "aksi";
 };
 
 /**
@@ -20,6 +22,7 @@ type TombolCetakUnduhProps = {
 export function TombolCetakUnduh({
   targetId,
   namaBerkas,
+  ukuran = "biasa",
 }: TombolCetakUnduhProps) {
   const [pesan, setPesan] = useState("");
 
@@ -59,11 +62,22 @@ export function TombolCetakUnduh({
   return (
     <div className="space-y-3 print:hidden">
       <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" onClick={() => window.print()}>
+        <Button
+          type="button"
+          size={ukuran === "aksi" ? "aksi" : "default"}
+          className={ukuran === "aksi" ? "flex-1" : undefined}
+          onClick={() => window.print()}
+        >
           <Printer aria-hidden="true" />
           Cetak / simpan PDF
         </Button>
-        <Button type="button" variant="outline" onClick={unduh}>
+        <Button
+          type="button"
+          variant="outline"
+          size={ukuran === "aksi" ? "aksi" : "default"}
+          className={ukuran === "aksi" ? "flex-1" : undefined}
+          onClick={unduh}
+        >
           <Download aria-hidden="true" />
           Unduh
         </Button>

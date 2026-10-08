@@ -41,7 +41,7 @@ export function NavBawahPortal() {
   return (
     <nav
       aria-label="Navigasi portal"
-      className="bg-card fixed inset-x-0 bottom-0 z-40 border-t pb-[env(safe-area-inset-bottom)]"
+      className="bg-card fixed inset-x-0 bottom-0 z-40 border-t pb-[env(safe-area-inset-bottom)] print:hidden"
     >
       <ul className="mx-auto flex max-w-[var(--lebar-konten-portal)] items-stretch">
         {TAB.map(({ href, label, Ikon }) => {

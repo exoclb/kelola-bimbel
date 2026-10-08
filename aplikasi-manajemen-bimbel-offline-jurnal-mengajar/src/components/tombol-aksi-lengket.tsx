@@ -28,7 +28,7 @@ export function TombolAksiLengket({
       />
       <div
         className={cn(
-          "bg-card fixed inset-x-0 bottom-[calc(var(--tinggi-bilah-tab)+1px+env(safe-area-inset-bottom))] z-20 border-t py-3",
+          "bg-card fixed inset-x-0 bottom-[calc(var(--tinggi-bilah-tab)+1px+env(safe-area-inset-bottom))] z-20 border-t py-3 print:hidden",
           className,
         )}
       >
