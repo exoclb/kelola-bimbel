@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, ClipboardList, Clock, Database, Users } from "lucide-react";
+import { ArrowLeft, ClipboardList, Clock, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -117,22 +117,6 @@ export function PemantauanHarian({
       <p className="mt-3 text-base leading-7 text-muted-foreground">
         {tanggalTampil} · dipantau oleh {namaOwner}
       </p>
-
-      <div
-        role="note"
-        className="mt-6 rounded-xl border border-dashed px-4 py-4"
-      >
-        <p className="flex items-center gap-2 font-medium">
-          <Database className="size-4 shrink-0" aria-hidden="true" />
-          Data tiruan — belum dari database
-        </p>
-        <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          Pilihan cabang dan ringkasan per cabang di halaman ini masih memakai
-          data contoh (daftar cabang serta data contoh kelas, penempatan murid,
-          dan riwayat jurnal). Daftar jurnal, status guru, dan pemberitahuan
-          sudah dibaca dari database.
-        </p>
-      </div>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-3">
         {statistik.map(({ label, nilai, ikon: Ikon }) => (

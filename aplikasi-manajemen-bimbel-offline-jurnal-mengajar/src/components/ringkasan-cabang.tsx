@@ -20,8 +20,8 @@ type PanelRingkasanCabangProps = {
 /**
  * Ringkasan satu cabang (atau seluruh cabang) pada halaman pantauan: berapa
  * kelas, jurnal yang sudah terisi, kelas yang belum punya jurnal, dan murid
- * aktifnya. Angkanya berasal dari data contoh yang sudah ada di repo, bukan
- * dari database — lihat catatan data tiruan di halaman pemantauan.
+ * aktifnya. Angkanya dihitung dari basis data: daftar cabang, kelas,
+ * penempatan murid, dan jurnal mengajar.
  */
 export function PanelRingkasanCabang({
   daftar,
@@ -45,7 +45,8 @@ export function PanelRingkasanCabang({
           {cabang && !cabang.statusAktif ? " (nonaktif)" : ""}
         </CardTitle>
         <CardDescription>
-          Dihitung dari data contoh kelas, penempatan murid, dan riwayat jurnal.
+          Dihitung dari data kelas, penempatan murid, dan riwayat jurnal di
+          basis data.
         </CardDescription>
       </CardHeader>
       <CardContent>
