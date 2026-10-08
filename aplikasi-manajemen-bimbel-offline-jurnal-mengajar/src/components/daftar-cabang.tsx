@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  Info,
   MapPin,
   PencilLine,
   Phone,
@@ -63,7 +64,8 @@ type GalatCabang = {
  * yang berjalan di sana. Datanya dibaca server lewat `listCabang()`, sedangkan
  * penambahan, penyuntingan, dan perubahan status dikirim ke `/api/cabang`
  * supaya halaman ini dan API memakai satu sumber yang sama. Jumlah kelasnya
- * juga dibaca server dari tabel `classes`, bukan dari data contoh kelas.
+ * juga dibaca server dari tabel `classes`, bukan dari data contoh kelas. Panel
+ * detail tiap cabang membaca ulang satu barisnya lewat `/api/cabang/:id`.
  *
  * PENTING: sumbernya tabel `cabang` di basis data (lihat
  * `src/services/cabang.service.ts`), jadi perubahannya bertahan walau server
@@ -82,6 +84,13 @@ export function DaftarCabang({
   const [galatUmum, setGalatUmum] = useState("");
   const [pesan, setPesan] = useState("");
   const [pending, setPending] = useState(false);
+  // Panel detail satu cabang: datanya dibaca ulang dari API supaya yang tampil
+  // adalah kondisi terbaru, dan cabang yang sudah tidak ada punya pesannya
+  // sendiri.
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const [detail, setDetail] = useState<Cabang | null>(null);
+  const [detailGalat, setDetailGalat] = useState("");
+  const [detailMemuat, setDetailMemuat] = useState(false);
 
   // Jumlah kelas per cabang dari basis data, dikunci dengan nama yang sudah
   // dinormalkan supaya perbedaan huruf besar-kecil tidak membuatnya hilang.
@@ -91,6 +100,55 @@ export function DaftarCabang({
       peta.set(rapi(nama), jumlah);
     return peta;
   }, [jumlahKelas]);
+
+  /**
+   * Buka panel detail satu cabang, atau tutup kalau tombolnya diklik lagi.
+   * Datanya diambil dari `GET /api/cabang/:id`; balasan 404 ditampilkan sebagai
+   * "tidak ditemukan" (mis. cabangnya baru dihapus dari perangkat lain), bukan
+   * sebagai kegagalan umum.
+   */
+  async function bukaDetail(cabang: Cabang) {
+    if (detailId === cabang.id) {
+      setDetailId(null);
+      setDetail(null);
+      setDetailGalat("");
+      return;
+    }
+
+    setDetailId(cabang.id);
+    setDetail(null);
+    setDetailGalat("");
+    setDetailMemuat(true);
+    try {
+      const jawaban = await fetch(`/api/cabang/${cabang.id}`, {
+        headers: { accept: "application/json" },
+      });
+      if (jawaban.status === 404) {
+        setDetailGalat(
+          `Cabang "${cabang.nama}" sudah tidak ada di basis data. Muat ulang halaman untuk menyegarkan daftarnya.`,
+        );
+        return;
+      }
+      if (!jawaban.ok) {
+        setDetailGalat(
+          await pesanGalatApi(jawaban, "Detail cabang gagal dimuat."),
+        );
+        return;
+      }
+      const isi = (await jawaban.json()) as { data?: Cabang };
+      if (!isi.data) {
+        setDetailGalat("Detail cabang gagal dimuat.");
+        return;
+      }
+      setDetail(isi.data);
+    } catch {
+      setDetailGalat(
+        "Detail cabang gagal dimuat. Periksa koneksi lalu coba lagi.",
+      );
+    } finally {
+      setDetailMemuat(false);
+    }
+  }
 
   function namaDipakai(nama: string, kecualiId?: string) {
     const rapi = nama.trim().toLocaleLowerCase("id");
@@ -383,6 +441,19 @@ export function DaftarCabang({
                           variant="outline"
                           size="sm"
                           disabled={pending}
+                          aria-expanded={detailId === cabang.id}
+                          aria-controls={`detail-${cabang.id}`}
+                          aria-label={`Detail cabang ${cabang.nama}`}
+                          onClick={() => bukaDetail(cabang)}
+                        >
+                          <Info aria-hidden="true" />
+                          Detail
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={pending}
                           title={`${cabang.statusAktif ? "Nonaktifkan" : "Aktifkan"} cabang ${cabang.nama}`}
                           aria-label={`${cabang.statusAktif ? "Nonaktifkan" : "Aktifkan"} cabang ${cabang.nama}`}
                           onClick={() => gantiStatus(cabang)}
@@ -395,6 +466,63 @@ export function DaftarCabang({
                           {cabang.statusAktif ? "Nonaktifkan" : "Aktifkan"}
                         </Button>
                       </div>
+
+                      {detailId === cabang.id && (
+                        <div
+                          id={`detail-${cabang.id}`}
+                          className="space-y-2 rounded-xl border bg-muted/40 px-4 py-3 text-sm"
+                        >
+                          <p className="font-medium">
+                            Detail cabang {cabang.nama}
+                          </p>
+                          {detailMemuat && (
+                            <p role="status" className="text-muted-foreground">
+                              Memuat detail cabang…
+                            </p>
+                          )}
+                          {!detailMemuat && detailGalat && (
+                            <p role="alert" className="text-destructive">
+                              {detailGalat}
+                            </p>
+                          )}
+                          {!detailMemuat && detail && (
+                            <dl className="grid gap-x-6 gap-y-1 sm:grid-cols-2">
+                              <div className="flex gap-2">
+                                <dt className="text-muted-foreground">Nama</dt>
+                                <dd>{detail.nama}</dd>
+                              </div>
+                              <div className="flex gap-2">
+                                <dt className="text-muted-foreground">
+                                  Status
+                                </dt>
+                                <dd>
+                                  {detail.statusAktif ? "Aktif" : "Nonaktif"}
+                                </dd>
+                              </div>
+                              <div className="flex gap-2">
+                                <dt className="text-muted-foreground">
+                                  Kontak
+                                </dt>
+                                <dd>{detail.kontak}</dd>
+                              </div>
+                              <div className="flex gap-2">
+                                <dt className="text-muted-foreground">Kelas</dt>
+                                <dd>
+                                  {jumlahKelas > 0
+                                    ? `${jumlahKelas} kelas`
+                                    : "Belum ada kelas"}
+                                </dd>
+                              </div>
+                              <div className="flex gap-2 sm:col-span-2">
+                                <dt className="text-muted-foreground">
+                                  Alamat
+                                </dt>
+                                <dd>{detail.alamat}</dd>
+                              </div>
+                            </dl>
+                          )}
+                        </div>
+                      )}
                     </>
                   )}
                 </Card>

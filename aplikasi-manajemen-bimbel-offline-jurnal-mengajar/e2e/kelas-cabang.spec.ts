@@ -682,3 +682,55 @@ test("form ubah cabang dan toggle status aktif bekerja", async ({ page }) => {
     await db.end();
   }
 });
+
+/**
+ * Panel detail cabang: datanya dibaca ulang dari `/api/cabang/:id`, dan cabang
+ * yang barisnya sudah hilang dijawab sebagai "tidak ditemukan" — bukan galat
+ * umum dan bukan panel kosong.
+ */
+test("panel detail cabang menangani cabang yang tidak ditemukan", async ({
+  page,
+}) => {
+  await jadikanOwner();
+  const penanda = randomUUID().slice(0, 8);
+  const nama = `Cabang Detail ${penanda}`;
+  await siapkanCabang(nama, true);
+
+  const db = await pool();
+  try {
+    const { rows } = await db.query<{ id: string }>(
+      "SELECT id FROM cabang WHERE nama = $1",
+      [nama],
+    );
+    const id = rows[0].id;
+
+    await masukPeramban(page);
+    await page.goto("/app/cabang");
+    const kartu = page
+      .locator("li")
+      .filter({
+        has: page.getByRole("button", { name: `Detail cabang ${nama}` }),
+      });
+    const panel = page.locator(`#detail-${id}`);
+
+    // 1) Detail tampil dari API: nama, status, kontak, dan alamatnya.
+    await kartu.getByRole("button", { name: `Detail cabang ${nama}` }).click();
+    await expect(panel.getByText(`Detail cabang ${nama}`)).toBeVisible();
+    await expect(panel.getByText("Aktif", { exact: true })).toBeVisible();
+    await expect(panel.getByText("0800-0000")).toBeVisible();
+    await expect(panel.getByText("Jl. Uji e2e No. 1")).toBeVisible();
+
+    // 2) Barisnya dihapus dari basis data: panel menyebut tidak ditemukan.
+    await db.query("DELETE FROM cabang WHERE id = $1", [id]);
+    await kartu.getByRole("button", { name: `Detail cabang ${nama}` }).click();
+    await kartu.getByRole("button", { name: `Detail cabang ${nama}` }).click();
+    await expect(
+      panel.getByText(
+        new RegExp(`Cabang "${nama}" sudah tidak ada di basis data`),
+      ),
+    ).toBeVisible();
+  } finally {
+    await db.query("DELETE FROM cabang WHERE nama = $1", [nama]);
+    await db.end();
+  }
+});
