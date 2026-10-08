@@ -31,6 +31,7 @@ The agent can use `npm run predev` then `npm run doctor` when dependencies alrea
 | `npm run db:seed`        | Create the first owner account; idempotent, needs `SEED_OWNER_PASSWORD`                                                                                      |
 | `npm run db:seed:wali`   | Link the example wali accounts to their children (`students` + `wali_murid`); idempotent, needs `SEED_WALI_PASSWORD` while any wali account is still missing |
 | `npm run db:seed:cabang` | Fill the example branches in `cabang`; idempotent, never overwrites existing rows, development only                                                          |
+| `npm run db:seed:kelas`  | Fill the example classes in `classes`, pointing at those branches (run `db:seed:cabang` first); idempotent, development only                                 |
 | `npm run doctor`         | Verify connection, auth tables, and project tooling files; note whether an example branch still has to be seeded with `npm run db:seed:cabang`               |
 
 Use these commands instead of bare `docker compose up`: the wrappers load Next.js environment files and the saved project name. The database listens only on `127.0.0.1`, using a generated high port recorded in `.env.local`. Each fresh derivative has its own project, password, port, and volume.

@@ -1172,3 +1172,63 @@ test("urutan data contoh cabang sama dengan urutan dari basis data", async () =>
     contoh,
   );
 });
+
+/**
+ * Seeder kelas (`scripts/lib/seed-kelas.mjs`): kelas contoh ditulis ke tabel
+ * `classes` dengan cabang yang sudah terdaftar (relasi `classes_cabang_cabang_nama_fk`),
+ * aman dijalankan ulang, dan menolak seluruh penulisan kalau ada cabang yang
+ * belum terdaftar.
+ */
+test("seeder kelas menunjuk cabang terdaftar dan aman dijalankan ulang", async () => {
+  const { seedKelas } = await import("../scripts/lib/seed-kelas.mjs");
+  const { getDaftarKelas } = await import("../src/lib/mock-kelas.ts");
+  await siapkanJurnal();
+
+  const contoh = getDaftarKelas();
+  const namaKelas = contoh.map((kelas) => kelas.namaKelas);
+  for (const cabang of [...new Set(contoh.map((kelas) => kelas.cabang))])
+    await pastikanCabang(cabang);
+  await dbJurnal.query("DELETE FROM classes WHERE nama_kelas = ANY($1)", [
+    namaKelas,
+  ]);
+
+  try {
+    const pertama = await seedKelas(dbJurnal);
+    assert.equal(pertama.dibuat, pertama.jumlah);
+    assert.equal(pertama.dilewati, 0);
+
+    // Setiap kelas yang masuk menunjuk cabang yang benar-benar terdaftar.
+    const { rows } = await dbJurnal.query(
+      `SELECT count(*)::int AS jumlah
+         FROM classes c
+         JOIN cabang b ON b.nama = c.cabang
+        WHERE c.nama_kelas = ANY($1)`,
+      [namaKelas],
+    );
+    assert.equal(rows[0].jumlah, pertama.jumlah);
+
+    const kedua = await seedKelas(dbJurnal);
+    assert.equal(kedua.dibuat, 0);
+    assert.equal(kedua.dilewati, kedua.jumlah);
+
+    // Cabang yang belum terdaftar membatalkan seluruh penulisan.
+    await assert.rejects(
+      seedKelas(dbJurnal, [
+        {
+          namaKelas: "Kelas Uji Cabang Hilang",
+          cabang: "Cabang Belum Terdaftar Sama Sekali",
+        },
+      ]),
+      /belum terdaftar/,
+    );
+    const { rows: kosong } = await dbJurnal.query(
+      "SELECT count(*)::int AS jumlah FROM classes WHERE nama_kelas = $1",
+      ["Kelas Uji Cabang Hilang"],
+    );
+    assert.equal(kosong[0].jumlah, 0);
+  } finally {
+    await dbJurnal.query("DELETE FROM classes WHERE nama_kelas = ANY($1)", [
+      namaKelas,
+    ]);
+  }
+});

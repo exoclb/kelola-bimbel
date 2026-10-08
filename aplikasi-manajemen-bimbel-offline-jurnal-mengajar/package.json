@@ -22,6 +22,7 @@
     "db:seed": "node scripts/seed.mjs",
     "db:seed:wali": "node scripts/seed-wali.mjs",
     "db:seed:cabang": "node scripts/seed-cabang.mjs",
+    "db:seed:kelas": "node scripts/seed-kelas.mjs",
     "role:set": "node scripts/set-role.mjs",
     "db:studio": "drizzle-kit studio",
     "doctor": "node scripts/doctor.mjs",
