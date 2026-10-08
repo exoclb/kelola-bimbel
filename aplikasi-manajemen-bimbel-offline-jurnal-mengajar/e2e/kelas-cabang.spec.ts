@@ -866,3 +866,71 @@ test("ubah cabang dan set status aktif idempoten", async ({ request }) => {
     await db.end();
   }
 });
+
+/**
+ * Ringkasan per cabang di halaman pantauan dihitung dari basis data: jumlah
+ * kelas, jurnal yang sudah masuk, kelas yang belum punya jurnal, dan murid
+ * aktif pada cabang yang sedang disaring.
+ */
+test("ringkasan per cabang di pantauan dihitung dari basis data", async ({
+  page,
+}) => {
+  await jadikanOwner();
+  const penanda = randomUUID().slice(0, 8);
+  const nama = `Cabang Pantau ${penanda}`;
+  await siapkanCabang(nama, true);
+
+  const db = await pool();
+  try {
+    const { rows: akun } = await db.query<{ id: string }>(
+      'SELECT id FROM "user" WHERE email = $1',
+      [email],
+    );
+    const guruId = akun[0].id;
+
+    const { rows: kelas } = await db.query<{ id: string }>(
+      `INSERT INTO classes (nama_kelas, cabang)
+       VALUES ($1, $2), ($3, $4)
+       RETURNING id`,
+      [`Kelas Pantau A ${penanda}`, nama, `Kelas Pantau B ${penanda}`, nama],
+    );
+    const murid = (
+      await db.query<{ id: string }>(
+        "INSERT INTO students (nama) VALUES ($1) RETURNING id",
+        [`Murid Pantau ${penanda}`],
+      )
+    ).rows[0].id;
+    await db.query(
+      "INSERT INTO student_enrollments (student_id, class_id, tanggal_mulai) VALUES ($1, $2, $3)",
+      [murid, kelas[0].id, "2026-01-05"],
+    );
+    // Satu jurnal di kelas pertama: satu kelas sudah berjurnal, satu belum.
+    await db.query(
+      `INSERT INTO teaching_journals (guru_id, class_id, tanggal, materi, jam_mengajar)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [guruId, kelas[0].id, "2026-01-06", `Materi pantau ${penanda}`, 1.5],
+    );
+
+    await masukPeramban(page);
+    await page.goto(`/app/pemantauan?cabang=${encodeURIComponent(nama)}`);
+    await expect(page.getByText(`Ringkasan ${nama}`)).toBeVisible();
+    await expect(
+      page.locator("dl").filter({ hasText: "Kelas belum ada jurnal" }),
+    ).toHaveText(
+      /Kelas\s*2\s*Jurnal terisi\s*1\s*Kelas belum ada jurnal\s*1\s*Murid aktif\s*1/,
+    );
+  } finally {
+    // Jurnal dihapus lebih dulu: kelasnya masih ditunjuk jurnal (foreign key).
+    await db.query("DELETE FROM teaching_journals WHERE materi LIKE $1", [
+      `Materi pantau %${penanda}`,
+    ]);
+    await db.query("DELETE FROM classes WHERE nama_kelas LIKE $1", [
+      `Kelas Pantau %${penanda}`,
+    ]);
+    await db.query("DELETE FROM students WHERE nama = $1", [
+      `Murid Pantau ${penanda}`,
+    ]);
+    await db.query("DELETE FROM cabang WHERE nama = $1", [nama]);
+    await db.end();
+  }
+});
