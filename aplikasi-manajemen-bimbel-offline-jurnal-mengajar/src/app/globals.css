@@ -22,6 +22,17 @@
   --color-border: var(--border);
   --color-input: var(--border);
   --color-ring: var(--primary);
+  /* Skala hijau brand #83B520 (brand-50 terang → brand-900 gelap). */
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-900: var(--brand-900);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -43,6 +54,19 @@
   --muted-foreground: #656561;
   --border: #e4e4e1;
   --destructive: #b91c1c;
+
+  /* Skala hijau brand; #83B520 adalah langkah 500. Langkah 700 aman untuk
+     teks di atas putih (kontras 5.4:1), 800/900 untuk latar/aksen gelap. */
+  --brand-50: #f8fcf0;
+  --brand-100: #eef8db;
+  --brand-200: #ddefb8;
+  --brand-300: #c2e283;
+  --brand-400: #a4d83e;
+  --brand-500: #83b520;
+  --brand-600: #69911a;
+  --brand-700: #547413;
+  --brand-800: #415b0e;
+  --brand-900: #314609;
 }
 
 .dark {
@@ -57,6 +81,19 @@
   --muted-foreground: #b0b0aa;
   --border: #3b3b37;
   --destructive: #ff8a8a;
+
+  /* Pada kanvas gelap, langkah terang dipakai untuk teks/ikon dan langkah
+     gelap tetap untuk latar. 300–600 memberi kontras >=4.5:1 di latar gelap. */
+  --brand-50: #eaf4d7;
+  --brand-100: #daecb6;
+  --brand-200: #c2e085;
+  --brand-300: #aad651;
+  --brand-400: #9bd42b;
+  --brand-500: #8dc322;
+  --brand-600: #78a71b;
+  --brand-700: #628a15;
+  --brand-800: #50700f;
+  --brand-900: #3d560b;
 }
 
 @layer base {
