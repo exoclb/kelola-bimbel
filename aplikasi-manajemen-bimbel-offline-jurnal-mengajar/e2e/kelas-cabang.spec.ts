@@ -83,6 +83,11 @@ test("formulir kelas hanya menawarkan cabang aktif, baris kelas menandai yang no
 
   await expect(page.getByText("Cabang Utara (nonaktif)").first()).toBeVisible();
   await expect(page.getByText("Cabang Pusat (nonaktif)")).toHaveCount(0);
+  // Ringkasannya muncul di atas daftar, bukan hanya di baris kelasnya.
+  await expect(page.getByText(/kelas berada di cabang nonaktif/)).toBeVisible();
+  await expect(page.getByText(/belum terdaftar — ganti cabangnya/)).toHaveCount(
+    0,
+  );
 
   await page.getByRole("button", { name: "Tambah kelas" }).click();
   const isian = page.locator("#cabang");
@@ -119,6 +124,9 @@ test("tanpa cabang sama sekali, formulir kelas menjelaskan dan simpan terkunci",
     // Baris kelas menunjuk cabang yang tidak ada lagi.
     await expect(
       page.getByText("Cabang Utara (belum terdaftar)").first(),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/kelas memakai cabang yang belum terdaftar/),
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Tambah kelas" }).click();

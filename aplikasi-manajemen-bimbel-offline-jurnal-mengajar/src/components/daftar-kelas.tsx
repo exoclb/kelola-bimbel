@@ -138,6 +138,27 @@ export function DaftarKelas({
     );
   }
 
+  // Cabang yang dipakai kelas bisa hilang atau dinonaktifkan setelah kelasnya
+  // dibuat. Supaya tidak cuma terlihat dari penanda di tiap baris, jumlahnya
+  // diringkas di atas daftar.
+  const kelasCabangHilang = daftar.filter(
+    (kelas) => !cabangKelas(kelas.cabang),
+  );
+  const kelasCabangNonaktif = daftar.filter((kelas) => {
+    const cabang = cabangKelas(kelas.cabang);
+    return cabang ? !cabang.statusAktif : false;
+  });
+  const catatanCabang = [
+    kelasCabangHilang.length > 0
+      ? `${kelasCabangHilang.length} kelas memakai cabang yang belum terdaftar — ganti cabangnya lewat “Ubah data kelas” supaya jumlah kelas per cabang cocok.`
+      : "",
+    kelasCabangNonaktif.length > 0
+      ? `${kelasCabangNonaktif.length} kelas berada di cabang nonaktif; kelasnya tetap berjalan, tetapi cabang itu tidak ditawarkan untuk kelas baru.`
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   function ubahJadwal(
     kelasId: string,
     ubah: (jadwal: JadwalKelas[]) => JadwalKelas[],
@@ -269,6 +290,15 @@ export function DaftarKelas({
           ? "Belum ada kelas yang dibuat."
           : `${daftar.length} kelas · ${jumlahJadwal} jadwal mengajar.`}
       </p>
+
+      {catatanCabang && (
+        <p
+          role="status"
+          className="mt-4 rounded-xl border border-dashed px-4 py-3 text-sm leading-6 text-muted-foreground"
+        >
+          {catatanCabang}
+        </p>
+      )}
 
       <div className="mt-8 space-y-3">
         <KolomPencarian
