@@ -3,7 +3,7 @@
 import { useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Receipt } from "lucide-react";
+import { ArrowLeft, Download, Printer, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KartuPortal } from "@/components/kartu-portal";
 import { PemilihAnak } from "@/components/pemilih-anak";
@@ -11,7 +11,6 @@ import { LayarPortal } from "@/components/layar-portal";
 import { PenandaStatus } from "@/components/penanda-status";
 import { RingkasanTagihanAnak } from "@/components/ringkasan-tagihan-anak";
 import { TombolAksiLengket } from "@/components/tombol-aksi-lengket";
-import { TombolCetakUnduh } from "@/components/tombol-cetak-unduh";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { formatRupiah } from "@/lib/gaji";
 import { tandaiTerbaca } from "@/lib/jejak-baca-portal-store";
@@ -211,14 +210,21 @@ export function TagihanSppAnak({
       </p>
       {dipilih && daftar.length > 0 && (
         <TombolAksiLengket>
-          <TombolCetakUnduh
-            targetId="bukti-tagihan-anak"
-            namaBerkas={`tagihan-${dipilih.nama
-              .toLowerCase()
-              .replace(/[^a-z0-9]+/g, "-")
-              .replace(/^-|-$/g, "")}`}
-            ukuran="aksi"
-          />
+          <Button
+            type="button"
+            variant="outline"
+            size="aksi"
+            onClick={() => window.print()}
+          >
+            <Printer aria-hidden="true" />
+            Cetak / simpan PDF
+          </Button>
+          <Button asChild size="aksi">
+            <a href={`/api/portal/tagihan/bukti?anak=${dipilih.muridId}`}>
+              <Download aria-hidden="true" />
+              Unduh bukti tagihan
+            </a>
+          </Button>
         </TombolAksiLengket>
       )}
     </LayarPortal>

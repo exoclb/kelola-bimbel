@@ -180,13 +180,22 @@ test("layar Tagihan portal menampilkan ringkasan dan tiga status pembayaran", as
   );
   await expect(page.getByText(`Jatuh tempo ${akhirBulanIni}`)).toBeVisible();
 
-  // Tab Tagihan aktif dan aksi cetak/unduh tersedia.
+  // Tab Tagihan aktif dan jalur aksi menyediakan cetak serta unduh bukti dari
+  // endpoint ekspor (bukan lagi salinan DOM di peramban).
   await expect(
     page
       .getByRole("navigation", { name: "Navigasi portal" })
       .getByRole("link", { name: "Tagihan", exact: true }),
   ).toHaveAttribute("aria-current", "page");
-  await expect(page.getByRole("button", { name: /Unduh/ })).toBeVisible();
+  const tautanUnduh = page.getByRole("link", { name: "Unduh bukti tagihan" });
+  await expect(tautanUnduh).toBeVisible();
+  await expect(tautanUnduh).toHaveAttribute(
+    "href",
+    `/api/portal/tagihan/bukti?anak=${muridId}`,
+  );
+  await expect(
+    page.getByRole("button", { name: "Cetak / simpan PDF" }),
+  ).toBeVisible();
 
   // Id anak yang tidak tertaut tidak menampilkan tagihan siapa pun, tetapi
   // tetap menyediakan jalan kembali ke anak yang benar.
@@ -268,4 +277,26 @@ test("endpoint daftar tagihan per anak hanya melayani wali yang tertaut", async 
   expect((await request.get(`/api/portal/tagihan?anak=${muridId}`)).status()).toBe(
     404,
   );
+
+  // Unduh bukti tagihan: dokumen HTML mandiri, terlampir sebagai berkas, dan
+  // hanya untuk anak yang tertaut.
+  const bukti = await page.request.get(`/api/portal/tagihan/bukti?anak=${muridId}`);
+  expect(bukti.status()).toBe(200);
+  expect(bukti.headers()["content-type"]).toContain("text/html");
+  expect(bukti.headers()["content-disposition"]).toContain("attachment");
+  expect(bukti.headers()["content-disposition"]).toContain(
+    'filename="bukti-tagihan-anak-endpoint-tagihan-',
+  );
+  const dokumen = await bukti.text();
+  expect(dokumen).toContain("Anak Endpoint Tagihan");
+  expect(dokumen).toContain("Rp300.000");
+  expect(dokumen).toContain("Jumlah tagihan");
+  expect(dokumen).toContain("Rp600.000");
+  expect(
+    (
+      await page.request.get(
+        `/api/portal/tagihan/bukti?anak=${randomUUID()}`,
+      )
+    ).status(),
+  ).toBe(404);
 });
