@@ -1,0 +1,1 @@
+ALTER TABLE "student_progress" ADD CONSTRAINT "student_progress_nilai_rentang" CHECK ("student_progress"."nilai" >= 0 and "student_progress"."nilai" <= 100);

@@ -1,4 +1,6 @@
+import { sql } from "drizzle-orm";
 import {
+  check,
   date,
   index,
   numeric,
@@ -48,5 +50,11 @@ export const studentProgress = pgTable(
       table.tanggal,
     ),
     index("student_progress_guru_idx").on(table.guruId),
+    // Nilai anak selalu 0–100; dijaga database supaya impor atau perbaikan
+    // manual tidak bisa menyisipkan angka di luar rentang itu.
+    check(
+      "student_progress_nilai_rentang",
+      sql`${table.nilai} >= 0 and ${table.nilai} <= 100`,
+    ),
   ],
 );

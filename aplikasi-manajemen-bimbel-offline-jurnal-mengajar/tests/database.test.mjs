@@ -463,3 +463,56 @@ test("guru yang dihapus meninggalkan kelasnya tanpa pengampu", async () => {
   ).rows[0];
   assert.equal(baris.guru_id, null);
 });
+
+/**
+ * Invarian skema catatan evaluasi (`drizzle/0010_catatan_perkembangan.sql` dan
+ * `0020_catatan_evaluasi_nilai_rentang.sql`): nilai anak selalu 0–100 (dijaga
+ * CHECK di database), satu anak boleh punya beberapa catatan pada hari yang
+ * sama, dan menghapus anak atau guru ikut menghapus catatannya.
+ */
+test("nilai catatan evaluasi dibatasi 0 sampai 100 oleh database", async () => {
+  const { guru, murid } = await siapkanJurnal();
+  const tulis = (nilai) =>
+    dbJurnal.query(
+      "INSERT INTO student_progress (student_id, guru_id, tanggal, nilai, sikap, catatan_perkembangan) VALUES ($1, $2, $3, $4, $5, $6)",
+      [murid, guru, "2026-05-05", nilai, "Baik", "Catatan uji"],
+    );
+
+  await tulis(0);
+  await tulis(100);
+  // Dua catatan pada hari yang sama memang boleh.
+  await tulis(85);
+
+  const terlaluTinggi = await ditolak(
+    "INSERT INTO student_progress (student_id, guru_id, tanggal, nilai, sikap, catatan_perkembangan) VALUES ($1, $2, $3, $4, $5, $6)",
+    [murid, guru, "2026-05-05", 120, "Baik", "Catatan uji"],
+  );
+  assert.equal(terlaluTinggi.code, "23514");
+
+  const negatif = await ditolak(
+    "INSERT INTO student_progress (student_id, guru_id, tanggal, nilai, sikap, catatan_perkembangan) VALUES ($1, $2, $3, $4, $5, $6)",
+    [murid, guru, "2026-05-05", -1, "Baik", "Catatan uji"],
+  );
+  assert.equal(negatif.code, "23514");
+});
+
+test("menghapus anak ikut menghapus catatan evaluasinya", async () => {
+  const { guru } = await siapkanJurnal();
+  const muridBaru = (
+    await dbJurnal.query(
+      "INSERT INTO students (nama) VALUES ($1) RETURNING id",
+      ["Murid Tanpa Catatan"],
+    )
+  ).rows[0].id;
+  await dbJurnal.query(
+    "INSERT INTO student_progress (student_id, guru_id, tanggal, nilai, sikap, catatan_perkembangan) VALUES ($1, $2, $3, $4, $5, $6)",
+    [muridBaru, guru, "2026-06-06", 75, "Cukup", "Catatan uji"],
+  );
+
+  await dbJurnal.query("DELETE FROM students WHERE id = $1", [muridBaru]);
+  const sisa = await dbJurnal.query(
+    "SELECT count(*)::int AS jumlah FROM student_progress WHERE student_id = $1",
+    [muridBaru],
+  );
+  assert.equal(sisa.rows[0].jumlah, 0);
+});
