@@ -249,4 +249,29 @@ test("wali hanya melihat anak yang tertaut ke akunnya", async ({
   await page.goto("/portal/tagihan");
   await expect(page.getByText("Anak Isolasi A", { exact: true })).toBeVisible();
   await expect(page.getByText("Anak Isolasi B")).toHaveCount(0);
+
+  // Penanda "info baru" disimpan per akun wali: menandai bagian sebagai dibaca
+  // mematikan lencananya, penandaan ulang tidak error, dan anak yang tidak
+  // tertaut tetap dijawab 404.
+  // Sesi yang sedang aktif di sini adalah wali A, jadi anaknya muridA.
+  const statusA = await page.request.get(`/api/jejak-baca?anak=${muridA}`);
+  expect(statusA.status()).toBe(200);
+  expect((await statusA.json()).data.bagian.perkembangan.baru).toBe(true);
+
+  const tandai = await page.request.post("/api/jejak-baca", {
+    headers,
+    data: { anak: muridA, bagian: "perkembangan" },
+  });
+  expect(tandai.status()).toBe(200);
+  expect((await tandai.json()).data.bagian.perkembangan.baru).toBe(false);
+
+  // Menandai ulang (sekalipun beberapa bagian sekaligus) idempoten.
+  const tandaiUlang = await page.request.post("/api/jejak-baca", {
+    headers,
+    data: { anak: muridA, bagian: ["perkembangan", "kehadiran"] },
+  });
+  expect(tandaiUlang.status()).toBe(200);
+  expect(
+    (await page.request.get(`/api/jejak-baca?anak=${muridB}`)).status(),
+  ).toBe(404);
 });
