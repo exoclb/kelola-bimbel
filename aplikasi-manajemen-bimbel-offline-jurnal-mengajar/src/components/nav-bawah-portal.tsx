@@ -52,10 +52,19 @@ export function NavBawahPortal() {
                 href={href}
                 aria-current={aktif ? "page" : undefined}
                 className={cn(
-                  "flex min-h-[var(--tinggi-bilah-tab)] flex-col items-center justify-center gap-1 px-1 py-1.5 text-3xs font-medium transition-colors",
+                  "relative flex min-h-[var(--tinggi-bilah-tab)] flex-col items-center justify-center gap-1 px-1 py-1.5 text-3xs font-medium transition-colors",
                   aktif ? "text-primary" : "text-muted-foreground",
                 )}
               >
+                {/* Penanda tab aktif bukan hanya warna: ada garis pendek di
+                    atas tab, jadi tetap terbaca kalau warnanya sulit dibedakan. */}
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "absolute top-0 h-0.5 w-8 rounded-full",
+                    aktif ? "bg-primary" : "bg-transparent",
+                  )}
+                />
                 <Ikon
                   className="size-[var(--ukuran-ikon-tab)]"
                   aria-hidden="true"
