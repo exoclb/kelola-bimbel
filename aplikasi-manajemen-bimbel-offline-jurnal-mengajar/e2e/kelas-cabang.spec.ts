@@ -385,3 +385,56 @@ test("menyimpan kelas menolak cabang yang belum terdaftar atau nonaktif", async 
     await db.end();
   }
 });
+
+/**
+ * Daftar dan detail kelas tetap menampilkan cabangnya setelah kolomnya
+ * ber-relasi ke tabel `cabang`: namanya disimpan di baris kelas, jadi tidak ada
+ * kelas yang kehilangan cabangnya, dan mengganti nama cabang membuat yang
+ * tampil adalah nama terbarunya.
+ */
+test("daftar kelas tetap menampilkan cabang, termasuk setelah cabangnya diganti nama", async ({
+  request,
+}) => {
+  const penanda = randomUUID().slice(0, 8);
+  const awal = `Cabang Tampil ${penanda}`;
+  const baru = `Cabang Tampil Baru ${penanda}`;
+  await siapkanCabang(awal, true);
+  await masukApi(request);
+
+  const buat = await request.post("/api/kelas", {
+    headers,
+    data: { namaKelas: `Kelas Tampil ${penanda}`, cabang: awal },
+  });
+  expect(buat.status()).toBe(201);
+  const kelas = (await buat.json()).data as { id: string; cabang: string };
+  expect(kelas.cabang).toBe(awal);
+
+  // Saring daftar kelas menurut cabang masih bekerja.
+  const daftar = await request.get(
+    `/api/kelas?cari=${encodeURIComponent(penanda)}`,
+    { headers },
+  );
+  expect(daftar.status()).toBe(200);
+  const baris = (await daftar.json()).data as { id: string; cabang: string }[];
+  expect(baris.find((satu) => satu.id === kelas.id)?.cabang).toBe(awal);
+
+  // Ganti nama cabang: kelasnya ikut pindah, jadi yang tampil nama barunya.
+  const db = await pool();
+  try {
+    await db.query("UPDATE cabang SET nama = $1 WHERE nama = $2", [baru, awal]);
+  } finally {
+    await db.end();
+  }
+  const detail = await request.get(`/api/kelas/${kelas.id}`, { headers });
+  expect(detail.status()).toBe(200);
+  expect((await detail.json()).data.cabang).toBe(baru);
+
+  // Kelas dan cabang buatan tes ini dibersihkan.
+  const bersih = await pool();
+  try {
+    await bersih.query("DELETE FROM classes WHERE id = $1", [kelas.id]);
+    await bersih.query("DELETE FROM cabang WHERE nama = $1", [baru]);
+  } finally {
+    await bersih.end();
+  }
+});

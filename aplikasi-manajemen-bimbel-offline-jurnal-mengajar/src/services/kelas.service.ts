@@ -35,6 +35,12 @@ export type KelasTersimpan = {
   jadwal: JadwalTersimpan[];
 };
 
+// Kolom yang keluar dari daftar dan detail kelas. `cabang` tetap dibaca dari
+// baris kelasnya sendiri — namanya tersimpan di sana dan ber-relasi ke
+// `cabang.nama` (`drizzle/0029_relasi_cabang_kelas.sql`), jadi daftar kelas
+// tidak perlu menggabungkan tabel cabang dan tidak kehilangan cabangnya kalau
+// baris cabangnya sedang tidak ada. Mengganti nama cabang ikut memindahkan
+// nilainya (`on update cascade`), jadi yang tampil selalu nama terbaru.
 const fields = {
   id: classes.id,
   namaKelas: classes.namaKelas,
