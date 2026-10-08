@@ -10,6 +10,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { cn } from "cn";
+import { tabAktifDari } from "@/lib/nav-portal";
 
 /**
  * Lima tab tetap Portal Wali. Susunannya mengikuti mockup: beranda, jadwal,
@@ -32,9 +33,10 @@ const TAB = [
  */
 export function NavBawahPortal() {
   const pathname = usePathname();
-  const hrefAktif = TAB.map((tab) => tab.href)
-    .filter((href) => pathname === href || pathname.startsWith(`${href}/`))
-    .sort((a, b) => b.length - a.length)[0];
+  const hrefAktif = tabAktifDari(
+    TAB.map((tab) => tab.href),
+    pathname,
+  );
 
   return (
     <nav
