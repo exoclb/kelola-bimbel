@@ -80,6 +80,8 @@ The portal component sizes and the payment-status pastels are tokens in `globals
 
 Portal content sits in `KartuPortal` (`src/components/kartu-portal.tsx`): a section with the 16px radius token, the shared padding, an optional `h2` title with icon and badge, and an optional description. `ringkas` tightens the inner spacing for single-figure cards. The staff area keeps using the shadcn `Card`.
 
+A screen's main action goes in `TombolAksiLengket` (`src/components/tombol-aksi-lengket.tsx`) with `<Button size="aksi">`: a sticky strip that floats just above the tab bar while the page scrolls and settles above the shell's bottom padding at the end, so it never hides content permanently. The `aksi` button size is the 48px / 12px-radius token pair.
+
 The base's welcome and blank app pages are replaceable. Reuse auth, setup, database, and UI when adding dashboard or chatbot features. Do not put feature conditionals throughout the base: create a derivative and implement that app directly.
 
 ## Dependency compatibility
