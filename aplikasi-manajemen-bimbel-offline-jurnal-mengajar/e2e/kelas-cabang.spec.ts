@@ -307,3 +307,81 @@ test("kelas menyimpan nama cabang kanonik walau dikirim beda huruf besar-kecil",
     await db.end();
   }
 });
+
+/**
+ * Menyimpan kelas hanya boleh memakai cabang yang terdaftar dan masih aktif;
+ * kelas yang sudah berada di cabang nonaktif tetap bisa disunting selama
+ * cabangnya tidak diubah.
+ */
+test("menyimpan kelas menolak cabang yang belum terdaftar atau nonaktif", async ({
+  request,
+}) => {
+  const penanda = randomUUID().slice(0, 8);
+  const aktif = `Cabang Simpan Aktif ${penanda}`;
+  const nonaktif = `Cabang Simpan Nonaktif ${penanda}`;
+  await siapkanCabang(aktif, true);
+  await siapkanCabang(nonaktif, false);
+  await masukApi(request);
+
+  const buat = await request.post("/api/kelas", {
+    headers,
+    data: { namaKelas: `Kelas Simpan ${penanda}`, cabang: aktif },
+  });
+  expect(buat.status()).toBe(201);
+  const kelas = (await buat.json()).data as { id: string };
+
+  const takAda = await request.post("/api/kelas", {
+    headers,
+    data: {
+      namaKelas: `Kelas Simpan Entah ${penanda}`,
+      cabang: "Cabang Simpan Entah",
+    },
+  });
+  expect(takAda.status()).toBe(422);
+  expect((await takAda.json()).error.code).toBe("CABANG_TIDAK_ADA");
+
+  const cabangNonaktif = await request.post("/api/kelas", {
+    headers,
+    data: { namaKelas: `Kelas Simpan Nonaktif ${penanda}`, cabang: nonaktif },
+  });
+  expect(cabangNonaktif.status()).toBe(422);
+  expect((await cabangNonaktif.json()).error.code).toBe("CABANG_NONAKTIF");
+
+  // Kelas yang sudah ada di cabang itu boleh terus disunting…
+  await siapkanCabang(nonaktif, true);
+  const diCabangItu = await request.post("/api/kelas", {
+    headers,
+    data: { namaKelas: `Kelas Simpan Tetap ${penanda}`, cabang: nonaktif },
+  });
+  expect(diCabangItu.status()).toBe(201);
+  const kelasTetap = (await diCabangItu.json()).data as { id: string };
+  await siapkanCabang(nonaktif, false);
+
+  const sunting = await request.patch(`/api/kelas/${kelasTetap.id}`, {
+    headers,
+    data: { namaKelas: `Kelas Simpan Tetap Diedit ${penanda}` },
+  });
+  expect(sunting.status()).toBe(200);
+
+  // …tetapi memindahkan kelas ke cabang nonaktif tetap ditolak.
+  const pindah = await request.patch(`/api/kelas/${kelas.id}`, {
+    headers,
+    data: { cabang: nonaktif },
+  });
+  expect(pindah.status()).toBe(422);
+  expect((await pindah.json()).error.code).toBe("CABANG_NONAKTIF");
+
+  // Kelas buatan tes ini dibersihkan supaya berkas uji lain tidak ikut
+  // melihatnya.
+  const db = await pool();
+  try {
+    await db.query("DELETE FROM classes WHERE id = ANY($1)", [
+      [kelas.id, kelasTetap.id],
+    ]);
+    await db.query("DELETE FROM cabang WHERE nama = ANY($1)", [
+      [aktif, nonaktif],
+    ]);
+  } finally {
+    await db.end();
+  }
+});
