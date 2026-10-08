@@ -1,6 +1,11 @@
 import { ApiError, withApiPermission } from "@/lib/api";
 import { muridTertaut } from "@/services/jejak-baca.service";
 import { listTagihanWali } from "@/services/tagihan.service";
+import {
+  hitungRekapTagihan,
+  periodeTagihan,
+  statusPembayaran,
+} from "@/lib/tagihan";
 import { anakPortalSchema } from "@/validators/portal";
 
 export const runtime = "nodejs";
@@ -20,7 +25,24 @@ export function GET(request: Request) {
     if (!(await muridTertaut(session.user.id, anak)))
       throw new ApiError(404, "NOT_FOUND", "Anak tidak tertaut ke akun ini.");
 
-    const data = await listTagihanWali(session.user.id, anak);
-    return Response.json({ data, meta: { anak, jumlah: data.length } });
+    const daftar = await listTagihanWali(session.user.id, anak);
+    const periodeBerjalan = periodeTagihan(new Date());
+
+    // Status yang ditampilkan ke wali dihitung dari periode berjalan, supaya
+    // pemanggil API tidak perlu menebak sendiri kapan "terlambat" berlaku.
+    const data = daftar.map((baris) => ({
+      ...baris,
+      statusTampil: statusPembayaran(baris, periodeBerjalan),
+    }));
+
+    return Response.json({
+      data,
+      meta: {
+        anak,
+        jumlah: data.length,
+        periodeBerjalan,
+        rekap: hitungRekapTagihan(daftar),
+      },
+    });
   });
 }

@@ -266,12 +266,30 @@ test("endpoint daftar tagihan per anak hanya melayani wali yang tertaut", async 
   const daftar = await page.request.get(`/api/portal/tagihan?anak=${muridId}`);
   expect(daftar.status()).toBe(200);
   const isi = (await daftar.json()) as {
-    data: { muridId: string; nominal: number }[];
-    meta: { jumlah: number };
+    data: { muridId: string; nominal: number; statusTampil: string }[];
+    meta: {
+      jumlah: number;
+      periodeBerjalan: string;
+      rekap: { jumlahBelumLunas: number; nominalBelumLunas: number };
+    };
   };
   expect(isi.meta.jumlah).toBe(2);
   expect(isi.data.every((baris) => baris.muridId === muridId)).toBe(true);
   expect(isi.data.every((baris) => baris.nominal === 300000)).toBe(true);
+
+  // Status pembayaran yang ditampilkan dan rekap periodenya ikut dikirim, jadi
+  // pemanggil API tidak perlu menghitung sendiri kapan "terlambat" berlaku.
+  expect(isi.meta.periodeBerjalan).toMatch(/^\d{4}-\d{2}$/);
+  expect(
+    isi.data.every((baris) =>
+      ["lunas", "belum", "terlambat"].includes(baris.statusTampil),
+    ),
+  ).toBe(true);
+  const belumLunas = isi.data.filter(
+    (baris) => baris.statusTampil !== "lunas",
+  ).length;
+  expect(isi.meta.rekap.jumlahBelumLunas).toBe(belumLunas);
+  expect(isi.meta.rekap.nominalBelumLunas).toBe(belumLunas * 300000);
 
   // Id anak yang tidak tertaut tidak membocorkan apa pun, dan kueri tanpa
   // parameter ditolak sebelum menyentuh layanan.
