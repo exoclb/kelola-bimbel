@@ -71,6 +71,10 @@ export function slipGajiHtml({
 <style>
   :root {
     color-scheme: light;
+  /* Palet dokumen mengikuti token aplikasi (globals.css): --kanvas = kanvas
+     #F8FAFC, --tinta = slate-900, --tinta-redup = slate-600, --garis =
+     slate-200. Ditulis sebagai warna tetap karena dokumen ini dibuka dan
+     dicetak di luar aplikasi, tanpa CSS token. */
     --kanvas: #f8fafc;
     --permukaan: #ffffff;
     --tinta: #0f172a;

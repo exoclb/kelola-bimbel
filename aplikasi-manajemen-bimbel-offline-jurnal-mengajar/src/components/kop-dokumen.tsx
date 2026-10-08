@@ -31,15 +31,36 @@ export function KopDokumen({
 }: KopDokumenProps) {
   const nama = namaProfilDokumen(profil);
   const kontak = kontakProfilDokumen(profil);
+  const logo = profil.logo?.trim();
+  // Monogram dipakai kalau logonya belum ada; warnanya dari token brand yang
+  // sama dengan kepala portal, jadi kop ikut benar di mode terang maupun gelap.
+  const monogram = nama.trim().charAt(0).toUpperCase() || "B";
 
   return (
     <div className="flex flex-wrap items-start justify-between gap-3 border-b pb-4">
-      <div className="space-y-0.5">
-        <p className="text-lg font-semibold">{nama}</p>
-        {kontak && (
-          <p className="text-muted-foreground text-xs leading-5">{kontak}</p>
+      <div className="flex min-w-0 items-start gap-3">
+        {logo ? (
+          // eslint-disable-next-line @next/next/no-img-element -- logonya URL dari profil, bukan aset statis aplikasi.
+          <img
+            src={logo}
+            alt=""
+            className="size-10 shrink-0 rounded-[var(--radius-aksi-portal)] border object-contain"
+          />
+        ) : (
+          <span
+            aria-hidden="true"
+            className="bg-primary/10 text-primary border-primary/20 grid size-10 shrink-0 place-items-center rounded-[var(--radius-aksi-portal)] border text-base font-semibold"
+          >
+            {monogram}
+          </span>
         )}
-        <p className="text-sm">{judul}</p>
+        <div className="min-w-0 space-y-0.5">
+          <p className="text-lg font-semibold">{nama}</p>
+          {kontak && (
+            <p className="text-muted-foreground text-xs leading-5">{kontak}</p>
+          )}
+          <p className="text-sm">{judul}</p>
+        </div>
       </div>
       {kanan && <div className="text-right text-sm">{kanan}</div>}
       {profilBelumLengkap(profil) && (

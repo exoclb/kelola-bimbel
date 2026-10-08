@@ -14,6 +14,11 @@ export type ProfilBimbel = {
   alamat: string;
   telepon: string;
   email: string;
+  /**
+   * Logo bimbel (URL atau data URL). Kosong berarti kop memakai monogram dari
+   * huruf pertama nama bimbel; kolomnya sudah ada di tabel `bimbel_profile`.
+   */
+  logo?: string;
 };
 
 export type AturanGaji = {
@@ -33,6 +38,8 @@ const PROFIL: ProfilBimbel = {
   alamat: "Jl. Melati No. 12, Bandung",
   telepon: "0812-3456-7890",
   email: "admin@cerdasnusantara.test",
+  // Logo belum diunggah, jadi kop memakai monogram "B".
+  logo: "",
 };
 
 // Riwayat tarif: yang dipakai untuk sebuah jurnal adalah baris terbaru yang
