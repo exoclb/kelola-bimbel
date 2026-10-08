@@ -1,4 +1,6 @@
+import { sql } from "drizzle-orm";
 import {
+  check,
   date,
   numeric,
   pgTable,
@@ -32,5 +34,11 @@ export const salarySettings = pgTable(
     // Satu tarif per tanggal berlaku; indeksnya sekaligus melayani pencarian
     // tarif terbaru (urut menurun) tanpa indeks tambahan.
     uniqueIndex("salary_settings_berlaku_sejak_idx").on(table.berlakuSejak),
+    // Tarif tidak boleh negatif; angka 0 masih mungkin (mis. kelas sukarela),
+    // tetapi nilai minus selalu salah hitung di rekap gaji.
+    check(
+      "salary_settings_tarif_tidak_negatif",
+      sql`${table.tarifPerJam} >= 0`,
+    ),
   ],
 );

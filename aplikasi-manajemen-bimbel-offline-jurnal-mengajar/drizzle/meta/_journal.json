@@ -148,6 +148,13 @@
       "when": 1791478406150,
       "tag": "0020_catatan_evaluasi_nilai_rentang",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1791480322992,
+      "tag": "0021_tarif_honor_tidak_negatif",
+      "breakpoints": true
     }
   ]
 }

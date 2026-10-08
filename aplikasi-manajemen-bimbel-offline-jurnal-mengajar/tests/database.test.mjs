@@ -516,3 +516,34 @@ test("menghapus anak ikut menghapus catatan evaluasinya", async () => {
   );
   assert.equal(sisa.rows[0].jumlah, 0);
 });
+
+/**
+ * Invarian skema tarif honor (`drizzle/0006_tarif_gaji.sql` dan
+ * `0021_tarif_honor_tidak_negatif.sql`): satu tarif per tanggal berlaku dan
+ * tarifnya tidak boleh negatif, supaya rekap gaji tidak pernah menghitung
+ * angka minus.
+ */
+test("tarif honor satu per tanggal dan tidak boleh negatif", async () => {
+  const tulis = (tarif, berlakuSejak) =>
+    dbJurnal.query(
+      "INSERT INTO salary_settings (tarif_per_jam, skema, berlaku_sejak) VALUES ($1, $2, $3)",
+      [tarif, "per jam", berlakuSejak],
+    );
+
+  await tulis(50000, "2099-01-01");
+  const kembar = await ditolak(
+    "INSERT INTO salary_settings (tarif_per_jam, skema, berlaku_sejak) VALUES ($1, $2, $3)",
+    [60000, "per jam", "2099-01-01"],
+  );
+  assert.equal(kembar.code, "23505");
+
+  const negatif = await ditolak(
+    "INSERT INTO salary_settings (tarif_per_jam, skema, berlaku_sejak) VALUES ($1, $2, $3)",
+    [-1, "per jam", "2099-02-01"],
+  );
+  assert.equal(negatif.code, "23514");
+
+  // Tarif 0 masih boleh (mis. kelas sukarela), yang ditolak hanya minus.
+  const nol = await tulis(0, "2099-03-01");
+  assert.equal(nol.rowCount, 1);
+});

@@ -1,0 +1,1 @@
+ALTER TABLE "salary_settings" ADD CONSTRAINT "salary_settings_tarif_tidak_negatif" CHECK ("salary_settings"."tarif_per_jam" >= 0);
