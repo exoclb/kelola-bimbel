@@ -59,6 +59,14 @@ export function PemilihAnak({
             const adaBaru = statusAnak
               ? BAGIAN_PORTAL.some((bagian) => statusAnak[bagian].baru)
               : false;
+            // Kelas hanya ditampilkan kalau memang ada penempatannya; status
+            // nonaktif ikut disebut supaya wali tahu anaknya sudah tidak aktif.
+            const keterangan = [
+              baris.kelasNama,
+              baris.statusAktif ? null : "Nonaktif",
+            ]
+              .filter(Boolean)
+              .join(" · ");
             return (
               <button
                 key={baris.muridId}
@@ -85,7 +93,7 @@ export function PemilihAnak({
                   )}
                 </span>
                 <span className="mt-1 block text-xs leading-5 text-muted-foreground">
-                  {baris.kelasNama}
+                  {keterangan}
                 </span>
                 {adaBaru && (
                   <span className="sr-only">

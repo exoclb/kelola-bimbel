@@ -1336,5 +1336,8 @@
     },
     "src/components/riwayat-status-wali.tsx": {
         "summary": "Panel catatan status portal per akun wali di halaman pengaturan wali (server component): menampilkan status saat ini, alasan nonaktif dari `ban_reason` (hanya bila ada), dan waktu perubahan terakhir yang tercatat (`updated_at`, dibandingkan `created_at` — bila sama ditulis belum ada perubahan), plus subsection terpisah berisi waktu tiap tautan murid dibuat dari `wali_murid.created_at`. Panel menyatakan keterbatasan secara eksplisit: aplikasi hanya menyimpan keadaan akun saat ini, bukan riwayat lengkap tiap perubahan status, sehingga waktu yang ditampilkan adalah perubahan data akun terakhir yang tercatat dan belum tentu khusus saklar portal — tidak ada riwayat yang dikarang dan tidak ada tabel/migrasi baru."
+    },
+    "src/services/portal.service.ts": {
+        "summary": "Layanan data anak Portal Wali dari basis data: `listAnakPortalWali(waliId)` menjalankan query `wali_murid JOIN students` (urut nama murid) sehingga wali hanya melihat anak yang benar-benar tertaut ke akunnya, lengkap dengan nama orang tua, kontak, dan status aktif; nama kelas diambil dari `student_enrollments JOIN classes` berstatus aktif dan bernilai null bila belum ada penempatan (tidak mengarang nama kelas). Menggantikan pembacaan data tiruan `getAnakPortal()` yang kini sudah dihapus."
     }
 }

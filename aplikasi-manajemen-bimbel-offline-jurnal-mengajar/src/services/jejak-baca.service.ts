@@ -4,13 +4,14 @@ import { db } from "@/db";
 import { jejakBacaPortal, waliMurid } from "@/db/schema";
 import {
   BAGIAN_PORTAL,
-  getAnakPortal,
+  type AnakPortal,
   type BagianPortal,
   type StatusBagianPortal,
   type StatusJejakAnak,
   type StatusJejakPortal,
   type WaktuBagian,
 } from "@/lib/mock-portal-wali";
+import { bagianPortalAnak } from "@/services/portal.service";
 import { tanggalISO } from "@/lib/tanggal";
 
 export type {
@@ -132,19 +133,24 @@ export async function statusAnak(
   muridId: string,
 ): Promise<StatusJejakAnak> {
   const catatan = await catatanWali(waliId);
-  const anak = getAnakPortal().find((baris) => baris.muridId === muridId);
-  return susunStatusAnak(muridId, anak?.bagian ?? null, catatan);
+  return susunStatusAnak(muridId, bagianPortalAnak(muridId), catatan);
 }
 
-/** Status seluruh anak yang tertaut ke wali ini, berkunci `muridId`. */
+/**
+ * Status seluruh anak yang tertaut ke wali ini, berkunci `muridId`. Daftar
+ * anaknya sudah dimuat halaman lewat `listAnakPortalWali` (portal.service),
+ * jadi tidak di-query ulang di sini — anak milik akun lain tidak ikut karena
+ * daftar itu memang hasil query `wali_murid` milik wali ini.
+ */
 export async function statusSemuaAnak(
   waliId: string,
+  anak: AnakPortal[],
 ): Promise<StatusJejakPortal> {
   const catatan = await catatanWali(waliId);
   return Object.fromEntries(
-    getAnakPortal().map((anak) => [
-      anak.muridId,
-      susunStatusAnak(anak.muridId, anak.bagian, catatan),
+    anak.map((satu) => [
+      satu.muridId,
+      susunStatusAnak(satu.muridId, satu.bagian, catatan),
     ]),
   );
 }

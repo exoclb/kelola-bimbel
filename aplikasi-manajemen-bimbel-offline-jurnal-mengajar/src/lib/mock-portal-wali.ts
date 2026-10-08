@@ -1,35 +1,45 @@
-// Data contoh Portal Wali (beranda).
+// Isi contoh Portal Wali.
 //
-// Anak yang tampil di portal diambil dari penautan akun wali ke murid
-// (`mock-wali.ts`), jadi daftar di portal tidak berbeda dengan daftar penautan
-// yang dilihat owner. Bentuk datanya mengikuti kolom yang nanti dipakai: murid
-// (`students`), catatan perkembangan (`student_progress`: nilai, sikap,
-// catatan). Kehadiran tidak disimpan di sini, melainkan dihitung dari
-// `getRiwayatJurnal`.
+// Anak yang tampil di portal bukan dari sini: daftar anak diambil dari basis
+// data per sesi wali (`src/services/portal.service.ts`, `wali_murid` →
+// `students`). Modul ini hanya menyediakan **isi tiruan per anak** — catatan
+// perkembangan, rekap kehadiran dari jurnal, dan waktu isi tiap bagian yang
+// jadi dasar penanda "baru" — beserta tipe yang dipakai bersama tampilan.
+//
+// Yang masih tiruan: catatan perkembangan, tagihan, dan jurnal (belum ada
+// sumber basis datanya), jadi isi anak dibaca dari modul tiruan yang sama
+// dengan yang dipakai owner. Yang sudah dari basis data: identitas anak (nama,
+// orang tua, status aktif, kelas dari penempatan). Kelas sengaja tidak diambil
+// dari sini — kalau tabel kelas/penempatan kosong, kelasnya `null`, bukan nama
+// karangan.
 //
 // Setiap anak membawa dua penamaan id (lihat `src/lib/id-murid.mjs`):
-// `muridId` adalah id basis data (`students.id`, dari `idMuridDb`) yang dipakai
-// portal di alamat halaman dan dikirim ke `/api/jejak-baca` supaya cocok dengan
+// `muridId` adalah id basis data (`students.id`) yang dipakai portal di alamat
+// halaman dan dikirim ke `/api/jejak-baca` supaya cocok dengan
 // `wali_murid.murid_id`, sedangkan `sumberTiruan` adalah id data contoh
 // (`mrd-N`) yang jadi kunci catatan, tagihan, dan jurnal tiruan.
 
-import { idMuridDb } from "@/lib/id-murid.mjs";
 import { getRiwayatJurnal } from "@/lib/mock-jurnal";
-import { getDaftarMurid } from "@/lib/mock-murid";
 import { getSemuaTagihan } from "@/lib/mock-tagihan";
-import { getWali, WALI_PORTAL } from "@/lib/mock-wali";
 import { tanggalISO } from "@/lib/tanggal";
 
 export type AnakWali = {
   /** Id basis data murid (`students.id`): dipakai alamat portal dan API. */
   muridId: string;
-  /** Id anak pada data tiruan (`mrd-N`): kunci catatan, tagihan, dan jurnal. */
-  sumberTiruan: string;
+  /**
+   * Id anak pada data tiruan (`mrd-N`): kunci catatan, tagihan, dan jurnal.
+   * `null` bila anaknya tidak berasal dari data tiruan (tanpa isi tiruan).
+   */
+  sumberTiruan: string | null;
   nama: string;
+  /** Nama orang tua dari `students`; string kosong bila kolomnya kosong. */
   namaOrangTua: string;
+  /** Kontak orang tua dari `students`; string kosong bila kolomnya kosong. */
   kontakOrangTua: string;
-  /** Kelas yang sedang diikuti, untuk ditampilkan di beranda. */
-  kelasNama: string;
+  /** Kelas yang sedang diikuti dari penempatan murid; `null` bila belum ada. */
+  kelasNama: string | null;
+  /** Status murid (`students.status_aktif`). */
+  statusAktif: boolean;
 };
 
 export type CatatanPerkembangan = {
@@ -83,6 +93,12 @@ export type AnakPortal = AnakWali & {
   /** Waktu isi & baca tiap bagian, dasar penanda "baru" di portal. */
   bagian: Record<BagianPortal, WaktuBagian>;
 };
+
+/** Isi tiruan satu anak (tanpa identitas, yang sudah datang dari basis data). */
+export type IsiAnakTiruan = Pick<
+  AnakPortal,
+  "catatan" | "kehadiran" | "bagian"
+>;
 
 type CatatanTersimpan = Omit<CatatanPerkembangan, "tanggal"> & {
   hariLalu: number;
@@ -174,104 +190,77 @@ const TERAKHIR_DIBACA: Record<string, Partial<Record<BagianPortal, number>>> = {
   "mrd-8": { kehadiran: 2, perkembangan: 1 },
 };
 
-/** Anak yang tertaut ke akun wali contoh, lengkap catatan dan kehadirannya. */
-export function getAnakPortal(): AnakPortal[] {
-  const wali = getWali(WALI_PORTAL);
-  if (!wali) return [];
+/** Isi anak tanpa data tiruan: tidak ada catatan, sesi, maupun tanggal isi. */
+const ISI_KOSONG: IsiAnakTiruan = {
+  catatan: [],
+  kehadiran: { sesi: 0, hadir: 0, terakhir: null },
+  bagian: {
+    kehadiran: { terbaru: null, terakhirDibaca: null },
+    perkembangan: { terbaru: null, terakhirDibaca: null },
+    tagihan: { terbaru: null, terakhirDibaca: null },
+  },
+};
 
-  const murid = new Map(getDaftarMurid().map((anak) => [anak.id, anak]));
+/**
+ * Isi tiruan satu anak: catatan perkembangan, rekap kehadiran dari jurnal, dan
+ * waktu isi tiap bagian (dasar penanda "baru"). Anak tanpa padanan data tiruan
+ * (`sumberTiruan` `null`) mendapat isi kosong, bukan galat — jadi anak basis
+ * data yang belum punya contoh tetap tampil dengan keadaan kosong yang jujur.
+ */
+export function isiAnakTiruan(sumberTiruan: string | null): IsiAnakTiruan {
+  if (!sumberTiruan) return ISI_KOSONG;
+
   const jurnal = getRiwayatJurnal();
   const tagihan = getSemuaTagihan();
   const hariIni = new Date();
 
-  return wali.murid.map((tautan) => {
-    // Isi tiruan (catatan, tagihan, jurnal) tetap berkunci id data contoh,
-    // sedangkan yang keluar ke halaman adalah id basis data lewat `idMuridDb`.
-    const idTiruan = tautan.muridId;
-    const anak = murid.get(idTiruan);
-    const sesi = jurnal
-      .map((catatan) => ({
-        tanggal: catatan.tanggal,
-        murid: catatan.murid.find((baris) => baris.id === idTiruan),
-      }))
-      .filter((baris) => baris.murid);
-    const hadir = sesi.filter((baris) => baris.murid?.hadir).length;
-    const tanggalSesi = sesi
-      .map((baris) => baris.tanggal)
-      .sort((a, b) => b.localeCompare(a));
-    const catatan = (CATATAN[idTiruan] ?? []).map(({ hariLalu, ...baris }) => {
+  const sesi = jurnal
+    .map((catatan) => ({
+      tanggal: catatan.tanggal,
+      murid: catatan.murid.find((baris) => baris.id === sumberTiruan),
+    }))
+    .filter((baris) => baris.murid);
+  const hadir = sesi.filter((baris) => baris.murid?.hadir).length;
+  const tanggalSesi = sesi
+    .map((baris) => baris.tanggal)
+    .sort((a, b) => b.localeCompare(a));
+  const catatan = (CATATAN[sumberTiruan] ?? []).map(
+    ({ hariLalu, ...baris }) => {
       const tanggal = new Date(hariIni);
       tanggal.setDate(tanggal.getDate() - hariLalu);
       return { ...baris, tanggal: tanggalISO(tanggal) };
-    });
-    // Tagihan dianggap berubah saat diterbitkan atau saat dibayar, jadi
-    // tanggal terbarunya diambil dari kedua kolom itu.
-    const tanggalTagihan =
-      tagihan
-        .filter((baris) => baris.muridId === idTiruan)
-        .flatMap((baris) => [baris.dibuatPada.slice(0, 10), baris.tanggalBayar])
-        .filter((nilai): nilai is string => Boolean(nilai))
-        .sort((a, b) => b.localeCompare(a))[0] ?? null;
-    const dibaca = TERAKHIR_DIBACA[idTiruan] ?? {};
+    },
+  );
+  // Tagihan dianggap berubah saat diterbitkan atau saat dibayar, jadi tanggal
+  // terbarunya diambil dari kedua kolom itu.
+  const tanggalTagihan =
+    tagihan
+      .filter((baris) => baris.muridId === sumberTiruan)
+      .flatMap((baris) => [baris.dibuatPada.slice(0, 10), baris.tanggalBayar])
+      .filter((nilai): nilai is string => Boolean(nilai))
+      .sort((a, b) => b.localeCompare(a))[0] ?? null;
+  const dibaca = TERAKHIR_DIBACA[sumberTiruan] ?? {};
 
-    return {
-      muridId: idMuridDb(idTiruan),
-      sumberTiruan: idTiruan,
-      nama: tautan.nama,
-      namaOrangTua: anak?.namaOrangTua ?? wali.nama,
-      kontakOrangTua: anak?.kontakOrangTua ?? wali.kontak,
-      kelasNama: tautan.kelasNama,
-      catatan,
+  return {
+    catatan,
+    kehadiran: {
+      sesi: sesi.length,
+      hadir,
+      terakhir: tanggalSesi[0] ?? null,
+    },
+    bagian: {
       kehadiran: {
-        sesi: sesi.length,
-        hadir,
-        terakhir: tanggalSesi[0] ?? null,
+        terbaru: tanggalSesi[0] ?? null,
+        terakhirDibaca: tanggalDibaca(dibaca.kehadiran),
       },
-      bagian: {
-        kehadiran: {
-          terbaru: tanggalSesi[0] ?? null,
-          terakhirDibaca: tanggalDibaca(dibaca.kehadiran),
-        },
-        perkembangan: {
-          terbaru: catatan[0]?.tanggal ?? null,
-          terakhirDibaca: tanggalDibaca(dibaca.perkembangan),
-        },
-        tagihan: {
-          terbaru: tanggalTagihan,
-          terakhirDibaca: tanggalDibaca(dibaca.tagihan),
-        },
+      perkembangan: {
+        terbaru: catatan[0]?.tanggal ?? null,
+        terakhirDibaca: tanggalDibaca(dibaca.perkembangan),
       },
-    };
-  });
-}
-
-/**
- * Waktu isi & baca terakhir satu bagian anak — sumber tiruan penanda "baru".
- * Fase berikutnya cukup mengganti isi fungsi ini dengan query per sesi wali,
- * tanpa mengubah tampilan.
- */
-export function waktuBagian(
-  muridId: string,
-  bagian: BagianPortal,
-): WaktuBagian | null {
-  const anak = getAnakPortal().find((baris) => baris.muridId === muridId);
-  return anak?.bagian[bagian] ?? null;
-}
-
-/**
- * Anak yang tertaut ke akun wali ini, atau `null` kalau id-nya bukan anak yang
- * tertaut. Dipakai setiap halaman portal supaya data anak lain tidak pernah
- * tersaji — nanti aturan yang sama dijalankan di sisi data (per sesi).
- */
-export function anakTertaut(muridId: string | null | undefined) {
-  return getAnakPortal().find((baris) => baris.muridId === muridId) ?? null;
-}
-
-/**
- * Anak yang diminta lewat alamat halaman; kalau id-nya bukan anak yang tertaut,
- * kembali ke anak pertama (atau `null` bila akun belum punya anak).
- */
-export function anakTertautAtauPertama(muridId?: string | null) {
-  const anak = getAnakPortal();
-  return anak.find((baris) => baris.muridId === muridId) ?? anak[0] ?? null;
+      tagihan: {
+        terbaru: tanggalTagihan,
+        terakhirDibaca: tanggalDibaca(dibaca.tagihan),
+      },
+    },
+  };
 }

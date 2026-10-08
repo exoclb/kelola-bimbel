@@ -13,15 +13,19 @@
 // Bentuknya UUID yang sah, nilainya deterministik, dan bisa dihitung tanpa
 // pustaka maupun kripto — jadi modul ini bisa dipakai bersama oleh skrip seed
 // (Node) dan modul portal (server) walaupun portal juga ikut dibundel ke
-// peramban. Pemetaannya satu arah dan eksplisit, sehingga tidak ada id yang
+// peramban. Pemetaannya eksplisit dan bolak-balik (`idMuridDb` dari data
+// contoh ke basis data, `idMuridTiruan` sebaliknya), sehingga tidak ada id yang
 // "kebetulan" cocok: seeder menulis id hasil fungsi ini ke `students.id`, lalu
-// portal mengirim id yang sama persis ke API.
+// portal mengirim id yang sama persis ke API — dan sebaliknya, anak yang sudah
+// dibaca dari basis data bisa dicari isinya di data contoh tanpa menebak.
 
 const POLA_TIRUAN = /^mrd-(\d{1,9})$/;
 const POLA_UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const AWALAN_UUID = "00000000-0000-4000-8000-";
+
+const POLA_DB = /^00000000-0000-4000-8000-([0-9a-f]{12})$/;
 
 /**
  * Id basis data (`students.id`) untuk anak data contoh `mrd-N`.
@@ -43,4 +47,25 @@ export function idMuridDb(muridIdTiruan) {
     );
   }
   return `${AWALAN_UUID}${cocok[1].padStart(12, "0")}`;
+}
+
+/**
+ * Kebalikan `idMuridDb`: id data contoh (`mrd-N`) untuk id basis data yang
+ * diturunkan darinya, atau `null` kalau id itu bukan turunan data contoh.
+ *
+ * Dipakai saat anak yang tampil sudah datang dari basis data tetapi isinya
+ * masih berkunci id data contoh: layanan portal menanyakan "anak basis data ini
+ * setara `mrd-` berapa" lewat fungsi ini, bukan menebak dari nama atau kelas.
+ * Hasilnya deterministik dan `null` yang eksplisit, sehingga anak dengan id
+ * asing cukup tidak mendapat isi tiruan, bukan salah memasangkan data.
+ *
+ * @param {string} muridIdDb
+ * @returns {string | null}
+ */
+export function idMuridTiruan(muridIdDb) {
+  const cocok = POLA_DB.exec(String(muridIdDb).toLowerCase());
+  if (!cocok) return null;
+  const nomor = Number.parseInt(cocok[1], 16);
+  if (!Number.isSafeInteger(nomor) || nomor < 1) return null;
+  return `mrd-${nomor}`;
 }

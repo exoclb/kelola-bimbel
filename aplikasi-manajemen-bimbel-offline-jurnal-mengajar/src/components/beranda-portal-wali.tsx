@@ -52,8 +52,9 @@ const namaHariBulan = new Intl.DateTimeFormat("id-ID", {
 
 /**
  * Beranda Portal Wali: identitas bimbel, pemilih anak, ringkasan tagihan anak
- * yang dipilih, dan sorotan perkembangan terbarunya. Semuanya hanya baca dan
- * masih memakai data tiruan.
+ * yang dipilih, dan sorotan perkembangan terbarunya. Semuanya hanya baca.
+ * Daftar anak datang dari basis data (lihat `portal.service`), sedangkan isi
+ * per anak — catatan, kehadiran, tagihan — masih tiruan.
  */
 export function BerandaPortalWali({
   anak,
@@ -160,7 +161,13 @@ export function BerandaPortalWali({
             {dipilih.nama}
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            {dipilih.kelasNama} · wali: {dipilih.namaOrangTua}
+            {[
+              dipilih.kelasNama,
+              dipilih.namaOrangTua ? `wali: ${dipilih.namaOrangTua}` : null,
+              dipilih.statusAktif ? null : "Nonaktif",
+            ]
+              .filter(Boolean)
+              .join(" · ")}
           </p>
         </CardHeader>
       </Card>
@@ -299,8 +306,9 @@ export function BerandaPortalWali({
       </Card>
 
       <p className="mt-6 text-xs leading-5 text-muted-foreground">
-        Catatan: portal ini masih data tiruan — tagihan dan perkembangan diambil
-        dari data contoh sampai penautan akun wali tersambung ke database.
+        Catatan: daftar anak sudah diambil dari database, sedangkan tagihan dan
+        catatan perkembangan masih data contoh sampai sumber keduanya
+        tersambung.
       </p>
     </div>
   );
