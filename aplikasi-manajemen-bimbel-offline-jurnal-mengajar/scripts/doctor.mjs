@@ -15,6 +15,20 @@ async function check(label, fn) {
   }
 }
 
+/**
+ * Catatan yang tidak menggagalkan pemeriksaan. Tabel `cabang` yang kosong bukan
+ * kerusakan — pemilik mengisi cabang sungguhannya lewat halaman cabang — tetapi
+ * di lingkungan pengembangan kelas baru belum bisa dibuat sebelum ada cabang
+ * aktif, jadi perintah seed contohnya diingatkan di sini.
+ */
+async function note(label, fn) {
+  try {
+    console.log(`• ${label}: ${await fn()}`);
+  } catch (error) {
+    console.log(`• ${label}: belum bisa dibaca (${error.message})`);
+  }
+}
+
 await loadEnvironment();
 await check("Node.js", assertNode);
 await check("Auth secret", () => {
@@ -56,6 +70,26 @@ await check("PostgreSQL connection and authentication tables", async () => {
         "Run npm run db:migrate to create the authentication tables.",
       );
     throw new Error(databaseError(error));
+  } finally {
+    await pool.end();
+  }
+});
+await note("Cabang bimbel", async () => {
+  const pool = new Pool({
+    connectionString: databaseUrl(),
+    max: 1,
+    connectionTimeoutMillis: 5000,
+  });
+  pool.on("error", () => {});
+  try {
+    const { rows } = await pool.query(
+      `SELECT count(*)::int AS jumlah,
+              count(*) filter (where status_aktif)::int AS aktif
+         FROM cabang`,
+    );
+    return rows[0].aktif > 0
+      ? `${rows[0].jumlah} cabang, ${rows[0].aktif} aktif`
+      : "belum ada cabang aktif; isi contohnya dengan npm run db:seed:cabang";
   } finally {
     await pool.end();
   }
