@@ -1,11 +1,12 @@
 import "server-only";
-import { and, asc, eq, inArray, sql, type SQL } from "drizzle-orm";
+import { and, asc, eq, exists, inArray, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import {
   classes,
   studentEnrollments,
   studentInvoices,
   students,
+  waliMurid,
 } from "@/db/schema";
 import type { RekapTagihanPeriode, Tagihan } from "@/lib/tagihan";
 import { tanggalISO } from "@/lib/tanggal";
@@ -117,6 +118,40 @@ export async function listTagihan({ periode }: ListTagihanInput) {
 export async function listTagihanMurid(muridIds: string[]): Promise<Tagihan[]> {
   if (muridIds.length === 0) return [];
   return ambilTagihan(inArray(studentInvoices.studentId, muridIds));
+}
+
+/**
+ * Penautan wali↔murid sebagai syarat tambahan pada kueri tagihan: baris hanya
+ * lolos kalau anaknya benar-benar tertaut ke akun wali itu. Syaratnya menyatu
+ * dengan kuerinya, jadi id anak milik akun lain tidak pernah mengembalikan
+ * baris meski id-nya ditebak.
+ */
+function syaratTertaut(waliId: string) {
+  return exists(
+    db
+      .select({ satu: sql`1` })
+      .from(waliMurid)
+      .where(
+        and(
+          eq(waliMurid.waliId, waliId),
+          eq(waliMurid.muridId, studentInvoices.studentId),
+        ),
+      ),
+  );
+}
+
+/**
+ * Tagihan satu anak untuk akun wali tertentu. Anak yang bukan tertaut ke akun
+ * itu menghasilkan daftar kosong; pemanggil (endpoint portal) yang memutuskan
+ * jawabannya 404.
+ */
+export async function listTagihanWali(
+  waliId: string,
+  muridId: string,
+): Promise<Tagihan[]> {
+  return ambilTagihan(
+    and(eq(studentInvoices.studentId, muridId), syaratTertaut(waliId)),
+  );
 }
 
 /**

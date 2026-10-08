@@ -199,3 +199,73 @@ test("layar Tagihan portal menampilkan ringkasan dan tiga status pembayaran", as
   await expect(page).toHaveURL(/\/portal\/tagihan$/);
   await expect(page.locator("#bukti-tagihan-anak")).toBeVisible();
 });
+
+test("endpoint daftar tagihan per anak hanya melayani wali yang tertaut", async ({
+  page,
+  request,
+}) => {
+  // Data disiapkan seperti pada uji layar: owner membuat murid dan tiga tagihan,
+  // lalu menautkannya ke akun wali.
+  const emailOwner = await signUp(request, "Owner Endpoint Tagihan", "owner-endpoint");
+  await setRole(emailOwner, "owner");
+  await masuk(request, emailOwner);
+
+  const murid = await request.post("/api/murid", {
+    headers,
+    data: { nama: "Anak Endpoint Tagihan", tanggalLahir: "2015-09-09" },
+  });
+  expect(murid.status()).toBe(201);
+  const muridId = (await murid.json()).data.id as string;
+  for (const periode of [periodeMundur(1), periodeMundur(0)]) {
+    const tagihan = await request.post("/api/tagihan", {
+      headers,
+      data: { periode, nominal: 300000, muridIds: [muridId] },
+    });
+    expect(tagihan.status()).toBe(201);
+  }
+
+  const emailWali = await signUp(request, "Wali Endpoint Tagihan", "wali-endpoint");
+  await setRole(emailWali, "orang-tua");
+  const waliId = await idAkun(emailWali);
+  await masuk(request, emailOwner);
+  expect(
+    (
+      await request.post(`/api/wali/${waliId}/murid`, {
+        headers,
+        data: { muridId },
+      })
+    ).status(),
+  ).toBe(201);
+
+  // Wali masuk lewat halaman agar `page.request` memakai cookie wali itu.
+  await page.goto("/sign-in");
+  await page.getByLabel("Email", { exact: true }).fill(emailWali);
+  await page.getByLabel("Password", { exact: true }).fill(sandi);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page).toHaveURL(/\/portal$/);
+
+  const daftar = await page.request.get(`/api/portal/tagihan?anak=${muridId}`);
+  expect(daftar.status()).toBe(200);
+  const isi = (await daftar.json()) as {
+    data: { muridId: string; nominal: number }[];
+    meta: { jumlah: number };
+  };
+  expect(isi.meta.jumlah).toBe(2);
+  expect(isi.data.every((baris) => baris.muridId === muridId)).toBe(true);
+  expect(isi.data.every((baris) => baris.nominal === 300000)).toBe(true);
+
+  // Id anak yang tidak tertaut tidak membocorkan apa pun, dan kueri tanpa
+  // parameter ditolak sebelum menyentuh layanan.
+  expect(
+    (await page.request.get(`/api/portal/tagihan?anak=${randomUUID()}`)).status(),
+  ).toBe(404);
+  expect((await page.request.get("/api/portal/tagihan")).status()).toBe(422);
+  expect((await page.request.get("/api/portal/tagihan?anak=bukan-uuid")).status()).toBe(
+    422,
+  );
+
+  // Akun owner yang bukan wali anak itu juga ditolak, walau izin portalnya ada.
+  expect((await request.get(`/api/portal/tagihan?anak=${muridId}`)).status()).toBe(
+    404,
+  );
+});
