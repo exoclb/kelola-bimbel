@@ -42,11 +42,13 @@ export function KartuPortal({
       )}
     >
       {judul && (
-        <h2 className="flex flex-wrap items-center gap-2 font-semibold">
-          {Ikon && <Ikon className="size-4 shrink-0" aria-hidden="true" />}
-          {judul}
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="flex flex-wrap items-center gap-2 font-semibold">
+            {Ikon && <Ikon className="size-4 shrink-0" aria-hidden="true" />}
+            {judul}
+          </h2>
           {penanda}
-        </h2>
+        </div>
       )}
       {keterangan && (
         <p className="text-muted-foreground mt-1 text-sm">{keterangan}</p>
