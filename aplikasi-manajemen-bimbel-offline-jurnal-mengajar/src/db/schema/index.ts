@@ -23,3 +23,4 @@ export * from "./expenses";
 export * from "./teacher-attendances";
 export * from "./wali-murid";
 export * from "./jejak-baca-portal";
+export * from "./cabang";
