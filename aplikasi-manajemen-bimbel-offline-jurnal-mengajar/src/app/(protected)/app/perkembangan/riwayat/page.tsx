@@ -4,6 +4,7 @@ import { RiwayatPerkembangan } from "@/components/riwayat-perkembangan";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { listMurid } from "@/services/murid.service";
 import { getRiwayatPerkembangan } from "@/services/perkembangan.service";
+import { requireSession } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Riwayat Perkembangan" };
 
@@ -40,8 +41,11 @@ export default async function RiwayatPerkembanganPage({
   const riwayat = await getRiwayatPerkembangan(muridTerpilih.id, 100, 0);
   if (!riwayat) notFound();
 
+  const sesi = await requireSession();
+
   return (
     <RiwayatPerkembangan
+      guruId={sesi.user.id}
       daftarMurid={daftar.data}
       muridTerpilih={riwayat.murid}
       catatan={riwayat.catatan.data}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AksiCatatanPerkembangan } from "@/components/aksi-catatan-perkembangan";
 import { ArrowLeft, CalendarCheck, CalendarX, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +17,8 @@ import type { RiwayatPerkembangan } from "@/services/perkembangan.service";
 import { formatTanggalLengkap, hitungUsia } from "@/lib/tanggal";
 
 type RiwayatPerkembanganProps = {
+  /** Id guru yang sedang melihat, supaya hanya penulis catatan yang bisa mengubahnya. */
+  guruId: string;
   daftarMurid: RiwayatPerkembangan["murid"][];
   muridTerpilih: RiwayatPerkembangan["murid"];
   catatan: RiwayatPerkembangan["catatan"]["data"];
@@ -27,6 +30,7 @@ type RiwayatPerkembanganProps = {
  * guru dari yang terbaru beserta ringkasan kehadirannya.
  */
 export function RiwayatPerkembangan({
+  guruId,
   daftarMurid,
   muridTerpilih,
   catatan,
@@ -172,6 +176,24 @@ export function RiwayatPerkembangan({
                       </span>
                     )}
                   </p>
+
+                  {baris.guruId === guruId ? (
+                    <AksiCatatanPerkembangan
+                      namaMurid={muridTerpilih.nama}
+                      catatan={{
+                        id: baris.id,
+                        tanggal: baris.tanggal,
+                        nilai: baris.nilai,
+                        sikap: baris.sikap,
+                        catatanPerkembangan: baris.catatanPerkembangan,
+                      }}
+                    />
+                  ) : (
+                    <p className="text-xs leading-5 text-muted-foreground">
+                      Ditulis {baris.guruNama}. Hanya penulisnya yang bisa
+                      mengubah atau menghapus catatan ini.
+                    </p>
+                  )}
                 </li>
               ))}
             </ol>
