@@ -1,7 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import { Pool } from "pg";
-import { expect, test, type APIResponse, type Page } from "@playwright/test";
+import {
+  expect,
+  test,
+  type APIRequestContext,
+  type APIResponse,
+  type Page,
+} from "@playwright/test";
 
 const origin = "http://localhost:3101";
 const headers = { Origin: origin };
@@ -50,6 +56,30 @@ async function siapkanCabang(nama: string, statusAktif: boolean) {
          SET status_aktif = excluded.status_aktif`,
       [nama, "Jl. Uji e2e No. 1", "0800-0000", statusAktif],
     );
+  } finally {
+    await db.end();
+  }
+}
+
+/** Masuk lewat API; dipakai tes yang memanggil endpoint, bukan halaman. */
+async function masukApi(client: APIRequestContext) {
+  const response = await denganRetry(() =>
+    client.post("/api/auth/sign-in/email", {
+      headers,
+      data: { email, password: sandi },
+    }),
+  );
+  expect(response.status()).toBe(200);
+}
+
+/** Beri akun bersama peran owner supaya boleh membaca `/api/cabang`. */
+async function jadikanOwner() {
+  const db = await pool();
+  try {
+    await db.query('UPDATE "user" SET role = $1 WHERE email = $2', [
+      "owner",
+      email,
+    ]);
   } finally {
     await db.end();
   }
@@ -155,4 +185,50 @@ test("tanpa cabang sama sekali, formulir kelas menjelaskan dan simpan terkunci",
     }
     await db.end();
   }
+});
+
+/**
+ * Daftar cabang dipakai sebagai pilihan di formulir kelas dan ringkasan
+ * pantauan, jadi urutannya harus sama di semua collation basis data: menurut
+ * nama tanpa membedakan huruf besar-kecil (bukan kolom apa adanya, yang bisa
+ * menaruh "CABANG …" sebelum "Cabang …").
+ */
+test("daftar cabang dari API terurut nama tak peka huruf besar-kecil", async ({
+  request,
+}) => {
+  await jadikanOwner();
+  const penanda = randomUUID().slice(0, 8);
+  // Ketiganya sengaja beda kapitalisasi: urutan kolom apa adanya menaruh
+  // "CABANG BETA" sebelum "Cabang Alfa", sedangkan urutan tak peka huruf
+  // besar-kecil menaruh alfa lebih dulu.
+  const campuran = [
+    `CABANG BETA ${penanda}`,
+    `Cabang Alfa ${penanda}`,
+    `cabang gama ${penanda}`,
+  ];
+  for (const nama of campuran) await siapkanCabang(nama, true);
+
+  await masukApi(request);
+  const response = await request.get("/api/cabang", { headers });
+  expect(response.status()).toBe(200);
+  const daftar = (await response.json()).data as { nama: string }[];
+  const kunci = daftar.map((baris) =>
+    baris.nama.trim().toLocaleLowerCase("id"),
+  );
+
+  // Seluruh daftar naik menurut nama yang sudah dinormalkan.
+  expect(kunci).toEqual([...kunci].sort((a, b) => a.localeCompare(b, "id")));
+
+  // Tiga nama campuran itu muncul berurutan alfa, beta, gama.
+  const harapan = [...campuran].sort((a, b) =>
+    a
+      .trim()
+      .toLocaleLowerCase("id")
+      .localeCompare(b.trim().toLocaleLowerCase("id"), "id"),
+  );
+  const posisi = harapan.map((nama) =>
+    kunci.indexOf(nama.trim().toLocaleLowerCase("id")),
+  );
+  expect(posisi.every((urutan) => urutan >= 0)).toBe(true);
+  expect(posisi).toEqual([...posisi].sort((a, b) => a - b));
 });

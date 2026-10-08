@@ -83,12 +83,21 @@ export async function namaCabangDipakai(nama: string, kecualiId?: string) {
   return terdaftar ? terdaftar.id !== kecualiId : false;
 }
 
-/** Semua cabang, diurutkan nama. */
+/**
+ * Semua cabang, diurutkan nama tanpa membedakan huruf besar-kecil.
+ *
+ * Urutannya sengaja lewat `lower(btrim(nama))`, bukan kolomnya langsung: nama
+ * cabang dibandingkan tanpa membedakan huruf besar-kecil di seluruh aplikasi
+ * (indeks uniknya pun begitu), dan urutan kolom apa adanya ikut aturan
+ * collation basis data — di database `en_US.utf8`, "CABANG Beta" bisa muncul
+ * sebelum "Cabang Alfa". Ekspresi yang sama dengan indeks uniknya membuat
+ * urutannya sama di semua collation, dan `id` menutup kemungkinan seri.
+ */
 export async function listCabang(): Promise<Cabang[]> {
   return db
     .select(fields)
     .from(tabelCabang)
-    .orderBy(asc(tabelCabang.nama), asc(tabelCabang.id));
+    .orderBy(sql`lower(btrim(${tabelCabang.nama}))`, asc(tabelCabang.id));
 }
 
 /** Ringkasan singkat: berapa cabang, berapa aktif, dan berapa nonaktif. */
