@@ -23,7 +23,7 @@ export default async function PortalWaliPage({
 
   // Status baca diambil di server untuk wali yang sedang masuk, lalu diteruskan
   // ke tampilan. Lencana "Baru" karena itu sudah benar sejak lukisan pertama.
-  const statusAwal = statusSemuaAnak(session.user.id);
+  const statusAwal = await statusSemuaAnak(session.user.id);
 
   return (
     <BerandaPortalWali

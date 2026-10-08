@@ -21,11 +21,11 @@ export function GET(request: Request) {
     const { anak } = statusJejakQuerySchema.parse(
       Object.fromEntries(new URL(request.url).searchParams),
     );
-    if (!muridTertaut(anak))
+    if (!(await muridTertaut(session.user.id, anak)))
       throw new ApiError(404, "NOT_FOUND", "Anak tidak tertaut ke akun ini.");
 
     return Response.json({
-      data: { anak, bagian: statusAnak(session.user.id, anak) },
+      data: { anak, bagian: await statusAnak(session.user.id, anak) },
     });
   });
 }
@@ -36,7 +36,7 @@ export function GET(request: Request) {
 export function POST(request: Request) {
   return withApiPermission(request, { portal: ["read"] }, async (session) => {
     const input = tandaiJejakSchema.parse(await readJson(request));
-    if (!muridTertaut(input.anak))
+    if (!(await muridTertaut(session.user.id, input.anak)))
       throw new ApiError(404, "NOT_FOUND", "Anak tidak tertaut ke akun ini.");
 
     const bagian = Array.isArray(input.bagian)
@@ -46,7 +46,7 @@ export function POST(request: Request) {
     return Response.json({
       data: {
         anak: input.anak,
-        bagian: tandaiTerbaca(session.user.id, input.anak, bagian),
+        bagian: await tandaiTerbaca(session.user.id, input.anak, bagian),
       },
     });
   });

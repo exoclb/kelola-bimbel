@@ -25,7 +25,7 @@ export default async function TagihanSppAnakPage({
     <TagihanSppAnak
       anak={anak}
       muridId={muridId}
-      statusAwal={statusSemuaAnak(session.user.id)}
+      statusAwal={await statusSemuaAnak(session.user.id)}
     />
   );
 }

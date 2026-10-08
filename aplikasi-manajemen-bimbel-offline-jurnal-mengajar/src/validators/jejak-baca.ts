@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { BAGIAN_PORTAL } from "@/lib/mock-portal-wali";
 
-// Validasi API jejak baca Portal Wali. Id anak masih data tiruan (mis. `mrd-2`),
-// jadi tidak divalidasi sebagai UUID seperti murid di database.
+// Validasi API jejak baca Portal Wali. `anak` sengaja tetap teks bebas (bukan
+// UUID): layanan yang memutuskan tertaut atau tidak lewat tabel `wali_murid`,
+// jadi id lama/asing cukup dijawab 404 di sana, bukan ditolak validasi di sini.
 
 /** Bagian portal yang bisa ditandai terbaca: kehadiran, perkembangan, tagihan. */
 export const bagianPortalSchema = z.enum(BAGIAN_PORTAL);

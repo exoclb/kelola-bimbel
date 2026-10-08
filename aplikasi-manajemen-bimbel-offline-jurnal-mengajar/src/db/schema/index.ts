@@ -21,3 +21,5 @@ export * from "./student-invoices";
 export * from "./expense-categories";
 export * from "./expenses";
 export * from "./teacher-attendances";
+export * from "./wali-murid";
+export * from "./jejak-baca-portal";

@@ -1282,5 +1282,17 @@
     },
     "src/validators/jejak-baca.ts": {
         "summary": "Skema Zod untuk API jejak baca Portal Wali: validasi kueri `anak` pada GET dan badan POST `{ anak, bagian }` dengan daftar bagian yang sah (kehadiran, perkembangan, tagihan), memakai tuple BAGIAN_PORTAL dari data contoh portal."
+    },
+    "src/db/schema/wali-murid.ts": {
+        "summary": "Skema tabel `wali_murid`: tautan akun wali (`waliId` text → user.id, cascade) ke murid (`muridId` uuid → students.id, cascade), dengan `id` uuid defaultRandom dan `createdAt`. Indeks unik `wali_murid_wali_murid_idx` pada (waliId, muridId) mencegah tautan ganda; dipakai untuk memvalidasi apakah seorang wali berhak melihat data seorang anak."
+    },
+    "src/db/schema/jejak-baca-portal.ts": {
+        "summary": "Skema tabel `jejak_baca_portal`: tanggal baca (`dibacaPada`, tipe date) per kunci (waliId text → user.id, muridId uuid → students.id, bagian text) dengan `id` uuid defaultRandom, `createdAt`/`updatedAt`. Indeks unik `jejak_baca_portal_wali_murid_bagian_idx` pada (waliId, muridId, bagian) menjadi dasar penulisan idempoten (ON CONFLICT DO UPDATE). `bagian` sengaja text, bukan enum, karena daftar bagian hidup di data contoh portal dan bisa bertambah tanpa migrasi."
+    },
+    "drizzle/0018_little_oracle.sql": {
+        "summary": "Migrasi 0018 (dihasilkan drizzle-kit): membuat tabel `wali_murid` dan `jejak_baca_portal` beserta foreign key cascade ke `user` dan `students`, dan dua indeks unik (wali+murid, dan wali+murid+bagian). Tidak mengubah tabel lain dan tidak membuat tipe enum baru."
+    },
+    "drizzle/meta/0018_snapshot.json": {
+        "summary": "Snapshot skema Drizzle untuk migrasi 0018 (tabel wali_murid dan jejak_baca_portal beserta indeks uniknya); dihasilkan otomatis oleh drizzle-kit agar migrasi berikutnya membandingkan dengan kondisi terbaru."
     }
 }

@@ -1,4 +1,7 @@
 import "server-only";
+import { and, eq, sql } from "drizzle-orm";
+import { db } from "@/db";
+import { jejakBacaPortal, waliMurid } from "@/db/schema";
 import {
   BAGIAN_PORTAL,
   getAnakPortal,
@@ -24,46 +27,54 @@ export type {
 // baca milik akun wali yang sedang masuk, sehingga dua wali yang menautkan anak
 // yang sama tidak saling menutup penanda "baru".
 //
-// PENTING: sumbernya masih data tiruan. Daftar anak yang tertaut ke akun wali
-// diambil dari `src/lib/mock-portal-wali.ts` (penautan wali–murid belum ada
-// tabelnya), dan tanggal bacanya disimpan sebagai penyimpanan tingkat proses
-// Node. Perubahan bertahan selama server hidup dan hilang saat server dimulai
-// ulang; nanti tinggal diganti query Drizzle per sesi tanpa mengubah bentuk
-// hasilnya.
+// Sumber datanya sudah tabel basis data: penautan anak di `wali_murid` dan
+// tanggal baca di `jejak_baca_portal`. Indeks unik `jejak_baca_portal` inilah
+// yang membuat penandaan ulang idempoten. Yang masih tiruan hanya tanggal isi
+// tiap bagian (`terbaru`), yang datang dari `src/lib/mock-portal-wali.ts`.
+//
+// Semua fungsi yang menyentuh basis data `async`, jadi halaman server (RSC) dan
+// route handler sama-sama menunggunya. Tidak ada keadaan yang disimpan di
+// instance modul, sehingga lapisan mana pun melihat data yang sama.
 
 /**
- * Peta "userId|muridId|bagian" → tanggal baca (`YYYY-MM-DD`, waktu setempat).
- * Tanggal saja dipakai karena waktu isi tiap bagian juga bertingkat hari, jadi
- * keduanya bisa dibandingkan langsung sebagai teks.
+ * Catatan baca milik satu akun wali, berkunci `"muridId|bagian"` → tanggal baca.
+ * Dibaca sekali per permintaan, jadi tiga bagian tidak memicu tiga query.
  */
-type CatatanBaca = Record<string, string>;
-
-// Sama seperti penyimpanan cabang tiruan: ditaruh di `globalThis`, bukan
-// variabel tingkat modul, karena Next.js bisa memberi lapisan halaman server
-// (RSC) dan route handler API salinan modulnya sendiri. Satu kunci di
-// `globalThis` membuat keduanya membaca status yang sama.
-type WadahGlobal = typeof globalThis & {
-  __kelolaBimbelJejakBaca?: CatatanBaca;
-};
-
-function penyimpanan(): CatatanBaca {
-  const wadah = globalThis as WadahGlobal;
-  return (wadah.__kelolaBimbelJejakBaca ??= {});
+async function catatanWali(waliId: string): Promise<Map<string, string>> {
+  const baris = await db
+    .select({
+      muridId: jejakBacaPortal.muridId,
+      bagian: jejakBacaPortal.bagian,
+      dibacaPada: jejakBacaPortal.dibacaPada,
+    })
+    .from(jejakBacaPortal)
+    .where(eq(jejakBacaPortal.waliId, waliId));
+  return new Map(
+    baris.map((satu) => [`${satu.muridId}|${satu.bagian}`, satu.dibacaPada]),
+  );
 }
 
 /**
- * Id murid yang tertaut ke akun wali. Fase tiruan belum punya penautan per akun,
- * jadi daftarnya sama dengan anak yang ditampilkan portal (milik `wali-1`).
- * Ketika tabel penautan sudah ada, fungsi ini menjadi query awal per sesi, dan
- * pemeriksaan `(userId, muridId)` yang sama tetap dipakai di bawah.
+ * Apakah anak ini memang tertaut ke akun wali, menurut tabel `wali_murid` —
+ * bukan anak milik akun lain. `murid_id` bertipe uuid sedangkan `muridId`
+ * datang dari permintaan sebagai teks bebas, jadi perbandingannya lewat teks:
+ * id yang bukan uuid cukup dijawab "tidak tertaut", bukan melempar galat cast.
  */
-export function daftarMuridTertaut(): string[] {
-  return getAnakPortal().map((anak) => anak.muridId);
-}
-
-/** Apakah anak ini memang tertaut ke akun wali (bukan anak milik akun lain). */
-export function muridTertaut(muridId: string): boolean {
-  return daftarMuridTertaut().includes(muridId);
+export async function muridTertaut(
+  waliId: string,
+  muridId: string,
+): Promise<boolean> {
+  const [tautan] = await db
+    .select({ muridId: waliMurid.muridId })
+    .from(waliMurid)
+    .where(
+      and(
+        eq(waliMurid.waliId, waliId),
+        sql`${waliMurid.muridId}::text = ${muridId}`,
+      ),
+    )
+    .limit(1);
+  return tautan !== undefined;
 }
 
 /**
@@ -71,12 +82,12 @@ export function muridTertaut(muridId: string): boolean {
  * bertanda "baru".
  */
 function statusDari(
-  userId: string,
   muridId: string,
   bagian: BagianPortal,
   waktu: WaktuBagian | null,
+  catatan: Map<string, string>,
 ): StatusBagianPortal {
-  const dicatat = penyimpanan()[`${userId}|${muridId}|${bagian}`] ?? null;
+  const dicatat = catatan.get(`${muridId}|${bagian}`) ?? null;
   const terbaru = waktu?.terbaru ?? null;
   // Tanggal baca yang dipakai: catatan wali ini kalau ada, selain itu tanggal
   // baca bawaan data tiruan.
@@ -84,8 +95,7 @@ function statusDari(
 
   // PERBANDINGAN WAKTU — satu-satunya tempat sebuah bagian disebut "baru":
   // isinya (`terbaru`) lebih baru daripada waktu baca terakhir. Bagian tanpa isi
-  // tidak pernah bertanda "baru". Fase database cukup memindahkan baris ini ke
-  // query/kolom yang setara, bukan mengubah tampilannya.
+  // tidak pernah bertanda "baru".
   const baru =
     terbaru !== null && (terakhirDibaca === null || terbaru > terakhirDibaca);
 
@@ -93,51 +103,76 @@ function statusDari(
 }
 
 function susunStatusAnak(
-  userId: string,
   muridId: string,
   bagian: Record<BagianPortal, WaktuBagian> | null,
+  catatan: Map<string, string>,
 ): StatusJejakAnak {
   return Object.fromEntries(
     BAGIAN_PORTAL.map((nama) => [
       nama,
-      statusDari(userId, muridId, nama, bagian?.[nama] ?? null),
+      statusDari(muridId, nama, bagian?.[nama] ?? null, catatan),
     ]),
   ) as StatusJejakAnak;
 }
 
 /** Status ketiga bagian satu anak untuk wali ini. */
-export function statusAnak(userId: string, muridId: string): StatusJejakAnak {
+export async function statusAnak(
+  waliId: string,
+  muridId: string,
+): Promise<StatusJejakAnak> {
+  const catatan = await catatanWali(waliId);
   const anak = getAnakPortal().find((baris) => baris.muridId === muridId);
-  return susunStatusAnak(userId, muridId, anak?.bagian ?? null);
+  return susunStatusAnak(muridId, anak?.bagian ?? null, catatan);
 }
 
 /** Status seluruh anak yang tertaut ke wali ini, berkunci `muridId`. */
-export function statusSemuaAnak(userId: string): StatusJejakPortal {
+export async function statusSemuaAnak(
+  waliId: string,
+): Promise<StatusJejakPortal> {
+  const catatan = await catatanWali(waliId);
   return Object.fromEntries(
     getAnakPortal().map((anak) => [
       anak.muridId,
-      susunStatusAnak(userId, anak.muridId, anak.bagian),
+      susunStatusAnak(anak.muridId, anak.bagian, catatan),
     ]),
   );
 }
 
 /**
  * Tandai satu atau beberapa bagian anak sudah dibaca oleh wali ini, lalu
- * kembalikan status terbarunya. Idempoten: menandai ulang pada hari yang sama
- * (atau saat catatan sudah lebih baru) tidak mengubah apa pun.
+ * kembalikan status terbarunya. Satu baris per (wali, murid, bagian) dijaga
+ * indeks unik `jejak_baca_portal`, jadi penandaan ulang idempoten: tanggal baca
+ * hanya maju, penandaan pada hari yang sama tidak mengubah barisnya.
  */
-export function tandaiTerbaca(
-  userId: string,
+export async function tandaiTerbaca(
+  waliId: string,
   muridId: string,
   daftar: BagianPortal[],
   waktu = new Date(),
-): StatusJejakAnak {
+): Promise<StatusJejakAnak> {
   const hari = tanggalISO(waktu);
-  const simpan = penyimpanan();
-  for (const bagian of daftar) {
-    const kunciBaris = `${userId}|${muridId}|${bagian}`;
-    const ada = simpan[kunciBaris];
-    if (!ada || hari > ada) simpan[kunciBaris] = hari;
-  }
-  return statusAnak(userId, muridId);
+  const bagianUnik = [...new Set(daftar)];
+  if (bagianUnik.length > 0)
+    await db
+      .insert(jejakBacaPortal)
+      .values(
+        bagianUnik.map((bagian) => ({
+          waliId,
+          muridId,
+          bagian,
+          dibacaPada: hari,
+        })),
+      )
+      .onConflictDoUpdate({
+        target: [
+          jejakBacaPortal.waliId,
+          jejakBacaPortal.muridId,
+          jejakBacaPortal.bagian,
+        ],
+        // Catatan yang lebih baru tidak boleh mundur karena penandaan yang
+        // datang belakangan.
+        set: { dibacaPada: hari, updatedAt: new Date() },
+        setWhere: sql`${jejakBacaPortal.dibacaPada} < ${hari}::date`,
+      });
+  return statusAnak(waliId, muridId);
 }

@@ -24,7 +24,7 @@ export default async function PerkembanganAnakPage({
     <PerkembanganAnakPortal
       anak={anak}
       muridId={muridId}
-      statusAwal={statusSemuaAnak(session.user.id)}
+      statusAwal={await statusSemuaAnak(session.user.id)}
     />
   );
 }
