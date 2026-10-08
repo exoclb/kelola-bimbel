@@ -21,7 +21,11 @@ export const cabang = pgTable(
   "cabang",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    nama: varchar("nama", { length: 80 }).notNull(),
+    // Unik tanpa membedakan huruf besar-kecil lewat indeks `cabang_nama_unik_idx`,
+    // dan unik apa adanya lewat batasan ini karena foreign key dari
+    // `classes.cabang` menunjuk kolom `nama` apa adanya (PostgreSQL memerlukan
+    // batasan unik, bukan indeks ekspresi, sebagai sasaran foreign key).
+    nama: varchar("nama", { length: 80 }).notNull().unique(),
     alamat: varchar("alamat", { length: 240 }).notNull(),
     kontak: varchar("kontak", { length: 40 }).notNull(),
     // Cabang nonaktif tetap terdaftar, tetapi tidak dipakai untuk kelas baru.

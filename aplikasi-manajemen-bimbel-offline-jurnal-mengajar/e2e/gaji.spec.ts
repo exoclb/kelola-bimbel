@@ -98,6 +98,13 @@ test.beforeAll(async ({ request }) => {
       "INSERT INTO salary_settings (tarif_per_jam, berlaku_sejak) VALUES ($1, $2)",
       [50000, `${bulan}-01`],
     );
+    // Kelas menunjuk nama cabang yang harus terdaftar (kolomnya ber-relasi ke
+    // tabel `cabang`).
+    await db.query(
+      `INSERT INTO cabang (nama, alamat, kontak) VALUES ($1, $2, $3)
+       ON CONFLICT (lower(btrim(nama))) DO NOTHING`,
+      ["Cabang Uji", "Jl. Uji e2e No. 1", "0800-0000"],
+    );
     await db.query(
       `INSERT INTO classes (id, nama_kelas, cabang, guru_id) VALUES ($1, $2, $3, $4)`,
       [randomUUID(), "Kelas Gaji Uji", "Cabang Uji", guruId],

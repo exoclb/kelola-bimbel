@@ -131,32 +131,62 @@ test("formulir kelas hanya menawarkan cabang aktif, baris kelas menandai yang no
   ).toBeEnabled();
 });
 
-test("tanpa cabang sama sekali, formulir kelas menjelaskan dan simpan terkunci", async ({
+test("cabang yang hilang atau nonaktif ditandai, formulir kelas terkunci tanpa cabang aktif", async ({
   page,
 }) => {
-  await masukPeramban(page);
-
-  // Seluruh cabang diambil sementara supaya layarnya benar-benar kosong;
-  // barisnya dikembalikan lagi di akhir supaya berkas uji lain yang memakai
-  // basis data yang sama tidak terpengaruh.
   const db = await pool();
-  const { rows } = await db.query<{
+  // Nama dan status seluruh cabang dicatat dulu supaya bisa dikembalikan.
+  const snapshot = await db.query<{
     id: string;
     nama: string;
-    alamat: string;
-    kontak: string;
     status_aktif: boolean;
-  }>("SELECT id, nama, alamat, kontak, status_aktif FROM cabang ORDER BY id");
-  try {
-    await db.query("DELETE FROM cabang");
-    await page.goto("/app/kelas");
+  }>("SELECT id, nama, status_aktif FROM cabang ORDER BY id");
+  const siapkan = async (nama: string) =>
+    db.query(
+      `INSERT INTO cabang (nama, alamat, kontak) VALUES ($1, $2, $3)
+       ON CONFLICT (lower(btrim(nama))) DO NOTHING`,
+      [nama, "Jl. Uji e2e No. 1", "0800-0000"],
+    );
 
-    // Baris kelas menunjuk cabang yang tidak ada lagi.
+  try {
+    // Dua cabang yang dipakai data kelas contoh.
+    await siapkan("Cabang Pusat");
+    await siapkan("Cabang Utara");
+    await db.query(
+      "UPDATE cabang SET status_aktif = true WHERE nama = ANY($1)",
+      [["Cabang Pusat", "Cabang Utara"]],
+    );
+
+    await masukPeramban(page);
+
+    // 1) Nama cabang yang dipakai kelas diganti → kelasnya jadi belum terdaftar.
+    //    Mengganti nama cabang memindahkan kelas di basis data, bukan data
+    //    contoh yang dirender halaman ini.
+    await db.query("UPDATE cabang SET nama = $1 WHERE nama = $2", [
+      "Cabang Utara Pindah",
+      "Cabang Utara",
+    ]);
+    await page.goto("/app/kelas");
     await expect(
       page.getByText("Cabang Utara (belum terdaftar)").first(),
     ).toBeVisible();
     await expect(
       page.getByText(/kelas memakai cabang yang belum terdaftar/),
+    ).toBeVisible();
+    await db.query("UPDATE cabang SET nama = $1 WHERE nama = $2", [
+      "Cabang Utara",
+      "Cabang Utara Pindah",
+    ]);
+
+    // 2) Semua cabang dinonaktifkan → kelasnya ditandai "(nonaktif)" dan
+    //    formulir kelas menjelaskan kenapa kelas baru belum bisa disimpan.
+    await db.query("UPDATE cabang SET status_aktif = false");
+    await page.goto("/app/kelas");
+    await expect(
+      page.getByText("Cabang Utara (nonaktif)").first(),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/kelas berada di cabang nonaktif/),
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Tambah kelas" }).click();
@@ -175,14 +205,17 @@ test("tanpa cabang sama sekali, formulir kelas menjelaskan dan simpan terkunci",
       page.getByRole("button", { name: "Simpan kelas" }),
     ).toBeDisabled();
   } finally {
-    for (const baris of rows) {
+    // Nama dan status seluruh cabang dikembalikan seperti semula supaya berkas
+    // uji lain yang memakai basis data yang sama tidak terpengaruh.
+    await db.query("UPDATE cabang SET nama = $1 WHERE nama = $2", [
+      "Cabang Utara",
+      "Cabang Utara Pindah",
+    ]);
+    for (const baris of snapshot.rows)
       await db.query(
-        `INSERT INTO cabang (id, nama, alamat, kontak, status_aktif)
-         VALUES ($1, $2, $3, $4, $5)
-         ON CONFLICT (id) DO NOTHING`,
-        [baris.id, baris.nama, baris.alamat, baris.kontak, baris.status_aktif],
+        "UPDATE cabang SET nama = $2, status_aktif = $3 WHERE id = $1",
+        [baris.id, baris.nama, baris.status_aktif],
       );
-    }
     await db.end();
   }
 });
@@ -231,4 +264,46 @@ test("daftar cabang dari API terurut nama tak peka huruf besar-kecil", async ({
   );
   expect(posisi.every((urutan) => urutan >= 0)).toBe(true);
   expect(posisi).toEqual([...posisi].sort((a, b) => a - b));
+});
+
+/**
+ * Kolom `classes.cabang` menyimpan nama cabang yang ber-relasi ke
+ * `cabang.nama`, dan perbandingannya apa adanya. Karena itu nama yang dikirim
+ * berbeda huruf besar-kecil atau berspasi tepi disimpan sebagai nama kanonik
+ * barisnya, supaya relasinya tidak putus.
+ */
+test("kelas menyimpan nama cabang kanonik walau dikirim beda huruf besar-kecil", async ({
+  request,
+}) => {
+  const nama = `Cabang Kanonik ${randomUUID().slice(0, 8)}`;
+  await siapkanCabang(nama, true);
+  await masukApi(request);
+
+  const buat = await request.post("/api/kelas", {
+    headers,
+    data: {
+      namaKelas: `Kelas Kanonik ${randomUUID().slice(0, 8)}`,
+      cabang: `  ${nama.toUpperCase()} `,
+    },
+  });
+  expect(buat.status()).toBe(201);
+  const kelas = (await buat.json()).data as { id: string; cabang: string };
+  expect(kelas.cabang).toBe(nama);
+
+  const ubah = await request.patch(`/api/kelas/${kelas.id}`, {
+    headers,
+    data: { cabang: nama.toLowerCase() },
+  });
+  expect(ubah.status()).toBe(200);
+  expect((await ubah.json()).data.cabang).toBe(nama);
+
+  // Kelas buatan tes ini dibersihkan supaya berkas uji lain yang membaca daftar
+  // kelas (mis. pantauan) tidak ikut melihatnya.
+  const db = await pool();
+  try {
+    await db.query("DELETE FROM classes WHERE id = $1", [kelas.id]);
+    await db.query("DELETE FROM cabang WHERE nama = $1", [nama]);
+  } finally {
+    await db.end();
+  }
 });

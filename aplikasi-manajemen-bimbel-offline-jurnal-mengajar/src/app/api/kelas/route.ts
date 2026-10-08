@@ -40,6 +40,9 @@ export function POST(request: Request) {
     // Cabang kelas harus terdaftar dan masih aktif, sama seperti pilihan yang
     // ditawarkan formulir kelas. Tanpa pemeriksaan ini kelas bisa menunjuk
     // cabang yang tidak ada dan jumlah kelas per cabang jadi tidak cocok.
+    // Nama yang tersimpan adalah nama kanonik barisnya, jadi "cabang pusat"
+    // tetap masuk sebagai "Cabang Pusat" — kolom `classes.cabang` ber-relasi ke
+    // `cabang.nama`, dan perbandingannya apa adanya.
     const cabang = await periksaCabangKelas(input.cabang);
     if (!cabang.ok) throw new ApiError(422, cabang.kode, cabang.pesan);
 
@@ -56,7 +59,7 @@ export function POST(request: Request) {
         throw new ApiError(409, "JADWAL_BENTROK", pesanBentrokJadwal(bentrok));
     }
 
-    const kelas = await createKelas(input);
+    const kelas = await createKelas({ ...input, cabang: cabang.cabang.nama });
     return Response.json(
       { data: kelas },
       { status: 201, headers: { Location: `/api/kelas/${kelas?.id ?? ""}` } },

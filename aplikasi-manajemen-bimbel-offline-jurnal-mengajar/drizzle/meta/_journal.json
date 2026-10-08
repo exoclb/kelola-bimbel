@@ -204,6 +204,13 @@
       "when": 1791492581352,
       "tag": "0028_cabang_nama_unik",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1791497695452,
+      "tag": "0029_relasi_cabang_kelas",
+      "breakpoints": true
     }
   ]
 }

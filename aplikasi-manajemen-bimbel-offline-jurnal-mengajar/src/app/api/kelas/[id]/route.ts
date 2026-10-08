@@ -29,15 +29,18 @@ export function PATCH(request: Request, context: Context) {
     const input = updateKelasSchema.parse(await readJson(request));
 
     // Pemindahan kelas ke cabang lain mengikuti aturan yang sama dengan
-    // pembuatan kelas: cabangnya harus terdaftar dan masih aktif. Kelas yang
-    // sudah berada di cabang nonaktif tetap boleh disunting selama cabangnya
-    // tidak diubah.
+    // pembuatan kelas: cabangnya harus terdaftar dan masih aktif, dan yang
+    // tersimpan adalah nama kanonik barisnya (lihat `POST /api/kelas`). Kelas
+    // yang sudah berada di cabang nonaktif tetap boleh disunting selama
+    // cabangnya tidak diubah.
+    let perubahan = input;
     if (input.cabang !== undefined) {
       const cabang = await periksaCabangKelas(input.cabang);
       if (!cabang.ok) throw new ApiError(422, cabang.kode, cabang.pesan);
+      perubahan = { ...input, cabang: cabang.cabang.nama };
     }
 
-    const hasil = await updateKelas(id, input);
+    const hasil = await updateKelas(id, perubahan);
 
     if (hasil.status === "kelas_tidak_ada")
       throw new ApiError(404, "NOT_FOUND", "Kelas tidak ditemukan.");

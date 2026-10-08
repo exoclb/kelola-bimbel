@@ -107,6 +107,46 @@ test("PostgreSQL migrations preserve rows on rerun and enforce auth constraints"
 let dbJurnal;
 let dataJurnal;
 
+/**
+ * Daftarkan cabang uji supaya kelas bisa menunjuknya: `classes.cabang`
+ * ber-relasi ke `cabang.nama` (`drizzle/0029_relasi_cabang_kelas.sql`).
+ */
+async function pastikanCabang(nama) {
+  await dbJurnal.query(
+    `INSERT INTO cabang (nama, alamat, kontak) VALUES ($1, $2, $3)
+     ON CONFLICT (lower(btrim(nama))) DO NOTHING`,
+    [nama, "Jl. Uji No. 1", "0800-0000"],
+  );
+}
+
+/**
+ * Hapus cabang yang tidak dipakai kelas mana pun. Cabang yang masih ditunjuk
+ * kelas tidak bisa dihapus (`classes_cabang_cabang_nama_fk`), jadi
+ * pembersihannya harus menyisakan baris yang dipakai tes lain.
+ */
+async function hapusCabangTanpaKelas() {
+  await dbJurnal.query(
+    "DELETE FROM cabang WHERE nama NOT IN (SELECT DISTINCT cabang FROM classes)",
+  );
+}
+
+/** Jumlah baris tabel `cabang` di basis data uji. */
+async function jumlahCabang() {
+  const { rows } = await dbJurnal.query(
+    "SELECT count(*)::int AS jumlah FROM cabang",
+  );
+  return rows[0].jumlah;
+}
+
+/** Benar kalau nama cabang itu sudah terdaftar (tak peka huruf besar-kecil). */
+async function cabangTerdaftar(nama) {
+  const { rowCount } = await dbJurnal.query(
+    "SELECT 1 FROM cabang WHERE lower(btrim(nama)) = lower(btrim($1))",
+    [nama],
+  );
+  return rowCount === 1;
+}
+
 async function siapkanJurnal() {
   if (dataJurnal) return dataJurnal;
   dbJurnal = new Pool({
@@ -120,6 +160,7 @@ async function siapkanJurnal() {
       ["guru-jurnal-skema", "Guru Skema", "guru-skema@example.test"],
     )
   ).rows[0].id;
+  await pastikanCabang("Cabang Uji");
   const kelas = (
     await dbJurnal.query(
       "INSERT INTO classes (nama_kelas, cabang, guru_id) VALUES ($1, $2, $3) RETURNING id",
@@ -396,6 +437,7 @@ test("menghapus kelas ikut menghapus jadwalnya, tetapi tertahan kalau ada jurnal
   const { guru, kelas } = await siapkanKelasMurid();
 
   // Kelas tanpa jurnal: jadwalnya ikut terhapus saat kelasnya dihapus.
+  await pastikanCabang("Cabang Uji");
   const kelasKosong = (
     await dbJurnal.query(
       "INSERT INTO classes (nama_kelas, cabang, guru_id) VALUES ($1, $2, $3) RETURNING id",
@@ -448,6 +490,7 @@ test("guru yang dihapus meninggalkan kelasnya tanpa pengampu", async () => {
       ["guru-sementara-kelas", "Guru Sementara", "guru-sementara@example.test"],
     )
   ).rows[0].id;
+  await pastikanCabang("Cabang Uji");
   const kelasSementara = (
     await dbJurnal.query(
       "INSERT INTO classes (nama_kelas, cabang, guru_id) VALUES ($1, $2, $3) RETURNING id",
@@ -884,23 +927,28 @@ test("cabang dijaga isinya dan namanya unik tak peka huruf besar-kecil", async (
  */
 test("seeder cabang mengisi sekali dan aman dijalankan ulang", async () => {
   const { seedCabang } = await import("../scripts/lib/seed-cabang.mjs");
+  const { getDaftarCabang } = await import("../src/lib/mock-cabang.ts");
   await siapkanJurnal();
 
-  // Tes ini yang memiliki seluruh isi tabel cabang di basis data uji.
-  await dbJurnal.query("DELETE FROM cabang");
+  // Tes ini yang memiliki isi tabel cabang di basis data uji: cabang yang tidak
+  // dipakai kelas dihapus, cabang yang dipakai tes lain dibiarkan.
+  await hapusCabangTanpaKelas();
+  const sebelum = await jumlahCabang();
 
   const pertama = await seedCabang(dbJurnal);
   assert.equal(pertama.dibuat, pertama.jumlah);
   assert.equal(pertama.dilewati, 0);
+  assert.equal(await jumlahCabang(), sebelum + pertama.jumlah);
+  for (const satu of getDaftarCabang())
+    assert.ok(
+      await cabangTerdaftar(satu.nama),
+      `${satu.nama} belum masuk tabel cabang.`,
+    );
 
   const kedua = await seedCabang(dbJurnal);
   assert.equal(kedua.dibuat, 0);
   assert.equal(kedua.dilewati, kedua.jumlah);
-
-  const { rows } = await dbJurnal.query(
-    "SELECT count(*)::int AS jumlah FROM cabang",
-  );
-  assert.equal(rows[0].jumlah, kedua.jumlah);
+  assert.equal(await jumlahCabang(), sebelum + pertama.jumlah);
 
   // Nama yang sudah ada tidak ditambah walau beda huruf besar-kecil dan spasi.
   const contoh = await seedCabang(dbJurnal, [
@@ -913,13 +961,9 @@ test("seeder cabang mengisi sekali dan aman dijalankan ulang", async () => {
   ]);
   assert.equal(contoh.dibuat, 0);
   assert.equal(contoh.dilewati, 1);
+  assert.equal(await jumlahCabang(), sebelum + pertama.jumlah);
 
-  const setelah = await dbJurnal.query(
-    "SELECT count(*)::int AS jumlah FROM cabang",
-  );
-  assert.equal(setelah.rows[0].jumlah, kedua.jumlah);
-
-  await dbJurnal.query("DELETE FROM cabang");
+  await hapusCabangTanpaKelas();
 });
 
 /**
@@ -932,7 +976,7 @@ test("seeder cabang tidak menimpa cabang yang sudah ada", async () => {
   const { seedCabang } = await import("../scripts/lib/seed-cabang.mjs");
   await siapkanJurnal();
 
-  await dbJurnal.query("DELETE FROM cabang");
+  await hapusCabangTanpaKelas();
   await dbJurnal.query(
     `INSERT INTO cabang (nama, alamat, kontak, status_aktif)
      VALUES ($1, $2, $3, $4)`,
@@ -957,5 +1001,53 @@ test("seeder cabang tidak menimpa cabang yang sudah ada", async () => {
     },
   ]);
 
-  await dbJurnal.query("DELETE FROM cabang");
+  await hapusCabangTanpaKelas();
+});
+
+/**
+ * Relasi kelas → cabang (`drizzle/0029_relasi_cabang_kelas.sql`): kolom
+ * `classes.cabang` menyimpan nama cabang yang harus ada di tabel `cabang`,
+ * mengganti nama cabang ikut memindahkan kelasnya, dan cabang yang masih
+ * dipakai kelas tidak bisa dihapus.
+ */
+test("kelas hanya boleh menunjuk cabang yang terdaftar", async () => {
+  const { guru } = await siapkanJurnal();
+  await pastikanCabang("Cabang Kelas Uji");
+
+  const asing = await ditolak(
+    "INSERT INTO classes (nama_kelas, cabang, guru_id) VALUES ($1, $2, $3)",
+    ["Kelas Cabang Asing", "Cabang Belum Terdaftar", guru],
+  );
+  assert.equal(asing.code, "23503");
+
+  const sah = await dbJurnal.query(
+    "INSERT INTO classes (nama_kelas, cabang, guru_id) VALUES ($1, $2, $3) RETURNING id",
+    ["Kelas Cabang Uji", "Cabang Kelas Uji", guru],
+  );
+  assert.equal(sah.rowCount, 1);
+  const kelasId = sah.rows[0].id;
+
+  // Ganti nama cabang: kelasnya ikut pindah, jadi tidak ada kelas yang
+  // menunjuk cabang yang sudah tidak ada.
+  await dbJurnal.query("UPDATE cabang SET nama = $1 WHERE nama = $2", [
+    "Cabang Kelas Uji Baru",
+    "Cabang Kelas Uji",
+  ]);
+  const dipindah = await dbJurnal.query(
+    "SELECT cabang FROM classes WHERE id = $1",
+    [kelasId],
+  );
+  assert.equal(dipindah.rows[0].cabang, "Cabang Kelas Uji Baru");
+
+  const terhapus = await ditolak("DELETE FROM cabang WHERE nama = $1", [
+    "Cabang Kelas Uji Baru",
+  ]);
+  assert.equal(terhapus.code, "23503");
+
+  // Setelah kelasnya dihapus, cabangnya boleh hilang.
+  await dbJurnal.query("DELETE FROM classes WHERE id = $1", [kelasId]);
+  const hapus = await dbJurnal.query("DELETE FROM cabang WHERE nama = $1", [
+    "Cabang Kelas Uji Baru",
+  ]);
+  assert.equal(hapus.rowCount, 1);
 });
