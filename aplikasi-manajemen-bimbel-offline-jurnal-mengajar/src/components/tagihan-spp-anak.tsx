@@ -176,7 +176,7 @@ export function TagihanSppAnak({
       )}
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="outline" size="aksi">
           <Link href={`/portal${dipilih ? `?anak=${dipilih.muridId}` : ""}`}>
             <ArrowLeft aria-hidden="true" />
             Kembali ke beranda portal

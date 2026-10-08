@@ -179,7 +179,7 @@ export function BerandaPortalWali({
             ? ` · terakhir ${formatTanggalLengkap(dipilih.kehadiran.terakhir)}`
             : ""}
         </p>
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="outline" size="aksi">
           <Link href={`/portal/perkembangan?anak=${dipilih.muridId}`}>
             Lihat rekap kehadiran
             <ArrowRight aria-hidden="true" />
@@ -232,7 +232,7 @@ export function BerandaPortalWali({
               ) : (
                 <span />
               )}
-              <Button asChild variant="outline" size="sm">
+              <Button asChild variant="outline" size="aksi">
                 <Link href={`/portal/tagihan?anak=${dipilih.muridId}`}>
                   Lihat semua tagihan
                   <ArrowRight aria-hidden="true" />
@@ -280,7 +280,7 @@ export function BerandaPortalWali({
             ))}
           </ul>
         )}
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="outline" size="aksi">
           <Link href={`/portal/perkembangan?anak=${dipilih.muridId}`}>
             Lihat semua catatan
             <ArrowRight aria-hidden="true" />

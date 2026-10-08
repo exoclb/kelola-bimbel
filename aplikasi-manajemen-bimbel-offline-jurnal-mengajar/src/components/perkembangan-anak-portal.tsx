@@ -239,13 +239,13 @@ export function PerkembanganAnakPortal({
       )}
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="outline" size="aksi">
           <Link href={`/portal${dipilih ? `?anak=${dipilih.muridId}` : ""}`}>
             <ArrowLeft aria-hidden="true" />
             Kembali ke beranda portal
           </Link>
         </Button>
-        <Button asChild variant="ghost" size="sm">
+        <Button asChild variant="ghost" size="aksi">
           <Link
             href={`/portal/tagihan${dipilih ? `?anak=${dipilih.muridId}` : ""}`}
           >

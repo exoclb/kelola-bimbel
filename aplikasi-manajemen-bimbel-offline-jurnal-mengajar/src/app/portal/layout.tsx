@@ -53,7 +53,10 @@ export default async function PortalLayout({
       <TemaPortal />
       <header className="bg-card sticky top-0 z-30 border-b pt-[env(safe-area-inset-top)] print:hidden">
         <div className="mx-auto flex max-w-[var(--lebar-konten-portal)] items-center justify-between gap-3 px-4 py-3">
-          <Link href="/portal" className="flex min-w-0 items-center gap-2.5">
+          <Link
+            href="/portal"
+            className="flex min-h-12 min-w-0 items-center gap-2.5"
+          >
             <span
               aria-hidden="true"
               className="bg-primary/10 text-primary grid size-9 shrink-0 place-items-center rounded-xl text-sm font-semibold"
