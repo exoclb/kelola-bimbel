@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FormTambahTautanWali } from "@/components/form-tambah-tautan-wali";
 import { PesanKosong } from "@/components/status-antarmuka";
+import { RiwayatStatusWali } from "@/components/riwayat-status-wali";
 import { SaklarAksesPortalWali } from "@/components/saklar-akses-portal-wali";
 import type { AkunWali, MuridRingkas } from "@/services/wali.service";
 
@@ -117,6 +118,8 @@ export function DaftarWali({ daftar, daftarMurid }: DaftarWaliProps) {
                     />
                   </div>
                 </div>
+
+                <RiwayatStatusWali wali={wali} />
 
                 <AksiLepasTautanWali
                   waliId={wali.waliId}

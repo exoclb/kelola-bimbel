@@ -35,15 +35,33 @@ export type MuridRingkas = {
   statusAktif: boolean;
 };
 
-/** Satu murid yang tertaut ke akun wali. */
-export type MuridTertaut = MuridRingkas;
+/** Satu murid yang tertaut ke akun wali, beserta waktu penautannya. */
+export type MuridTertaut = MuridRingkas & {
+  /**
+   * Waktu baris tautan ini dibuat (`wali_murid.created_at`). Tabel tautan tidak
+   * punya `updated_at` — tautan hanya dibuat atau dihapus, jadi waktu ini juga
+   * penanda terakhir tautan itu ada selama tidak dilepas.
+   */
+  dibuatPada: Date;
+};
 
-/** Satu akun wali beserta murid tertaut dan status akses portalnya. */
+/**
+ * Satu akun wali beserta murid tertaut, status akses portal, dan waktu data
+ * akunnya terakhir berubah. Aplikasi tidak menyimpan riwayat tiap perubahan
+ * status, jadi `diubahPada` (`user.updated_at`) adalah catatan terakhir yang
+ * bisa diturunkan — bukan daftar semua penonaktifan/penyalaan portal.
+ */
 export type AkunWali = {
   waliId: string;
   nama: string;
   email: string;
   aksesPortal: boolean;
+  /** `ban_reason` akun, terisi saat portal dimatikan; `null` bila portal aktif. */
+  alasanNonaktif: string | null;
+  /** Waktu akun dibuat (`user.created_at`). */
+  dibuatPada: Date;
+  /** Waktu data akun terakhir berubah (`user.updated_at`). */
+  diubahPada: Date;
   murid: MuridTertaut[];
 };
 
@@ -52,6 +70,9 @@ type BarisAkun = {
   nama: string;
   email: string;
   banned: boolean | null;
+  banReason: string | null;
+  createdAt: Date;
+  updatedAt: Date;
   role: string;
 };
 
@@ -60,6 +81,9 @@ const kolomAkun = {
   nama: user.name,
   email: user.email,
   banned: user.banned,
+  banReason: user.banReason,
+  createdAt: user.createdAt,
+  updatedAt: user.updatedAt,
   role: user.role,
 };
 
@@ -78,6 +102,7 @@ async function tautanPerWali(waliIds: string[]) {
       muridId: waliMurid.muridId,
       nama: students.nama,
       statusAktif: students.statusAktif,
+      dibuatPada: waliMurid.createdAt,
     })
     .from(waliMurid)
     .innerJoin(students, eq(students.id, waliMurid.muridId))
@@ -94,6 +119,7 @@ async function tautanPerWali(waliIds: string[]) {
       muridId: satu.muridId,
       nama: satu.nama,
       statusAktif: satu.statusAktif,
+      dibuatPada: satu.dibuatPada,
     });
     peta.set(satu.waliId, daftar);
   }
@@ -107,6 +133,9 @@ async function susunAkun(baris: BarisAkun[]): Promise<AkunWali[]> {
     nama: satu.nama,
     email: satu.email,
     aksesPortal: !satu.banned,
+    alasanNonaktif: satu.banReason,
+    dibuatPada: satu.createdAt,
+    diubahPada: satu.updatedAt,
     murid: peta.get(satu.waliId) ?? [],
   }));
 }

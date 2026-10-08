@@ -1333,5 +1333,8 @@
     },
     "src/components/saklar-akses-portal-wali.tsx": {
         "summary": "Komponen klien saklar akses portal per akun wali: tombol Matikan/Nyalakan portal memanggil PATCH /api/wali/:id {aksesPortal} lalu router.refresh(); lencana server-rendered jadi acuan setelah refresh. Respons meta.berubah=false ditampilkan sebagai keterangan (\"memang sudah aktif/nonaktif\"), bukan galat; efeknya memakai status banned akun sehingga tidak bisa masuk/membuka portal tanpa menghapus akun maupun tautannya."
+    },
+    "src/components/riwayat-status-wali.tsx": {
+        "summary": "Panel catatan status portal per akun wali di halaman pengaturan wali (server component): menampilkan status saat ini, alasan nonaktif dari `ban_reason` (hanya bila ada), dan waktu perubahan terakhir yang tercatat (`updated_at`, dibandingkan `created_at` — bila sama ditulis belum ada perubahan), plus subsection terpisah berisi waktu tiap tautan murid dibuat dari `wali_murid.created_at`. Panel menyatakan keterbatasan secara eksplisit: aplikasi hanya menyimpan keadaan akun saat ini, bukan riwayat lengkap tiap perubahan status, sehingga waktu yang ditampilkan adalah perubahan data akun terakhir yang tercatat dan belum tentu khusus saklar portal — tidak ada riwayat yang dikarang dan tidak ada tabel/migrasi baru."
     }
 }
