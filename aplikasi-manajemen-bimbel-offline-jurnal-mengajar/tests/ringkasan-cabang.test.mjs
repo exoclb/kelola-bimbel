@@ -31,7 +31,7 @@ registerHooks({
   },
 });
 
-const { jumlahKelasPerCabang, ringkasanPerCabang } =
+const { jumlahKelasPerCabang, jumlahkanRingkasanCabang, ringkasanPerCabang } =
   await import("../src/lib/ringkasan-cabang.ts");
 
 const PENANDA = "Uji Ringkasan Cabang";
@@ -162,6 +162,41 @@ test("cabang tanpa kelas tampil dengan angka nol", async () => {
   assert.equal((await jumlahKelasPerCabang())[kosong], undefined);
 
   await bersihkan();
+});
+
+/**
+ * `jumlahkanRingkasanCabang` dipakai panel pantauan saat saringan cabangnya
+ * kosong: seluruh baris dijumlahkan, dan daftar kosong menghasilkan nol.
+ */
+test("jumlahkanRingkasanCabang menjumlahkan seluruh cabang", () => {
+  assert.deepEqual(
+    jumlahkanRingkasanCabang([
+      {
+        nama: "Cabang A",
+        statusAktif: true,
+        jumlahKelas: 2,
+        jumlahMurid: 3,
+        jurnalTerisi: 5,
+        belumAdaJurnal: 1,
+      },
+      {
+        nama: "Cabang B",
+        statusAktif: false,
+        jumlahKelas: 1,
+        jumlahMurid: 0,
+        jurnalTerisi: 0,
+        belumAdaJurnal: 1,
+      },
+    ]),
+    { jumlahKelas: 3, jumlahMurid: 3, jurnalTerisi: 5, belumAdaJurnal: 2 },
+  );
+
+  assert.deepEqual(jumlahkanRingkasanCabang([]), {
+    jumlahKelas: 0,
+    jumlahMurid: 0,
+    jurnalTerisi: 0,
+    belumAdaJurnal: 0,
+  });
 });
 
 test.after(async () => {
