@@ -4,6 +4,7 @@ import {
   BellRing,
   Building2,
   DatabaseBackup,
+  FileDown,
   ServerCog,
   Users,
   Wallet,
@@ -100,6 +101,15 @@ export async function PengaturanBimbel({ bolehKelola }: PengaturanBimbelProps) {
       tombol: "Lihat penautan",
     },
     {
+      href: "/app/pengaturan/ekspor",
+      ikon: FileDown,
+      judul: "Ekspor Dokumen",
+      ringkasan: "Pratinjau lalu unduh slip gaji guru",
+      keterangan:
+        "Lihat dokumennya lebih dulu, baru unduh sebagai berkas HTML atau cetak jadi PDF.",
+      tombol: "Buka ekspor dokumen",
+    },
+    {
       href: "/app/pengaturan/lingkungan",
       ikon: ServerCog,
       judul: "Status Variabel Lingkungan",
@@ -163,7 +173,12 @@ export async function PengaturanBimbel({ bolehKelola }: PengaturanBimbelProps) {
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm font-medium">{ringkasan}</p>
-                <Button asChild variant="outline" size="sm">
+                <Button
+                  asChild
+                  variant="outline"
+                  size="aksi"
+                  className="w-full sm:w-auto"
+                >
                   <Link href={href}>
                     {tombol}
                     <ArrowRight aria-hidden="true" />
