@@ -1,5 +1,4 @@
 import {
-  date,
   pgTable,
   text,
   timestamp,
@@ -28,10 +27,12 @@ export const jejakBacaPortal = pgTable(
       .notNull()
       .references(() => students.id, { onDelete: "cascade" }),
     bagian: text("bagian").notNull(),
-    // Tanggal baca saja (`YYYY-MM-DD`, waktu setempat), sama seperti yang
-    // dibandingkan dengan tanggal isi bagian. Keduanya bertingkat hari, jadi
-    // perbandingan teks sudah cukup.
-    dibacaPada: date("dibaca_pada").notNull(),
+    // Waktu baca lengkap (dengan zona waktu), bukan lagi tanggal saja. Aturan
+    // "baru" adalah `terbaru > terakhirDibaca`; dengan granularitas hari, isi
+    // yang muncul dan dibaca di hari yang sama tidak akan pernah bertanda
+    // "baru". Perbandingan tetap dinormalkan ke resolusi hari di layanan
+    // supaya perilaku lamanya tidak berubah.
+    dibacaPada: timestamp("dibaca_pada", { withTimezone: true }).notNull(),
     // Kapan barisnya pertama dibuat dan terakhir diperbarui, untuk menelusuri
     // jejak penandaan tanpa mengubah bentuk hasil layanan.
     createdAt: timestamp("created_at", { withTimezone: true })

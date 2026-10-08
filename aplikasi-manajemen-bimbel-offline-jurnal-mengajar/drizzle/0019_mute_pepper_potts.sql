@@ -1,0 +1,1 @@
+ALTER TABLE "jejak_baca_portal" ALTER COLUMN "dibaca_pada" SET DATA TYPE timestamp with time zone;

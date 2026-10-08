@@ -1294,5 +1294,11 @@
     },
     "drizzle/meta/0018_snapshot.json": {
         "summary": "Snapshot skema Drizzle untuk migrasi 0018 (tabel wali_murid dan jejak_baca_portal beserta indeks uniknya); dihasilkan otomatis oleh drizzle-kit agar migrasi berikutnya membandingkan dengan kondisi terbaru."
+    },
+    "drizzle/0019_mute_pepper_potts.sql": {
+        "summary": "Migrasi 0019 (dihasilkan drizzle-kit): satu statement ALTER TABLE jejak_baca_portal ALTER COLUMN dibaca_pada SET DATA TYPE timestamp with time zone — mengubah granularitas waktu baca dari tanggal (date) menjadi timestamp berzona agar konten yang muncul dan dibaca di hari yang sama tetap bisa bertanda 'baru'. Kolom bagian dan tabel lain tidak disentuh."
+    },
+    "drizzle/meta/0019_snapshot.json": {
+        "summary": "Snapshot skema Drizzle untuk migrasi 0019: mencatat jejak_baca_portal.dibaca_pada bertipe timestamp with time zone sedangkan bagian tetap text, menjadi dasar perbandingan bagi migrasi berikutnya."
     }
 }

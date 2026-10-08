@@ -37,10 +37,11 @@ export type {
 // instance modul, sehingga lapisan mana pun melihat data yang sama.
 
 /**
- * Catatan baca milik satu akun wali, berkunci `"muridId|bagian"` → tanggal baca.
- * Dibaca sekali per permintaan, jadi tiga bagian tidak memicu tiga query.
+ * Catatan baca milik satu akun wali, berkunci `"muridId|bagian"` → waktu baca
+ * (kolom `timestamptz`). Dibaca sekali per permintaan, jadi tiga bagian tidak
+ * memicu tiga query.
  */
-async function catatanWali(waliId: string): Promise<Map<string, string>> {
+async function catatanWali(waliId: string): Promise<Map<string, Date>> {
   const baris = await db
     .select({
       muridId: jejakBacaPortal.muridId,
@@ -85,17 +86,27 @@ function statusDari(
   muridId: string,
   bagian: BagianPortal,
   waktu: WaktuBagian | null,
-  catatan: Map<string, string>,
+  catatan: Map<string, Date>,
 ): StatusBagianPortal {
   const dicatat = catatan.get(`${muridId}|${bagian}`) ?? null;
   const terbaru = waktu?.terbaru ?? null;
   // Tanggal baca yang dipakai: catatan wali ini kalau ada, selain itu tanggal
-  // baca bawaan data tiruan.
-  const terakhirDibaca = dicatat ?? waktu?.terakhirDibaca ?? null;
+  // baca bawaan data tiruan. Nilainya bisa berupa `Date` (kolom `timestamptz`)
+  // atau string `YYYY-MM-DD` (data tiruan), jadi bentuknya disamakan di bawah.
+  const dibaca: Date | string | null = dicatat ?? waktu?.terakhirDibaca ?? null;
 
   // PERBANDINGAN WAKTU — satu-satunya tempat sebuah bagian disebut "baru":
   // isinya (`terbaru`) lebih baru daripada waktu baca terakhir. Bagian tanpa isi
-  // tidak pernah bertanda "baru".
+  // tidak pernah bertanda "baru". `dibaca` dari kolom `timestamptz` dinormalkan
+  // di sini ke resolusi hari (waktu setempat, `YYYY-MM-DD`) supaya sebanding
+  // dengan `terbaru` yang berupa tanggal dari data tiruan — hasilnya sama
+  // seperti saat kolomnya masih bertipe `date`, bukan perbandingan jam.
+  const terakhirDibaca =
+    dibaca === null
+      ? null
+      : typeof dibaca === "string"
+        ? dibaca.slice(0, 10)
+        : tanggalISO(dibaca);
   const baru =
     terbaru !== null && (terakhirDibaca === null || terbaru > terakhirDibaca);
 
@@ -105,7 +116,7 @@ function statusDari(
 function susunStatusAnak(
   muridId: string,
   bagian: Record<BagianPortal, WaktuBagian> | null,
-  catatan: Map<string, string>,
+  catatan: Map<string, Date>,
 ): StatusJejakAnak {
   return Object.fromEntries(
     BAGIAN_PORTAL.map((nama) => [
@@ -141,8 +152,8 @@ export async function statusSemuaAnak(
 /**
  * Tandai satu atau beberapa bagian anak sudah dibaca oleh wali ini, lalu
  * kembalikan status terbarunya. Satu baris per (wali, murid, bagian) dijaga
- * indeks unik `jejak_baca_portal`, jadi penandaan ulang idempoten: tanggal baca
- * hanya maju, penandaan pada hari yang sama tidak mengubah barisnya.
+ * indeks unik `jejak_baca_portal`, jadi penandaan ulang idempoten: barisnya
+ * tetap satu, `dibaca_pada` hanya dimajukan ke waktu sekarang.
  */
 export async function tandaiTerbaca(
   waliId: string,
@@ -150,7 +161,6 @@ export async function tandaiTerbaca(
   daftar: BagianPortal[],
   waktu = new Date(),
 ): Promise<StatusJejakAnak> {
-  const hari = tanggalISO(waktu);
   const bagianUnik = [...new Set(daftar)];
   if (bagianUnik.length > 0)
     await db
@@ -160,7 +170,7 @@ export async function tandaiTerbaca(
           waliId,
           muridId,
           bagian,
-          dibacaPada: hari,
+          dibacaPada: waktu,
         })),
       )
       .onConflictDoUpdate({
@@ -171,8 +181,8 @@ export async function tandaiTerbaca(
         ],
         // Catatan yang lebih baru tidak boleh mundur karena penandaan yang
         // datang belakangan.
-        set: { dibacaPada: hari, updatedAt: new Date() },
-        setWhere: sql`${jejakBacaPortal.dibacaPada} < ${hari}::date`,
+        set: { dibacaPada: waktu, updatedAt: new Date() },
+        setWhere: sql`${jejakBacaPortal.dibacaPada} < ${waktu}::timestamptz`,
       });
   return statusAnak(waliId, muridId);
 }
