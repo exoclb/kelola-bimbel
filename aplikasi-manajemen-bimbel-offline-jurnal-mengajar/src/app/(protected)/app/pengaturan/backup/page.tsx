@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, CalendarClock, DatabaseBackup, Timer } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarClock,
+  DatabaseBackup,
+  Timer,
+  TriangleAlert,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -152,10 +158,25 @@ export default async function BackupDatabasePage() {
                       : " · masih berjalan"}
                     {baris.lokasi ? ` · ${baris.lokasi}` : ""}
                   </p>
-                  {baris.pesan && (
-                    <p className="text-sm leading-6 text-muted-foreground">
-                      {baris.pesan}
+                  {baris.status === "gagal" ? (
+                    // Alasan kegagalan dibuat menonjol: inilah bagian yang
+                    // dicari saat backup gagal.
+                    <p className="border-destructive/20 bg-destructive/5 text-destructive flex items-start gap-2 rounded-lg border px-3 py-2 text-sm leading-6">
+                      <TriangleAlert
+                        className="mt-0.5 size-4 shrink-0"
+                        aria-hidden="true"
+                      />
+                      <span>
+                        {baris.pesan?.trim() ||
+                          "Proses berhenti tanpa pesan. Periksa log backup di server untuk sebabnya."}
+                      </span>
                     </p>
+                  ) : (
+                    baris.pesan && (
+                      <p className="text-sm leading-6 text-muted-foreground">
+                        {baris.pesan}
+                      </p>
+                    )
                   )}
                 </div>
                 <span
