@@ -183,6 +183,14 @@ test("wali hanya melihat anak yang tertaut ke akunnya", async ({
   expect(
     (await page.request.get(`/api/portal/tagihan?anak=${muridB}`)).status(),
   ).toBe(200);
+  const berandaB = await page.request.get(`/api/portal/beranda?anak=${muridB}`);
+  expect(berandaB.status()).toBe(200);
+  const isiBerandaB = await berandaB.json();
+  expect(isiBerandaB.data.anak.nama).toBe("Anak Isolasi B");
+  expect(isiBerandaB.data.anak.muridId).toBe(muridB);
+  expect(isiBerandaB.data.bagian.perkembangan.terbaru).toBe("2026-04-06");
+  expect(isiBerandaB.data.statusBaca.perkembangan.baru).toBe(true);
+
   const catatanB = await page.request.get(
     `/api/portal/perkembangan?anak=${muridB}`,
   );
