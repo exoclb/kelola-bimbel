@@ -16,6 +16,7 @@ import {
   HARI_DALAM_SEMINGGU,
   indeksHari,
   namaHari,
+  tanggalISO,
   urutkanJadwal,
 } from "@/lib/tanggal";
 
@@ -39,21 +40,38 @@ function DaftarSesi({ daftar }: { daftar: JadwalAnak[] }) {
   );
 }
 
-/** Langganan kosong: hari dibaca ulang tiap render, bukan tiap kejadian. */
+/** Langganan kosong: tanggal dibaca ulang tiap render, bukan tiap kejadian. */
 const tanpaLangganan = () => () => {};
 
 /**
- * Nama hari menurut jam perangkat wali. Lukisan pertama memakai `hariServer`
- * (supaya server dan klien tidak berbeda), lalu React menghitung ulang dengan jam
- * peramban — jadi zona waktu server tidak menggeser "hari ini" bagi pengguna.
+ * Tanggal hari ini menurut jam perangkat wali (`YYYY-MM-DD`). Lukisan pertama
+ * memakai `tanggalServer` supaya server dan klien tidak berbeda, lalu React
+ * menghitung ulang dengan jam peramban — jadi zona waktu server (mis. UTC di
+ * wadah produksi) tidak menggeser "hari ini" bagi pengguna di Indonesia.
  */
-function useHariPerangkat(hariServer: string) {
+function useTanggalPerangkat(tanggalServer: string) {
   return useSyncExternalStore(
     tanpaLangganan,
-    () => namaHari(new Date()),
-    () => hariServer,
+    () => tanggalISO(new Date()),
+    () => tanggalServer,
   );
 }
+
+/**
+ * Tanggal salah satu hari di pekan yang memuat `acuan` (Senin sebagai awal
+ * pekan), supaya daftar jadwal mingguan bisa menyebut tanggalnya.
+ */
+function tanggalHari(hari: string, acuan: Date) {
+  const indeksAcuanHariIni = indeksHari(namaHari(acuan));
+  const tanggal = new Date(acuan);
+  tanggal.setDate(acuan.getDate() + indeksHari(hari) - indeksAcuanHariIni);
+  return tanggal;
+}
+
+const tanggalRingkas = new Intl.DateTimeFormat("id-ID", {
+  day: "numeric",
+  month: "long",
+});
 
 type JadwalAnakPortalProps = {
   anak: AnakWali[];
@@ -64,12 +82,12 @@ type JadwalAnakPortalProps = {
   /** Jadwal seluruh anak yang tertaut; disaring ke anak yang sedang dipilih. */
   jadwal: JadwalAnak[];
   /**
-   * Nama hari hari ini menurut server. Dipakai untuk lukisan pertama saja;
-   * setelah halaman hidup, harinya dihitung ulang dari jam perangkat wali
-   * supaya zona waktu server (mis. UTC di wadah produksi) tidak menggeser
-   * "hari ini" bagi pengguna di Indonesia.
+   * Tanggal hari ini menurut server (`YYYY-MM-DD`). Dipakai untuk lukisan
+   * pertama saja; setelah halaman hidup, tanggal dihitung ulang dari jam
+   * perangkat wali supaya zona waktu server (mis. UTC di wadah produksi) tidak
+   * menggeser "hari ini" bagi pengguna di Indonesia.
    */
-  hariServer: string;
+  tanggalServer: string;
 };
 
 /**
@@ -83,7 +101,7 @@ export function JadwalAnakPortal({
   muridId,
   statusAwal,
   jadwal,
-  hariServer,
+  tanggalServer,
 }: JadwalAnakPortalProps) {
   const router = useRouter();
   const dipilih =
@@ -102,7 +120,12 @@ export function JadwalAnakPortal({
     return peta;
   }, [jadwal, dipilih?.muridId]);
 
-  const hariIni = useHariPerangkat(hariServer);
+  const tanggalPerangkat = useTanggalPerangkat(tanggalServer);
+  const tanggalAcuan = useMemo(
+    () => new Date(`${tanggalPerangkat}T00:00:00`),
+    [tanggalPerangkat],
+  );
+  const hariIni = namaHari(tanggalAcuan);
 
   const sesiHariIni = perHari.get(hariIni) ?? [];
   // Hari ini sudah tampil di kartunya sendiri, jadi daftar pekan tidak
@@ -152,6 +175,7 @@ export function JadwalAnakPortal({
                 className="mt-6"
                 judul={`Hari ini · ${hariIni}`}
                 ikon={CalendarCheck}
+                keterangan={tanggalRingkas.format(tanggalAcuan)}
               >
                 {sesiHariIni.length > 0 ? (
                   <DaftarSesi daftar={sesiHariIni} />
@@ -177,6 +201,9 @@ export function JadwalAnakPortal({
                   className="mt-4"
                   judul={hari}
                   ikon={CalendarDays}
+                  keterangan={tanggalRingkas.format(
+                    tanggalHari(hari, tanggalAcuan),
+                  )}
                 >
                   <DaftarSesi daftar={perHari.get(hari) ?? []} />
                 </KartuPortal>
