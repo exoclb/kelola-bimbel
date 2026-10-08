@@ -169,7 +169,31 @@ export function BerandaPortalWali({
         ]
           .filter(Boolean)
           .join(" · ")}
-      />
+        penanda={
+          tagihanTerdekat ? (
+            <PenandaStatus
+              status={statusPembayaran(tagihanTerdekat, periodeBerjalan)}
+            />
+          ) : undefined
+        }
+      >
+        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+          <dt className="text-muted-foreground">Kehadiran</dt>
+          <dd className="text-right">
+            {dipilih.kehadiran.hadir} dari {dipilih.kehadiran.sesi} sesi
+          </dd>
+          <dt className="text-muted-foreground">Catatan guru</dt>
+          <dd className="text-right">{dipilih.catatan.length} catatan</dd>
+          <dt className="text-muted-foreground">Belum dibayar</dt>
+          <dd className="text-right font-medium tabular-nums">
+            {formatRupiah(
+              tagihanAnak
+                .filter((baris) => baris.status !== "lunas")
+                .reduce((jumlah, baris) => jumlah + baris.nominal, 0),
+            )}
+          </dd>
+        </dl>
+      </KartuPortal>
 
       <KartuPortal
         className="mt-4"
