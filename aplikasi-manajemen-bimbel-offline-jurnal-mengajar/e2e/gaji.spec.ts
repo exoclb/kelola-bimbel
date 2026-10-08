@@ -10,6 +10,22 @@ const sandi = "Gaji-test-password-123!";
 // selalu berisi jurnal ini.
 const bulan = new Date().toISOString().slice(0, 7);
 
+/** Label periode seperti di dokumen slip, mis. "Oktober 2026". */
+function labelPeriode(periode: string) {
+  const [tahun, bulanKe] = periode.split("-").map(Number);
+  return new Intl.DateTimeFormat("id-ID", {
+    month: "long",
+    year: "numeric",
+  }).format(new Date(tahun, bulanKe - 1, 1));
+}
+
+/** Bulan sebelum `bulan`, untuk memastikan slip mengikuti periode yang diminta. */
+function bulanLain() {
+  const [tahun, bulanKe] = bulan.split("-").map(Number);
+  const lain = new Date(Date.UTC(tahun, bulanKe - 2, 1));
+  return `${lain.getUTCFullYear()}-${String(lain.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
 async function pool() {
   return new Pool({
     connectionString: process.env.STARTER_TEST_DATABASE_URL,
@@ -200,7 +216,33 @@ test("owner bisa melihat gaji setiap guru, dan penandaan pembayaran berlaku", as
   expect(slip.status()).toBe(200);
   expect(slip.headers()["content-type"]).toContain("text/html");
   expect(slip.headers()["content-disposition"]).toContain("attachment");
-  expect(await slip.text()).toContain("Guru Gaji");
+  // Berkasnya menyebut guru dan periodenya, jadi slip bulan lain tidak
+  // tertukar saat diunduh.
+  expect(slip.headers()["content-disposition"]).toContain(
+    "slip-gaji-guru-gaji",
+  );
+  expect(slip.headers()["content-disposition"]).toContain(bulan);
+  const isiSlip = await slip.text();
+  expect(isiSlip).toContain("Guru Gaji");
+  expect(isiSlip).toContain(`Slip gaji guru · ${labelPeriode(bulan)}`);
+  // Gaji guru ini baru saja ditandai dibayar, jadi slipnya menyebut itu dan
+  // memuat hitungan jam × tarifnya.
+  expect(isiSlip).toContain("Sudah dibayar");
+  expect(isiSlip).toContain("Total 1,5 jam × Rp50.000/jam");
+
+  // Periode lain tetap bisa diminta (jamnya nol), dan guru yang tidak ada
+  // dijawab 404.
+  const periodeLain = await request.get(
+    `/api/admin/gaji/slip?guruId=${guruId}&periode=${bulanLain()}`,
+    { headers },
+  );
+  expect(periodeLain.status()).toBe(200);
+  expect(await periodeLain.text()).toContain(labelPeriode(bulanLain()));
+  const guruTidakAda = await request.get(
+    `/api/admin/gaji/slip?guruId=${randomUUID()}`,
+    { headers },
+  );
+  expect(guruTidakAda.status()).toBe(404);
 });
 
 test("slip gaji meng-escape nilai dari basis data", async ({ request }) => {
