@@ -18,6 +18,19 @@ async function pool() {
   });
 }
 
+/** Daftarkan cabang uji yang dipakai berkas ini; kelas hanya boleh memakai cabang terdaftar. */
+async function siapkanCabang(nama: string) {
+  const db = await pool();
+  try {
+    await db.query(
+      "INSERT INTO cabang (nama, alamat, kontak, status_aktif) VALUES ($1, $2, $3, true) ON CONFLICT DO NOTHING",
+      [nama, "Jl. Uji e2e No. 1", "0800-0000"],
+    );
+  } finally {
+    await db.end();
+  }
+}
+
 async function signUp(client: APIRequestContext, name: string, awalan: string) {
   const data = {
     name,
@@ -112,6 +125,7 @@ test("wali hanya melihat anak yang tertaut ke akunnya", async ({
 
   // Anak B ditempatkan ke satu kelas aktif dengan jadwal, supaya endpoint
   // jadwal portal punya isi nyata.
+  await siapkanCabang("Cabang Isolasi");
   const kelas = await request.post("/api/kelas", {
     headers,
     data: {

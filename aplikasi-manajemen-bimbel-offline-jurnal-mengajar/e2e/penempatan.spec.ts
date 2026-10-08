@@ -13,6 +13,19 @@ async function pool() {
   });
 }
 
+/** Daftarkan cabang uji yang dipakai berkas ini; kelas hanya boleh memakai cabang terdaftar. */
+async function siapkanCabang(nama: string) {
+  const db = await pool();
+  try {
+    await db.query(
+      "INSERT INTO cabang (nama, alamat, kontak, status_aktif) VALUES ($1, $2, $3, true) ON CONFLICT DO NOTHING",
+      [nama, "Jl. Uji e2e No. 1", "0800-0000"],
+    );
+  } finally {
+    await db.end();
+  }
+}
+
 async function signUp(client: APIRequestContext, name: string) {
   const data = {
     name,
@@ -69,6 +82,8 @@ async function idAkun(email: string) {
 test("murid boleh aktif di beberapa kelas tanpa dobel di kelas yang sama", async ({
   request,
 }) => {
+  await siapkanCabang("Cabang Penempatan");
+
   const email = await signUp(request, "Owner Penempatan");
   await setRole(email, "owner");
   await masuk(request, email);

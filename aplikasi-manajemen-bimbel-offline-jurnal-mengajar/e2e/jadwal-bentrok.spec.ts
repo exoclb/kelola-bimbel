@@ -40,6 +40,22 @@ async function idAkun(email: string) {
   }
 }
 
+/** Daftarkan cabang uji yang dipakai berkas ini; kelas hanya boleh memakai cabang terdaftar. */
+async function siapkanCabang(nama: string) {
+  const db = new Pool({
+    connectionString: process.env.STARTER_TEST_DATABASE_URL,
+    max: 1,
+  });
+  try {
+    await db.query(
+      "INSERT INTO cabang (nama, alamat, kontak, status_aktif) VALUES ($1, $2, $3, true) ON CONFLICT DO NOTHING",
+      [nama, "Jl. Uji e2e No. 1", "0800-0000"],
+    );
+  } finally {
+    await db.end();
+  }
+}
+
 /**
  * Deteksi bentrok jadwal menjaga jadwal yang beririsan: jam yang bertumpuk di
  * kelas yang sama (waktu) dan guru yang sama mengajar dua kelas (guru). Dua
@@ -65,6 +81,13 @@ test("bentrok jadwal ditolak untuk kelas dan guru yang sama", async ({
       headers,
       data: { namaKelas, cabang, guruId, jadwal },
     });
+
+  // Kelas hanya boleh memakai cabang yang sudah terdaftar.
+  await Promise.all([
+    siapkanCabang("Cabang Pusat"),
+    siapkanCabang("Cabang Utara"),
+    siapkanCabang("Cabang Timur"),
+  ]);
 
   // Dasar: Senin 09:00–10:30 di Cabang Pusat, diampu guru A.
   const dasar = await buatKelas("Kelas Bentrok Satu", "Cabang Pusat", guruA, [

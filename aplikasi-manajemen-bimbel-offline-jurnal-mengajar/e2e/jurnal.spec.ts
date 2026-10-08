@@ -48,6 +48,19 @@ async function idAkun(email: string) {
   }
 }
 
+/** Daftarkan cabang uji yang dipakai berkas ini; kelas hanya boleh memakai cabang terdaftar. */
+async function siapkanCabang(nama: string) {
+  const db = await pool();
+  try {
+    await db.query(
+      "INSERT INTO cabang (nama, alamat, kontak, status_aktif) VALUES ($1, $2, $3, true) ON CONFLICT DO NOTHING",
+      [nama, "Jl. Uji e2e No. 1", "0800-0000"],
+    );
+  } finally {
+    await db.end();
+  }
+}
+
 /**
  * Endpoint simpan jurnal: kelas, tanggal, dan jam ditentukan server dari
  * jadwal guru, kirim ulang tidak menambah baris baru, dan kehadiran hanya boleh
@@ -72,6 +85,7 @@ test("jurnal tersimpan idempoten dan kehadirannya dibatasi kelas", async ({
   const muridKelas = await buatMurid("Murid Di Kelas");
   const muridLuar = await buatMurid("Murid Luar Kelas");
 
+  await siapkanCabang("Cabang Jurnal");
   const kelas = await request.post("/api/kelas", {
     headers,
     data: {

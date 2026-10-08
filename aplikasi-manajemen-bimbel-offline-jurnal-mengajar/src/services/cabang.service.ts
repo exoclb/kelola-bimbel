@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, eq, ne, sql } from "drizzle-orm";
+import { asc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { cabang as tabelCabang } from "@/db/schema";
 import { pelanggaranUnik } from "@/lib/db-error";
@@ -34,23 +34,53 @@ function kunciNama(nama: string) {
   return nama.trim().toLocaleLowerCase("id");
 }
 
+/** Satu cabang menurut namanya (spasi tepi dan besar/kecil huruf diabaikan). */
+export async function getCabangByNama(nama: string): Promise<Cabang | null> {
+  const [baris] = await db
+    .select(fields)
+    .from(tabelCabang)
+    .where(sql`lower(btrim(${tabelCabang.nama})) = ${kunciNama(nama)}`)
+    .limit(1);
+  return baris ?? null;
+}
+
+export type HasilCabangKelas =
+  | { ok: true; cabang: Cabang }
+  | { ok: false; kode: "CABANG_TIDAK_ADA" | "CABANG_NONAKTIF"; pesan: string };
+
+/**
+ * Periksa cabang yang dipilih untuk sebuah kelas: namanya harus terdaftar di
+ * tabel `cabang` dan cabangnya harus masih aktif. Dipakai jalur pembuatan dan
+ * pemindahan kelas supaya kelas tidak menunjuk cabang yang tidak ada, dan
+ * cabang nonaktif hanya tetap dipakai kelas lama.
+ */
+export async function periksaCabangKelas(
+  nama: string,
+): Promise<HasilCabangKelas> {
+  const terdaftar = await getCabangByNama(nama);
+  if (!terdaftar)
+    return {
+      ok: false,
+      kode: "CABANG_TIDAK_ADA",
+      pesan: `Cabang "${nama.trim()}" belum terdaftar.`,
+    };
+  if (!terdaftar.statusAktif)
+    return {
+      ok: false,
+      kode: "CABANG_NONAKTIF",
+      pesan: `Cabang "${terdaftar.nama}" sedang nonaktif, jadi belum bisa dipakai kelas baru.`,
+    };
+  return { ok: true, cabang: terdaftar };
+}
+
 /**
  * Apakah nama cabang sudah dipakai cabang lain. Spasi tepi dan besar/kecil
  * huruf diabaikan. Saat menyunting, kirim `kecualiId` berisi id baris yang
  * sedang diubah supaya namanya sendiri tidak dianggap bentrok.
  */
 export async function namaCabangDipakai(nama: string, kecualiId?: string) {
-  const [baris] = await db
-    .select({ id: tabelCabang.id })
-    .from(tabelCabang)
-    .where(
-      and(
-        sql`lower(btrim(${tabelCabang.nama})) = ${kunciNama(nama)}`,
-        kecualiId ? ne(tabelCabang.id, kecualiId) : undefined,
-      ),
-    )
-    .limit(1);
-  return Boolean(baris);
+  const terdaftar = await getCabangByNama(nama);
+  return terdaftar ? terdaftar.id !== kecualiId : false;
 }
 
 /** Semua cabang, diurutkan nama. */

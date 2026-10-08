@@ -60,6 +60,22 @@ async function idAkun(email: string) {
   }
 }
 
+/** Daftarkan cabang uji yang dipakai berkas ini; kelas hanya boleh memakai cabang terdaftar. */
+async function siapkanCabang(nama: string) {
+  const db = new Pool({
+    connectionString: process.env.STARTER_TEST_DATABASE_URL,
+    max: 1,
+  });
+  try {
+    await db.query(
+      "INSERT INTO cabang (nama, alamat, kontak, status_aktif) VALUES ($1, $2, $3, true) ON CONFLICT DO NOTHING",
+      [nama, "Jl. Uji e2e No. 1", "0800-0000"],
+    );
+  } finally {
+    await db.end();
+  }
+}
+
 /**
  * `GET /api/kehadiran` adalah pembaca presensi murid: penyaring `kelasId`
  * memakai kelas jurnalnya (bukan kelas murid sekarang), rentang tanggal
@@ -100,6 +116,8 @@ test("presensi murid kelas dibaca per kelas dan rentang tanggal", async ({
       jadwal: { id: string; jamMulai: string }[];
     };
   };
+
+  await siapkanCabang("Cabang Presensi");
 
   const kelasA = await buatKelas("Kelas Presensi A", [
     { hari: hariIni(), jamMulai: "06:00", jamSelesai: "07:00" },

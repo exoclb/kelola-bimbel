@@ -1,4 +1,5 @@
 import { ApiError, readJson, withApiSession } from "@/lib/api";
+import { periksaCabangKelas } from "@/services/cabang.service";
 import {
   getKelasById,
   pesanBentrokJadwal,
@@ -26,6 +27,16 @@ export function PATCH(request: Request, context: Context) {
   return withApiSession(request, async () => {
     const id = kelasIdSchema.parse((await context.params).id);
     const input = updateKelasSchema.parse(await readJson(request));
+
+    // Pemindahan kelas ke cabang lain mengikuti aturan yang sama dengan
+    // pembuatan kelas: cabangnya harus terdaftar dan masih aktif. Kelas yang
+    // sudah berada di cabang nonaktif tetap boleh disunting selama cabangnya
+    // tidak diubah.
+    if (input.cabang !== undefined) {
+      const cabang = await periksaCabangKelas(input.cabang);
+      if (!cabang.ok) throw new ApiError(422, cabang.kode, cabang.pesan);
+    }
+
     const hasil = await updateKelas(id, input);
 
     if (hasil.status === "kelas_tidak_ada")

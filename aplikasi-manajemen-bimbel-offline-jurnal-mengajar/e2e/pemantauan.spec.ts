@@ -89,6 +89,22 @@ async function setRole(role: string) {
   }
 }
 
+/** Daftarkan cabang uji yang dipakai berkas ini; kelas hanya boleh memakai cabang terdaftar. */
+async function siapkanCabang(nama: string) {
+  const pool = new Pool({
+    connectionString: process.env.STARTER_TEST_DATABASE_URL,
+    max: 1,
+  });
+  try {
+    await pool.query(
+      "INSERT INTO cabang (nama, alamat, kontak, status_aktif) VALUES ($1, $2, $3, true) ON CONFLICT DO NOTHING",
+      [nama, "Jl. Uji e2e No. 1", "0800-0000"],
+    );
+  } finally {
+    await pool.end();
+  }
+}
+
 test("endpoint pantauan menjawab 401 tanpa sesi", async ({ request }) => {
   for (const url of endpointPantauan) {
     const response = await request.get(url, { headers });
@@ -633,6 +649,7 @@ test("jurnal yang masuk membuat pemberitahuan owner yang bisa ditandai dibaca", 
   const muridId = (await murid.json()).data.id as string;
 
   // Kelas diampu akun ini sendiri, jadi jurnalnya boleh dikirim olehnya.
+  await siapkanCabang("Cabang Notifikasi");
   const kelas = await request.post("/api/kelas", {
     headers,
     data: {

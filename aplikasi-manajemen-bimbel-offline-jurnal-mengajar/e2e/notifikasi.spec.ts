@@ -49,6 +49,22 @@ async function idAkun(email: string) {
   }
 }
 
+/** Daftarkan cabang uji yang dipakai berkas ini; kelas hanya boleh memakai cabang terdaftar. */
+async function siapkanCabang(nama: string) {
+  const db = new Pool({
+    connectionString: process.env.STARTER_TEST_DATABASE_URL,
+    max: 1,
+  });
+  try {
+    await db.query(
+      "INSERT INTO cabang (nama, alamat, kontak, status_aktif) VALUES ($1, $2, $3, true) ON CONFLICT DO NOTHING",
+      [nama, "Jl. Uji e2e No. 1", "0800-0000"],
+    );
+  } finally {
+    await db.end();
+  }
+}
+
 /** Tanggal ISO hari ini dan nama harinya, sama seperti alur jurnal. */
 function hariIni() {
   const sekarang = new Date();
@@ -267,6 +283,7 @@ test("jurnal baru hanya memberi tahu pemilik yang masih mengaktifkannya", async 
   }
 
   await masuk(request, emailPemilik);
+  await siapkanCabang("Cabang Notifikasi");
   const kelas = await request.post("/api/kelas", {
     headers,
     data: {

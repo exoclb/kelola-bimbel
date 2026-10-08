@@ -1,4 +1,5 @@
 import { ApiError, readJson, withApiSession } from "@/lib/api";
+import { periksaCabangKelas } from "@/services/cabang.service";
 import {
   adaGuru,
   cariBentrokDiDaftar,
@@ -35,6 +36,12 @@ export function POST(request: Request) {
         "GURU_TIDAK_ADA",
         "Guru pengampu tidak ditemukan.",
       );
+
+    // Cabang kelas harus terdaftar dan masih aktif, sama seperti pilihan yang
+    // ditawarkan formulir kelas. Tanpa pemeriksaan ini kelas bisa menunjuk
+    // cabang yang tidak ada dan jumlah kelas per cabang jadi tidak cocok.
+    const cabang = await periksaCabangKelas(input.cabang);
+    if (!cabang.ok) throw new ApiError(422, cabang.kode, cabang.pesan);
 
     // Jadwal guru baru tidak boleh beririsan, baik dengan jadwal lain di
     // permintaan yang sama maupun dengan jadwal kelas lain miliknya.

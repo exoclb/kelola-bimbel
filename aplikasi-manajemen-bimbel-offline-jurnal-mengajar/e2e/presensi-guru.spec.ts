@@ -40,6 +40,16 @@ async function denganDb(fn: (db: Pool) => Promise<unknown>) {
   }
 }
 
+/** Daftarkan cabang uji yang dipakai berkas ini; kelas hanya boleh memakai cabang terdaftar. */
+async function siapkanCabang(nama: string) {
+  await denganDb(async (db) => {
+    await db.query(
+      "INSERT INTO cabang (nama, alamat, kontak, status_aktif) VALUES ($1, $2, $3, true) ON CONFLICT DO NOTHING",
+      [nama, "Jl. Uji e2e No. 1", "0800-0000"],
+    );
+  });
+}
+
 function idAkun(email: string) {
   return denganDb(async (db) => {
     const { rows } = await db.query('SELECT id FROM "user" WHERE email = $1', [
@@ -84,6 +94,7 @@ test("presensi guru dicatat per sesi hari ini dan hanya untuk akun sendiri", asy
   await masuk(request, emailGuru);
   const guruId = await idAkun(emailGuru);
 
+  await siapkanCabang("Cabang Presensi Guru");
   const kelas = await request.post("/api/kelas", {
     headers,
     data: {
