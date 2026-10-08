@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import { Pool } from "pg";
 
@@ -166,4 +167,46 @@ test("kop dokumen ekspor memakai profil bimbel yang tersimpan", async ({
       .getByText("Jl. Kop Dokumen 9 · 081233334444 · kop@bimbel.test")
       .first(),
   ).toBeVisible();
+});
+
+/**
+ * Berkas Excel yang diunduh memakai kop profil yang sama dengan layar: nama,
+ * alamat, dan kontak bimbel ikut masuk ke berkasnya.
+ */
+test("berkas Excel laporan memuat kop profil bimbel yang tersimpan", async ({
+  page,
+  request,
+}) => {
+  const email = await daftar(request, "Owner Excel Profil");
+  await setRole(email, "owner");
+  await masuk(request, email);
+
+  const disimpan = await request.put("/api/pengaturan/profil", {
+    headers,
+    data: {
+      nama: "Bimbel Berkas Excel",
+      alamat: "Jl. Berkas 21",
+      telepon: "081255556666",
+      email: "berkas@bimbel.test",
+      logo: null,
+    },
+  });
+  expect(disimpan.status()).toBe(200);
+
+  await page.goto("/sign-in");
+  await page.getByLabel("Email", { exact: true }).fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(sandi);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.waitForURL((url) => !url.pathname.startsWith("/sign-in"));
+  await page.goto("/app/laba-rugi");
+
+  const [unduhan] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("button", { name: "Unduh Excel", exact: true }).click(),
+  ]);
+  expect(unduhan.suggestedFilename()).toMatch(/\.xls$/);
+
+  const isi = await readFile((await unduhan.path())!, "utf8");
+  expect(isi).toContain("Bimbel Berkas Excel");
+  expect(isi).toContain("Jl. Berkas 21 · 081255556666 · berkas@bimbel.test");
 });
