@@ -337,3 +337,129 @@ test("guru pengganti yang dihapus hanya dilepas, catatannya tetap ada", async ()
   assert.equal(baris.guru_pengganti_id, null);
   assert.equal(baris.status, "digantikan");
 });
+
+/**
+ * Invarian skema kelas, murid, penempatan, dan jadwal (`drizzle/0003_jurnal.sql`
+ * dan `0014_penempatan_multi_kelas.sql`): jadwal tidak boleh dobel per kelas +
+ * hari + jam mulai, penempatan aktif hanya satu per murid + kelas, dan pilihan
+ * `on delete` tiap relasi harus benar.
+ */
+async function siapkanKelasMurid() {
+  const { guru, kelas, murid } = await siapkanJurnal();
+  return { guru, kelas, murid };
+}
+
+test("jadwal tidak boleh dobel untuk kelas + hari + jam mulai yang sama", async () => {
+  const { guru, kelas } = await siapkanKelasMurid();
+  const tulis = (hari, jamMulai, jamSelesai = "11:00") =>
+    dbJurnal.query(
+      "INSERT INTO schedules (class_id, guru_id, hari, jam_mulai, jam_selesai) VALUES ($1, $2, $3, $4, $5)",
+      [kelas, guru, hari, jamMulai, jamSelesai],
+    );
+
+  await tulis("Jumat", "10:00");
+  // Jam mulai berbeda pada hari yang sama tetap boleh.
+  await tulis("Jumat", "13:00");
+
+  const galat = await ditolak(
+    "INSERT INTO schedules (class_id, guru_id, hari, jam_mulai, jam_selesai) VALUES ($1, $2, $3, $4, $5)",
+    [kelas, guru, "Jumat", "10:00", "11:30"],
+  );
+  assert.equal(galat.code, "23505");
+});
+
+test("penempatan aktif hanya satu per murid + kelas", async () => {
+  const { kelas, murid } = await siapkanKelasMurid();
+  const tempatkan = (status, tanggalMulai) =>
+    dbJurnal.query(
+      "INSERT INTO student_enrollments (student_id, class_id, tanggal_mulai, status) VALUES ($1, $2, $3, $4)",
+      [murid, kelas, tanggalMulai, status],
+    );
+
+  await tempatkan("aktif", "2026-01-05");
+  const galat = await ditolak(
+    "INSERT INTO student_enrollments (student_id, class_id, tanggal_mulai, status) VALUES ($1, $2, $3, $4)",
+    [murid, kelas, "2026-02-05", "aktif"],
+  );
+  assert.equal(galat.code, "23505");
+
+  // Setelah penempatan lama ditandai selesai, penempatan baru boleh dibuat.
+  await dbJurnal.query(
+    "UPDATE student_enrollments SET status = 'selesai' WHERE student_id = $1 AND class_id = $2",
+    [murid, kelas],
+  );
+  const baru = await tempatkan("aktif", "2026-03-05");
+  assert.equal(baru.rowCount, 1);
+});
+
+test("menghapus kelas ikut menghapus jadwalnya, tetapi tertahan kalau ada jurnal", async () => {
+  const { guru, kelas } = await siapkanKelasMurid();
+
+  // Kelas tanpa jurnal: jadwalnya ikut terhapus saat kelasnya dihapus.
+  const kelasKosong = (
+    await dbJurnal.query(
+      "INSERT INTO classes (nama_kelas, cabang, guru_id) VALUES ($1, $2, $3) RETURNING id",
+      ["Kelas Tanpa Jurnal", "Cabang Uji", guru],
+    )
+  ).rows[0].id;
+  await dbJurnal.query(
+    "INSERT INTO schedules (class_id, guru_id, hari, jam_mulai, jam_selesai) VALUES ($1, $2, $3, $4, $5)",
+    [kelasKosong, guru, "Sabtu", "09:00", "10:00"],
+  );
+
+  await dbJurnal.query("DELETE FROM classes WHERE id = $1", [kelasKosong]);
+  const sisa = await dbJurnal.query(
+    "SELECT count(*)::int AS jumlah FROM schedules WHERE class_id = $1",
+    [kelasKosong],
+  );
+  assert.equal(sisa.rows[0].jumlah, 0);
+
+  // Kelas yang sudah punya jurnal tidak boleh dihapus (jurnalnya menyimpan jam
+  // yang dipakai menghitung gaji).
+  const galat = await ditolak("DELETE FROM classes WHERE id = $1", [kelas]);
+  assert.equal(galat.code, "23503");
+});
+
+test("menghapus murid ikut menghapus penempatannya", async () => {
+  const { kelas } = await siapkanKelasMurid();
+  const muridBaru = (
+    await dbJurnal.query(
+      "INSERT INTO students (nama) VALUES ($1) RETURNING id",
+      ["Murid Tanpa Jurnal"],
+    )
+  ).rows[0].id;
+  await dbJurnal.query(
+    "INSERT INTO student_enrollments (student_id, class_id, tanggal_mulai, status) VALUES ($1, $2, $3, $4)",
+    [muridBaru, kelas, "2026-04-05", "aktif"],
+  );
+
+  await dbJurnal.query("DELETE FROM students WHERE id = $1", [muridBaru]);
+  const sisa = await dbJurnal.query(
+    "SELECT count(*)::int AS jumlah FROM student_enrollments WHERE student_id = $1",
+    [muridBaru],
+  );
+  assert.equal(sisa.rows[0].jumlah, 0);
+});
+
+test("guru yang dihapus meninggalkan kelasnya tanpa pengampu", async () => {
+  const guruSementara = (
+    await dbJurnal.query(
+      `INSERT INTO "user" (id, name, email) VALUES ($1, $2, $3) RETURNING id`,
+      ["guru-sementara-kelas", "Guru Sementara", "guru-sementara@example.test"],
+    )
+  ).rows[0].id;
+  const kelasSementara = (
+    await dbJurnal.query(
+      "INSERT INTO classes (nama_kelas, cabang, guru_id) VALUES ($1, $2, $3) RETURNING id",
+      ["Kelas Guru Sementara", "Cabang Uji", guruSementara],
+    )
+  ).rows[0].id;
+
+  await dbJurnal.query('DELETE FROM "user" WHERE id = $1', [guruSementara]);
+  const baris = (
+    await dbJurnal.query("SELECT guru_id FROM classes WHERE id = $1", [
+      kelasSementara,
+    ])
+  ).rows[0];
+  assert.equal(baris.guru_id, null);
+});
