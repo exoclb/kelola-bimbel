@@ -2,7 +2,7 @@ import { ApiError, readJson, withApiSession } from "@/lib/api";
 import {
   adaGuru,
   cariBentrokDiDaftar,
-  cariBentrokGuru,
+  cariBentrokJadwal,
   createKelas,
   listKelas,
   pesanBentrokJadwal,
@@ -41,7 +41,10 @@ export function POST(request: Request) {
     if (input.guruId && input.jadwal.length > 0) {
       const bentrok =
         cariBentrokDiDaftar(input.jadwal) ??
-        (await cariBentrokGuru(input.guruId, input.jadwal));
+        (await cariBentrokJadwal({
+          jadwalBaru: input.jadwal,
+          guruId: input.guruId,
+        }));
       if (bentrok)
         throw new ApiError(409, "JADWAL_BENTROK", pesanBentrokJadwal(bentrok));
     }
