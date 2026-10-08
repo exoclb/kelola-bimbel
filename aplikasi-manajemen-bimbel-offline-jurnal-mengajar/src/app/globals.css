@@ -111,7 +111,7 @@
   /* Penanda status pembayaran: LUNAS, BELUM BAYAR, TERLAMBAT. */
   --status-lunas-latar: color-mix(in oklab, var(--primary) 12%, var(--card));
   --status-lunas-garis: color-mix(in oklab, var(--primary) 32%, var(--card));
-  --status-lunas-teks: var(--primary);
+  --status-lunas-teks: var(--brand-800);
   --status-belum-latar: var(--muted);
   --status-belum-garis: var(--border);
   --status-belum-teks: var(--muted-foreground);
@@ -185,6 +185,10 @@
   --border: #334155;
   --destructive: #ff8a8a;
   --destructive-foreground: #ffffff;
+
+  /* Di kanvas gelap, teks pil "lunas" memakai langkah brand yang lebih terang
+     (token statusnya diwarisi dari :root, jadi perlu ditimpa di sini). */
+  --status-lunas-teks: var(--brand-500);
 }
 
 @layer base {
