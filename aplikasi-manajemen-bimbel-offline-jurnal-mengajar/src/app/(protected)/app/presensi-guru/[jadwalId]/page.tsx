@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { z } from "zod";
 import { PresensiSesi } from "@/components/presensi-sesi";
-import {
-  FILTER_RIWAYAT_KOSONG,
-  getJadwalHariIni,
-  getRiwayatJurnal,
-} from "@/lib/mock-jurnal";
 import { requireSession } from "@/lib/session";
-import { formatTanggalLengkap, namaHari, tanggalISO } from "@/lib/tanggal";
+import { formatTanggalLengkap, tanggalISO } from "@/lib/tanggal";
+import {
+  getJurnalIdSesi,
+  getSesiPresensiGuru,
+} from "@/services/presensi-guru.service";
 
 export const metadata: Metadata = { title: "Presensi Sesi" };
 
@@ -19,33 +19,24 @@ export default async function PresensiSesiPage({
   const { user } = await requireSession();
   const { jadwalId } = await params;
 
-  // Hanya sesi hari ini yang bisa dibuka, memakai sumber jadwal yang sama
-  // dengan halaman presensi hari ini.
+  // Id dari URL hanya dipakai kalau bentuknya benar, supaya alamat asing
+  // berakhir di halaman "tidak ditemukan", bukan galat server.
+  if (!z.string().uuid().safeParse(jadwalId).success) notFound();
+
+  // Hanya sesi hari ini milik guru yang sedang masuk yang bisa dibuka.
   const sekarang = new Date();
-  const hariIni = tanggalISO(sekarang);
-  const jadwal = getJadwalHariIni(namaHari(sekarang)).find(
-    (sesi) => sesi.id === jadwalId,
-  );
-  if (!jadwal) notFound();
+  const tanggal = tanggalISO(sekarang);
+  const sesi = await getSesiPresensiGuru(user.id, jadwalId, tanggal);
+  if (!sesi) notFound();
 
   // Jurnal sesi ini (kalau sudah diisi) dipakai untuk tautan silang, supaya
   // presensi guru dan jurnal mengajar bisa ditelusuri dari dua arah.
-  const jurnal =
-    getRiwayatJurnal({
-      ...FILTER_RIWAYAT_KOSONG,
-      kelas: jadwal.namaKelas,
-      dari: hariIni,
-      sampai: hariIni,
-    }).find(
-      (catatan) =>
-        catatan.jamMulai === jadwal.jamMulai &&
-        catatan.jamSelesai === jadwal.jamSelesai,
-    ) ?? null;
+  const jurnalId = await getJurnalIdSesi(user.id, jadwalId, tanggal);
 
   return (
     <PresensiSesi
-      jadwal={jadwal}
-      jurnalId={jurnal?.id ?? null}
+      sesi={sesi}
+      jurnalId={jurnalId}
       namaGuru={user.name}
       tanggalTampil={formatTanggalLengkap(sekarang)}
     />

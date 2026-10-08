@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
@@ -23,22 +24,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { LabelStatusPresensi } from "@/components/label-status-presensi";
-import type { Jadwal } from "@/lib/mock-jurnal";
+import { pesanGalatApi } from "@/lib/pesan-api";
 import {
   keteranganStatusPresensi,
   labelStatusPresensi,
+  type SesiPresensiGuru,
   type StatusPresensiGuru,
-} from "@/lib/mock-presensi-guru";
-import {
-  langgananPresensiGuru,
-  siapkanPresensiGuru,
-  simpanStatusPresensiGuru,
-  snapshotPresensiGuru,
-  snapshotRiwayatPresensiGuru,
-} from "@/lib/presensi-guru-store";
+} from "@/lib/presensi-guru";
 
 type PresensiSesiProps = {
-  jadwal: Jadwal;
+  /** Sesi hari ini dari database, termasuk presensi yang sudah tercatat. */
+  sesi: SesiPresensiGuru;
   /** Id jurnal sesi ini kalau jurnalnya sudah ada, untuk tautan silang. */
   jurnalId: string | null;
   namaGuru: string;
@@ -62,35 +58,18 @@ const tanggalJamTampil = new Intl.DateTimeFormat("id-ID", {
 
 /**
  * Halaman satu sesi mengajar: guru melihat rincian sesinya dan menetapkan
- * status kehadirannya (hadir, izin, atau tidak hadir). Perubahan disimpan di
- * penyimpanan sementara aplikasi, jadi statusnya tetap ada saat guru kembali
- * ke halaman ini atau ke daftar sesi hari ini.
+ * status kehadirannya (hadir, izin, atau tidak hadir). Statusnya disimpan
+ * lewat `/api/presensi-guru`, lalu halamannya disegarkan dari database, jadi
+ * pilihannya tetap ada saat halaman ini dibuka lagi.
  */
 export function PresensiSesi({
-  jadwal,
+  sesi,
   jurnalId,
   namaGuru,
   tanggalTampil,
 }: PresensiSesiProps) {
-  const presensi = useSyncExternalStore(
-    langgananPresensiGuru,
-    snapshotPresensiGuru,
-    snapshotPresensiGuru,
-  );
-  const riwayat = useSyncExternalStore(
-    langgananPresensiGuru,
-    snapshotRiwayatPresensiGuru,
-    snapshotRiwayatPresensiGuru,
-  );
-
-  // Salinan dari penyimpanan peramban baru dibaca setelah halaman tampil,
-  // supaya hasil render pertama tetap sama dengan hasil server.
-  useEffect(() => {
-    siapkanPresensiGuru();
-  }, []);
-
-  const baris = presensi.find((item) => item.jadwalId === jadwal.id) ?? null;
-  const jejak = riwayat.filter((item) => item.jadwalId === jadwal.id);
+  const router = useRouter();
+  const tersimpan = sesi.presensi;
 
   // Pilihan pengguna (belum diisi = belum memilih sendiri). Selama belum
   // memilih, tampilan mengikuti status tersimpan supaya setelah halaman dimuat
@@ -98,31 +77,49 @@ export function PresensiSesi({
   const [pilihanSendiri, setPilihanSendiri] =
     useState<StatusPresensiGuru | null>(null);
   const [pesan, setPesan] = useState("");
-  const pilihan = pilihanSendiri ?? baris?.status ?? null;
+  const [galat, setGalat] = useState("");
+  const [pending, setPending] = useState(false);
+  const pilihan = pilihanSendiri ?? tersimpan?.status ?? null;
 
-  function simpan() {
+  async function simpan() {
     if (!pilihan) return;
-    simpanStatusPresensiGuru({
-      jadwalId: jadwal.id,
-      status: pilihan,
-      guruPenggantiNama: null,
-      catatan: "",
-      diubahOleh: namaGuru,
-      diubahPada: new Date().toISOString(),
-    });
-    setPesan(
-      `Status sesi ${jadwal.namaKelas} disimpan: ${labelStatusPresensi(pilihan)}.`,
-    );
+    setPending(true);
+    setGalat("");
+    try {
+      const jawaban = await fetch("/api/presensi-guru", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jadwalId: sesi.jadwalId, status: pilihan }),
+      });
+      if (!jawaban.ok) {
+        setGalat(
+          await pesanGalatApi(
+            jawaban,
+            "Status belum bisa disimpan. Coba lagi sebentar lagi.",
+          ),
+        );
+        return;
+      }
+      setPesan(
+        `Status sesi ${sesi.namaKelas} disimpan: ${labelStatusPresensi(pilihan)}.`,
+      );
+      setPilihanSendiri(null);
+      router.refresh();
+    } catch {
+      setGalat("Status belum bisa disimpan. Coba lagi sebentar lagi.");
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
     <div className="mx-auto max-w-3xl">
       <p className="mb-3 text-sm font-medium text-primary">Presensi Guru</p>
       <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-        {jadwal.namaKelas}
+        {sesi.namaKelas}
       </h1>
       <p className="mt-3 text-base leading-7 text-muted-foreground">
-        {tanggalTampil} · {jadwal.jamMulai}–{jadwal.jamSelesai} · {namaGuru}
+        {tanggalTampil} · {sesi.jamMulai}–{sesi.jamSelesai} · {namaGuru}
       </p>
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
@@ -146,7 +143,7 @@ export function PresensiSesi({
         <CardHeader>
           <CardTitle>Rincian Sesi</CardTitle>
           <CardDescription>
-            Sesi ini mengikuti jadwal mingguan kelas {jadwal.namaKelas}
+            Sesi ini mengikuti jadwal mingguan kelas {sesi.namaKelas}
             {jurnalId ? " dan jurnalnya sudah terkirim." : "."}
           </CardDescription>
         </CardHeader>
@@ -154,11 +151,11 @@ export function PresensiSesi({
           <p className="flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground">
             <span className="inline-flex items-center gap-1.5">
               <Clock className="size-4" aria-hidden="true" />
-              {jadwal.jamMulai}–{jadwal.jamSelesai}
+              {sesi.jamMulai}–{sesi.jamSelesai}
             </span>
             <span className="inline-flex items-center gap-1.5">
               <MapPin className="size-4" aria-hidden="true" />
-              {jadwal.cabang}
+              {sesi.cabang}
             </span>
             <span className="inline-flex items-center gap-1.5">
               <CalendarClock className="size-4" aria-hidden="true" />
@@ -168,18 +165,20 @@ export function PresensiSesi({
           <div>
             <p className="flex items-center gap-1.5 font-medium">
               <Users className="size-4" aria-hidden="true" />
-              {jadwal.murid.length} murid
+              {sesi.murid.length} murid
             </p>
-            <ul className="mt-2 flex flex-wrap gap-1.5">
-              {jadwal.murid.map((anak) => (
-                <li
-                  key={anak.id}
-                  className="rounded-full border bg-muted px-2.5 py-0.5 text-xs text-muted-foreground"
-                >
-                  {anak.nama}
-                </li>
-              ))}
-            </ul>
+            {sesi.murid.length > 0 && (
+              <ul className="mt-2 flex flex-wrap gap-1.5">
+                {sesi.murid.map((anak) => (
+                  <li
+                    key={anak.id}
+                    className="rounded-full border bg-muted px-2.5 py-0.5 text-xs text-muted-foreground"
+                  >
+                    {anak.nama}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -188,11 +187,11 @@ export function PresensiSesi({
         <CardHeader>
           <CardTitle>Status Kehadiran Saya</CardTitle>
           <CardDescription className="flex flex-wrap items-center gap-2">
-            <LabelStatusPresensi status={baris?.status ?? null} />
-            {baris && (
+            <LabelStatusPresensi status={tersimpan?.status ?? null} />
+            {tersimpan && (
               <span>
-                Diubah {baris.diubahOleh} ·{" "}
-                {jamTampil.format(new Date(baris.diubahPada))}
+                Diubah {tersimpan.diubahOlehNama ?? "sistem"} ·{" "}
+                {jamTampil.format(new Date(tersimpan.diubahPada))}
               </span>
             )}
           </CardDescription>
@@ -232,14 +231,14 @@ export function PresensiSesi({
           </div>
 
           <p role="status" className="text-sm text-muted-foreground">
-            {pesan}
+            {galat || pesan}
           </p>
 
           <div className="flex flex-wrap items-center gap-2">
             <Button
               type="button"
               size="sm"
-              disabled={!pilihan || pilihan === baris?.status}
+              disabled={!pilihan || pilihan === tersimpan?.status || pending}
               onClick={simpan}
             >
               <Save aria-hidden="true" />
@@ -253,45 +252,29 @@ export function PresensiSesi({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <History className="size-4" aria-hidden="true" />
-            Riwayat Perubahan
+            Perubahan Terakhir
           </CardTitle>
           <CardDescription>
-            Catatan siapa dan kapan terakhir mengubah status sesi ini.
+            Siapa dan kapan terakhir mengubah status sesi ini.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {jejak.length === 0 ? (
+          {tersimpan ? (
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+              <LabelStatusPresensi status={tersimpan.status} />
+              <span className="text-muted-foreground">
+                {tersimpan.diubahOlehNama ?? "sistem"} ·{" "}
+                {tanggalJamTampil.format(new Date(tersimpan.diubahPada))}
+                {tersimpan.catatan ? ` · ${tersimpan.catatan}` : ""}
+              </span>
+            </p>
+          ) : (
             <p className="text-sm text-muted-foreground">
               Belum ada perubahan untuk sesi ini.
             </p>
-          ) : (
-            <ul className="space-y-2 text-sm">
-              {jejak.map((item, urutan) => (
-                <li
-                  key={`${item.pada}-${urutan}`}
-                  className="flex flex-wrap items-center gap-x-2 gap-y-1"
-                >
-                  {item.status ? (
-                    <LabelStatusPresensi status={item.status} />
-                  ) : (
-                    <span className="rounded-full border border-dashed px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-                      Tanda dihapus
-                    </span>
-                  )}
-                  <span className="text-muted-foreground">
-                    {item.oleh} · {tanggalJamTampil.format(new Date(item.pada))}
-                  </span>
-                </li>
-              ))}
-            </ul>
           )}
         </CardContent>
       </Card>
-
-      <p className="mt-6 text-xs leading-5 text-muted-foreground">
-        Catatan: status kehadiran di halaman ini masih data tiruan — bertahan
-        selama aplikasi terbuka, lalu diganti penyimpanan ke database.
-      </p>
     </div>
   );
 }

@@ -1354,5 +1354,26 @@
     },
     "src/app/api/pengeluaran/kategori/route.ts": {
         "summary": "Route API kategori pengeluaran: `POST /api/pengeluaran/kategori` menambah kategori baru (izin pengeluaran write-any) dengan 201 saat berhasil dan 409 saat nama kategori sudah ada."
+    },
+    "src/lib/presensi-guru.ts": {
+        "summary": "Tipe dan helper murni presensi guru: status kehadiran (hadir/izin/sakit/digantikan/dll), label tampilan, dan normalisasi tanggal; dipakai bersama oleh validator, layanan, serta komponen halaman presensi guru."
+    },
+    "src/lib/pesan-api.ts": {
+        "summary": "Helper bersama untuk mengambil pesan galat dari respons API (menggantikan salinan lokal `pesanGalatApi` yang sebelumnya diduplikasi di beberapa komponen klien), sehingga pesan penolakan server tampil konsisten."
+    },
+    "src/validators/presensi-guru.ts": {
+        "summary": "Skema Zod untuk API presensi guru: validasi status kehadiran, catatan (batas panjang), guru pengganti (wajib hanya untuk status digantikan dan dilarang untuk status lain), serta id jadwal/baris."
+    },
+    "src/services/presensi-guru.service.ts": {
+        "summary": "Layanan presensi guru di atas tabel `teacher_attendances` (migrasi 0017): `sesiHariIni(guruId)` mengambil jadwal hari ini milik guru dengan LEFT JOIN presensi (null berarti belum ditandai) beserta murid aktif hasil penempatan; penyimpanan memakai upsert `ON CONFLICT (guru_id, schedule_id, tanggal)` dengan tanggal dihitung di server sehingga mencatat dua kali tidak menghasilkan baris ganda; guru hanya bisa menulis sesi miliknya (selain itu 404 agar jadwal guru lain tidak bocor) dan hanya pemilik yang boleh membaca data guru lain; tersedia pula rekap per status. Menggantikan penyimpanan peramban `presensi-guru-store` yang kini dihapus."
+    },
+    "src/app/api/presensi-guru/route.ts": {
+        "summary": "Route API presensi guru: `GET /api/presensi-guru` mengembalikan sesi hari ini milik guru yang sedang masuk beserta penanda sudah/belum dicatat (owner boleh memfilter `?guruId=`), dan `POST` mencatat presensi satu sesi — 201 saat baris baru, 200 saat menimpa, 404 bila sesi bukan milik guru itu, 422 saat input tidak sah atau jadwal bukan hari ini."
+    },
+    "src/app/api/presensi-guru/[id]/route.ts": {
+        "summary": "Route API presensi guru per baris: `PATCH /api/presensi-guru/<id>` mengubah catatan presensi dan `DELETE` menghapusnya — hanya untuk baris milik guru yang sedang masuk (selain itu 404 sesuai desain agar tidak membocorkan data guru lain)."
+    },
+    "src/app/api/presensi-guru/rekap/route.ts": {
+        "summary": "Route API rekap presensi guru: menghitung jumlah per status dari seluruh baris yang cocok (daftar dibatasi 100 terbaru); owner boleh membaca semua guru lewat `?guruId=`, sedangkan guru lain ditolak 403."
     }
 }

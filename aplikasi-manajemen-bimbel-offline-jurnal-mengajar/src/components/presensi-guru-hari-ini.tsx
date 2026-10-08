@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   CalendarDays,
@@ -15,19 +16,19 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LabelStatusPresensi } from "@/components/label-status-presensi";
 import { PesanKosong } from "@/components/status-antarmuka";
-import type { Jadwal } from "@/lib/mock-jurnal";
-import { labelStatusPresensi } from "@/lib/mock-presensi-guru";
 import {
-  batalkanStatusPresensiGuru,
-  langgananPresensiGuru,
-  siapkanPresensiGuru,
-  simpanStatusPresensiGuru,
-  snapshotPresensiGuru,
-} from "@/lib/presensi-guru-store";
+  labelStatusPresensi,
+  STATUS_PRESENSI_GURU,
+  type SesiPresensiGuru,
+} from "@/lib/presensi-guru";
+import { pesanGalatApi } from "@/lib/pesan-api";
 
 type PresensiGuruHariIniProps = {
-  jadwal: Jadwal[];
+  /** Sesi mengajar hari ini dari database, terurut jam mulai. */
+  sesi: SesiPresensiGuru[];
   namaGuru: string;
+  /** Tanggal sesi ini (`YYYY-MM-DD`), dipakai saat mencatat presensi. */
+  tanggal: string;
   tanggalTampil: string;
 };
 
@@ -38,60 +39,85 @@ const jamTampil = new Intl.DateTimeFormat("id-ID", {
 
 /**
  * Presensi kehadiran guru untuk sesi mengajar hari ini. Guru menandai dirinya
- * hadir dengan satu ketukan, dan tanda itu bisa dibatalkan bila keliru. Datanya
- * masih tiruan dan hanya berlaku di layar.
+ * hadir dengan satu ketukan, dan tanda itu bisa dibatalkan bila keliru.
+ * Setiap perubahan dikirim ke `/api/presensi-guru` lalu halamannya disegarkan
+ * dari database lewat `router.refresh()`, jadi statusnya tetap ada setelah
+ * halaman dimuat ulang.
  */
 export function PresensiGuruHariIni({
-  jadwal,
+  sesi,
   namaGuru,
+  tanggal,
   tanggalTampil,
 }: PresensiGuruHariIniProps) {
-  // Status dibaca dari penyimpanan sementara bersama, supaya sama dengan yang
-  // terlihat di halaman satu sesi.
-  const presensi = useSyncExternalStore(
-    langgananPresensiGuru,
-    snapshotPresensiGuru,
-    snapshotPresensiGuru,
-  );
+  const router = useRouter();
   const [pesan, setPesan] = useState("");
+  const [galat, setGalat] = useState("");
+  const [pending, setPending] = useState(false);
 
-  useEffect(() => {
-    siapkanPresensiGuru();
-  }, []);
-
-  const presensiUntuk = (jadwalId: string) =>
-    presensi.find((baris) => baris.jadwalId === jadwalId);
-
-  const sudahDitandai = jadwal.filter((sesi) => presensiUntuk(sesi.id)).length;
-  const belumDitandai = jadwal.length - sudahDitandai;
+  const sudahDitandai = sesi.filter((baris) => baris.presensi).length;
+  const belumDitandai = sesi.length - sudahDitandai;
 
   // Ringkasan status hari ini: berapa sesi yang sudah hadir, izin, tidak hadir,
   // atau digantikan. Status yang belum dipakai tidak ditampilkan.
-  const rincianStatus = (
-    ["hadir", "izin", "tidak_hadir", "digantikan"] as const
-  )
-    .map((status) => ({
-      status,
-      jumlah: jadwal.filter((sesi) => presensiUntuk(sesi.id)?.status === status)
-        .length,
-    }))
-    .filter((baris) => baris.jumlah > 0);
+  const rincianStatus = STATUS_PRESENSI_GURU.map((status) => ({
+    status,
+    jumlah: sesi.filter((baris) => baris.presensi?.status === status).length,
+  })).filter((baris) => baris.jumlah > 0);
 
-  function tandaiHadir(sesi: Jadwal) {
-    simpanStatusPresensiGuru({
-      jadwalId: sesi.id,
-      status: "hadir",
-      guruPenggantiNama: null,
-      catatan: "",
-      diubahOleh: namaGuru,
-      diubahPada: new Date().toISOString(),
-    });
-    setPesan(`Kehadiran ${namaGuru} di ${sesi.namaKelas} ditandai hadir.`);
+  async function tandaiHadir(baris: SesiPresensiGuru) {
+    setPending(true);
+    setGalat("");
+    try {
+      const jawaban = await fetch("/api/presensi-guru", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jadwalId: baris.jadwalId, status: "hadir" }),
+      });
+      if (!jawaban.ok) {
+        setGalat(
+          await pesanGalatApi(
+            jawaban,
+            "Kehadiran belum bisa disimpan. Coba lagi sebentar lagi.",
+          ),
+        );
+        return;
+      }
+      setPesan(`Kehadiran ${namaGuru} di ${baris.namaKelas} ditandai hadir.`);
+      router.refresh();
+    } catch {
+      setGalat("Kehadiran belum bisa disimpan. Coba lagi sebentar lagi.");
+    } finally {
+      setPending(false);
+    }
   }
 
-  function batalkan(sesi: Jadwal) {
-    batalkanStatusPresensiGuru(sesi.id, namaGuru);
-    setPesan(`Tanda kehadiran ${sesi.namaKelas} dibatalkan.`);
+  async function batalkan(baris: SesiPresensiGuru) {
+    if (!baris.presensi) return;
+    setPending(true);
+    setGalat("");
+    try {
+      const jawaban = await fetch(`/api/presensi-guru/${baris.presensi.id}`, {
+        method: "DELETE",
+      });
+      if (!jawaban.ok) {
+        setGalat(
+          await pesanGalatApi(
+            jawaban,
+            "Tanda kehadiran belum bisa dibatalkan. Coba lagi sebentar lagi.",
+          ),
+        );
+        return;
+      }
+      setPesan(`Tanda kehadiran ${baris.namaKelas} dibatalkan.`);
+      router.refresh();
+    } catch {
+      setGalat(
+        "Tanda kehadiran belum bisa dibatalkan. Coba lagi sebentar lagi.",
+      );
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
@@ -105,9 +131,9 @@ export function PresensiGuruHariIni({
         {tanggalTampil} · {namaGuru}
       </p>
       <p className="mt-2 text-base leading-7 text-muted-foreground">
-        {jadwal.length === 0
+        {sesi.length === 0
           ? "Tidak ada sesi mengajar hari ini."
-          : `${jadwal.length} sesi hari ini · ${sudahDitandai} sudah ditandai · ${belumDitandai} belum ditandai.`}
+          : `${sesi.length} sesi hari ini · ${sudahDitandai} sudah ditandai · ${belumDitandai} belum ditandai.`}
       </p>
 
       {rincianStatus.length > 0 && (
@@ -124,7 +150,7 @@ export function PresensiGuruHariIni({
       )}
 
       <p role="status" className="mt-4 text-sm text-muted-foreground">
-        {pesan}
+        {galat || pesan}
       </p>
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
@@ -142,7 +168,7 @@ export function PresensiGuruHariIni({
         </Button>
       </div>
 
-      {jadwal.length === 0 ? (
+      {sesi.length === 0 ? (
         <PesanKosong
           className="mt-6"
           judul="Belum ada jadwal hari ini"
@@ -150,51 +176,51 @@ export function PresensiGuruHariIni({
         />
       ) : (
         <ul className="mt-6 space-y-3">
-          {jadwal.map((sesi) => {
-            const baris = presensiUntuk(sesi.id);
-            const ditandai = Boolean(baris);
+          {sesi.map((baris) => {
+            const presensi = baris.presensi;
             return (
-              <li key={sesi.id}>
+              <li key={baris.jadwalId}>
                 <Card className="gap-3 px-5 py-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="space-y-1">
-                      <p className="font-medium">{sesi.namaKelas}</p>
+                      <p className="font-medium">{baris.namaKelas}</p>
                       <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
                         <span className="inline-flex items-center gap-1.5">
                           <Clock className="size-4" aria-hidden="true" />
-                          {sesi.jamMulai}–{sesi.jamSelesai}
+                          {baris.jamMulai}–{baris.jamSelesai}
                         </span>
                         <span className="inline-flex items-center gap-1.5">
                           <MapPin className="size-4" aria-hidden="true" />
-                          {sesi.cabang}
+                          {baris.cabang}
                         </span>
                         <span className="inline-flex items-center gap-1.5">
                           <Users className="size-4" aria-hidden="true" />
-                          {sesi.murid.length} murid
+                          {baris.murid.length} murid
                         </span>
                       </p>
                     </div>
-                    <LabelStatusPresensi status={baris?.status ?? null} />
+                    <LabelStatusPresensi status={presensi?.status ?? null} />
                   </div>
 
-                  {ditandai && baris && (
+                  {presensi && (
                     <p className="text-sm text-muted-foreground">
-                      Ditandai {baris.diubahOleh} ·{" "}
-                      {jamTampil.format(new Date(baris.diubahPada))}
-                      {baris.guruPenggantiNama
-                        ? ` · pengganti: ${baris.guruPenggantiNama}`
+                      Ditandai {presensi.diubahOlehNama ?? "sistem"} ·{" "}
+                      {jamTampil.format(new Date(presensi.diubahPada))}
+                      {presensi.guruPenggantiNama
+                        ? ` · pengganti: ${presensi.guruPenggantiNama}`
                         : ""}
-                      {baris.catatan ? ` · ${baris.catatan}` : ""}
+                      {presensi.catatan ? ` · ${presensi.catatan}` : ""}
                     </p>
                   )}
 
                   <div className="flex flex-wrap items-center gap-2">
-                    {ditandai ? (
+                    {presensi ? (
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => batalkan(sesi)}
+                        disabled={pending}
+                        onClick={() => batalkan(baris)}
                       >
                         <Undo2 aria-hidden="true" />
                         Batalkan tanda kehadiran
@@ -203,14 +229,15 @@ export function PresensiGuruHariIni({
                       <Button
                         type="button"
                         size="sm"
-                        onClick={() => tandaiHadir(sesi)}
+                        disabled={pending}
+                        onClick={() => tandaiHadir(baris)}
                       >
                         <Check aria-hidden="true" />
                         Tandai hadir
                       </Button>
                     )}
                     <Button asChild variant="ghost" size="sm">
-                      <Link href={`/app/presensi-guru/${sesi.id}`}>
+                      <Link href={`/app/presensi-guru/${baris.jadwalId}`}>
                         Buka sesi
                         <ArrowRight aria-hidden="true" />
                       </Link>
@@ -224,8 +251,8 @@ export function PresensiGuruHariIni({
       )}
 
       <p className="mt-6 text-xs leading-5 text-muted-foreground">
-        Catatan: presensi guru di halaman ini masih data tiruan — statusnya
-        berlaku di layar sampai penyimpanannya tersambung ke database.
+        Presensi sesi {tanggal} tersimpan di database, jadi tandanya tetap ada
+        saat halaman dibuka lagi dari perangkat lain.
       </p>
     </div>
   );

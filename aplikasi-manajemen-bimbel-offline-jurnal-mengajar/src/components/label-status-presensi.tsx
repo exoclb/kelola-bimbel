@@ -2,7 +2,7 @@ import { cn } from "cn";
 import {
   labelStatusPresensi,
   type StatusPresensiGuru,
-} from "@/lib/mock-presensi-guru";
+} from "@/lib/presensi-guru";
 
 const GAYA: Record<StatusPresensiGuru, string> = {
   hadir: "border-primary/30 bg-primary/10 text-primary",
