@@ -162,6 +162,13 @@
       "when": 1791480483434,
       "tag": "0022_honor_terhitung_invarian",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1791481854828,
+      "tag": "0023_tagihan_spp_invarian",
+      "breakpoints": true
     }
   ]
 }

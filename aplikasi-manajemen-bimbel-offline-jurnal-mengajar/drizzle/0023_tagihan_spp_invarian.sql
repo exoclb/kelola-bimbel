@@ -1,0 +1,3 @@
+ALTER TABLE "student_invoices" ADD CONSTRAINT "student_invoices_nominal_tidak_negatif" CHECK ("student_invoices"."nominal" >= 0);--> statement-breakpoint
+ALTER TABLE "student_invoices" ADD CONSTRAINT "student_invoices_periode_valid" CHECK ("student_invoices"."periode_bulan" between 1 and 12 and "student_invoices"."periode_tahun" between 2000 and 2100);--> statement-breakpoint
+ALTER TABLE "student_invoices" ADD CONSTRAINT "student_invoices_tanggal_bayar_konsisten" CHECK (("student_invoices"."status" = 'lunas') = ("student_invoices"."tanggal_bayar" is not null));

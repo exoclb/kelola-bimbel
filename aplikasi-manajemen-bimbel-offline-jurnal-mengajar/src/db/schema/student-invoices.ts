@@ -1,5 +1,7 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   date,
   index,
   integer,
@@ -57,6 +59,19 @@ export const studentInvoices = pgTable(
     index("student_invoices_periode_idx").on(
       table.periodeTahun,
       table.periodeBulan,
+    ),
+    // Nominal tagihan tidak boleh negatif.
+    check("student_invoices_nominal_tidak_negatif", sql`${table.nominal} >= 0`),
+    // Periode harus bulan 1–12 pada tahun yang masuk akal; salah tulis di sini
+    // membuat tagihan tidak pernah ketemu di rekap periodenya.
+    check(
+      "student_invoices_periode_valid",
+      sql`${table.periodeBulan} between 1 and 12 and ${table.periodeTahun} between 2000 and 2100`,
+    ),
+    // Status "lunas" dan tanggal bayarnya harus konsisten dua arah.
+    check(
+      "student_invoices_tanggal_bayar_konsisten",
+      sql`(${table.status} = 'lunas') = (${table.tanggalBayar} is not null)`,
     ),
   ],
 );

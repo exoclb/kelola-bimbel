@@ -590,3 +590,60 @@ test("catatan honor terhitung dijaga periode, angka, dan tanggal bayarnya", asyn
   const dibayarDenganTanggal = await tulis("2099-04", "dibayar", "2099-05-01");
   assert.equal(dibayarDenganTanggal.rowCount, 1);
 });
+
+/**
+ * Invarian skema tagihan SPP (`drizzle/0015_tagihan_murid.sql` dan
+ * `0023_tagihan_spp_invarian.sql`): satu tagihan per murid per periode, nominal
+ * tidak negatif, periode bulan 1–12, dan status "lunas" selalu sejalan dengan
+ * tanggal bayarnya.
+ */
+test("tagihan SPP dijaga periode, nominal, dan tanggal bayarnya", async () => {
+  const { murid } = await siapkanJurnal();
+  const tulis = (
+    bulan,
+    tahun,
+    nominal = 350000,
+    status = "belum_lunas",
+    tanggalBayar = null,
+  ) =>
+    dbJurnal.query(
+      "INSERT INTO student_invoices (student_id, periode_bulan, periode_tahun, nominal, status, tanggal_bayar) VALUES ($1, $2, $3, $4, $5, $6)",
+      [murid, bulan, tahun, nominal, status, tanggalBayar],
+    );
+
+  await tulis(1, 2099);
+  const kembar = await ditolak(
+    "INSERT INTO student_invoices (student_id, periode_bulan, periode_tahun, nominal, status, tanggal_bayar) VALUES ($1, $2, $3, $4, $5, $6)",
+    [murid, 1, 2099, 350000, "belum_lunas", null],
+  );
+  assert.equal(kembar.code, "23505");
+
+  const bulanAneh = await ditolak(
+    "INSERT INTO student_invoices (student_id, periode_bulan, periode_tahun, nominal, status, tanggal_bayar) VALUES ($1, $2, $3, $4, $5, $6)",
+    [murid, 13, 2099, 350000, "belum_lunas", null],
+  );
+  assert.equal(bulanAneh.code, "23514");
+
+  const nominalNegatif = await ditolak(
+    "INSERT INTO student_invoices (student_id, periode_bulan, periode_tahun, nominal, status, tanggal_bayar) VALUES ($1, $2, $3, $4, $5, $6)",
+    [murid, 2, 2099, -1000, "belum_lunas", null],
+  );
+  assert.equal(nominalNegatif.code, "23514");
+
+  // Lunas tanpa tanggal bayar ditolak, dan sebaliknya belum lunas tidak boleh
+  // menyimpan tanggal bayar.
+  const lunasTanpaTanggal = await ditolak(
+    "INSERT INTO student_invoices (student_id, periode_bulan, periode_tahun, nominal, status, tanggal_bayar) VALUES ($1, $2, $3, $4, $5, $6)",
+    [murid, 3, 2099, 350000, "lunas", null],
+  );
+  assert.equal(lunasTanpaTanggal.code, "23514");
+
+  const belumLunasDenganTanggal = await ditolak(
+    "INSERT INTO student_invoices (student_id, periode_bulan, periode_tahun, nominal, status, tanggal_bayar) VALUES ($1, $2, $3, $4, $5, $6)",
+    [murid, 4, 2099, 350000, "belum_lunas", "2099-04-10"],
+  );
+  assert.equal(belumLunasDenganTanggal.code, "23514");
+
+  const lunas = await tulis(5, 2099, 350000, "lunas", "2099-05-10");
+  assert.equal(lunas.rowCount, 1);
+});
