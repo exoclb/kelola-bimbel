@@ -32,7 +32,7 @@ export function PanelRincianJam({
       <Button
         type="button"
         variant="ghost"
-        size="sm"
+        size="aksi"
         aria-expanded={terbuka}
         aria-controls={idRincian}
         className="-ml-3"

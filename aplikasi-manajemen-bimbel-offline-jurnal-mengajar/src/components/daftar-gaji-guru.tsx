@@ -8,13 +8,23 @@ import { PanelRincianJam } from "@/components/panel-rincian-jam";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { formatRupiah } from "@/lib/gaji";
 import { formatJam } from "@/lib/jurnal";
-import { tanggalISO } from "@/lib/tanggal";
 import type { BarisRekapGaji, StatusPembayaran } from "@/lib/mock-gaji";
 import Link from "next/link";
+
+export type StatusGajiGuru = {
+  status: StatusPembayaran;
+  tanggal: string | null;
+};
 
 type DaftarGajiGuruProps = {
   daftar: BarisRekapGaji[];
   periode: string;
+  /**
+   * Status pembayaran tiap guru. Dimiliki induk (`RekapGajiBulanan`) supaya
+   * kartu ringkasan dan berkas unduhan memakai angka yang sama dengan barisnya.
+   */
+  pembayaran: Record<string, StatusGajiGuru>;
+  onUbahStatus: (guruId: string, dibayar: boolean) => void;
 };
 
 const tanggalTampil = new Intl.DateTimeFormat("id-ID", {
@@ -44,20 +54,12 @@ function LabelPembayaran({ status }: { status: StatusPembayaran }) {
  * di state karena tabel `salary_recaps` (dan endpoint-nya) belum ada; begitu
  * endpoint gaji siap, kontrol ini tinggal memanggil API-nya.
  */
-export function DaftarGajiGuru({ daftar, periode }: DaftarGajiGuruProps) {
-  const [pembayaran, setPembayaran] = useState<
-    Record<string, { status: StatusPembayaran; tanggal: string | null }>
-  >(
-    Object.fromEntries(
-      daftar.map((baris) => [
-        baris.guruId,
-        {
-          status: baris.statusPembayaran,
-          tanggal: baris.tanggalDibayar,
-        },
-      ]),
-    ),
-  );
+export function DaftarGajiGuru({
+  daftar,
+  periode,
+  pembayaran,
+  onUbahStatus,
+}: DaftarGajiGuruProps) {
   const belumDibayar = Object.values(pembayaran).filter(
     (baris) => baris.status === "belum_dibayar",
   ).length;
@@ -65,13 +67,7 @@ export function DaftarGajiGuru({ daftar, periode }: DaftarGajiGuruProps) {
   const [dibatalkan, setDibatalkan] = useState<Record<string, boolean>>({});
 
   function ubahStatus(guruId: string, dibayar: boolean) {
-    setPembayaran((sebelumnya) => ({
-      ...sebelumnya,
-      [guruId]: {
-        status: dibayar ? "dibayar" : "belum_dibayar",
-        tanggal: dibayar ? tanggalISO(new Date()) : null,
-      },
-    }));
+    onUbahStatus(guruId, dibayar);
     setDibatalkan((sebelumnya) => ({ ...sebelumnya, [guruId]: !dibayar }));
   }
 
@@ -122,7 +118,7 @@ export function DaftarGajiGuru({ daftar, periode }: DaftarGajiGuruProps) {
                   totalJam={baris.totalJam}
                   tarifPerJam={baris.tarifPerJam}
                 />
-                <Button asChild variant="outline" size="sm">
+                <Button asChild variant="outline" size="aksi">
                   <Link
                     href={`/app/gaji/slip/${baris.guruId}?periode=${periode}`}
                   >
@@ -133,7 +129,7 @@ export function DaftarGajiGuru({ daftar, periode }: DaftarGajiGuruProps) {
                   <Button
                     type="button"
                     variant="ghost"
-                    size="sm"
+                    size="aksi"
                     onClick={() => ubahStatus(baris.guruId, false)}
                   >
                     <Undo2 aria-hidden="true" />
@@ -142,7 +138,7 @@ export function DaftarGajiGuru({ daftar, periode }: DaftarGajiGuruProps) {
                 ) : (
                   <Button
                     type="button"
-                    size="sm"
+                    size="aksi"
                     onClick={() => ubahStatus(baris.guruId, true)}
                   >
                     <BadgeCheck aria-hidden="true" />

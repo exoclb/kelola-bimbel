@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { CalendarRange, History, Receipt, Users, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,7 +17,8 @@ import { DaftarGajiGuru } from "@/components/daftar-gaji-guru";
 import { TombolUnduhLaporan } from "@/components/tombol-unduh-laporan";
 import { formatJam } from "@/lib/jurnal";
 import { formatRupiah } from "@/lib/gaji";
-import type { RekapGaji } from "@/lib/mock-gaji";
+import type { RekapGaji, StatusPembayaran } from "@/lib/mock-gaji";
+import { tanggalISO } from "@/lib/tanggal";
 import { getProfilBimbel } from "@/lib/mock-pengaturan";
 
 type RekapGajiBulananProps = {
@@ -32,6 +36,32 @@ export function RekapGajiBulanan({
   periodeTampil,
   namaOwner,
 }: RekapGajiBulananProps) {
+  // Status pembayaran dipegang di sini, bukan di daftar, supaya kartu
+  // ringkasan dan berkas unduhan ikut berubah begitu satu guru ditandai.
+  const [pembayaran, setPembayaran] = useState<
+    Record<string, { status: StatusPembayaran; tanggal: string | null }>
+  >(() =>
+    Object.fromEntries(
+      rekap.daftar.map((baris) => [
+        baris.guruId,
+        {
+          status: baris.statusPembayaran,
+          tanggal: baris.tanggalDibayar,
+        },
+      ]),
+    ),
+  );
+
+  function ubahStatus(guruId: string, dibayar: boolean) {
+    setPembayaran((sebelumnya) => ({
+      ...sebelumnya,
+      [guruId]: {
+        status: dibayar ? "dibayar" : "belum_dibayar",
+        tanggal: dibayar ? tanggalISO(new Date()) : null,
+      },
+    }));
+  }
+
   const totalJam = rekap.daftar.reduce(
     (jumlah, baris) => jumlah + baris.totalJam,
     0,
@@ -43,7 +73,7 @@ export function RekapGajiBulanan({
   // Yang dihitung hanya guru yang gajinya sudah ditandai dibayar; dulu angka ini
   // berisi jumlah semua guru sehingga seolah-olah semuanya sudah dibayar.
   const sudahDibayar = rekap.daftar.filter(
-    (baris) => baris.statusPembayaran === "dibayar",
+    (baris) => pembayaran[baris.guruId]?.status === "dibayar",
   ).length;
 
   // Baris untuk unduhan: angka ditulis apa adanya supaya bisa dijumlahkan lagi
@@ -54,7 +84,9 @@ export function RekapGajiBulanan({
     baris.totalJam,
     baris.tarifPerJam,
     baris.totalGaji,
-    baris.statusPembayaran === "dibayar" ? "Dibayar" : "Belum dibayar",
+    pembayaran[baris.guruId]?.status === "dibayar"
+      ? "Dibayar"
+      : "Belum dibayar",
   ]);
   barisUnduhan.push([
     "Total",
@@ -88,7 +120,7 @@ export function RekapGajiBulanan({
         <p className="text-base leading-7 text-muted-foreground">
           {periodeTampil} · disiapkan untuk {namaOwner}
         </p>
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="outline" size="aksi">
           <Link href="/app/gaji/riwayat">
             <History aria-hidden="true" />
             Riwayat gaji
@@ -141,10 +173,10 @@ export function RekapGajiBulanan({
                 name="periode"
                 type="month"
                 defaultValue={rekap.periode}
-                className="w-44"
+                className="h-[var(--target-sentuh-portal)] w-44 md:text-base"
               />
             </div>
-            <Button type="submit" size="sm">
+            <Button type="submit" size="aksi">
               <Receipt aria-hidden="true" />
               Tampilkan
             </Button>
@@ -160,7 +192,12 @@ export function RekapGajiBulanan({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <DaftarGajiGuru daftar={rekap.daftar} periode={rekap.periode} />
+          <DaftarGajiGuru
+            daftar={rekap.daftar}
+            periode={rekap.periode}
+            pembayaran={pembayaran}
+            onUbahStatus={ubahStatus}
+          />
         </CardContent>
       </Card>
     </div>

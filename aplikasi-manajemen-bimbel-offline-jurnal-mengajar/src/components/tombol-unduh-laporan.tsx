@@ -132,7 +132,7 @@ export function TombolUnduhLaporan({
       <div className="flex flex-wrap items-center gap-2">
         <Button
           type="button"
-          size="sm"
+          size="aksi"
           disabled={sedangProses !== null}
           onClick={unduhPdf}
         >
@@ -149,7 +149,7 @@ export function TombolUnduhLaporan({
         <Button
           type="button"
           variant="outline"
-          size="sm"
+          size="aksi"
           disabled={sedangProses !== null}
           onClick={unduhExcel}
         >
