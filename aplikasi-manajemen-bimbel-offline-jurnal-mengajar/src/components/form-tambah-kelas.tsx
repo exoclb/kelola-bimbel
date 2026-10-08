@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState, type FormEvent } from "react";
 import { CalendarPlus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,10 @@ export function FormTambahKelas({
     () => daftarCabang.filter((baris) => baris.statusAktif),
     [daftarCabang],
   );
+  // Tanpa cabang aktif, kelas baru memang belum bisa disimpan: server menolak
+  // cabang yang tidak terdaftar atau nonaktif. Formulirnya menjelaskan itu dan
+  // tidak menawarkan tombol simpan yang pasti gagal.
+  const adaCabangAktif = pilihanCabang.length > 0;
 
   const [terbuka, setTerbuka] = useState(false);
   const [namaKelas, setNamaKelas] = useState("");
@@ -139,7 +144,7 @@ export function FormTambahKelas({
                 }));
               }}
             >
-              {pilihanCabang.length === 0 && (
+              {!adaCabangAktif && (
                 <option value="">Belum ada cabang aktif</option>
               )}
               {pilihanCabang.map((baris) => (
@@ -203,8 +208,22 @@ export function FormTambahKelas({
             />
           </div>
 
+          {!adaCabangAktif && (
+            <p role="status" className="text-sm text-muted-foreground">
+              Belum ada cabang aktif, jadi kelas baru belum bisa disimpan.
+              Aktifkan atau tambah cabang dulu di{" "}
+              <Link
+                href="/app/cabang"
+                className="font-medium text-primary underline-offset-4 hover:underline"
+              >
+                halaman Cabang
+              </Link>
+              .
+            </p>
+          )}
+
           <div className="flex flex-wrap items-center gap-2">
-            <Button type="submit">
+            <Button type="submit" disabled={!adaCabangAktif}>
               <Plus aria-hidden="true" />
               Simpan kelas
             </Button>
