@@ -129,11 +129,13 @@ export function PanelPenempatan({
               Semua murid sudah punya kelas.
             </p>
           ) : (
-            <div className="flex flex-wrap items-end gap-2">
-              <div className="space-y-2">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-2">
+              {/* Di ponsel pilih murid lalu tekan tombolnya bertumpuk, supaya
+                  nama panjang tidak berdesakan dengan label tombol. */}
+              <div className="w-full space-y-2 sm:w-auto">
                 <Label htmlFor={idSelect}>Tambah murid</Label>
                 <NativeSelect
-                  className="h-[var(--target-sentuh-portal)] md:text-base"
+                  className="h-[var(--target-sentuh-portal)] w-full md:text-base"
                   id={idSelect}
                   value={dipilih}
                   onChange={(event) => setPilihan(event.target.value)}
@@ -148,6 +150,7 @@ export function PanelPenempatan({
               <Button
                 type="button"
                 size="aksi"
+                className="w-full sm:w-auto"
                 disabled={!dipilih}
                 onClick={() => {
                   onTambah(dipilih);
