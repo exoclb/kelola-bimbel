@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, CalendarDays, Phone, UserRound } from "lucide-react";
 import { cn } from "cn";
@@ -8,9 +8,13 @@ import { FormTambahMurid } from "@/components/form-tambah-murid";
 import { KolomPencarian } from "@/components/kolom-pencarian";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
 import { Card } from "@/components/ui/card";
 import type { Murid } from "@/lib/mock-murid";
 import { formatTanggalLengkap, hitungUsia } from "@/lib/tanggal";
+
+type SaringanStatus = "semua" | "aktif" | "nonaktif";
 
 type DaftarMuridProps = {
   daftarAwal: Murid[];
@@ -25,19 +29,31 @@ export function DaftarMurid({ daftarAwal }: DaftarMuridProps) {
   const [daftar, setDaftar] = useState(daftarAwal);
   const [pesan, setPesan] = useState("");
   const [cari, setCari] = useState("");
+  const [saringan, setSaringan] = useState<SaringanStatus>("semua");
+  const idSaring = useId();
 
   const aktif = daftar.filter((murid) => murid.statusAktif).length;
   const kataKunci = cari.trim().toLowerCase();
-  const cocok = kataKunci
-    ? daftar.filter(
-        // Sama seperti `?cari=` di /api/murid: nama anak, nama orang tua,
-        // atau kontak orang tuanya.
-        (murid) =>
-          murid.nama.toLowerCase().includes(kataKunci) ||
-          murid.namaOrangTua.toLowerCase().includes(kataKunci) ||
-          murid.kontakOrangTua.toLowerCase().includes(kataKunci),
-      )
-    : daftar;
+  const cocok = daftar
+    .filter((murid) => {
+      // Penyaringan status: murid nonaktif disembunyikan supaya daftar harian
+      // hanya berisi anak yang masih belajar.
+      if (saringan === "aktif") return murid.statusAktif;
+      if (saringan === "nonaktif") return !murid.statusAktif;
+      return true;
+    })
+    .filter((murid) => {
+      if (!kataKunci) return true;
+      // Sama seperti `?cari=` di /api/murid: nama anak, nama orang tua,
+      // atau kontak orang tuanya.
+      return (
+        murid.nama.toLowerCase().includes(kataKunci) ||
+        murid.namaOrangTua.toLowerCase().includes(kataKunci) ||
+        murid.kontakOrangTua.toLowerCase().includes(kataKunci)
+      );
+    });
+
+  const adaSaringan = Boolean(kataKunci) || saringan !== "semua";
 
   function tambahMurid(murid: Murid) {
     setDaftar((sebelumnya) =>
@@ -67,10 +83,31 @@ export function DaftarMurid({ daftarAwal }: DaftarMuridProps) {
           label="Cari murid"
           placeholder="Cari nama, orang tua, atau kontak…"
         />
-        {kataKunci && (
+        <div className="space-y-2">
+          <Label htmlFor={idSaring}>Status murid</Label>
+          <NativeSelect
+            className="h-[var(--target-sentuh-portal)] md:text-base"
+            id={idSaring}
+            value={saringan}
+            onChange={(event) =>
+              setSaringan(event.target.value as SaringanStatus)
+            }
+          >
+            <option value="semua">Semua status</option>
+            <option value="aktif">Hanya yang aktif</option>
+            <option value="nonaktif">Hanya yang tidak aktif</option>
+          </NativeSelect>
+        </div>
+        {adaSaringan && (
           <p role="status" className="text-sm text-muted-foreground">
-            {cocok.length} dari {daftar.length} murid cocok dengan “
-            {cari.trim()}”.
+            {cocok.length} dari {daftar.length} murid cocok
+            {kataKunci ? ` dengan “${cari.trim()}”` : ""}
+            {saringan === "aktif"
+              ? " dan masih aktif"
+              : saringan === "nonaktif"
+                ? " dan tidak aktif"
+                : ""}
+            .
           </p>
         )}
         <FormTambahMurid onTambah={tambahMurid} />
@@ -82,10 +119,10 @@ export function DaftarMurid({ daftarAwal }: DaftarMuridProps) {
       {cocok.length === 0 ? (
         <PesanKosong
           className="mt-6"
-          judul={kataKunci ? "Tidak ada murid yang cocok" : "Belum ada murid"}
+          judul={adaSaringan ? "Tidak ada murid yang cocok" : "Belum ada murid"}
           keterangan={
-            kataKunci
-              ? `Coba kata kunci lain, atau hapus pencarian “${cari.trim()}”.`
+            adaSaringan
+              ? "Coba kata kunci lain, atau ubah saringan statusnya."
               : "Data murid muncul di sini setelah ditambahkan."
           }
         />

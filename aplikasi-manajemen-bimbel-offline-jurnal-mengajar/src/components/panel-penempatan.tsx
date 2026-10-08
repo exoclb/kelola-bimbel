@@ -7,6 +7,7 @@ import {
   Phone,
   UserMinus,
   UserPlus,
+  TriangleAlert,
   UserRound,
   Users,
 } from "lucide-react";
@@ -27,6 +28,8 @@ type PanelPenempatanProps = {
   terdaftar: MuridDiKelas[];
   /** Murid yang belum aktif di kelas yang sedang dibuka. */
   tersedia: Murid[];
+  /** Pesan penolakan penempatan untuk kelas ini, mis. murid sudah terdaftar. */
+  galat?: string;
   onTambah: (muridId: string) => void;
   onKeluarkan: (muridId: string) => void;
 };
@@ -38,6 +41,7 @@ type PanelPenempatanProps = {
 export function PanelPenempatan({
   terdaftar,
   tersedia,
+  galat = "",
   onTambah,
   onKeluarkan,
 }: PanelPenempatanProps) {
@@ -126,7 +130,7 @@ export function PanelPenempatan({
 
           {tersedia.length === 0 ? (
             <p className="text-muted-foreground text-sm">
-              Semua murid sudah punya kelas.
+              Semua murid aktif sudah masuk kelas ini.
             </p>
           ) : (
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-2">
@@ -161,6 +165,19 @@ export function PanelPenempatan({
                 Masukkan ke kelas
               </Button>
             </div>
+          )}
+
+          {galat && (
+            <p
+              role="alert"
+              className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm leading-6 text-destructive"
+            >
+              <TriangleAlert
+                className="mt-0.5 size-4 shrink-0"
+                aria-hidden="true"
+              />
+              {galat}
+            </p>
           )}
         </>
       )}

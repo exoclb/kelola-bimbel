@@ -58,6 +58,9 @@ export function DaftarKelas({
   const penempatanTerkini = useRef(penempatanAwal);
   const [pesan, setPesan] = useState("");
   const [galat, setGalat] = useState("");
+  // Penolakan penempatan ditampilkan di panel kelas yang bersangkutan, bukan
+  // di kepala halaman, supaya terlihat saat guru sedang berada di panel itu.
+  const [galatUntuk, setGalatUntuk] = useState("");
   const [cari, setCari] = useState("");
   // Id kelas yang sedang diubah datanya; sisanya tampil seperti biasa.
   const [ubahUntuk, setUbahUntuk] = useState<string | null>(null);
@@ -80,10 +83,12 @@ export function DaftarKelas({
   function tampilkanPesan(teks: string) {
     setPesan(teks);
     setGalat("");
+    setGalatUntuk("");
   }
 
-  function tampilkanGalat(teks: string) {
+  function tampilkanGalat(teks: string, kelasId = "") {
     setGalat(teks);
+    setGalatUntuk(kelasId);
     setPesan("");
   }
 
@@ -114,8 +119,12 @@ export function DaftarKelas({
       .filter((baris) => baris.status === "aktif")
       .map((baris) => `${baris.kelasId}:${baris.muridId}`),
   );
+  // Murid nonaktif tidak boleh ditempatkan lagi, jadi tidak ikut ditawarkan.
   const muridTersedia = (kelasId: string) =>
-    daftarMurid.filter((murid) => !muridDiKelas.has(`${kelasId}:${murid.id}`));
+    daftarMurid.filter(
+      (murid) =>
+        murid.statusAktif && !muridDiKelas.has(`${kelasId}:${murid.id}`),
+    );
 
   function ubahJadwal(
     kelasId: string,
@@ -189,6 +198,15 @@ export function DaftarKelas({
   function tempatkanMurid(kelasId: string, muridId: string) {
     // Sejak aturan multi-kelas, murid boleh aktif di beberapa kelas; yang
     // ditolak hanya penempatan kedua di kelas yang sama.
+    const murid = daftarMurid.find((anak) => anak.id === muridId);
+    if (murid && !murid.statusAktif) {
+      tampilkanGalat(
+        `${murid.nama} sudah tidak aktif, jadi belum bisa ditempatkan. Aktifkan dulu di halaman Murid.`,
+        kelasId,
+      );
+      return;
+    }
+
     const sudahAda = penempatanTerkini.current.find(
       (baris) =>
         baris.muridId === muridId &&
@@ -196,7 +214,10 @@ export function DaftarKelas({
         baris.status === "aktif",
     );
     if (sudahAda) {
-      tampilkanGalat(`${namaMurid(muridId)} sudah terdaftar di kelas ini.`);
+      tampilkanGalat(
+        `${namaMurid(muridId)} sudah terdaftar di kelas ini.`,
+        kelasId,
+      );
       return;
     }
 
@@ -254,11 +275,6 @@ export function DaftarKelas({
         <p role="status" className="text-sm text-muted-foreground">
           {pesan}
         </p>
-        {galat && (
-          <p role="alert" className="text-sm text-destructive">
-            {galat}
-          </p>
-        )}
       </div>
 
       {cocok.length === 0 ? (
@@ -351,6 +367,7 @@ export function DaftarKelas({
                       }}
                     />
                     <PanelPenempatan
+                      galat={galatUntuk === kelas.id ? galat : ""}
                       terdaftar={terdaftar}
                       tersedia={muridTersedia(kelas.id)}
                       onTambah={(muridId) => tempatkanMurid(kelas.id, muridId)}
