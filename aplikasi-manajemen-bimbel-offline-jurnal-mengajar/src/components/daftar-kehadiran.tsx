@@ -1,6 +1,7 @@
 "use client";
 
 import { CheckCheck } from "lucide-react";
+import { PilPortal } from "@/components/pil-portal";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -44,8 +45,11 @@ export function DaftarKehadiran({
       <CardHeader>
         <CardTitle>Kehadiran murid</CardTitle>
         <CardDescription>
-          {jumlahHadir} dari {murid.length} murid hadir. Hilangkan centang kalau
-          ada yang tidak masuk.
+          {jumlahHadir} dari {murid.length} murid hadir
+          {murid.length - jumlahHadir > 0
+            ? ` · ${murid.length - jumlahHadir} tidak hadir`
+            : " · semua hadir"}
+          . Hilangkan centang kalau ada yang tidak masuk.
         </CardDescription>
         <CardAction>
           <Button
@@ -87,11 +91,14 @@ export function DaftarKehadiran({
                   </Label>
                 </div>
                 {hadir ? (
-                  <span className="pl-7 text-sm text-muted-foreground sm:pl-0">
+                  <PilPortal className="border-primary/30 bg-primary/10 text-primary">
                     Hadir
-                  </span>
+                  </PilPortal>
                 ) : (
-                  <div className="pl-7 sm:w-64 sm:pl-0">
+                  <div className="space-y-2 pl-7 sm:w-64 sm:pl-0">
+                    <PilPortal className="border-destructive/30 bg-destructive/10 text-destructive">
+                      Tidak hadir
+                    </PilPortal>
                     <Label
                       htmlFor={`keterangan-${anak.id}`}
                       className="sr-only"
