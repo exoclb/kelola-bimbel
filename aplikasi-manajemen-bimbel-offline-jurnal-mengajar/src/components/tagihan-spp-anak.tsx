@@ -15,7 +15,9 @@ import { PesanKosong } from "@/components/status-antarmuka";
 import { formatRupiah } from "@/lib/gaji";
 import { tandaiTerbaca } from "@/lib/jejak-baca-portal-store";
 import type { AnakWali, StatusJejakPortal } from "@/lib/portal-wali";
+import { bedaHari, tanggalISO } from "@/lib/tanggal";
 import { periodeDariTagihan, type Tagihan } from "@/lib/tagihan";
+import { useTanggalPerangkat } from "@/lib/tanggal-perangkat";
 import {
   formatPeriodeTagihan,
   jatuhTempoTagihan,
@@ -31,6 +33,8 @@ type TagihanSppAnakProps = {
   statusAwal: StatusJejakPortal;
   /** Tagihan seluruh anak yang tertaut ke wali ini, dari tabel `student_invoices`. */
   tagihan: Tagihan[];
+  /** Tanggal hari ini menurut server (), dipakai sebelum jam perangkat siap. */
+  tanggalServer: string;
 };
 
 const tanggalTampil = new Intl.DateTimeFormat("id-ID", {
@@ -51,8 +55,12 @@ export function TagihanSppAnak({
   muridId,
   statusAwal,
   tagihan,
+  tanggalServer,
 }: TagihanSppAnakProps) {
   const router = useRouter();
+  // Tanggal menurut jam perangkat wali, supaya hitungan hari terlambat tidak
+  // bergeser karena zona waktu server.
+  const tanggalPerangkat = useTanggalPerangkat(tanggalServer);
 
   // Tanpa id dari alamat, tampil anak pertama milik wali ini; id yang tidak
   // tertaut tidak jatuh ke anak lain, jadi tidak ada tagihan yang bocor.
@@ -182,6 +190,21 @@ export function TagihanSppAnak({
                           <span>
                             Jatuh tempo{" "}
                             {tanggalTampil.format(jatuhTempoTagihan(tagihan))}
+                            {(() => {
+                              const telat = bedaHari(
+                                tanggalISO(jatuhTempoTagihan(tagihan)),
+                                tanggalPerangkat,
+                              );
+                              return statusPembayaran(
+                                tagihan,
+                                periodeBerjalan,
+                              ) === "terlambat" && telat > 0 ? (
+                                <span className="text-destructive font-medium">
+                                  {" "}
+                                  · terlambat {telat} hari
+                                </span>
+                              ) : null;
+                            })()}
                           </span>
                         )}
                       </div>

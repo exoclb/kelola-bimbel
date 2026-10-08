@@ -89,6 +89,19 @@ export function menitSekarang(tanggal = new Date()) {
 }
 
 /**
+ * Selisih hari antara dua tanggal `YYYY-MM-DD`; positif kalau tanggal kedua
+ * lebih baru. Keduanya dibaca sebagai tengah malam UTC supaya perhitungannya
+ * tidak terpengaruh zona waktu peramban (mis. untuk menghitung "terlambat N
+ * hari" pada tagihan).
+ */
+export function bedaHari(pertama: string, kedua: string) {
+  return Math.round(
+    (Date.parse(`${kedua}T00:00:00Z`) - Date.parse(`${pertama}T00:00:00Z`)) /
+      86_400_000,
+  );
+}
+
+/**
  * Lama satu sesi dari jam mulai dan jam selesai (`HH:MM`), mis. "1 jam 30
  * menit". String kosong dipakai bila jamnya tidak masuk akal (selesai sebelum
  * mulai), supaya tampilan tidak menampilkan angka negatif.

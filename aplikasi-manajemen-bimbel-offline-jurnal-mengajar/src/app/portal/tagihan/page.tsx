@@ -3,6 +3,7 @@ import { TagihanSppAnak } from "@/components/tagihan-spp-anak";
 import { statusSemuaAnak } from "@/services/jejak-baca.service";
 import { muatIsiPortalWali } from "@/services/portal.service";
 import { requireSession } from "@/lib/session";
+import { tanggalISO } from "@/lib/tanggal";
 
 export const metadata: Metadata = { title: "Tagihan SPP Anak" };
 
@@ -25,6 +26,7 @@ export default async function TagihanSppAnakPage({
       muridId={params.anak?.trim() ?? ""}
       statusAwal={await statusSemuaAnak(session.user.id, anak)}
       tagihan={tagihan}
+      tanggalServer={tanggalISO(new Date())}
     />
   );
 }

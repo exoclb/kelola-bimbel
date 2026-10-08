@@ -34,6 +34,9 @@ export function RingkasanTagihanAnak({
 }: RingkasanTagihanAnakProps) {
   const rekap = hitungRekapTagihan(daftar);
   const terbaru = daftar[0];
+  const jumlahTerlambat = daftar.filter(
+    (baris) => statusPembayaran(baris, periodeBerjalan) === "terlambat",
+  ).length;
 
   return (
     <KartuPortal
@@ -62,7 +65,7 @@ export function RingkasanTagihanAnak({
       </dl>
       <p className="text-muted-foreground text-xs">
         {rekap.jumlah > 0
-          ? `${rekap.jumlah} tagihan · ${rekap.jumlahLunas} lunas · ${rekap.jumlahBelumLunas} belum lunas`
+          ? `${rekap.jumlah} tagihan · ${rekap.jumlahLunas} lunas · ${rekap.jumlahBelumLunas} belum lunas${jumlahTerlambat > 0 ? ` · ${jumlahTerlambat} terlambat` : ""}`
           : "Belum ada tagihan yang tercatat untuk anak ini."}
       </p>
     </KartuPortal>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useSyncExternalStore } from "react";
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarCheck, CalendarDays, Clock3 } from "lucide-react";
 import { KartuPortal } from "@/components/kartu-portal";
@@ -18,11 +18,14 @@ import {
   HARI_DALAM_SEMINGGU,
   indeksHari,
   menitDariJam,
-  menitSekarang,
   namaHari,
   tanggalISO,
   urutkanJadwal,
 } from "@/lib/tanggal";
+import {
+  useMenitPerangkat,
+  useTanggalPerangkat,
+} from "@/lib/tanggal-perangkat";
 import { cn } from "cn";
 import { KELAS_PIL } from "@/components/pil-portal";
 
@@ -131,36 +134,6 @@ function DaftarSesi({
         );
       })}
     </ul>
-  );
-}
-
-/** Langganan kosong: tanggal dibaca ulang tiap render, bukan tiap kejadian. */
-const tanpaLangganan = () => () => {};
-
-/**
- * Tanggal hari ini menurut jam perangkat wali (`YYYY-MM-DD`). Lukisan pertama
- * memakai `tanggalServer` supaya server dan klien tidak berbeda, lalu React
- * menghitung ulang dengan jam peramban — jadi zona waktu server (mis. UTC di
- * wadah produksi) tidak menggeser "hari ini" bagi pengguna di Indonesia.
- */
-function useTanggalPerangkat(tanggalServer: string) {
-  return useSyncExternalStore(
-    tanpaLangganan,
-    () => tanggalISO(new Date()),
-    () => tanggalServer,
-  );
-}
-
-/**
- * Menit sejak tengah malam menurut jam perangkat wali. Lukisan pertama memakai
- * `menitServer` supaya server dan klien tidak berbeda, lalu React menghitung
- * ulang dengan jam peramban.
- */
-function useMenitPerangkat(menitServer: number) {
-  return useSyncExternalStore(
-    tanpaLangganan,
-    () => menitSekarang(),
-    () => menitServer,
   );
 }
 
