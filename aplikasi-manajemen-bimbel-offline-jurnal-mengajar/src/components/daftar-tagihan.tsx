@@ -48,6 +48,8 @@ export function DaftarTagihan({ daftar, periodeTampil }: DaftarTagihanProps) {
   const [pesan, setPesan] = useState("");
   const [galat, setGalat] = useState("");
   const [pendingId, setPendingId] = useState<string | null>(null);
+  // Tagihan yang status lunasnya sedang dikonfirmasi untuk dibatalkan.
+  const [batalId, setBatalId] = useState<string | null>(null);
 
   const rekap = hitungRekapTagihan(daftar);
 
@@ -210,22 +212,57 @@ export function DaftarTagihan({ daftar, periodeTampil }: DaftarTagihanProps) {
 
                   <div className="flex flex-wrap items-end gap-2">
                     {lunas ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="aksi"
-                        disabled={pending}
-                        onClick={() => {
-                          void ubahStatus(
-                            tagihan,
-                            { status: "belum_lunas" },
-                            `${tagihan.muridNama}: status lunas dibatalkan.`,
-                          );
-                        }}
-                      >
-                        <Undo2 aria-hidden="true" />
-                        Batalkan lunas
-                      </Button>
+                      batalId === tagihan.id ? (
+                        // Pembatalan mengubah data di database, jadi dikonfirmasi
+                        // dulu di tempat, sama seperti pola daftar pengeluaran.
+                        <div
+                          role="alert"
+                          className="flex flex-wrap items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2"
+                        >
+                          <p className="text-sm">
+                            Batalkan status lunas {tagihan.muridNama}?
+                          </p>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="aksi"
+                              disabled={pending}
+                              onClick={() => {
+                                setBatalId(null);
+                                void ubahStatus(
+                                  tagihan,
+                                  { status: "belum_lunas" },
+                                  `${tagihan.muridNama}: status lunas dibatalkan.`,
+                                );
+                              }}
+                            >
+                              <Undo2 aria-hidden="true" />
+                              Ya, batalkan
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="aksi"
+                              disabled={pending}
+                              onClick={() => setBatalId(null)}
+                            >
+                              Batal
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="aksi"
+                          disabled={pending}
+                          onClick={() => setBatalId(tagihan.id)}
+                        >
+                          <Undo2 aria-hidden="true" />
+                          Batalkan lunas
+                        </Button>
+                      )
                     ) : bukaId === tagihan.id ? (
                       <>
                         <div className="space-y-2">
@@ -274,6 +311,7 @@ export function DaftarTagihan({ daftar, periodeTampil }: DaftarTagihanProps) {
                         size="aksi"
                         onClick={() => {
                           setTanggalBayar(tanggalISO(new Date()));
+                          setBatalId(null);
                           setBukaId(tagihan.id);
                         }}
                       >
