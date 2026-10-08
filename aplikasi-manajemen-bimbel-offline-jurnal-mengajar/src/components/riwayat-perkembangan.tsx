@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { AksiCatatanPerkembangan } from "@/components/aksi-catatan-perkembangan";
-import { ArrowLeft, CalendarCheck, CalendarX, UserRound } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarCheck,
+  CalendarX,
+  ClipboardList,
+  UserRound,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -101,7 +107,17 @@ export function RiwayatPerkembangan({
               : `${hadir} dari ${kehadiran.length} pertemuan dihadiri · ${tidakHadir} tidak hadir.`}
           </CardDescription>
         </CardHeader>
-        {kehadiran.length > 0 && (
+        {kehadiran.length === 0 ? (
+          <CardContent>
+            <p className="text-muted-foreground flex items-start gap-2 text-sm">
+              <CalendarX
+                className="mt-0.5 size-4 shrink-0"
+                aria-hidden="true"
+              />
+              Kehadiran muncul di sini setelah guru mengisi jurnal sesinya.
+            </p>
+          </CardContent>
+        ) : (
           <CardContent className="space-y-2">
             <ul className="divide-y">
               {[...kehadiran]
@@ -150,7 +166,18 @@ export function RiwayatPerkembangan({
               : "Terbaru lebih dulu."}
           </CardDescription>
         </CardHeader>
-        {urut.length > 0 && (
+        {urut.length === 0 ? (
+          <CardContent>
+            <p className="text-muted-foreground flex items-start gap-2 text-sm">
+              <ClipboardList
+                className="mt-0.5 size-4 shrink-0"
+                aria-hidden="true"
+              />
+              Nilai, sikap, dan catatan guru muncul di sini setelah guru mengisi
+              evaluasi pertemuan.
+            </p>
+          </CardContent>
+        ) : (
           <CardContent>
             <ol className="divide-y">
               {urut.map((baris) => (
@@ -170,13 +197,15 @@ export function RiwayatPerkembangan({
                       </span>
                     </div>
                   </div>
-                  <p className="text-sm">
-                    {baris.catatanPerkembangan || (
-                      <span className="text-muted-foreground">
-                        Tanpa catatan tertulis.
-                      </span>
-                    )}
-                  </p>
+                  {baris.catatanPerkembangan ? (
+                    <p className="border-primary/30 border-l-2 pl-3 text-sm leading-6">
+                      {baris.catatanPerkembangan}
+                    </p>
+                  ) : (
+                    <p className="text-muted-foreground text-sm">
+                      Tanpa catatan tertulis.
+                    </p>
+                  )}
 
                   {baris.guruId === guruId ? (
                     <AksiCatatanPerkembangan
