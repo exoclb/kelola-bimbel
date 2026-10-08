@@ -199,6 +199,51 @@ test("jumlahkanRingkasanCabang menjumlahkan seluruh cabang", () => {
   });
 });
 
+/**
+ * Seeder cabang dan kelas menghasilkan keadaan yang konsisten dengan data
+ * contoh: jumlah kelas per cabang di ringkasan sama dengan jumlah kelas contoh
+ * yang menunjuk cabang itu, dan angkanya ikut turun saat kelasnya dihapus.
+ */
+test("hasil seeder cabang dan kelas konsisten dengan data contoh", async () => {
+  const { seedCabang } = await import("../scripts/lib/seed-cabang.mjs");
+  const { seedKelas } = await import("../scripts/lib/seed-kelas.mjs");
+  const { getDaftarCabang } = await import("../src/lib/mock-cabang.ts");
+  const { getDaftarKelas } = await import("../src/lib/mock-kelas.ts");
+
+  await bersihkan();
+  const cabangContoh = getDaftarCabang();
+  const kelasContoh = getDaftarKelas();
+  await seedCabang(pool, cabangContoh);
+  const hasil = await seedKelas(pool, kelasContoh);
+  assert.equal(hasil.jumlah, kelasContoh.length);
+
+  const daftar = await ringkasanPerCabang();
+  for (const cabang of cabangContoh) {
+    const harapan = kelasContoh.filter(
+      (kelas) => kelas.cabang === cabang.nama,
+    ).length;
+    const baris = daftar.find((satu) => satu.nama === cabang.nama);
+    assert.equal(baris.jumlahKelas, harapan, `kelas ${cabang.nama}`);
+    assert.equal(
+      baris.statusAktif,
+      cabang.statusAktif,
+      `status ${cabang.nama}`,
+    );
+  }
+
+  // Menghapus satu kelas contoh menurunkan angka cabangnya.
+  const korban = kelasContoh[0];
+  const sebelum = (await jumlahKelasPerCabang())[korban.cabang];
+  await pool.query("DELETE FROM classes WHERE nama_kelas = $1", [
+    korban.namaKelas,
+  ]);
+  assert.equal((await jumlahKelasPerCabang())[korban.cabang], sebelum - 1);
+
+  await pool.query("DELETE FROM classes WHERE nama_kelas = ANY($1)", [
+    kelasContoh.map((kelas) => kelas.namaKelas),
+  ]);
+});
+
 test.after(async () => {
   await bersihkan();
   await pool.query('DELETE FROM "user" WHERE id = $1', [GURU]);
