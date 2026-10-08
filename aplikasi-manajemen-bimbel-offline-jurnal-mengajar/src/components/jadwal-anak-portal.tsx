@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarCheck, CalendarDays, Clock3 } from "lucide-react";
 import { KartuPortal } from "@/components/kartu-portal";
@@ -12,7 +12,12 @@ import type {
   JadwalAnak,
   StatusJejakPortal,
 } from "@/lib/portal-wali";
-import { HARI_DALAM_SEMINGGU, namaHari, urutkanJadwal } from "@/lib/tanggal";
+import {
+  HARI_DALAM_SEMINGGU,
+  indeksHari,
+  namaHari,
+  urutkanJadwal,
+} from "@/lib/tanggal";
 
 /** Daftar sesi satu hari: jam, kelas beserta cabangnya, dan guru pengajar. */
 function DaftarSesi({ daftar }: { daftar: JadwalAnak[] }) {
@@ -34,6 +39,22 @@ function DaftarSesi({ daftar }: { daftar: JadwalAnak[] }) {
   );
 }
 
+/** Langganan kosong: hari dibaca ulang tiap render, bukan tiap kejadian. */
+const tanpaLangganan = () => () => {};
+
+/**
+ * Nama hari menurut jam perangkat wali. Lukisan pertama memakai `hariServer`
+ * (supaya server dan klien tidak berbeda), lalu React menghitung ulang dengan jam
+ * peramban — jadi zona waktu server tidak menggeser "hari ini" bagi pengguna.
+ */
+function useHariPerangkat(hariServer: string) {
+  return useSyncExternalStore(
+    tanpaLangganan,
+    () => namaHari(new Date()),
+    () => hariServer,
+  );
+}
+
 type JadwalAnakPortalProps = {
   anak: AnakWali[];
   /** Id anak dari alamat halaman (`?anak=`); kosong berarti anak pertama. */
@@ -42,6 +63,13 @@ type JadwalAnakPortalProps = {
   statusAwal: StatusJejakPortal;
   /** Jadwal seluruh anak yang tertaut; disaring ke anak yang sedang dipilih. */
   jadwal: JadwalAnak[];
+  /**
+   * Nama hari hari ini menurut server. Dipakai untuk lukisan pertama saja;
+   * setelah halaman hidup, harinya dihitung ulang dari jam perangkat wali
+   * supaya zona waktu server (mis. UTC di wadah produksi) tidak menggeser
+   * "hari ini" bagi pengguna di Indonesia.
+   */
+  hariServer: string;
 };
 
 /**
@@ -55,6 +83,7 @@ export function JadwalAnakPortal({
   muridId,
   statusAwal,
   jadwal,
+  hariServer,
 }: JadwalAnakPortalProps) {
   const router = useRouter();
   const dipilih =
@@ -73,13 +102,21 @@ export function JadwalAnakPortal({
     return peta;
   }, [jadwal, dipilih?.muridId]);
 
-  const hariIni = namaHari(new Date());
+  const hariIni = useHariPerangkat(hariServer);
+
   const sesiHariIni = perHari.get(hariIni) ?? [];
   // Hari ini sudah tampil di kartunya sendiri, jadi daftar pekan tidak
   // mengulanginya.
   const hariLain = HARI_DALAM_SEMINGGU.filter(
     (hari) => hari !== hariIni && perHari.has(hari),
   );
+  // Sesi terdekat setelah hari ini; kalau pekan ini sudah lewat, dipakai sesi
+  // paling awal pekan berjalan.
+  const hariBerikut =
+    HARI_DALAM_SEMINGGU.filter(
+      (hari) => perHari.has(hari) && indeksHari(hari) > indeksHari(hariIni),
+    )[0] ?? hariLain[0];
+  const sesiBerikut = hariBerikut ? perHari.get(hariBerikut)?.[0] : undefined;
 
   return (
     <LayarPortal
@@ -119,9 +156,18 @@ export function JadwalAnakPortal({
                 {sesiHariIni.length > 0 ? (
                   <DaftarSesi daftar={sesiHariIni} />
                 ) : (
-                  <p className="text-muted-foreground text-sm">
-                    Tidak ada sesi belajar hari ini.
-                  </p>
+                  <div className="space-y-1">
+                    <p className="text-muted-foreground text-sm">
+                      Tidak ada sesi belajar hari ini.
+                    </p>
+                    {sesiBerikut && (
+                      <p className="text-sm">
+                        Sesi berikutnya: {sesiBerikut.hari},{" "}
+                        {sesiBerikut.jamMulai}–{sesiBerikut.jamSelesai} ·{" "}
+                        {sesiBerikut.kelasNama}
+                      </p>
+                    )}
+                  </div>
                 )}
               </KartuPortal>
 
