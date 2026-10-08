@@ -62,16 +62,12 @@ export async function jumlahKelasPerCabang(): Promise<Record<string, number>> {
 export async function ringkasanPerCabang(): Promise<RingkasanCabang[]> {
   // Tiga agregat terpisah, bukan satu query berjalin: penempatan murid dan
   // jurnal sama-sama bercabang dari kelas, jadi menggabungkannya dalam satu
-  // query akan menggandakan hitungannya.
-  const [daftarCabang, perKelas, perMurid, perJurnal] = await Promise.all([
+  // query akan menggandakan hitungannya. Jumlah kelasnya memakai query yang
+  // sama dengan halaman pengaturan cabang (`jumlahKelasPerCabang`), jadi
+  // angkanya tidak bisa berbeda antara kedua halaman itu.
+  const [daftarCabang, kelasPerCabang, perMurid, perJurnal] = await Promise.all([
     listCabang(),
-    db
-      .select({
-        cabang: classes.cabang,
-        jumlahKelas: sql<number>`count(*)::int`.as("jumlah_kelas"),
-      })
-      .from(classes)
-      .groupBy(classes.cabang),
+    jumlahKelasPerCabang(),
     db
       .select({
         cabang: classes.cabang,
@@ -111,8 +107,8 @@ export async function ringkasanPerCabang(): Promise<RingkasanCabang[]> {
     return baru;
   };
 
-  for (const baris of perKelas)
-    wadah(baris.cabang).jumlahKelas = baris.jumlahKelas;
+  for (const [nama, jumlah] of Object.entries(kelasPerCabang))
+    wadah(nama).jumlahKelas = jumlah;
   for (const baris of perMurid)
     wadah(baris.cabang).jumlahMurid = baris.jumlahMurid;
   for (const baris of perJurnal) {
