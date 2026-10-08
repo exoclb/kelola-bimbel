@@ -172,7 +172,7 @@ export function JadwalAnakPortal({
           ) : (
             <>
               <KartuPortal
-                className="mt-6"
+                className="border-primary/40 bg-primary/5 mt-6"
                 judul={`Hari ini · ${hariIni}`}
                 ikon={CalendarCheck}
                 keterangan={tanggalRingkas.format(tanggalAcuan)}
