@@ -21,16 +21,17 @@ The agent can use `npm run predev` then `npm run doctor` when dependencies alrea
 
 ## Database commands
 
-| Command                | Result                                                                                                                                                       |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `npm run db:up`        | Generate missing local settings and start PostgreSQL; wait until healthy                                                                                     |
-| `npm run db:status`    | Show this copy's running or stopped database container                                                                                                       |
-| `npm run db:logs`      | Show the last 80 database log lines without following indefinitely                                                                                           |
-| `npm run db:down`      | Remove this copy's container and network, keeping its data volume                                                                                            |
-| `npm run db:migrate`   | Apply committed migrations                                                                                                                                   |
-| `npm run db:seed`      | Create the first owner account; idempotent, needs `SEED_OWNER_PASSWORD`                                                                                      |
-| `npm run db:seed:wali` | Link the example wali accounts to their children (`students` + `wali_murid`); idempotent, needs `SEED_WALI_PASSWORD` while any wali account is still missing |
-| `npm run doctor`       | Verify connection, auth tables, and project tooling files                                                                                                    |
+| Command                  | Result                                                                                                                                                       |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `npm run db:up`          | Generate missing local settings and start PostgreSQL; wait until healthy                                                                                     |
+| `npm run db:status`      | Show this copy's running or stopped database container                                                                                                       |
+| `npm run db:logs`        | Show the last 80 database log lines without following indefinitely                                                                                           |
+| `npm run db:down`        | Remove this copy's container and network, keeping its data volume                                                                                            |
+| `npm run db:migrate`     | Apply committed migrations                                                                                                                                   |
+| `npm run db:seed`        | Create the first owner account; idempotent, needs `SEED_OWNER_PASSWORD`                                                                                      |
+| `npm run db:seed:wali`   | Link the example wali accounts to their children (`students` + `wali_murid`); idempotent, needs `SEED_WALI_PASSWORD` while any wali account is still missing |
+| `npm run db:seed:cabang` | Fill the example branches in `cabang`; idempotent, development only                                                                                          |
+| `npm run doctor`         | Verify connection, auth tables, and project tooling files                                                                                                    |
 
 Use these commands instead of bare `docker compose up`: the wrappers load Next.js environment files and the saved project name. The database listens only on `127.0.0.1`, using a generated high port recorded in `.env.local`. Each fresh derivative has its own project, password, port, and volume.
 

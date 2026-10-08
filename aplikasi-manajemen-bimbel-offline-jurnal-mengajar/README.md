@@ -82,6 +82,7 @@ Not every screen is wired to the database yet. Expenses, teacher attendance, and
 | `npm run db:generate`         | Generate migration SQL after a schema edit                               |
 | `npm run db:migrate`          | Apply committed migrations                                               |
 | `npm run db:seed`             | Create the first owner account; idempotent, needs `SEED_OWNER_PASSWORD`  |
+| `npm run db:seed:cabang`      | Fill the example branches (`cabang`); idempotent, development only       |
 | `npm run role:set`            | Grant a role: `npm run role:set -- you@example.com admin`                |
 | `npm run db:studio`           | Inspect the database with Drizzle Studio                                 |
 | `npm run check`               | Lint, typecheck, and tests against disposable PostgreSQL                 |
