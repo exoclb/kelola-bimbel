@@ -1,5 +1,7 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   pgTable,
   text,
   timestamp,
@@ -29,6 +31,12 @@ export const notificationPreferences = pgTable(
     uniqueIndex("notification_preferences_user_jenis_idx").on(
       table.userId,
       table.jenisNotifikasi,
+    ),
+    // Jenis kosong tidak cocok dengan jenis notifikasi mana pun, jadi tidak
+    // akan pernah berpengaruh dan hanya menyesatkan.
+    check(
+      "notification_preferences_jenis_terisi",
+      sql`length(btrim(${table.jenisNotifikasi})) > 0`,
     ),
   ],
 );

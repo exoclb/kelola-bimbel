@@ -1,5 +1,7 @@
+import { sql } from "drizzle-orm";
 import {
   bigint,
+  check,
   index,
   pgTable,
   text,
@@ -29,5 +31,17 @@ export const backupRuns = pgTable(
     // Keterangan tambahan: pesan galat, atau catatan retensi/pemulihan.
     pesan: text("pesan"),
   },
-  (table) => [index("backup_runs_mulai_idx").on(table.mulai)],
+  (table) => [
+    index("backup_runs_mulai_idx").on(table.mulai),
+    // "berjalan" belum punya waktu selesai, dan status lain harus sudah
+    // punya — supaya proses yang menggantung bisa dibedakan dari yang selesai.
+    check(
+      "backup_runs_selesai_konsisten",
+      sql`(${table.status} = 'berjalan') = (${table.selesai} is null)`,
+    ),
+    check(
+      "backup_runs_ukuran_tidak_negatif",
+      sql`${table.ukuranByte} is null or ${table.ukuranByte} >= 0`,
+    ),
+  ],
 );

@@ -1,5 +1,7 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   index,
   pgTable,
   text,
@@ -37,5 +39,9 @@ export const notifications = pgTable(
       table.userId,
       table.createdAt.desc(),
     ),
+    // Pemberitahuan tanpa tipe atau pesan tidak bisa ditampilkan maupun
+    // dikelompokkan, jadi tidak boleh masuk sama sekali.
+    check("notifications_tipe_terisi", sql`length(btrim(${table.tipe})) > 0`),
+    check("notifications_pesan_terisi", sql`length(btrim(${table.pesan})) > 0`),
   ],
 );

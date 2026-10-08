@@ -744,3 +744,78 @@ test("profil bimbel dijaga tunggal, namanya terisi, dan logonya data URL", async
   ]);
   assert.equal(kedua.code, "23505");
 });
+
+/**
+ * Invarian notifikasi dan catatan backup (`drizzle/0013_notifikasi.sql`,
+ * `0014_backup_runs.sql`, dan `0026_notifikasi_backup_invarian.sql`): tipe/pesan
+ * notifikasi dan jenis preferensi harus terisi, preferensi unik per akun per
+ * jenis, dan status backup harus sejalan dengan waktu selesainya.
+ */
+test("notifikasi dan backup dijaga isi, keunikan, dan statusnya", async () => {
+  const { guru } = await siapkanJurnal();
+
+  const tipeKosong = await ditolak(
+    "INSERT INTO notifications (user_id, tipe, pesan) VALUES ($1, $2, $3)",
+    [guru, "  ", "Pesan uji"],
+  );
+  assert.equal(tipeKosong.code, "23514");
+
+  const pesanKosong = await ditolak(
+    "INSERT INTO notifications (user_id, tipe, pesan) VALUES ($1, $2, $3)",
+    [guru, "jurnal_baru", "   "],
+  );
+  assert.equal(pesanKosong.code, "23514");
+
+  const notifikasi = await dbJurnal.query(
+    "INSERT INTO notifications (user_id, tipe, pesan) VALUES ($1, $2, $3) RETURNING id",
+    [guru, "jurnal_baru", "Jurnal baru masuk"],
+  );
+  assert.equal(notifikasi.rowCount, 1);
+
+  const jenisKosong = await ditolak(
+    "INSERT INTO notification_preferences (user_id, jenis_notifikasi) VALUES ($1, $2)",
+    [guru, " "],
+  );
+  assert.equal(jenisKosong.code, "23514");
+
+  await dbJurnal.query(
+    "INSERT INTO notification_preferences (user_id, jenis_notifikasi, aktif) VALUES ($1, $2, $3)",
+    [guru, "jurnal_baru", true],
+  );
+  const jenisKembar = await ditolak(
+    "INSERT INTO notification_preferences (user_id, jenis_notifikasi, aktif) VALUES ($1, $2, $3)",
+    [guru, "jurnal_baru", false],
+  );
+  assert.equal(jenisKembar.code, "23505");
+
+  // Backup: status "berjalan" belum berselesai, status lain wajib berselesai.
+  const berjalan = await dbJurnal.query(
+    "INSERT INTO backup_runs (status) VALUES ($1) RETURNING id",
+    ["berjalan"],
+  );
+  assert.equal(berjalan.rowCount, 1);
+
+  const selesaiTanpaStatus = await ditolak(
+    "UPDATE backup_runs SET status = $1 WHERE id = $2",
+    ["sukses", berjalan.rows[0].id],
+  );
+  assert.equal(selesaiTanpaStatus.code, "23514");
+
+  const berjalanTapiSelesai = await ditolak(
+    "UPDATE backup_runs SET selesai = now() WHERE id = $1",
+    [berjalan.rows[0].id],
+  );
+  assert.equal(berjalanTapiSelesai.code, "23514");
+
+  const ukuranNegatif = await ditolak(
+    "UPDATE backup_runs SET status = $1, selesai = now(), ukuran_byte = $2 WHERE id = $3",
+    ["sukses", -1, berjalan.rows[0].id],
+  );
+  assert.equal(ukuranNegatif.code, "23514");
+
+  const selesai = await dbJurnal.query(
+    "UPDATE backup_runs SET status = $1, selesai = now(), ukuran_byte = $2 WHERE id = $3",
+    ["sukses", 2048, berjalan.rows[0].id],
+  );
+  assert.equal(selesai.rowCount, 1);
+});

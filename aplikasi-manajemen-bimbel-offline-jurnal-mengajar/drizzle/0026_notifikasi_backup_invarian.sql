@@ -1,0 +1,5 @@
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_tipe_terisi" CHECK (length(btrim("notifications"."tipe")) > 0);--> statement-breakpoint
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_pesan_terisi" CHECK (length(btrim("notifications"."pesan")) > 0);--> statement-breakpoint
+ALTER TABLE "notification_preferences" ADD CONSTRAINT "notification_preferences_jenis_terisi" CHECK (length(btrim("notification_preferences"."jenis_notifikasi")) > 0);--> statement-breakpoint
+ALTER TABLE "backup_runs" ADD CONSTRAINT "backup_runs_selesai_konsisten" CHECK (("backup_runs"."status" = 'berjalan') = ("backup_runs"."selesai" is null));--> statement-breakpoint
+ALTER TABLE "backup_runs" ADD CONSTRAINT "backup_runs_ukuran_tidak_negatif" CHECK ("backup_runs"."ukuran_byte" is null or "backup_runs"."ukuran_byte" >= 0);
