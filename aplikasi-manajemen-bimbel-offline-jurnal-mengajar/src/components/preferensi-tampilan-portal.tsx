@@ -13,6 +13,13 @@ import {
 
 const PILIHAN: TemaPortal[] = ["sistem", "terang", "gelap"];
 
+/** Langganan preferensi gelap perangkat, supaya keterangannya ikut berubah. */
+function berlanggananModeGelap(dengar: () => void) {
+  const media = window.matchMedia("(prefers-color-scheme: dark)");
+  media.addEventListener("change", dengar);
+  return () => media.removeEventListener("change", dengar);
+}
+
 /**
  * Pengaturan tampilan Portal Wali: satu isian pilihan tema berukuran sentuh,
  * memakai pola formulir mobile yang sama dengan isian lain (label di atas
@@ -27,6 +34,19 @@ export function PreferensiTampilanPortal() {
     temaTersimpan,
     temaServer,
   );
+  const modeGelapPerangkat = useSyncExternalStore(
+    berlanggananModeGelap,
+    () => window.matchMedia("(prefers-color-scheme: dark)").matches,
+    () => false,
+  );
+
+  // Tampilan yang benar-benar dipakai: pilihan wali, dan kalau "ikut perangkat",
+  // mengikuti preferensi gelap perangkat saat ini.
+  const gelapAktif =
+    tema === "gelap" || (tema === "sistem" && modeGelapPerangkat);
+  const keterangan = `Tampilan aktif: ${gelapAktif ? "gelap" : "terang"}${
+    tema === "sistem" ? " (ikut perangkat)" : ""
+  }. Pilihan ini tersimpan di peramban ini saja.`;
 
   return (
     <IsianPilih
@@ -34,7 +54,7 @@ export function PreferensiTampilanPortal() {
       label="Tampilan"
       ukuran="sentuh"
       value={tema}
-      keterangan="Pilihan ini tersimpan di peramban ini saja."
+      keterangan={keterangan}
       onChange={(event) => simpanTema(event.target.value as TemaPortal)}
     >
       {PILIHAN.map((nilai) => (
