@@ -8,6 +8,8 @@
 // (tagihan.service), dan waktu baca dari `jejak_baca_portal`
 // (jejak-baca.service).
 
+import type { NamaHari } from "@/lib/tanggal";
+
 export type AnakWali = {
   /** Id basis data murid (`students.id`): dipakai alamat portal dan API. */
   muridId: string;
@@ -42,9 +44,21 @@ export type SesiKehadiran = {
   catatan: string;
 };
 
+/** Satu jadwal belajar satu anak: kelasnya, jamnya, dan guru pengajarnya. */
+export type JadwalAnak = {
+  jadwalId: string;
+  muridId: string;
+  kelasNama: string;
+  cabang: string;
+  guruNama: string;
+  hari: NamaHari;
+  /** Jam dalam bentuk `HH:MM`. */
+  jamMulai: string;
+  jamSelesai: string;
+};
+
 /** Bagian portal yang punya penanda "baru" sendiri. */
 export const BAGIAN_PORTAL = ["kehadiran", "perkembangan", "tagihan"] as const;
-
 export type BagianPortal = (typeof BAGIAN_PORTAL)[number];
 
 /**

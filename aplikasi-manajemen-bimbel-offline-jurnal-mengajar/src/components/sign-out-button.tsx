@@ -4,10 +4,16 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import { cn } from "cn";
 import { Button } from "@/components/ui/button";
 
 /** Tombol keluar: mengakhiri sesi, lalu kembali ke halaman masuk. */
-export function SignOutButton() {
+export function SignOutButton({
+  ukuran = "biasa",
+}: {
+  /** `aksi` memakai tombol setinggi 48px milik Portal Wali. */
+  ukuran?: "biasa" | "aksi";
+} = {}) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(false);
   const router = useRouter();
@@ -28,7 +34,12 @@ export function SignOutButton() {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div
+      className={cn(
+        "flex flex-wrap items-center gap-2",
+        ukuran === "aksi" && "w-full",
+      )}
+    >
       {error && (
         <p role="alert" className="text-sm text-destructive">
           Gagal keluar. Coba lagi.
@@ -39,7 +50,8 @@ export function SignOutButton() {
         onClick={signOut}
         disabled={pending}
         variant="outline"
-        size="sm"
+        size={ukuran === "aksi" ? "aksi" : "sm"}
+        className={ukuran === "aksi" ? "w-full" : undefined}
       >
         <LogOut aria-hidden="true" />
         {pending ? "Sedang keluar…" : "Keluar"}

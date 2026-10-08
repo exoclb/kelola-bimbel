@@ -80,7 +80,9 @@ The portal component sizes and the payment-status pastels are tokens in `globals
 
 Portal content sits in `KartuPortal` (`src/components/kartu-portal.tsx`): a section with the 16px radius token, the shared padding, an optional `h2` title with icon and badge, and an optional description. `ringkas` tightens the inner spacing for single-figure cards. The staff area keeps using the shadcn `Card`.
 
-A screen's main action goes in `TombolAksiLengket` (`src/components/tombol-aksi-lengket.tsx`) with `<Button size="aksi">`: a sticky strip that floats just above the tab bar while the page scrolls and settles above the shell's bottom padding at the end, so it never hides content permanently. The `aksi` button size is the 48px / 12px-radius token pair.
+A screen's main action goes in `TombolAksiLengket` (`src/components/tombol-aksi-lengket.tsx`) with `<Button size="aksi">`: a strip pinned just above the tab bar that stays visible on short and long pages alike and reserves its own height at the end of the content, so it never hides the last card. The `aksi` button size is the 48px / 12px-radius token pair.
+
+The five portal screens are `/portal` (Beranda), `/portal/jadwal`, `/portal/tagihan`, `/portal/perkembangan` (Progres), and `/portal/akun`, each using `LayarPortal` and `KartuPortal`. Jadwal reads the child's class schedules through `listJadwalAnak()` in `src/services/portal.service.ts`; Akun shows the signed-in wali, the linked children, and the sign-out action.
 
 `PenandaStatus` (`src/components/penanda-status.tsx`) renders the pastel payment pills for `lunas`, `belum`, and `terlambat`, styled only from the `--status-*` tokens and always carrying the status word next to its icon. `statusPembayaran()` in `src/lib/tagihan.ts` decides which of the three applies to an invoice: paid, unpaid within the running period, or unpaid past its period.
 

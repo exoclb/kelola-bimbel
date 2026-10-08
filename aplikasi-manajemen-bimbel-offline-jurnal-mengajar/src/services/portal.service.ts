@@ -1,14 +1,23 @@
 import "server-only";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { classes, studentEnrollments, students, waliMurid } from "@/db/schema";
+import {
+  classes,
+  schedules,
+  studentEnrollments,
+  students,
+  user,
+  waliMurid,
+} from "@/db/schema";
 import type {
   AnakPortal,
   BagianPortal,
   CatatanPerkembangan,
+  JadwalAnak,
   SesiKehadiran,
   WaktuBagian,
 } from "@/lib/portal-wali";
+import type { NamaHari } from "@/lib/tanggal";
 import type { Tagihan } from "@/lib/tagihan";
 import {
   listKehadiranAnak,
@@ -148,6 +157,47 @@ export type IsiPortalWali = {
   anak: AnakPortal[];
   tagihan: Tagihan[];
 };
+
+/**
+ * Jadwal belajar anak-anak itu: jadwal dari kelas yang sedang mereka ikuti
+ * (`student_enrollments` → `schedules`), lengkap dengan kelas, cabang, dan guru
+ * pengajarnya. Satu query untuk semua murid supaya daftar anak tidak memicu
+ * N+1; urutan hari dan jamnya dirapikan komponen dengan `urutkanJadwal`.
+ */
+export async function listJadwalAnak(
+  muridIds: string[],
+): Promise<JadwalAnak[]> {
+  if (muridIds.length === 0) return [];
+
+  const baris = await db
+    .select({
+      jadwalId: schedules.id,
+      muridId: studentEnrollments.studentId,
+      kelasNama: classes.namaKelas,
+      cabang: classes.cabang,
+      guruNama: user.name,
+      hari: schedules.hari,
+      jamMulai: sql<string>`to_char(${schedules.jamMulai}, 'HH24:MI')`.as(
+        "jam_mulai",
+      ),
+      jamSelesai: sql<string>`to_char(${schedules.jamSelesai}, 'HH24:MI')`.as(
+        "jam_selesai",
+      ),
+    })
+    .from(studentEnrollments)
+    .innerJoin(classes, eq(classes.id, studentEnrollments.classId))
+    .innerJoin(schedules, eq(schedules.classId, classes.id))
+    .innerJoin(user, eq(user.id, schedules.guruId))
+    .where(
+      and(
+        inArray(studentEnrollments.studentId, muridIds),
+        eq(studentEnrollments.status, "aktif"),
+      ),
+    )
+    .orderBy(asc(schedules.jamMulai), asc(classes.namaKelas), asc(schedules.id));
+
+  return baris.map((satu) => ({ ...satu, hari: satu.hari as NamaHari }));
+}
 
 /**
  * Anak yang tertaut ke akun wali ini beserta isinya, dan tagihan anak-anak itu

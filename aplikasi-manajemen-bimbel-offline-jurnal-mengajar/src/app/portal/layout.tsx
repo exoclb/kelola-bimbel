@@ -2,7 +2,6 @@ import Link from "next/link";
 import type { Viewport } from "next";
 import { NavBawahPortal } from "@/components/nav-bawah-portal";
 import { PenandaPengguna } from "@/components/penanda-pengguna";
-import { SignOutButton } from "@/components/sign-out-button";
 import { getProfilBimbel } from "@/lib/mock-pengaturan";
 import { peranDariRole } from "@/lib/peran";
 import { requirePermission } from "@/lib/session";
@@ -68,7 +67,6 @@ export default async function PortalLayout({
               peran={peran}
               ringkas
             />
-            <SignOutButton />
           </div>
         </div>
       </header>
