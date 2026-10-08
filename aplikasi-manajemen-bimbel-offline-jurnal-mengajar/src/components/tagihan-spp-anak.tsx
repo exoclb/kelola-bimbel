@@ -107,7 +107,7 @@ export function TagihanSppAnak({
 
       {dipilih && (
         <>
-          <div className="mt-6">
+          <div className="mt-6 print:hidden">
             <PemilihAnak
               anak={anak}
               nilai={dipilih.muridId}
@@ -171,7 +171,7 @@ export function TagihanSppAnak({
         </>
       )}
 
-      <div className="mt-6 flex flex-wrap items-center gap-2">
+      <div className="mt-6 flex flex-wrap items-center gap-2 print:hidden">
         <Button asChild variant="outline" size="aksi">
           <Link href={`/portal${dipilih ? `?anak=${dipilih.muridId}` : ""}`}>
             <ArrowLeft aria-hidden="true" />
@@ -180,7 +180,7 @@ export function TagihanSppAnak({
         </Button>
       </div>
 
-      <p className="mt-6 text-xs leading-5 text-muted-foreground">
+      <p className="text-muted-foreground mt-6 text-xs leading-5 print:hidden">
         Catatan: daftar tagihan ini dibaca dari database (tabel
         student_invoices) — sumber yang sama dengan yang dipakai owner.
       </p>
