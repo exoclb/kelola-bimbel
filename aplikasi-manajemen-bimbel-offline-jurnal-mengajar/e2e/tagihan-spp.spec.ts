@@ -117,4 +117,50 @@ test("penerbitan tagihan SPP melewati murid yang sudah ditagih", async ({
       (baris: { nominal: number }) => baris.nominal === 275000,
     ),
   ).toBe(true);
+
+  // Ubah status: tandai lunas dengan tanggal bayar, lalu kembalikan ke belum
+  // lunas — status dan tanggalnya harus konsisten dengan CHECK di database.
+  const tagihanA = (isiDaftar.data as { id: string; muridId: string }[]).find(
+    (baris) => baris.muridId === muridA,
+  )!;
+  const lunas = await request.patch(`/api/tagihan/${tagihanA.id}`, {
+    headers,
+    data: { status: "lunas", tanggalBayar: "2098-03-10" },
+  });
+  expect(lunas.status()).toBe(200);
+  expect((await lunas.json()).data.status).toBe("lunas");
+
+  // Menandai lunas tanpa mengirim tanggal memakai tanggal berjalan, bukan
+  // menyimpan status lunas tanpa tanggal.
+  const lunasTanpaTanggal = await request.patch(`/api/tagihan/${tagihanA.id}`, {
+    headers,
+    data: { status: "lunas" },
+  });
+  expect(lunasTanpaTanggal.status()).toBe(200);
+  expect((await lunasTanpaTanggal.json()).data.tanggalBayar).not.toBe(null);
+
+  const batal = await request.patch(`/api/tagihan/${tagihanA.id}`, {
+    headers,
+    data: { status: "belum_lunas" },
+  });
+  expect(batal.status()).toBe(200);
+  const setelahBatal = (await batal.json()).data as {
+    status: string;
+    tanggalBayar: string | null;
+  };
+  expect(setelahBatal.status).toBe("belum_lunas");
+  expect(setelahBatal.tanggalBayar).toBe(null);
+
+  // Akun guru tidak boleh mengubah tagihan milik bimbel.
+  const emailGuru = await daftar(request, "Guru Tagihan SPP");
+  await setRole(emailGuru, "user");
+  await masuk(request, emailGuru);
+  expect(
+    (
+      await request.patch(`/api/tagihan/${tagihanA.id}`, {
+        headers,
+        data: { status: "lunas", tanggalBayar: "2098-03-10" },
+      })
+    ).status(),
+  ).toBe(403);
 });
