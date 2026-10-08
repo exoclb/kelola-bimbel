@@ -30,7 +30,12 @@ export function AkunPortal({ nama, email, peran, anak }: AkunPortalProps) {
       <KartuPortal className="mt-6" judul="Akun yang masuk" ikon={UserRound}>
         {/* Kartu identitas memakai penanda pengguna yang sama dengan kepala
             halaman, jadi inisial, nama, email, dan lencana perannya konsisten. */}
-        <PenandaPengguna nama={nama} email={email} peran={peran} />
+        <PenandaPengguna
+          nama={nama}
+          email={email}
+          peran={peran}
+          emailDiPonsel
+        />
       </KartuPortal>
 
       <KartuPortal

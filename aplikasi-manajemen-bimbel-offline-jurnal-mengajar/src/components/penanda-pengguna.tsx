@@ -1,3 +1,4 @@
+import { cn } from "cn";
 import { labelPeran, type PeranPengguna } from "@/lib/peran";
 
 type PenandaPenggunaProps = {
@@ -12,6 +13,12 @@ type PenandaPenggunaProps = {
    * layar Akun.
    */
   lencana?: boolean;
+  /**
+   * Tampilkan email juga di layar sempit. Di kepala halaman email disembunyikan
+   * supaya nama bimbel tidak terpotong; di layar Akun emailnya justru perlu
+   * terlihat, karena wali sedang memeriksa akun mana yang masuk.
+   */
+  emailDiPonsel?: boolean;
 };
 
 /**
@@ -25,6 +32,7 @@ export function PenandaPengguna({
   peran,
   ringkas = false,
   lencana = true,
+  emailDiPonsel = false,
 }: PenandaPenggunaProps) {
   const inisial = nama.trim().charAt(0).toUpperCase() || "?";
 
@@ -39,7 +47,12 @@ export function PenandaPengguna({
       {!ringkas && (
         <span className="leading-tight">
           <span className="block text-sm font-medium">{nama}</span>
-          <span className="text-muted-foreground hidden text-xs sm:block">
+          <span
+            className={cn(
+              "text-muted-foreground text-xs",
+              emailDiPonsel ? "block" : "hidden sm:block",
+            )}
+          >
             {email}
           </span>
         </span>
