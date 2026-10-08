@@ -1154,3 +1154,106 @@ test("form tambah cabang memvalidasi isian di tampilan", async ({
     await db.end();
   }
 });
+
+/**
+ * Panel ringkasan cabang di halaman pantauan menerima datanya lewat prop, jadi
+ * yang diuji di sini kontrak tampilannya: jumlah seluruh cabang saat tanpa
+ * saringan, cabang tanpa kelas, dan cabang nonaktif. Angka pembandingnya
+ * dihitung sendiri dari basis data.
+ */
+test("panel ringkasan cabang menampilkan jumlah, cabang kosong, dan cabang nonaktif", async ({
+  page,
+}) => {
+  await jadikanOwner();
+  const penanda = randomUUID().slice(0, 8);
+  const berisi = `Cabang Panel Isi ${penanda}`;
+  const kosong = `Cabang Panel Kosong ${penanda}`;
+  const nonaktif = `Cabang Panel Nonaktif ${penanda}`;
+  await siapkanCabang(berisi, true);
+  await siapkanCabang(kosong, true);
+  await siapkanCabang(nonaktif, false);
+
+  const db = await pool();
+  try {
+    const { rows: akun } = await db.query<{ id: string }>(
+      'SELECT id FROM "user" WHERE email = $1',
+      [email],
+    );
+    const { rows: kelas } = await db.query<{ id: string }>(
+      `INSERT INTO classes (nama_kelas, cabang)
+       VALUES ($1, $2), ($3, $4)
+       RETURNING id`,
+      [
+        `Kelas Panel Isi ${penanda}`,
+        berisi,
+        `Kelas Panel Nonaktif ${penanda}`,
+        nonaktif,
+      ],
+    );
+    await db.query(
+      `INSERT INTO teaching_journals (guru_id, class_id, tanggal, materi, jam_mengajar)
+       VALUES ($1, $2, '2026-01-07', $3, 1.5)`,
+      [akun[0].id, kelas[0].id, `Materi panel ${penanda}`],
+    );
+
+    // Angka pembanding untuk panel "semua cabang": penjumlahan per cabang,
+    // jadi murid yang sama di dua cabang dihitung di masing-masing cabangnya.
+    const { rows: harapan } = await db.query<{
+      kelas: number;
+      jurnal: number;
+      belum: number;
+      murid: number;
+    }>(
+      `SELECT (SELECT count(*)::int FROM classes) AS kelas,
+              (SELECT count(*)::int FROM teaching_journals) AS jurnal,
+              (SELECT count(*)::int FROM classes)
+                - (SELECT count(DISTINCT class_id)::int FROM teaching_journals) AS belum,
+              (SELECT coalesce(sum(jumlah), 0)::int FROM (
+                 SELECT count(DISTINCT e.student_id) AS jumlah
+                   FROM student_enrollments e
+                   JOIN classes c ON c.id = e.class_id
+                  WHERE e.status = 'aktif'
+                  GROUP BY c.cabang) t) AS murid`,
+    );
+
+    await masukPeramban(page);
+    const panel = page
+      .locator("dl")
+      .filter({ hasText: "Kelas belum ada jurnal" });
+
+    // 1) Tanpa saringan: judul "semua cabang" dan angka penjumlahan.
+    await page.goto("/app/pemantauan");
+    await expect(page.getByText("Ringkasan semua cabang")).toBeVisible();
+    await expect(panel).toHaveText(
+      new RegExp(
+        `Kelas\\s*${harapan[0].kelas}\\s*Jurnal terisi\\s*${harapan[0].jurnal}` +
+          `\\s*Kelas belum ada jurnal\\s*${harapan[0].belum}\\s*Murid aktif\\s*${harapan[0].murid}`,
+      ),
+    );
+
+    // 2) Cabang tanpa kelas: pesannya menyebut cabang itu.
+    await page.goto(`/app/pemantauan?cabang=${encodeURIComponent(kosong)}`);
+    await expect(page.getByText(`Ringkasan ${kosong}`)).toBeVisible();
+    await expect(page.getByText(`${kosong} belum punya kelas`)).toBeVisible();
+
+    // 3) Cabang nonaktif: judulnya ditandai, angkanya tetap tampil.
+    await page.goto(`/app/pemantauan?cabang=${encodeURIComponent(nonaktif)}`);
+    await expect(
+      page.getByText(`Ringkasan ${nonaktif} (nonaktif)`),
+    ).toBeVisible();
+    await expect(panel).toHaveText(
+      /Kelas\s*1\s*Jurnal terisi\s*0\s*Kelas belum ada jurnal\s*1\s*Murid aktif\s*0/,
+    );
+  } finally {
+    await db.query("DELETE FROM teaching_journals WHERE materi LIKE $1", [
+      `Materi panel %${penanda}`,
+    ]);
+    await db.query("DELETE FROM classes WHERE nama_kelas LIKE $1", [
+      `Kelas Panel %${penanda}`,
+    ]);
+    await db.query("DELETE FROM cabang WHERE nama = ANY($1)", [
+      [berisi, kosong, nonaktif],
+    ]);
+    await db.end();
+  }
+});
