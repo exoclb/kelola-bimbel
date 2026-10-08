@@ -482,3 +482,71 @@ test("halaman cabang menghitung kelas dari basis data", async ({ page }) => {
     }
   }
 });
+
+/**
+ * Ringkasan di kepala halaman cabang ("N cabang · M aktif · K nonaktif")
+ * dihitung dari tabel `cabang`, dan ikut bertambah setelah cabang baru
+ * disimpan lewat formulir.
+ */
+test("ringkasan halaman cabang cocok dengan isi tabel cabang", async ({
+  page,
+}) => {
+  await jadikanOwner();
+  const penanda = randomUUID().slice(0, 8);
+  const tambahan = `Cabang Ringkas ${penanda}`;
+  const baru = `Cabang Ringkas Baru ${penanda}`;
+  const db = await pool();
+  let diharapkan: { cabang: number; aktif: number; nonaktif: number };
+
+  try {
+    // Satu cabang nonaktif tambahan supaya angka aktif dan nonaktif berbeda.
+    await db.query(
+      `INSERT INTO cabang (nama, alamat, kontak, status_aktif)
+       VALUES ($1, $2, $3, false)
+       ON CONFLICT (lower(btrim(nama))) DO UPDATE SET status_aktif = false`,
+      [tambahan, "Jl. Uji e2e No. 1", "0800-0000"],
+    );
+    const { rows } = await db.query<{
+      cabang: number;
+      aktif: number;
+      nonaktif: number;
+    }>(
+      `SELECT count(*)::int AS cabang,
+              count(*) filter (where status_aktif)::int AS aktif,
+              count(*) filter (where not status_aktif)::int AS nonaktif
+         FROM cabang`,
+    );
+    diharapkan = rows[0];
+
+    await masukPeramban(page);
+    await page.goto("/app/cabang");
+    const ringkasan = (isi: {
+      cabang: number;
+      aktif: number;
+      nonaktif: number;
+    }) =>
+      `${isi.cabang} cabang · ${isi.aktif} aktif · ${isi.nonaktif} nonaktif.`;
+    await expect(page.getByText(ringkasan(diharapkan))).toBeVisible();
+
+    // Tambah lewat formulir: ringkasannya ikut bertambah setelah disegarkan.
+    await page.getByRole("button", { name: "Tambah cabang" }).click();
+    await page.getByLabel("Nama cabang").fill(baru);
+    await page.getByLabel("Kontak").fill("0800-9999");
+    await page.getByLabel("Alamat").fill("Jl. Uji e2e No. 2");
+    await page.getByRole("button", { name: "Simpan cabang" }).click();
+    await expect(
+      page.getByText(
+        ringkasan({
+          cabang: diharapkan.cabang + 1,
+          aktif: diharapkan.aktif + 1,
+          nonaktif: diharapkan.nonaktif,
+        }),
+      ),
+    ).toBeVisible();
+  } finally {
+    await db.query("DELETE FROM cabang WHERE nama = ANY($1)", [
+      [tambahan, baru],
+    ]);
+    await db.end();
+  }
+});
