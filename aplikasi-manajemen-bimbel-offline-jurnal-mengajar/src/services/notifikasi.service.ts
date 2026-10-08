@@ -79,13 +79,16 @@ export async function tandaiNotifikasiDibaca(
   userId: string,
   input: TandaiBacaInput,
 ) {
+  // `dibaca: false` menandai balik menjadi belum dibaca; `semua` hanya berlaku
+  // untuk menandai sudah dibaca.
+  const dibaca = "dibaca" in input ? (input.dibaca ?? true) : true;
   const syarat = [eq(notifications.userId, userId)];
-  syarat.push(eq(notifications.sudahDibaca, false));
+  syarat.push(eq(notifications.sudahDibaca, !dibaca));
   if ("ids" in input) syarat.push(inArray(notifications.id, input.ids));
 
   const diperbarui = await db
     .update(notifications)
-    .set({ sudahDibaca: true })
+    .set({ sudahDibaca: dibaca })
     .where(and(...syarat))
     .returning({ id: notifications.id });
 

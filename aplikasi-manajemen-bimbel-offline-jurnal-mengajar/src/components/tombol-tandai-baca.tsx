@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCheck, LoaderCircle } from "lucide-react";
+import { CheckCheck, LoaderCircle, MailWarning } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type TombolTandaiBacaProps = {
   /** Notifikasi tertentu yang ditandai; kosongkan kalau memakai `semua`. */
   ids?: string[];
   semua?: boolean;
+  /** `false` menandai balik menjadi belum dibaca. */
+  dibaca?: boolean;
   label: string;
 };
 
@@ -19,6 +21,7 @@ type TombolTandaiBacaProps = {
 export function TombolTandaiBaca({
   ids,
   semua = false,
+  dibaca = true,
   label,
 }: TombolTandaiBacaProps) {
   const router = useRouter();
@@ -33,7 +36,7 @@ export function TombolTandaiBaca({
       const jawaban = await fetch("/api/notifikasi", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(semua ? { semua: true } : { ids }),
+        body: JSON.stringify(semua ? { semua: true } : { ids, dibaca }),
       });
       if (!jawaban.ok) throw new Error("gagal");
       router.refresh();
@@ -58,8 +61,10 @@ export function TombolTandaiBaca({
             className="animate-spin motion-reduce:animate-none"
             aria-hidden="true"
           />
-        ) : (
+        ) : dibaca ? (
           <CheckCheck aria-hidden="true" />
+        ) : (
+          <MailWarning aria-hidden="true" />
         )}
         {label}
       </Button>

@@ -78,7 +78,15 @@ export function DaftarNotifikasi({
                     {baris.sudahDibaca ? " · sudah dibaca" : ""}
                   </span>
                 </span>
-                {!baris.sudahDibaca && (
+                {baris.sudahDibaca ? (
+                  // Kabar yang sudah dibaca bisa dibalik lagi kalau ternyata
+                  // masih perlu ditindak lanjut.
+                  <TombolTandaiBaca
+                    ids={[baris.id]}
+                    dibaca={false}
+                    label="Tandai belum dibaca"
+                  />
+                ) : (
                   <TombolTandaiBaca ids={[baris.id]} label="Tandai dibaca" />
                 )}
               </li>

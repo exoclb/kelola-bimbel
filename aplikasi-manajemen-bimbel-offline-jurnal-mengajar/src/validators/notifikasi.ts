@@ -17,9 +17,15 @@ export const listNotifikasiSchema = z
 
 export type ListNotifikasiInput = z.infer<typeof listNotifikasiSchema>;
 
-// Tandai baca: id tertentu, atau semua notifikasi yang belum dibaca.
+// Ubah status baca: id tertentu, atau semua notifikasi yang belum dibaca.
+// `dibaca: false` membalik tandanya (dipakai tombol "Tandai belum dibaca").
 export const tandaiBacaSchema = z.union([
-  z.object({ ids: z.array(z.string().uuid()).min(1).max(100) }).strict(),
+  z
+    .object({
+      ids: z.array(z.string().uuid()).min(1).max(100),
+      dibaca: z.boolean().optional(),
+    })
+    .strict(),
   z.object({ semua: z.literal(true) }).strict(),
 ]);
 
