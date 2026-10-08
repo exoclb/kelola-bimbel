@@ -17,7 +17,12 @@ import { LayarPortal } from "@/components/layar-portal";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { cn } from "cn";
 import { tandaiTerbacaBanyak } from "@/lib/jejak-baca-portal-store";
-import type { AnakPortal, StatusJejakPortal } from "@/lib/portal-wali";
+import type {
+  AnakPortal,
+  CatatanPerkembangan,
+  StatusJejakPortal,
+} from "@/lib/portal-wali";
+import { formatPeriode } from "@/lib/gaji";
 import { formatTanggalLengkap } from "@/lib/tanggal";
 
 type PerkembanganAnakPortalProps = {
@@ -100,6 +105,16 @@ export function PerkembanganAnakPortal({
   // Grafik hanya memuat beberapa catatan terakhir supaya layar tetap ringkas;
   // riwayat lengkapnya ada di daftar Catatan Evaluasi di bawahnya.
   const grafik = daftarCatatan.slice(0, 6);
+
+  // Catatan dikelompokkan per bulan supaya wali bisa membaca perkembangan per
+  // periode; urutannya mengikuti daftar yang sudah terbaru lebih dulu.
+  const perPeriode = new Map<string, CatatanPerkembangan[]>();
+  for (const baris of daftarCatatan) {
+    const kunci = formatPeriode(baris.tanggal.slice(0, 7));
+    const daftar = perPeriode.get(kunci) ?? [];
+    daftar.push(baris);
+    perPeriode.set(kunci, daftar);
+  }
 
   return (
     <LayarPortal
@@ -219,32 +234,51 @@ export function PerkembanganAnakPortal({
                 keterangan="Catatan guru akan muncul di sini setelah dicatat."
               />
             ) : (
-              <ul className="space-y-3">
-                {daftarCatatan.map((baris) => (
-                  <li
-                    key={baris.id}
-                    className="rounded-xl border px-3 py-3"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="flex items-baseline gap-1.5">
-                        <span className="text-muted-foreground text-xs">
-                          Nilai
-                        </span>
-                        <span className="text-xl font-semibold tabular-nums">
-                          {angkaTampil.format(baris.nilai)}
-                        </span>
+              <div className="space-y-5">
+                {[...perPeriode].map(([periode, catatan]) => (
+                  <div key={periode} className="space-y-3">
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                      <h3 className="text-sm font-semibold">{periode}</h3>
+                      <p className="text-muted-foreground text-xs">
+                        {catatan.length} catatan · rata-rata{" "}
+                        {angkaTampil.format(
+                          catatan.reduce(
+                            (jumlah, baris) => jumlah + baris.nilai,
+                            0,
+                          ) / catatan.length,
+                        )}
                       </p>
-                      <span className="bg-muted text-muted-foreground rounded-full border px-2.5 py-0.5 text-xs">
-                        Sikap {baris.sikap}
-                      </span>
                     </div>
-                    <p className="text-muted-foreground mt-1 text-xs">
-                      {formatTanggalLengkap(baris.tanggal)} · {baris.guruNama}
-                    </p>
-                    <p className="mt-2 text-sm">{baris.catatan}</p>
-                  </li>
+                    <ul className="space-y-3">
+                      {catatan.map((baris) => (
+                        <li
+                          key={baris.id}
+                          className="rounded-xl border px-3 py-3"
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <p className="flex items-baseline gap-1.5">
+                              <span className="text-muted-foreground text-xs">
+                                Nilai
+                              </span>
+                              <span className="text-xl font-semibold tabular-nums">
+                                {angkaTampil.format(baris.nilai)}
+                              </span>
+                            </p>
+                            <span className="bg-muted text-muted-foreground rounded-full border px-2.5 py-0.5 text-xs">
+                              Sikap {baris.sikap}
+                            </span>
+                          </div>
+                          <p className="text-muted-foreground mt-1 text-xs">
+                            {formatTanggalLengkap(baris.tanggal)} ·{" "}
+                            {baris.guruNama}
+                          </p>
+                          <p className="mt-2 text-sm">{baris.catatan}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ))}
-              </ul>
+              </div>
             )}
           </KartuPortal>
 
