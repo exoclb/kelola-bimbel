@@ -761,3 +761,50 @@ test("api cabang menolak id yang tidak sah dan tidak ditemukan", async ({
     expect((await jawaban.json()).error).toBeTruthy();
   }
 });
+
+/**
+ * Penjagaan anti-duplikat harus tetap utuh saat dua permintaan datang
+ * bersamaan: pemeriksaan di layanan bisa terlewat, dan indeks unik basis data
+ * yang menangkapnya — hasilnya tetap satu cabang, satu 201 dan satu 409.
+ */
+test("dua permintaan tambah cabang bersamaan hanya menghasilkan satu cabang", async ({
+  request,
+}) => {
+  await jadikanOwner();
+  await masukApi(request);
+  const nama = `Cabang Balapan ${randomUUID().slice(0, 8)}`;
+  const db = await pool();
+
+  try {
+    const [satu, dua] = await Promise.all([
+      request.post("/api/cabang", {
+        headers,
+        data: { nama, alamat: "Jl. Balap No. 1", kontak: "0800-1" },
+      }),
+      request.post("/api/cabang", {
+        headers,
+        data: {
+          nama: `  ${nama.toUpperCase()} `,
+          alamat: "Jl. Balap No. 2",
+          kontak: "0800-2",
+        },
+      }),
+    ]);
+
+    expect([satu.status(), dua.status()].sort()).toEqual([201, 409]);
+    const ditolak = satu.status() === 409 ? satu : dua;
+    expect((await ditolak.json()).error.code).toBe("NAMA_SUDAH_DIPAKAI");
+
+    const { rows } = await db.query<{ jumlah: number }>(
+      "SELECT count(*)::int AS jumlah FROM cabang WHERE lower(btrim(nama)) = lower(btrim($1))",
+      [nama],
+    );
+    expect(rows[0].jumlah).toBe(1);
+  } finally {
+    await db.query(
+      "DELETE FROM cabang WHERE lower(btrim(nama)) = lower(btrim($1))",
+      [nama],
+    );
+    await db.end();
+  }
+});
