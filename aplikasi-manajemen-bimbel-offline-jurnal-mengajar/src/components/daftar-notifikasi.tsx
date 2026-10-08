@@ -54,8 +54,10 @@ export function DaftarNotifikasi({
       </CardHeader>
       <CardContent className="space-y-3">
         {notifikasi.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Kabar seperti jurnal yang baru dikirim guru muncul di sini.
+          <p className="text-sm leading-6 text-muted-foreground">
+            Kabar seperti jurnal yang baru dikirim guru, tagihan yang terbit,
+            atau pengingat dari bimbel muncul di sini. Jenis kabar yang ingin
+            diterima bisa diatur di Pengaturan · Preferensi Notifikasi.
           </p>
         ) : (
           <ul className="space-y-2">

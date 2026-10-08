@@ -130,7 +130,7 @@ export default async function BackupDatabasePage() {
         <PesanKosong
           className="mt-6"
           judul="Belum ada catatan backup"
-          keterangan="Catatan muncul di sini setelah proses backup terjadwal di server selesai dijalankan."
+          keterangan="Catatan muncul setelah backup terjadwal pertama di server selesai — kartu di atas masih nol sampai itu terjadi. Proses yang sedang berjalan langsung muncul di sini dengan statusnya, jadi gagal atau menggantung tidak perlu dicari di log."
         />
       ) : (
         <Card className="mt-6">
