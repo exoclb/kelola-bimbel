@@ -24,6 +24,7 @@
     "role:set": "node scripts/set-role.mjs",
     "db:studio": "drizzle-kit studio",
     "doctor": "node scripts/doctor.mjs",
+    "db:backup": "node scripts/backup.mjs",
     "test": "node scripts/test.mjs unit",
     "test:e2e": "node scripts/test.mjs e2e",
     "create:variant": "node scripts/create-variant.mjs",

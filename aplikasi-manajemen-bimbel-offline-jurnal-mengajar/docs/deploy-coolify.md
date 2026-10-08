@@ -243,26 +243,35 @@ ini** dengan image lama, jadi ia **tidak** membatalkan migrasi database,
 ### 3. Backup terjadwal
 
 Aplikasi hanya bisa **memantau**, bukan menjadwalkan: setiap proses backup
-menulis satu baris ke tabel `backup_runs`, dan owner melihatnya di
+(yang dijalankan `npm run db:backup`, lihat di bawah) menulis satu baris ke tabel
+`backup_runs`, dan owner melihatnya di
 **Pengaturan → Backup Database** (`/app/pengaturan/backup`) — kapan backup
 terakhir berhasil, berapa catatan yang gagal, dan di mana salinannya disimpan.
 
 Menjadwalkan backup (di server/Coolify, memakai container database yang sama):
 
-1. Buat skrip kecil di server, mis. `/opt/kelola/backup.sh`:
+1. Buat skrip kecil di server, mis. `/opt/kelola/backup.sh`. Pencatatannya
+   dilakukan `npm run db:backup`: ia menulis baris `berjalan` lebih dulu,
+   menjalankan dump, lalu menutup barisnya sebagai `sukses` (lengkap dengan
+   ukuran dan lokasi berkas) atau `gagal` beserta alasan kegagalannya — dan
+   keluar dengan kode bukan nol supaya penjadwal ikut tahu:
 
    ```bash
    #!/bin/sh
    set -eu
-   STAMP=$(date +%Y%m%d-%H%M%S)
-   docker exec <container-database> \
-     pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc \
-     > "/var/backups/kelola/$STAMP.dump"
+   cd /opt/kelola/app
+   BACKUP_DIR=/var/backups/kelola \
+   BACKUP_COMMAND="docker exec -i <container-database> \
+     pg_dump -U \$POSTGRES_USER -d \$POSTGRES_DB -Fc" \
+     npm run db:backup
    # simpan ke lokasi terpisah (rclone/S3) supaya tidak hilang bersama server
-   rclone copy "/var/backups/kelola/$STAMP.dump" remote:kelola-backup/ || true
+   rclone copy /var/backups/kelola remote:kelola-backup/ || true
    # retensi: sisakan 30 hari
    find /var/backups/kelola -name '*.dump' -mtime +30 -delete
    ```
+
+   Perintah dump harus menulis ke stdout (seperti `pg_dump` tanpa `-f`); kalau
+   perintahnya memuat `{file}`, penanda itu diganti dengan berkas tujuan.
 
    Nama container database diambil dari dashboard Coolify; jangan menulis sandi
    di skrip — cukup `docker exec` ke container yang sudah punya env-nya.
