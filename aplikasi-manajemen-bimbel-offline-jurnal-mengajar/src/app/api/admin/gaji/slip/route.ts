@@ -1,5 +1,5 @@
 import { ApiError, withApiPermission } from "@/lib/api";
-import { siteConfig } from "@/config/site";
+import { getProfilBimbel } from "@/lib/mock-pengaturan";
 import { formatPeriode, periodeBulan } from "@/lib/gaji";
 import { namaBerkasSlip, slipGajiHtml } from "@/lib/slip-gaji-html";
 import { rekapGajiAnyGuru } from "@/services/gaji.service";
@@ -23,7 +23,7 @@ export function GET(request: Request) {
       slipGajiHtml({
         baris: rekap.guru,
         periodeTampil: formatPeriode(bulan),
-        namaBimbel: siteConfig.name,
+        profil: getProfilBimbel(),
       }),
       {
         headers: {

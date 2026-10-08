@@ -4,13 +4,15 @@
 
 import { formatRupiah } from "@/lib/gaji";
 import { formatJam } from "@/lib/jurnal";
+import type { ProfilBimbel } from "@/lib/mock-pengaturan";
 import { formatTanggalLengkap } from "@/lib/tanggal";
 import type { BarisGajiGuru } from "@/services/gaji.service";
 
 type SlipGajiHtmlProps = {
   baris: BarisGajiGuru;
   periodeTampil: string;
-  namaBimbel: string;
+  /** Identitas bimbel untuk kop dokumen; sama dengan kop di pratinjau layar. */
+  profil: ProfilBimbel;
 };
 
 /**
@@ -55,7 +57,7 @@ function barisRincian(baris: BarisGajiGuru) {
 export function slipGajiHtml({
   baris,
   periodeTampil,
-  namaBimbel,
+  profil,
 }: SlipGajiHtmlProps) {
   const sudahDibayar = baris.statusPembayaran === "dibayar";
 
@@ -97,8 +99,9 @@ export function slipGajiHtml({
   <div class="slip">
     <div class="kepala">
       <div>
-        <h1>${amanHtml(namaBimbel)}</h1>
-        <p class="periode">Slip gaji guru · ${periodeTampil}</p>
+        <h1>${amanHtml(profil.nama)}</h1>
+        <p class="periode">${amanHtml([profil.alamat, profil.telepon, profil.email].filter(Boolean).join(" · "))}</p>
+        <p>Slip gaji guru · ${periodeTampil}</p>
       </div>
       <p class="status">
         ${sudahDibayar ? "Sudah dibayar" : "Belum dibayar"}
@@ -127,7 +130,7 @@ export function slipGajiHtml({
 
     <p class="catatan">
       Jam mengajar diambil dari jurnal yang dikirim guru. Slip ini dibuat otomatis
-      oleh ${amanHtml(namaBimbel)}.
+      oleh ${amanHtml(profil.nama)}.
     </p>
   </div>
 </body>

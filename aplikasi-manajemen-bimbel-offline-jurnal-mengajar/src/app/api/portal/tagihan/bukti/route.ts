@@ -43,6 +43,7 @@ export function GET(request: Request) {
           nama: profil.nama,
           alamat: profil.alamat,
           telepon: profil.telepon,
+          email: profil.email,
         },
         dibuatPada: new Date(),
       }),

@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { siteConfig } from "@/config/site";
+import { getProfilBimbel } from "@/lib/mock-pengaturan";
+import { KopDokumen } from "@/components/kop-dokumen";
 import type { KehadiranTersimpan } from "@/services/kehadiran.service";
 import type { RiwayatPerkembangan } from "@/services/perkembangan.service";
 import { formatTanggalLengkap, hitungUsia } from "@/lib/tanggal";
@@ -43,23 +44,20 @@ export function LaporanPerkembangan({
       className="print:border-0 print:shadow-none"
     >
       <CardContent className="space-y-6">
-        <div className="flex flex-wrap items-start justify-between gap-3 border-b pb-4">
-          <div>
-            <p className="text-lg font-semibold">{siteConfig.name}</p>
-            <p className="text-muted-foreground text-sm">
-              Laporan perkembangan anak
-            </p>
-          </div>
-          <div className="text-right text-sm">
-            <p className="font-medium">{murid.nama}</p>
-            <p className="text-muted-foreground">
-              {murid.tanggalLahir
-                ? `${hitungUsia(murid.tanggalLahir)} tahun · `
-                : ""}
-              {murid.statusAktif ? "aktif" : "tidak aktif"}
-            </p>
-          </div>
-        </div>
+        <KopDokumen
+          judul="Laporan perkembangan anak"
+          kanan={
+            <>
+              <p className="font-medium">{murid.nama}</p>
+              <p className="text-muted-foreground">
+                {murid.tanggalLahir
+                  ? `${hitungUsia(murid.tanggalLahir)} tahun · `
+                  : ""}
+                {murid.statusAktif ? "aktif" : "tidak aktif"}
+              </p>
+            </>
+          }
+        />
 
         {terbaru ? (
           <dl className="grid gap-3 text-sm sm:grid-cols-2">
@@ -149,7 +147,7 @@ export function LaporanPerkembangan({
         )}
 
         <p className="text-muted-foreground border-t pt-4 text-xs leading-5">
-          Laporan dibuat otomatis oleh {siteConfig.name} pada{" "}
+          Laporan dibuat otomatis oleh {getProfilBimbel().nama} pada{" "}
           {formatTanggalLengkap(tanggalCetak)} dari catatan guru dan kehadiran
           yang tercatat. Total catatan: {urut.length}
           {urut.length > 0 ? ` · rata-rata nilai ${rataNilai}` : ""}.

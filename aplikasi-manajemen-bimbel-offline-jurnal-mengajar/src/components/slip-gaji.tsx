@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { siteConfig } from "@/config/site";
+import { KopDokumen } from "@/components/kop-dokumen";
 import { formatRupiah } from "@/lib/gaji";
 import { formatJam } from "@/lib/jurnal";
 import type { BarisRekapGaji } from "@/lib/mock-gaji";
@@ -20,24 +20,21 @@ export function SlipGaji({ baris, periodeTampil }: SlipGajiProps) {
   return (
     <Card id="slip-gaji" className="print:border-0 print:shadow-none">
       <CardContent className="space-y-6">
-        <div className="flex flex-wrap items-start justify-between gap-3 border-b pb-4">
-          <div>
-            <p className="text-lg font-semibold">{siteConfig.name}</p>
-            <p className="text-sm text-muted-foreground">
-              Slip gaji guru · {periodeTampil}
-            </p>
-          </div>
-          <div className="text-right text-sm">
-            <p className="font-medium">
-              {sudahDibayar ? "Sudah dibayar" : "Belum dibayar"}
-            </p>
-            {baris.tanggalDibayar && (
-              <p className="text-muted-foreground">
-                {formatTanggalLengkap(baris.tanggalDibayar)}
+        <KopDokumen
+          judul={`Slip gaji guru · ${periodeTampil}`}
+          kanan={
+            <>
+              <p className="font-medium">
+                {sudahDibayar ? "Sudah dibayar" : "Belum dibayar"}
               </p>
-            )}
-          </div>
-        </div>
+              {baris.tanggalDibayar && (
+                <p className="text-muted-foreground">
+                  {formatTanggalLengkap(baris.tanggalDibayar)}
+                </p>
+              )}
+            </>
+          }
+        />
 
         <div className="grid gap-3 text-sm sm:grid-cols-2">
           <div>

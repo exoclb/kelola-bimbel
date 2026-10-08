@@ -16,7 +16,8 @@ type BuktiTagihanHtmlProps = {
   /** Baris tagihan satu anak; baris pertama dipakai untuk identitas anak. */
   daftar: Tagihan[];
   periodeBerjalan: string;
-  profil: { nama: string; alamat: string; telepon: string };
+  /** Identitas bimbel untuk kop; bentuknya sama dengan `ProfilBimbel`. */
+  profil: { nama: string; alamat: string; telepon: string; email: string };
   /** Tanggal dokumen dibuat, untuk catatan kaki. */
   dibuatPada: Date;
 };
@@ -121,7 +122,7 @@ export function buktiTagihanHtml({
     <div class="kepala">
       <div>
         <h1>${amanHtml(profil.nama || "Bukti tagihan SPP")}</h1>
-        <p class="periode">${amanHtml(profil.alamat)}${profil.alamat && profil.telepon ? " · " : ""}${amanHtml(profil.telepon)}</p>
+        <p class="periode">${amanHtml([profil.alamat, profil.telepon, profil.email].filter(Boolean).join(" · "))}</p>
       </div>
       <p class="kanan">
         Bukti tagihan SPP<br>
