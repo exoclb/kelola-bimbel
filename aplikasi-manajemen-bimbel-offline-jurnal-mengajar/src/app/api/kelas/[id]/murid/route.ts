@@ -36,6 +36,12 @@ export function POST(request: Request, context: Context) {
       throw new ApiError(404, "NOT_FOUND", "Kelas tidak ditemukan.");
     if (hasil.status === "murid_tidak_ada")
       throw new ApiError(404, "NOT_FOUND", "Murid tidak ditemukan.");
+    if (hasil.status === "murid_tidak_aktif")
+      throw new ApiError(
+        409,
+        "MURID_TIDAK_AKTIF",
+        "Murid ini sudah tidak aktif, jadi belum bisa ditempatkan. Aktifkan dulu di halaman Murid.",
+      );
     // Sejak aturan multi-kelas, murid boleh aktif di beberapa kelas; yang
     // ditolak hanya penempatan kedua di kelas yang sama.
     if (hasil.status === "sudah_terdaftar")

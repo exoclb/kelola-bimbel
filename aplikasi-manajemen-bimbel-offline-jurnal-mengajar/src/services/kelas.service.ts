@@ -481,6 +481,7 @@ export type HasilTempatkanMurid =
   | { status: "tersimpan" }
   | { status: "kelas_tidak_ada" }
   | { status: "murid_tidak_ada" }
+  | { status: "murid_tidak_aktif" }
   | { status: "sudah_terdaftar" };
 
 /**
@@ -505,11 +506,14 @@ export async function tempatkanMurid(
   if (!kelas) return { status: "kelas_tidak_ada" };
 
   const [murid] = await db
-    .select({ id: students.id })
+    .select({ id: students.id, statusAktif: students.statusAktif })
     .from(students)
     .where(eq(students.id, muridId))
     .limit(1);
   if (!murid) return { status: "murid_tidak_ada" };
+  // Murid yang sudah dinonaktifkan tidak ditempatkan lagi; aktifkan dulu di
+  // halaman Murid. Aturan yang sama ditampilkan panel kelas di layar.
+  if (!murid.statusAktif) return { status: "murid_tidak_aktif" };
 
   try {
     await db.insert(studentEnrollments).values({

@@ -131,5 +131,34 @@ test("murid boleh aktif di beberapa kelas tanpa dobel di kelas yang sama", async
   // Setelah keluar, murid yang sama boleh ditempatkan lagi di kelas A.
   expect((await tempatkan(kelasA)).status()).toBe(201);
 
+  // Murid yang dinonaktifkan tidak bisa ditempatkan lagi sampai diaktifkan.
+  // Kelas C dipakai supaya penolakannya benar-benar datang dari status murid,
+  // bukan dari penempatan yang sudah ada.
+  const kelasC = await buatKelas("Penempatan Kelas C");
+  const db = await pool();
+  try {
+    await db.query("UPDATE students SET status_aktif = false WHERE id = $1", [
+      muridId,
+    ]);
+  } finally {
+    await db.end();
+  }
+  const nonaktif = await tempatkan(kelasC);
+  expect(nonaktif.status()).toBe(409);
+  const galatNonaktif = await nonaktif.json();
+  expect(galatNonaktif.error.code).toBe("MURID_TIDAK_AKTIF");
+  expect(galatNonaktif.error.message).toContain("tidak aktif");
+
+  const dbAktif = await pool();
+  try {
+    await dbAktif.query(
+      "UPDATE students SET status_aktif = true WHERE id = $1",
+      [muridId],
+    );
+  } finally {
+    await dbAktif.end();
+  }
+  expect((await tempatkan(kelasC)).status()).toBe(201);
+
   await setRole(email, "user");
 });
