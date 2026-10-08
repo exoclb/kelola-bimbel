@@ -126,6 +126,18 @@ export function DaftarKelas({
         murid.statusAktif && !muridDiKelas.has(`${kelasId}:${murid.id}`),
     );
 
+  /**
+   * Baris cabang yang dipakai sebuah kelas. Pencocokannya mengabaikan spasi
+   * tepi dan besar/kecil huruf, sama seperti pemeriksaan di layanan cabang.
+   * `undefined` berarti kelasnya menunjuk cabang yang belum terdaftar.
+   */
+  function cabangKelas(nama: string) {
+    const kunci = nama.trim().toLocaleLowerCase("id");
+    return daftarCabang.find(
+      (baris) => baris.nama.trim().toLocaleLowerCase("id") === kunci,
+    );
+  }
+
   function ubahJadwal(
     kelasId: string,
     ubah: (jadwal: JadwalKelas[]) => JadwalKelas[],
@@ -291,6 +303,7 @@ export function DaftarKelas({
         <ul className="mt-6 space-y-3">
           {cocok.map((kelas) => {
             const terdaftar = terdaftarDi(kelas.id);
+            const cabang = cabangKelas(kelas.cabang);
             return (
               <li key={kelas.id}>
                 <Card className="gap-3 px-5 py-4">
@@ -300,6 +313,18 @@ export function DaftarKelas({
                       <span className="inline-flex items-center gap-1.5">
                         <MapPin className="size-4" aria-hidden="true" />
                         {kelas.cabang}
+                        {!cabang && (
+                          <span className="text-destructive">
+                            {" "}
+                            (belum terdaftar)
+                          </span>
+                        )}
+                        {cabang && !cabang.statusAktif && (
+                          <span className="text-muted-foreground">
+                            {" "}
+                            (nonaktif)
+                          </span>
+                        )}
                       </span>
                       <span>Guru: {kelas.guruNama}</span>
                       <span className="inline-flex items-center gap-1.5">
