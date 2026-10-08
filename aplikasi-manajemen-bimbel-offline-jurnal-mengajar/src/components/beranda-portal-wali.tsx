@@ -88,11 +88,11 @@ export function BerandaPortalWali({
   const tagihanAnak = useMemo(
     () =>
       tagihan
-        .filter((baris) => baris.muridId === dipilih?.muridId)
+        .filter((baris) => baris.muridId === dipilih?.sumberTiruan)
         .sort((a, b) =>
           periodeDariTagihan(b).localeCompare(periodeDariTagihan(a)),
         ),
-    [tagihan, dipilih?.muridId],
+    [tagihan, dipilih?.sumberTiruan],
   );
 
   const periodeBerjalan = periodeTagihan(new Date());

@@ -6,7 +6,14 @@
 // (`students`), catatan perkembangan (`student_progress`: nilai, sikap,
 // catatan). Kehadiran tidak disimpan di sini, melainkan dihitung dari
 // `getRiwayatJurnal`.
+//
+// Setiap anak membawa dua penamaan id (lihat `src/lib/id-murid.mjs`):
+// `muridId` adalah id basis data (`students.id`, dari `idMuridDb`) yang dipakai
+// portal di alamat halaman dan dikirim ke `/api/jejak-baca` supaya cocok dengan
+// `wali_murid.murid_id`, sedangkan `sumberTiruan` adalah id data contoh
+// (`mrd-N`) yang jadi kunci catatan, tagihan, dan jurnal tiruan.
 
+import { idMuridDb } from "@/lib/id-murid.mjs";
 import { getRiwayatJurnal } from "@/lib/mock-jurnal";
 import { getDaftarMurid } from "@/lib/mock-murid";
 import { getSemuaTagihan } from "@/lib/mock-tagihan";
@@ -14,7 +21,10 @@ import { getWali, WALI_PORTAL } from "@/lib/mock-wali";
 import { tanggalISO } from "@/lib/tanggal";
 
 export type AnakWali = {
+  /** Id basis data murid (`students.id`): dipakai alamat portal dan API. */
   muridId: string;
+  /** Id anak pada data tiruan (`mrd-N`): kunci catatan, tagihan, dan jurnal. */
+  sumberTiruan: string;
   nama: string;
   namaOrangTua: string;
   kontakOrangTua: string;
@@ -175,36 +185,38 @@ export function getAnakPortal(): AnakPortal[] {
   const hariIni = new Date();
 
   return wali.murid.map((tautan) => {
-    const anak = murid.get(tautan.muridId);
+    // Isi tiruan (catatan, tagihan, jurnal) tetap berkunci id data contoh,
+    // sedangkan yang keluar ke halaman adalah id basis data lewat `idMuridDb`.
+    const idTiruan = tautan.muridId;
+    const anak = murid.get(idTiruan);
     const sesi = jurnal
       .map((catatan) => ({
         tanggal: catatan.tanggal,
-        murid: catatan.murid.find((baris) => baris.id === tautan.muridId),
+        murid: catatan.murid.find((baris) => baris.id === idTiruan),
       }))
       .filter((baris) => baris.murid);
     const hadir = sesi.filter((baris) => baris.murid?.hadir).length;
     const tanggalSesi = sesi
       .map((baris) => baris.tanggal)
       .sort((a, b) => b.localeCompare(a));
-    const catatan = (CATATAN[tautan.muridId] ?? []).map(
-      ({ hariLalu, ...baris }) => {
-        const tanggal = new Date(hariIni);
-        tanggal.setDate(tanggal.getDate() - hariLalu);
-        return { ...baris, tanggal: tanggalISO(tanggal) };
-      },
-    );
+    const catatan = (CATATAN[idTiruan] ?? []).map(({ hariLalu, ...baris }) => {
+      const tanggal = new Date(hariIni);
+      tanggal.setDate(tanggal.getDate() - hariLalu);
+      return { ...baris, tanggal: tanggalISO(tanggal) };
+    });
     // Tagihan dianggap berubah saat diterbitkan atau saat dibayar, jadi
     // tanggal terbarunya diambil dari kedua kolom itu.
     const tanggalTagihan =
       tagihan
-        .filter((baris) => baris.muridId === tautan.muridId)
+        .filter((baris) => baris.muridId === idTiruan)
         .flatMap((baris) => [baris.dibuatPada.slice(0, 10), baris.tanggalBayar])
         .filter((nilai): nilai is string => Boolean(nilai))
         .sort((a, b) => b.localeCompare(a))[0] ?? null;
-    const dibaca = TERAKHIR_DIBACA[tautan.muridId] ?? {};
+    const dibaca = TERAKHIR_DIBACA[idTiruan] ?? {};
 
     return {
-      muridId: tautan.muridId,
+      muridId: idMuridDb(idTiruan),
+      sumberTiruan: idTiruan,
       nama: tautan.nama,
       namaOrangTua: anak?.namaOrangTua ?? wali.nama,
       kontakOrangTua: anak?.kontakOrangTua ?? wali.kontak,

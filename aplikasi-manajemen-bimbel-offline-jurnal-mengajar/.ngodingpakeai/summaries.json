@@ -1300,5 +1300,11 @@
     },
     "drizzle/meta/0019_snapshot.json": {
         "summary": "Snapshot skema Drizzle untuk migrasi 0019: mencatat jejak_baca_portal.dibaca_pada bertipe timestamp with time zone sedangkan bagian tetap text, menjadi dasar perbandingan bagi migrasi berikutnya."
+    },
+    "src/lib/id-murid.mjs": {
+        "summary": "Jembatan id antara data tiruan dan basis data: menerjemahkan id murid teks dari data contoh (`mrd-2`) menjadi UUID tetap yang deterministik (`00000000-0000-4000-8000-000000000002`) lewat fungsi `idMuridDb()` yang murni JavaScript sehingga aman dipakai modul portal yang ikut dibundel ke peramban. Dipakai bersama oleh seeder wali dan `mock-portal-wali` supaya portal mengirim id yang sama dengan yang tersimpan di `wali_murid.murid_id`; id data contoh tetap disimpan pada `sumberTiruan` untuk mencari catatan/tagihan/jurnal tiruan."
+    },
+    "scripts/seed-wali.mjs": {
+        "summary": "Seeder tautan wali↔murid yang membaca `src/lib/mock-wali.ts` dan `src/lib/mock-murid.ts` langsung (lewat registerHooks yang menerjemahkan alias `@/`), lalu mengisi tabel `students` dan `wali_murid` secara idempoten dengan INSERT ... ON CONFLICT DO NOTHING. Akun wali dipetakan lewat email dan dibuat bila belum ada memakai sandi dari SEED_WALI_PASSWORD (tidak pernah dicetak; wali ber-aksesPortal false dibuat banned), mencetak laporan dibuat/dilewati per langkah dan keluar dengan kode non-nol saat gagal. Dijalankan lewat npm script `db:seed:wali`."
     }
 }

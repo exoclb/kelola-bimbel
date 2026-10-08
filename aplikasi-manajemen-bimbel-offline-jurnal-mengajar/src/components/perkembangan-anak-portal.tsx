@@ -79,7 +79,7 @@ export function PerkembanganAnakPortal({
     return getRiwayatJurnal()
       .map((jurnal) => ({
         jurnal,
-        baris: jurnal.murid.find((murid) => murid.id === dipilih.muridId),
+        baris: jurnal.murid.find((murid) => murid.id === dipilih.sumberTiruan),
       }))
       .filter((item) => item.baris)
       .sort((a, b) => b.jurnal.tanggal.localeCompare(a.jurnal.tanggal));

@@ -76,11 +76,11 @@ export function TagihanSppAnak({
   const daftar = useMemo(
     () =>
       semua
-        .filter((baris) => baris.muridId === dipilih?.muridId)
+        .filter((baris) => baris.muridId === dipilih?.sumberTiruan)
         .sort((a, b) =>
           periodeDariTagihan(b).localeCompare(periodeDariTagihan(a)),
         ),
-    [semua, dipilih?.muridId],
+    [semua, dipilih?.sumberTiruan],
   );
 
   const rekap = hitungRekapTagihan(daftar);
