@@ -132,7 +132,7 @@ export function RekapGajiBulanan({
         <TombolUnduhLaporan
           judul="Rekap Gaji Guru"
           periode={periodeTampil}
-          kop={getProfilBimbel()}
+          profil={getProfilBimbel()}
           kolom={[
             "Guru",
             "Jumlah Jurnal",

@@ -3,44 +3,19 @@
 import { useState } from "react";
 import { Download, FileSpreadsheet, LoaderCircle, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-export type KopLaporan = {
-  nama: string;
-  alamat?: string;
-  telepon?: string;
-};
+import { lembarLaporanHtml, namaBerkasLembar } from "@/lib/lembar-laporan-html";
+import type { ProfilBimbel } from "@/lib/mock-pengaturan";
 
 type TombolUnduhLaporanProps = {
   /** Judul laporan, dipakai di kop berkas and nama berkas. */
   judul: string;
   /** Periode laporan, mis. "Oktober 2026". */
   periode: string;
-  /** Baris kop tambahan (mis. nama bimbel, periode). */
-  kop: KopLaporan;
+  /** Identitas bimbel untuk kop lembar; sama dengan kop dokumen lain. */
+  profil: ProfilBimbel;
   kolom: string[];
   baris: (string | number)[][];
 };
-
-/** Nama berkas seragam: laporan, periode, dan tanggal unduh. */
-function namaBerkas(judul: string, periode: string, ekstensi: string) {
-  const judulRapi = judul
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-  const periodeRapi = periode
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-  return `${judulRapi}-${periodeRapi}.${ekstensi}`;
-}
-
-/** Lolos teks untuk ditaruh di dalam sel HTML tabel Excel. */
-function lolosTeks(nilai: string | number) {
-  return String(nilai)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
 
 /**
  * Tombol unduh laporan: PDF lewat dialog cetak browser (di sana tersedia
@@ -50,7 +25,7 @@ function lolosTeks(nilai: string | number) {
 export function TombolUnduhLaporan({
   judul,
   periode,
-  kop,
+  profil,
   kolom,
   baris,
 }: TombolUnduhLaporanProps) {
@@ -73,25 +48,15 @@ export function TombolUnduhLaporan({
     // Beri kesempatan status tampil dulu sebelum berkasnya disusun.
     setTimeout(() => {
       try {
-        const tabel = `<!doctype html>
-<html lang="id"><head><meta charset="utf-8"><title>${lolosTeks(judul)} ${lolosTeks(periode)}</title></head>
-<body>
-  <h2 style="margin:0">${lolosTeks(kop.nama)}</h2>
-  ${kop.alamat ? `<p style="margin:2px 0">${lolosTeks(kop.alamat)}</p>` : ""}
-  ${kop.telepon ? `<p style="margin:2px 0">${lolosTeks(kop.telepon)}</p>` : ""}
-  <h3 style="margin:12px 0 4px">${lolosTeks(judul)} — ${lolosTeks(periode)}</h3>
-  <table border="1" cellspacing="0" cellpadding="4">
-    <thead><tr>${kolom.map((judulKolom) => `<th align="left" scope="col">${lolosTeks(judulKolom)}</th>`).join("")}</tr></thead>
-    <tbody>${baris
-      .map(
-        (isi) =>
-          `<tr>${isi.map((sel) => `<td>${lolosTeks(sel)}</td>`).join("")}</tr>`,
-      )
-      .join("")}</tbody>
-  </table>
-</body></html>`;
+        const tabel = lembarLaporanHtml({
+          judul,
+          periode,
+          profil,
+          kolom,
+          baris,
+        });
 
-        const nama = namaBerkas(judul, periode, "xls");
+        const nama = namaBerkasLembar(judul, periode, "xls");
         const tautan = document.createElement("a");
         tautan.href = URL.createObjectURL(
           new Blob([tabel], { type: "application/vnd.ms-excel" }),
@@ -115,7 +80,7 @@ export function TombolUnduhLaporan({
       setGalat("Belum ada data pada periode ini untuk diunduh.");
       return;
     }
-    const nama = namaBerkas(judul, periode, "pdf");
+    const nama = namaBerkasLembar(judul, periode, "pdf");
     setSedangProses("pdf");
     setPesan(`Menyiapkan ${nama}…`);
     setTimeout(() => {

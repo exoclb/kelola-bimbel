@@ -11,10 +11,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
+import { KopDokumen } from "@/components/kop-dokumen";
 import { PesanKosong } from "@/components/status-antarmuka";
+import { TombolUnduhLaporan } from "@/components/tombol-unduh-laporan";
 import { TombolCetakUnduh } from "@/components/tombol-cetak-unduh";
 import { SlipGaji } from "@/components/slip-gaji";
+import { formatJam } from "@/lib/jurnal";
 import { formatRupiah } from "@/lib/gaji";
+import { getProfilBimbel } from "@/lib/mock-pengaturan";
 import type { BarisRekapGaji } from "@/lib/mock-gaji";
 
 type PratinjauEksporProps = {
@@ -43,6 +47,43 @@ export function PratinjauEkspor({
   daftar,
   terpilih,
 }: PratinjauEksporProps) {
+  // Lembar rekap memuat semua guru pada bulan itu — bukan hanya yang sedang
+  // dipratinjau — supaya angkanya sama dengan unduhan Excel dari halaman gaji.
+  const totalJam = daftar.reduce((jumlah, baris) => jumlah + baris.totalJam, 0);
+  const totalGaji = daftar.reduce(
+    (jumlah, baris) => jumlah + baris.totalGaji,
+    0,
+  );
+  const sudahDibayar = daftar.filter(
+    (baris) => baris.statusPembayaran === "dibayar",
+  ).length;
+  const kolomLembar = [
+    "Guru",
+    "Jumlah Jurnal",
+    "Total Jam",
+    "Tarif per Jam (Rp)",
+    "Total Gaji (Rp)",
+    "Status Pembayaran",
+  ];
+  const barisLembar: (string | number)[][] = daftar.map((baris) => [
+    baris.guruNama,
+    baris.jumlahJurnal,
+    baris.totalJam,
+    baris.tarifPerJam,
+    baris.totalGaji,
+    baris.statusPembayaran === "dibayar" ? "Dibayar" : "Belum dibayar",
+  ]);
+  if (daftar.length > 0) {
+    barisLembar.push([
+      "Total",
+      daftar.reduce((jumlah, baris) => jumlah + baris.jumlahJurnal, 0),
+      totalJam,
+      daftar[0].tarifPerJam,
+      totalGaji,
+      `${sudahDibayar} dari ${daftar.length} guru dibayar`,
+    ]);
+  }
+
   return (
     <>
       <Card>
@@ -155,6 +196,72 @@ export function PratinjauEkspor({
             </CardContent>
           </Card>
         </>
+      )}
+
+      {daftar.length > 0 && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Pratinjau rekap gaji (Excel)</CardTitle>
+            <CardDescription>
+              Lembar yang diunduh memuat semua guru pada {periodeTampil}.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-[var(--radius-kartu-portal)] border bg-muted/40 p-3">
+              <KopDokumen judul={`Rekap gaji guru · ${periodeTampil}`} />
+              {/* Tabelnya bisa digeser mendatar di ponsel tanpa membuat
+                  halaman ikut melebar. */}
+              <div className="mt-3 overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="text-muted-foreground border-b">
+                      {kolomLembar.map((judulKolom) => (
+                        <th
+                          key={judulKolom}
+                          scope="col"
+                          className="py-2 pr-3 font-medium whitespace-nowrap"
+                        >
+                          {judulKolom}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {barisLembar.map((isi, urutan) => (
+                      <tr
+                        key={`${isi[0]}-${urutan}`}
+                        className="border-b last:border-0"
+                      >
+                        {isi.map((sel, kolomKe) => (
+                          <td
+                            key={`${kolomKe}-${sel}`}
+                            className="py-2 pr-3 tabular-nums"
+                          >
+                            {typeof sel === "number" &&
+                            kolomLembar[kolomKe]?.includes("(Rp)")
+                              ? formatRupiah(sel)
+                              : typeof sel === "number" &&
+                                  kolomLembar[kolomKe] === "Total Jam"
+                                ? formatJam(sel)
+                                : String(sel)}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <TombolUnduhLaporan
+              judul="Rekap Gaji Guru"
+              periode={periodeTampil}
+              profil={getProfilBimbel()}
+              kolom={kolomLembar}
+              baris={barisLembar}
+            />
+          </CardContent>
+        </Card>
       )}
     </>
   );

@@ -233,7 +233,7 @@ export function LaporanLabaRugi({
         <TombolUnduhLaporan
           judul="Laporan Laba Rugi"
           periode={periodeTampil}
-          kop={getProfilBimbel()}
+          profil={getProfilBimbel()}
           kolom={["Keterangan", "Jumlah (Rp)"]}
           baris={[
             ["Pemasukan SPP (lunas)", rekapTagihan.nominalLunas],
