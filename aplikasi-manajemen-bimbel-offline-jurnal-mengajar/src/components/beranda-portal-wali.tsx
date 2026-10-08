@@ -252,12 +252,7 @@ export function BerandaPortalWali({
         </Button>
       </KartuPortal>
 
-      <KartuPortal
-        className="mt-4"
-        judul="Tagihan Terdekat"
-        ikon={Receipt}
-        penanda={tagihanBaru ? <LencanaBaru /> : undefined}
-      >
+      <KartuPortal className="mt-4" judul="Tagihan Terdekat" ikon={Receipt}>
         {!tagihanTerdekat ? (
           <p className="text-muted-foreground text-sm">
             Belum ada tagihan untuk anak ini.
@@ -265,8 +260,9 @@ export function BerandaPortalWali({
         ) : (
           <>
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-lg font-semibold">
+              <p className="flex flex-wrap items-center gap-2 text-lg font-semibold">
                 {formatRupiah(tagihanTerdekat.nominal)}
+                {tagihanBaru && <LencanaBaru />}
               </p>
               <PenandaStatus
                 status={statusPembayaran(tagihanTerdekat, periodeBerjalan)}
@@ -312,7 +308,6 @@ export function BerandaPortalWali({
         className="mt-4"
         judul="Sorotan Perkembangan"
         ikon={GraduationCap}
-        penanda={perkembanganBaru ? <LencanaBaru /> : undefined}
       >
         {catatanTerbaru.length === 0 ? (
           <p className="text-muted-foreground text-sm">
@@ -320,7 +315,7 @@ export function BerandaPortalWali({
           </p>
         ) : (
           <ul className="space-y-3">
-            {catatanTerbaru.map((catatan) => (
+            {catatanTerbaru.map((catatan, urutan) => (
               <li
                 key={`${catatan.tanggal}-${catatan.nilai}-${catatan.sikap}`}
                 className="rounded-lg border px-3 py-2"
@@ -337,6 +332,9 @@ export function BerandaPortalWali({
                       new Date(`${catatan.tanggal}T00:00:00`),
                     )}
                   </span>
+                  {/* Penanda bagian yang baru: catatan terbaru yang belum
+                      dibaca wali sejak kunjungan terakhirnya. */}
+                  {perkembanganBaru && urutan === 0 && <LencanaBaru />}
                 </div>
                 <p className="text-muted-foreground mt-1 text-sm">
                   {catatan.catatan}
