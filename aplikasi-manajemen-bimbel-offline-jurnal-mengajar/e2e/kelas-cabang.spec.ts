@@ -808,3 +808,61 @@ test("dua permintaan tambah cabang bersamaan hanya menghasilkan satu cabang", as
     await db.end();
   }
 });
+
+/**
+ * Ubah cabang dan set status aktif harus aman dijalankan berulang: mengirim
+ * perubahan yang sama dua kali menghasilkan keadaan yang sama (bukan galat,
+ * bukan baris kedua), dan permintaan kosong tetap ditolak validasi.
+ */
+test("ubah cabang dan set status aktif idempoten", async ({ request }) => {
+  await jadikanOwner();
+  await masukApi(request);
+  const nama = `Cabang Idem ${randomUUID().slice(0, 8)}`;
+  await siapkanCabang(nama, true);
+
+  const db = await pool();
+  try {
+    const { rows } = await db.query<{ id: string }>(
+      "SELECT id FROM cabang WHERE nama = $1",
+      [nama],
+    );
+    const id = rows[0].id;
+    const patch = (data: Record<string, unknown>) =>
+      request.patch(`/api/cabang/${id}`, { headers, data });
+
+    // Perubahan yang sama dua kali: hasilnya sama.
+    for (const ulangan of [1, 2]) {
+      const jawaban = await patch({
+        alamat: "Jl. Idem No. 1",
+        kontak: "0800-1",
+      });
+      expect(jawaban.status(), `percobaan ke-${ulangan}`).toBe(200);
+      expect((await jawaban.json()).data).toMatchObject({
+        nama,
+        alamat: "Jl. Idem No. 1",
+        kontak: "0800-1",
+        statusAktif: true,
+      });
+    }
+
+    // Menonaktifkan dua kali: tetap nonaktif, bukan galat.
+    for (const ulangan of [1, 2]) {
+      const jawaban = await patch({ statusAktif: false });
+      expect(jawaban.status(), `nonaktif ke-${ulangan}`).toBe(200);
+      expect((await jawaban.json()).data.statusAktif).toBe(false);
+    }
+
+    // Permintaan tanpa kolom apa pun tetap ditolak validasi.
+    const kosong = await patch({});
+    expect(kosong.status()).toBe(422);
+
+    const { rows: baris } = await db.query<{ jumlah: number }>(
+      "SELECT count(*)::int AS jumlah FROM cabang WHERE lower(btrim(nama)) = lower(btrim($1))",
+      [nama],
+    );
+    expect(baris[0].jumlah).toBe(1);
+  } finally {
+    await db.query("DELETE FROM cabang WHERE nama = $1", [nama]);
+    await db.end();
+  }
+});
