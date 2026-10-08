@@ -213,15 +213,30 @@ export function FormTambahPengeluaran({
               </dd>
             </div>
           </dl>
-          <Button
-            type="button"
-            variant="outline"
-            size="aksi"
-            onClick={tambahLagi}
-          >
-            <Plus aria-hidden="true" />
-            Tambah pengeluaran lagi
-          </Button>
+          {/* Setelah tersimpan, kartu ini menggantikan tombol pemicunya; "Selesai"
+              menutupnya tanpa membuka formulir baru supaya daftar di bawah bisa
+              langsung dibaca. */}
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Button
+              type="button"
+              variant="outline"
+              size="aksi"
+              className="w-full sm:w-auto"
+              onClick={tambahLagi}
+            >
+              <Plus aria-hidden="true" />
+              Tambah pengeluaran lagi
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="aksi"
+              className="w-full sm:w-auto"
+              onClick={() => setTersimpan(null)}
+            >
+              Selesai
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );
