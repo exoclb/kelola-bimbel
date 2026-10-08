@@ -16,17 +16,71 @@ import {
   durasiSesi,
   HARI_DALAM_SEMINGGU,
   indeksHari,
+  menitDariJam,
+  menitSekarang,
   namaHari,
   tanggalISO,
   urutkanJadwal,
 } from "@/lib/tanggal";
+import { cn } from "cn";
+
+/**
+ * Pil penanda keadaan sesi hari ini terhadap jam sekarang: `berlangsung` saat
+ * jamnya sedang berjalan, `berikutnya` untuk sesi terdekat yang belum mulai.
+ * Sesi yang sudah lewat tidak diberi pil supaya tidak ramai.
+ */
+function PilSesi({ keadaan }: { keadaan: "berlangsung" | "berikutnya" }) {
+  const berlangsung = keadaan === "berlangsung";
+  return (
+    <span
+      className={cn(
+        "rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap",
+        berlangsung
+          ? "border-primary/30 bg-primary/10 text-primary"
+          : "border-border bg-muted text-foreground",
+      )}
+    >
+      {berlangsung ? "Berlangsung" : "Berikutnya"}
+    </span>
+  );
+}
 
 /** Detail satu sesi: jam beserta lamanya, kelas, ruang, dan guru pengajar. */
-function DaftarSesi({ daftar }: { daftar: JadwalAnak[] }) {
+function DaftarSesi({
+  daftar,
+  menitSekarang,
+}: {
+  daftar: JadwalAnak[];
+  /**
+   * Menit sejak tengah malam menurut jam perangkat wali. Kalau diisi, sesi hari
+   * ini ditandai "Berlangsung" atau "Berikutnya"; kalau kosong, tidak ada pil.
+   */
+  menitSekarang?: number;
+}) {
+  // Sesi terdekat yang belum mulai: hanya yang paling awal perlu pil.
+  const jadwalBerikutnya =
+    menitSekarang === undefined
+      ? undefined
+      : daftar.find((baris) => {
+          const mulai = menitDariJam(baris.jamMulai);
+          return mulai !== null && mulai > menitSekarang;
+        })?.jadwalId;
+
   return (
     <ul className="space-y-3">
       {daftar.map((baris) => {
         const durasi = durasiSesi(baris.jamMulai, baris.jamSelesai);
+        const mulai = menitDariJam(baris.jamMulai);
+        const selesai = menitDariJam(baris.jamSelesai);
+        const keadaan =
+          menitSekarang === undefined || mulai === null || selesai === null
+            ? null
+            : menitSekarang >= mulai && menitSekarang <= selesai
+              ? "berlangsung"
+              : baris.jadwalId === jadwalBerikutnya
+                ? "berikutnya"
+                : null;
+
         return (
           <li key={baris.jadwalId} className="rounded-lg border px-3 py-2">
             <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm font-medium">
@@ -35,6 +89,11 @@ function DaftarSesi({ daftar }: { daftar: JadwalAnak[] }) {
               {durasi && (
                 <span className="text-muted-foreground font-normal">
                   · {durasi}
+                </span>
+              )}
+              {keadaan && (
+                <span className="ml-auto">
+                  <PilSesi keadaan={keadaan} />
                 </span>
               )}
             </p>
@@ -71,6 +130,19 @@ function useTanggalPerangkat(tanggalServer: string) {
 }
 
 /**
+ * Menit sejak tengah malam menurut jam perangkat wali. Lukisan pertama memakai
+ * `menitServer` supaya server dan klien tidak berbeda, lalu React menghitung
+ * ulang dengan jam peramban.
+ */
+function useMenitPerangkat(menitServer: number) {
+  return useSyncExternalStore(
+    tanpaLangganan,
+    () => menitSekarang(),
+    () => menitServer,
+  );
+}
+
+/**
  * Tanggal salah satu hari di pekan yang memuat `acuan` (Senin sebagai awal
  * pekan), supaya daftar jadwal mingguan bisa menyebut tanggalnya.
  */
@@ -101,6 +173,11 @@ type JadwalAnakPortalProps = {
    * menggeser "hari ini" bagi pengguna di Indonesia.
    */
   tanggalServer: string;
+  /**
+   * Menit sejak tengah malam menurut server, dipakai untuk lukisan pertama
+   * penanda sesi yang sedang berlangsung atau berikutnya.
+   */
+  menitServer: number;
 };
 
 /**
@@ -115,6 +192,7 @@ export function JadwalAnakPortal({
   statusAwal,
   jadwal,
   tanggalServer,
+  menitServer,
 }: JadwalAnakPortalProps) {
   const router = useRouter();
   const dipilih =
@@ -139,6 +217,7 @@ export function JadwalAnakPortal({
     [tanggalPerangkat],
   );
   const hariIni = namaHari(tanggalAcuan);
+  const menitPerangkat = useMenitPerangkat(menitServer);
 
   const sesiHariIni = perHari.get(hariIni) ?? [];
   // Hari ini sudah tampil di kartunya sendiri, jadi daftar pekan tidak
@@ -191,7 +270,10 @@ export function JadwalAnakPortal({
                 keterangan={tanggalRingkas.format(tanggalAcuan)}
               >
                 {sesiHariIni.length > 0 ? (
-                  <DaftarSesi daftar={sesiHariIni} />
+                  <DaftarSesi
+                    daftar={sesiHariIni}
+                    menitSekarang={menitPerangkat}
+                  />
                 ) : (
                   <div className="space-y-1">
                     <p className="text-muted-foreground text-sm">

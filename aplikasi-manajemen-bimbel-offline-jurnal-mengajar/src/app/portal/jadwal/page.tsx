@@ -3,7 +3,7 @@ import { JadwalAnakPortal } from "@/components/jadwal-anak-portal";
 import { statusSemuaAnak } from "@/services/jejak-baca.service";
 import { listJadwalAnak, muatIsiPortalWali } from "@/services/portal.service";
 import { requireSession } from "@/lib/session";
-import { tanggalISO } from "@/lib/tanggal";
+import { menitSekarang, tanggalISO } from "@/lib/tanggal";
 
 export const metadata: Metadata = { title: "Jadwal Belajar" };
 
@@ -29,6 +29,7 @@ export default async function JadwalBelajarPage({
       statusAwal={await statusSemuaAnak(session.user.id, anak)}
       jadwal={await listJadwalAnak(anak.map((baris) => baris.muridId))}
       tanggalServer={tanggalISO(new Date())}
+      menitServer={menitSekarang()}
     />
   );
 }

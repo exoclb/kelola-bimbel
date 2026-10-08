@@ -74,6 +74,21 @@ export function urutkanJadwal(
 }
 
 /**
+ * Menit sejak tengah malam untuk jam `HH:MM`. Dipakai membandingkan jam sesi
+ * dengan jam sekarang tanpa menyentuh tanggal.
+ */
+export function menitDariJam(jam: string) {
+  const [jamKe, menit] = jam.split(":").map(Number);
+  if (!Number.isFinite(jamKe) || !Number.isFinite(menit)) return null;
+  return jamKe * 60 + menit;
+}
+
+/** Menit sejak tengah malam pada waktu tertentu (bawaan: sekarang). */
+export function menitSekarang(tanggal = new Date()) {
+  return tanggal.getHours() * 60 + tanggal.getMinutes();
+}
+
+/**
  * Lama satu sesi dari jam mulai dan jam selesai (`HH:MM`), mis. "1 jam 30
  * menit". String kosong dipakai bila jamnya tidak masuk akal (selesai sebelum
  * mulai), supaya tampilan tidak menampilkan angka negatif.
