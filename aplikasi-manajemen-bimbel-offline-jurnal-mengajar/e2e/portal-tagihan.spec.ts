@@ -187,4 +187,15 @@ test("layar Tagihan portal menampilkan ringkasan dan tiga status pembayaran", as
       .getByRole("link", { name: "Tagihan", exact: true }),
   ).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("button", { name: /Unduh/ })).toBeVisible();
+
+  // Id anak yang tidak tertaut tidak menampilkan tagihan siapa pun, tetapi
+  // tetap menyediakan jalan kembali ke anak yang benar.
+  await page.goto(`/portal/tagihan?anak=${randomUUID()}`);
+  await expect(
+    page.getByText("Anak yang diminta tidak tertaut", { exact: true }),
+  ).toBeVisible();
+  await expect(page.locator("#bukti-tagihan-anak")).toHaveCount(0);
+  await page.getByRole("link", { name: /Tampilkan tagihan/ }).click();
+  await expect(page).toHaveURL(/\/portal\/tagihan$/);
+  await expect(page.locator("#bukti-tagihan-anak")).toBeVisible();
 });

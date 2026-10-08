@@ -105,17 +105,42 @@ export function TagihanSppAnak({
       }
     >
 
+      <div className="mt-6 print:hidden">
+        <PemilihAnak
+          anak={anak}
+          nilai={dipilih?.muridId ?? ""}
+          status={statusAwal}
+          onPilih={(id) => router.replace(`/portal/tagihan?anak=${id}`)}
+        />
+      </div>
+
+      {!dipilih && (
+        <PesanKosong
+          className="mt-6"
+          judul={
+            anak.length > 0
+              ? "Anak yang diminta tidak tertaut"
+              : "Belum ada anak yang tertaut"
+          }
+          keterangan={
+            anak.length > 0
+              ? "Anak dari alamat halaman ini bukan murid yang tertaut ke akun Anda. Pilih anak lewat daftar di atas."
+              : "Tautannya dibuat owner bimbel lewat halaman pengaturan wali. Setelah tertaut, tagihan SPP anak muncul di sini."
+          }
+          aksi={
+            anak.length > 0 ? (
+              <Button asChild variant="outline" size="aksi">
+                <Link href="/portal/tagihan">
+                  Tampilkan tagihan {anak[0]?.nama}
+                </Link>
+              </Button>
+            ) : undefined
+          }
+        />
+      )}
+
       {dipilih && (
         <>
-          <div className="mt-6 print:hidden">
-            <PemilihAnak
-              anak={anak}
-              nilai={dipilih.muridId}
-              status={statusAwal}
-              onPilih={(id) => router.replace(`/portal/tagihan?anak=${id}`)}
-            />
-          </div>
-
           <div id="bukti-tagihan-anak" className="mt-6 space-y-3">
             <RingkasanTagihanAnak
               anak={dipilih}
