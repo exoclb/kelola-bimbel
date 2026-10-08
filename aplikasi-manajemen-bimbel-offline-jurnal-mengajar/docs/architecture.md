@@ -72,6 +72,8 @@ Focus is part of the token system: `*:focus-visible` in `globals.css` draws a 2p
 
 The portal shell is the only place that opts into `viewport-fit=cover` (its own `viewport` metadata in `src/app/portal/layout.tsx`), which is what makes `env(safe-area-inset-*)` report the device insets. The bottom tab bar adds `env(safe-area-inset-bottom)` to its padding and the content adds the same value to its bottom padding, while the sticky header uses `env(safe-area-inset-top)`, so nothing sits under the home indicator or a notch. Other routes keep the default viewport.
 
+The core content column is `--lebar-konten-portal` (480px) in `globals.css`; the header, the page content, and the tabs' inner row all use it with `mx-auto`, so they stay perfectly aligned and centred from 768px upward while filling the screen on phones.
+
 The base's welcome and blank app pages are replaceable. Reuse auth, setup, database, and UI when adding dashboard or chatbot features. Do not put feature conditionals throughout the base: create a derivative and implement that app directly.
 
 ## Dependency compatibility

@@ -43,7 +43,7 @@ export function NavBawahPortal() {
       aria-label="Navigasi portal"
       className="bg-card fixed inset-x-0 bottom-0 z-40 border-t pb-[env(safe-area-inset-bottom)]"
     >
-      <ul className="mx-auto flex max-w-[480px] items-stretch">
+      <ul className="mx-auto flex max-w-[var(--lebar-konten-portal)] items-stretch">
         {TAB.map(({ href, label, Ikon }) => {
           const aktif = href === hrefAktif;
           return (

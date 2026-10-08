@@ -91,6 +91,10 @@
 :root {
   color-scheme: light;
   --radius: 0.75rem;
+  /* Lebar konten inti Portal Wali: 480px, terpusat di layar lebar dan selebar
+     layar di ponsel. Dipakai kepala halaman, isi, dan bilah tab bawah supaya
+     ketiganya selalu sejajar. */
+  --lebar-konten-portal: 30rem;
   /* Kanvas terang #F8FAFC (slate-50) dengan teks slate-900. */
   --background: #f8fafc;
   --foreground: #0f172a;

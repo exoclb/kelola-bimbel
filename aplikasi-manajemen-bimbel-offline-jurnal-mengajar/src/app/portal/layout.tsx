@@ -44,7 +44,7 @@ export default async function PortalLayout({
   return (
     <>
       <header className="bg-card sticky top-0 z-30 border-b pt-[env(safe-area-inset-top)] print:hidden">
-        <div className="mx-auto flex max-w-[480px] items-center justify-between gap-3 px-4 py-3">
+        <div className="mx-auto flex max-w-[var(--lebar-konten-portal)] items-center justify-between gap-3 px-4 py-3">
           <Link href="/portal" className="flex min-w-0 items-center gap-2.5">
             <span
               aria-hidden="true"
@@ -74,7 +74,7 @@ export default async function PortalLayout({
       </header>
       <main
         id="main-content"
-        className="mx-auto w-full max-w-[480px] px-4 pt-6 pb-[calc(6rem+env(safe-area-inset-bottom))]"
+        className="mx-auto w-full max-w-[var(--lebar-konten-portal)] px-4 pt-6 pb-[calc(6rem+env(safe-area-inset-bottom))]"
       >
         {children}
       </main>
