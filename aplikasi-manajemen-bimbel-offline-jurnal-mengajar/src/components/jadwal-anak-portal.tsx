@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, Clock3 } from "lucide-react";
+import { CalendarCheck, CalendarDays, Clock3 } from "lucide-react";
 import { KartuPortal } from "@/components/kartu-portal";
 import { LayarPortal } from "@/components/layar-portal";
 import { PemilihAnak } from "@/components/pemilih-anak";
@@ -12,7 +12,27 @@ import type {
   JadwalAnak,
   StatusJejakPortal,
 } from "@/lib/portal-wali";
-import { HARI_DALAM_SEMINGGU, urutkanJadwal } from "@/lib/tanggal";
+import { HARI_DALAM_SEMINGGU, namaHari, urutkanJadwal } from "@/lib/tanggal";
+
+/** Daftar sesi satu hari: jam, kelas beserta cabangnya, dan guru pengajar. */
+function DaftarSesi({ daftar }: { daftar: JadwalAnak[] }) {
+  return (
+    <ul className="space-y-3">
+      {daftar.map((baris) => (
+        <li key={baris.jadwalId} className="rounded-lg border px-3 py-2">
+          <p className="flex items-center gap-1.5 text-sm font-medium">
+            <Clock3 className="size-4" aria-hidden="true" />
+            {baris.jamMulai}–{baris.jamSelesai}
+          </p>
+          <p className="text-muted-foreground mt-1 text-sm">
+            {baris.kelasNama} · {baris.cabang}
+          </p>
+          <p className="text-muted-foreground text-xs">Guru {baris.guruNama}</p>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 type JadwalAnakPortalProps = {
   anak: AnakWali[];
@@ -53,6 +73,14 @@ export function JadwalAnakPortal({
     return peta;
   }, [jadwal, dipilih?.muridId]);
 
+  const hariIni = namaHari(new Date());
+  const sesiHariIni = perHari.get(hariIni) ?? [];
+  // Hari ini sudah tampil di kartunya sendiri, jadi daftar pekan tidak
+  // mengulanginya.
+  const hariLain = HARI_DALAM_SEMINGGU.filter(
+    (hari) => hari !== hariIni && perHari.has(hari),
+  );
+
   return (
     <LayarPortal
       judul="Jadwal Belajar"
@@ -82,36 +110,32 @@ export function JadwalAnakPortal({
               keterangan="Jadwal muncul setelah bimbel menempatkan anak ke kelas."
             />
           ) : (
-            HARI_DALAM_SEMINGGU.filter((hari) => perHari.has(hari)).map(
-              (hari) => (
+            <>
+              <KartuPortal
+                className="mt-6"
+                judul={`Hari ini · ${hariIni}`}
+                ikon={CalendarCheck}
+              >
+                {sesiHariIni.length > 0 ? (
+                  <DaftarSesi daftar={sesiHariIni} />
+                ) : (
+                  <p className="text-muted-foreground text-sm">
+                    Tidak ada sesi belajar hari ini.
+                  </p>
+                )}
+              </KartuPortal>
+
+              {hariLain.map((hari) => (
                 <KartuPortal
                   key={hari}
                   className="mt-4"
                   judul={hari}
                   ikon={CalendarDays}
                 >
-                  <ul className="space-y-3">
-                    {(perHari.get(hari) ?? []).map((baris) => (
-                      <li
-                        key={baris.jadwalId}
-                        className="rounded-lg border px-3 py-2"
-                      >
-                        <p className="flex items-center gap-1.5 text-sm font-medium">
-                          <Clock3 className="size-4" aria-hidden="true" />
-                          {baris.jamMulai}–{baris.jamSelesai}
-                        </p>
-                        <p className="text-muted-foreground mt-1 text-sm">
-                          {baris.kelasNama} · {baris.cabang}
-                        </p>
-                        <p className="text-muted-foreground text-xs">
-                          Guru {baris.guruNama}
-                        </p>
-                      </li>
-                    ))}
-                  </ul>
+                  <DaftarSesi daftar={perHari.get(hari) ?? []} />
                 </KartuPortal>
-              ),
-            )
+              ))}
+            </>
           )}
         </>
       )}
