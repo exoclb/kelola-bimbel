@@ -1,19 +1,35 @@
 import Link from "next/link";
-import { ArrowRight, Mail, Phone, Power, UserRound, Users } from "lucide-react";
+import { ArrowRight, Mail, Power, UserRound, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { FormTambahTautanWali } from "@/components/form-tambah-tautan-wali";
 import { PesanKosong } from "@/components/status-antarmuka";
-import { ringkasPenautan, type AkunWali } from "@/lib/mock-wali";
+import type { AkunWali, MuridRingkas } from "@/services/wali.service";
 
 type DaftarWaliProps = {
+  /** Akun wali dari basis data, urut nama. */
   daftar: AkunWali[];
+  /** Semua murid yang bisa dipilih saat menambah tautan, urut nama. */
+  daftarMurid: MuridRingkas[];
 };
 
+/** Ringkasan singkat isi daftar: jumlah akun, portal, dan murid tertaut. */
+function ringkasPenautan(daftar: AkunWali[]) {
+  return {
+    jumlahAkun: daftar.length,
+    jumlahPortalAktif: daftar.filter((wali) => wali.aksesPortal).length,
+    jumlahPortalNonaktif: daftar.filter((wali) => !wali.aksesPortal).length,
+    jumlahTertaut: daftar.filter((wali) => wali.murid.length > 0).length,
+    jumlahMurid: daftar.reduce((jumlah, wali) => jumlah + wali.murid.length, 0),
+  };
+}
+
 /**
- * Daftar akun wali beserta murid yang tertaut padanya. Datanya masih contoh;
- * penambahan dan pencabutan penautan menyusul.
+ * Daftar akun wali beserta murid yang tertaut padanya, dibaca dari basis data
+ * lewat `listAkunWali()`. Taulannya ditambah lewat formulir di atas daftar,
+ * yang mengirim ke `POST /api/wali/:id/murid` lalu menyegarkan halaman ini.
  */
-export function DaftarWali({ daftar }: DaftarWaliProps) {
+export function DaftarWali({ daftar, daftarMurid }: DaftarWaliProps) {
   const ringkas = ringkasPenautan(daftar);
 
   return (
@@ -37,6 +53,12 @@ export function DaftarWali({ daftar }: DaftarWaliProps) {
           : "Belum ada akun wali yang terdaftar."}
       </p>
 
+      {daftar.length > 0 && (
+        <div className="mt-6">
+          <FormTambahTautanWali daftar={daftar} daftarMurid={daftarMurid} />
+        </div>
+      )}
+
       {daftar.length === 0 ? (
         <PesanKosong
           className="mt-6"
@@ -59,12 +81,6 @@ export function DaftarWali({ daftar }: DaftarWaliProps) {
                         <Mail className="size-4" aria-hidden="true" />
                         {wali.email}
                       </span>
-                      {wali.kontak && (
-                        <span className="inline-flex items-center gap-1.5">
-                          <Phone className="size-4" aria-hidden="true" />
-                          {wali.kontak}
-                        </span>
-                      )}
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-1.5">
@@ -100,7 +116,8 @@ export function DaftarWali({ daftar }: DaftarWaliProps) {
                         key={anak.muridId}
                         className="rounded-full border bg-muted px-2.5 py-0.5 text-xs text-muted-foreground"
                       >
-                        {anak.nama} · {anak.kelasNama}
+                        {anak.nama}
+                        {anak.statusAktif ? "" : " · tidak aktif"}
                       </li>
                     ))}
                   </ul>
@@ -116,9 +133,9 @@ export function DaftarWali({ daftar }: DaftarWaliProps) {
       )}
 
       <p className="mt-6 text-xs leading-5 text-muted-foreground">
-        Catatan: daftar penautan ini masih data tiruan — penambahan, pencabutan
-        penautan, dan pengaturan akses portal menyusul bersama penyimpanan ke
-        database.
+        Catatan: akun wali, murid, dan penautannya dibaca langsung dari basis
+        data. Pencabutan tautan dan pengaturan akses portal menyusul di fase
+        berikutnya.
       </p>
     </div>
   );

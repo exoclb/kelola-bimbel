@@ -28,12 +28,15 @@ import { peranDariRole } from "@/lib/peran";
 // yang disimpan di instance modul — halaman (RSC) maupun route handler melihat
 // data yang sama.
 
-/** Satu murid yang tertaut ke akun wali. */
-export type MuridTertaut = {
+/** Data dasar seorang murid yang dipakai daftar penautan. */
+export type MuridRingkas = {
   muridId: string;
   nama: string;
   statusAktif: boolean;
 };
+
+/** Satu murid yang tertaut ke akun wali. */
+export type MuridTertaut = MuridRingkas;
 
 /** Satu akun wali beserta murid tertaut dan status akses portalnya. */
 export type AkunWali = {
@@ -135,6 +138,23 @@ export async function getAkunWali(waliId: string): Promise<AkunWali | null> {
 
   const [wali] = await susunAkun([baris]);
   return wali ?? null;
+}
+
+/**
+ * Semua murid (id, nama, status aktifnya), urut nama — dipakai pemilih murid di
+ * halaman penautan. Sengaja tanpa paginasi: pemilihnya harus memuat seluruh
+ * murid supaya anak mana pun bisa ditautkan, sedangkan jumlah murid satu bimbel
+ * masih kecil. Kalau nanti daftarnya panjang, ganti dengan versi berpencarian.
+ */
+export async function listMuridRingkas(): Promise<MuridRingkas[]> {
+  return db
+    .select({
+      muridId: students.id,
+      nama: students.nama,
+      statusAktif: students.statusAktif,
+    })
+    .from(students)
+    .orderBy(asc(students.nama), asc(students.id));
 }
 
 /** Apakah id murid ini ada di `students`. */

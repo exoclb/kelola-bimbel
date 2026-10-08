@@ -1324,5 +1324,8 @@
     },
     "src/app/api/wali/[id]/murid/[muridId]/route.ts": {
         "summary": "Route API pelepasan tautan: `DELETE /api/wali/<id>/murid/<muridId>` melepas tautan wali↔murid — idempoten, 0 baris terhapus tetap sukses, dan meta.terlepas menunjukkan apakah ada baris yang benar-benar dihapus."
+    },
+    "src/components/form-tambah-tautan-wali.tsx": {
+        "summary": "Formulir klien untuk aksi \"Tambah tautan\" di halaman pengaturan wali: tombol pembuka, pilihan akun wali + murid (murid yang sudah tertaut ke akun itu ditandai \"— sudah tertaut\"), lalu POST ke /api/wali/:id/murid dan router.refresh(). Membedakan hasil idempoten: meta.dibuat=false ditampilkan sebagai keterangan \"sudah tertaut\" (role=status), bukan galat; kegagalan server/jaringan tampil di role=alert."
     }
 }
