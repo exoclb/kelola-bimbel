@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "cabang_nama_unik_idx" ON "cabang" USING btree (lower(btrim("nama")));

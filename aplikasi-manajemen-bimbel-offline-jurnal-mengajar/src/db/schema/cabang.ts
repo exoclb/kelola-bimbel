@@ -4,14 +4,15 @@ import {
   check,
   pgTable,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
 
-// Cabang bimbel: lokasi tempat kelas diadakan. Tabel ini menggantikan daftar
-// tiruan di `src/lib/mock-cabang.ts`; bentuk kolomnya sengaja mengikuti bentuk
-// `Cabang` di modul itu (nama, alamat, kontak, status aktif) supaya layanan dan
-// API cabang bisa berpindah sumber tanpa mengubah bentuk hasilnya.
+// Cabang bimbel: lokasi tempat kelas diadakan. Bentuk kolomnya mengikuti bentuk
+// `Cabang` yang dipakai layanan cabang (`src/services/cabang.service.ts`) dan
+// API-nya, jadi sumbernya bisa dipindah tanpa mengubah hasil yang dibaca
+// tampilan. Data awalnya ada di `src/lib/mock-cabang.ts`.
 //
 // `nama` dipakai sebagai penanda cabang pada kolom `classes.cabang`, jadi
 // panjangnya dibatasi sama seperti validasi formulir (80 karakter) dan isinya
@@ -35,6 +36,12 @@ export const cabang = pgTable(
       .notNull(),
   },
   (table) => [
+    // Nama cabang jadi penanda barisnya di daftar, di pilihan formulir kelas,
+    // dan di kolom `classes.cabang`. Dua cabang karena itu tidak boleh punya
+    // nama yang sama, termasuk kalau bedanya hanya huruf besar/kecil atau spasi
+    // di tepi. Penjaganya indeks unik pada ekspresi `lower(btrim(nama))`, sama
+    // dengan pembanding yang dipakai layanan cabang saat memeriksa duplikat.
+    uniqueIndex("cabang_nama_unik_idx").on(sql`lower(btrim(${table.nama}))`),
     // Nama, alamat, dan kontak selalu ditampilkan di daftar cabang maupun kop
     // dokumen, jadi baris yang isinya kosong (mis. hanya spasi) tidak boleh
     // masuk walau lewat jalur selain formulir.
