@@ -66,6 +66,24 @@ export function periodeDariTagihan(baris: Tagihan) {
   return `${baris.periodeTahun}-${String(baris.periodeBulan).padStart(2, "0")}`;
 }
 
+/**
+ * Status pembayaran satu tagihan untuk penanda di Portal Wali:
+ * - `lunas` — sudah dibayar,
+ * - `terlambat` — belum dibayar dan periodenya sudah lewat,
+ * - `belum` — belum dibayar tetapi periodenya masih berjalan.
+ */
+export type StatusPembayaran = "lunas" | "belum" | "terlambat";
+
+export function statusPembayaran(
+  baris: Tagihan,
+  periodeBerjalan: string,
+): StatusPembayaran {
+  if (baris.status === "lunas") return "lunas";
+  return menunggak(periodeDariTagihan(baris), periodeBerjalan, baris.status)
+    ? "terlambat"
+    : "belum";
+}
+
 /** Nama status tagihan untuk ditampilkan di lencana. */
 export function labelStatusTagihan(status: StatusTagihan) {
   return status === "lunas" ? "Lunas" : "Belum lunas";

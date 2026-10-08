@@ -82,6 +82,8 @@ Portal content sits in `KartuPortal` (`src/components/kartu-portal.tsx`): a sect
 
 A screen's main action goes in `TombolAksiLengket` (`src/components/tombol-aksi-lengket.tsx`) with `<Button size="aksi">`: a sticky strip that floats just above the tab bar while the page scrolls and settles above the shell's bottom padding at the end, so it never hides content permanently. The `aksi` button size is the 48px / 12px-radius token pair.
 
+`PenandaStatus` (`src/components/penanda-status.tsx`) renders the pastel payment pills for `lunas`, `belum`, and `terlambat`, styled only from the `--status-*` tokens and always carrying the status word next to its icon. `statusPembayaran()` in `src/lib/tagihan.ts` decides which of the three applies to an invoice: paid, unpaid within the running period, or unpaid past its period.
+
 The base's welcome and blank app pages are replaceable. Reuse auth, setup, database, and UI when adding dashboard or chatbot features. Do not put feature conditionals throughout the base: create a derivative and implement that app directly.
 
 ## Dependency compatibility

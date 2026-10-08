@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { KartuPortal } from "@/components/kartu-portal";
 import { PemilihAnak } from "@/components/pemilih-anak";
 import { LayarPortal } from "@/components/layar-portal";
-import { LabelStatusTagihan } from "@/components/label-status-tagihan";
+import { PenandaStatus } from "@/components/penanda-status";
 import { LencanaBaru } from "@/components/lencana-baru";
 import { formatRupiah } from "@/lib/gaji";
 import type { AnakPortal, StatusJejakPortal } from "@/lib/portal-wali";
@@ -24,6 +24,7 @@ import {
   menunggak,
   periodeTagihan,
   selisihBulan,
+  statusPembayaran,
 } from "@/lib/tagihan";
 import { formatTanggalLengkap } from "@/lib/tanggal";
 
@@ -202,7 +203,9 @@ export function BerandaPortalWali({
               <p className="text-lg font-semibold">
                 {formatRupiah(tagihanTerdekat.nominal)}
               </p>
-              <LabelStatusTagihan status={tagihanTerdekat.status} />
+              <PenandaStatus
+                status={statusPembayaran(tagihanTerdekat, periodeBerjalan)}
+              />
             </div>
             <p className="text-muted-foreground text-sm">
               Periode {formatPeriodeTagihan(periodeDariTagihan(tagihanTerdekat))}

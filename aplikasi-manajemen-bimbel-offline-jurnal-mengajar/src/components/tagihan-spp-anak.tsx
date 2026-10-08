@@ -8,13 +8,18 @@ import { Button } from "@/components/ui/button";
 import { KartuPortal } from "@/components/kartu-portal";
 import { PemilihAnak } from "@/components/pemilih-anak";
 import { LayarPortal } from "@/components/layar-portal";
-import { LabelStatusTagihan } from "@/components/label-status-tagihan";
+import { PenandaStatus } from "@/components/penanda-status";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { formatRupiah } from "@/lib/gaji";
 import { tandaiTerbaca } from "@/lib/jejak-baca-portal-store";
 import type { AnakWali, StatusJejakPortal } from "@/lib/portal-wali";
 import { periodeDariTagihan, type Tagihan } from "@/lib/tagihan";
-import { formatPeriodeTagihan, hitungRekapTagihan } from "@/lib/tagihan";
+import {
+  formatPeriodeTagihan,
+  hitungRekapTagihan,
+  periodeTagihan,
+  statusPembayaran,
+} from "@/lib/tagihan";
 
 type TagihanSppAnakProps = {
   anak: AnakWali[];
@@ -81,6 +86,7 @@ export function TagihanSppAnak({
   );
 
   const rekap = hitungRekapTagihan(daftar);
+  const periodeBerjalan = periodeTagihan(new Date());
 
   return (
     <LayarPortal
@@ -127,7 +133,11 @@ export function TagihanSppAnak({
                   <KartuPortal
                     judul={`SPP ${formatPeriodeTagihan(periodeDariTagihan(tagihan))}`}
                     ikon={Receipt}
-                    penanda={<LabelStatusTagihan status={tagihan.status} />}
+                    penanda={
+                      <PenandaStatus
+                        status={statusPembayaran(tagihan, periodeBerjalan)}
+                      />
+                    }
                   >
                     <p className="text-muted-foreground text-sm">
                       {tagihan.kelasNama}
