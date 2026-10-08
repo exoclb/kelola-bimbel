@@ -60,7 +60,7 @@ Schema updates use `db:generate` then `db:migrate`. SQL and metadata must travel
 
 ## UI and future features
 
-Server Components are the default. Client components are small interactive boundaries. Tailwind v4 tokens live in `globals.css`; shadcn components are normal editable source files. Motion respects reduced-motion preferences. System fonts avoid a build-time dependency on a font CDN.
+Server Components are the default. Client components are small interactive boundaries. Tailwind v4 tokens live in `globals.css`; shadcn components are normal editable source files. Motion respects reduced-motion preferences. The primary typeface is Plus Jakarta Sans, loaded through `next/font/google` in the root layout as the `--font-jakarta` variable and consumed by the `--font-sans` token, so the browser requests no external font host.
 
 The global theme owns two primitive ramps: brand green (`--brand-50` … `--brand-900`, where `--brand-500` is `#83B520`) and neutral slate (`--slate-50` … `--slate-900`). Both are absolute values shared by every theme and are exposed to Tailwind as `bg-brand-*`, `text-slate-*`, `border-slate-*`, and gradient steps. The light canvas is the slate-50 `#F8FAFC` mapped onto `--background`; dark mode re-points the semantic tokens (`--background`, `--card`, `--border`, `--muted-foreground`) at darker slate steps rather than redefining the ramps. Use `brand-700` or darker when brand-coloured text sits on a light surface and `brand-300` … `brand-500` on dark surfaces; do not hard-code the hex values in components.
 
