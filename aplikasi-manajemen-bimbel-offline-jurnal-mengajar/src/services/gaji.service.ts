@@ -9,8 +9,9 @@ import {
   teachingJournals,
   user,
 } from "@/db/schema";
-import { hitungGaji } from "@/lib/gaji";
+import { formatPeriode, formatRupiah, hitungGaji } from "@/lib/gaji";
 import { tanggalISO } from "@/lib/tanggal";
+import { catatNotifikasi } from "@/services/notifikasi.service";
 
 export type RincianGaji = {
   tanggal: string;
@@ -309,6 +310,17 @@ export async function tandaiPembayaranGaji(
   if (!guru) return { status: "guru_tidak_ada" };
 
   const { awal, akhir } = rentangBulan(periode);
+  const [sebelumnya] = await db
+    .select({ statusPembayaran: salaryRecaps.statusPembayaran })
+    .from(salaryRecaps)
+    .where(
+      and(
+        eq(salaryRecaps.guruId, guruId),
+        eq(salaryRecaps.periodeBulan, periode),
+      ),
+    )
+    .limit(1);
+
   const [tarifPerJam, agregat] = await Promise.all([
     tarifBerlaku(periode),
     db
@@ -357,6 +369,16 @@ export async function tandaiPembayaranGaji(
       statusPembayaran: salaryRecaps.statusPembayaran,
       tanggalDibayar: salaryRecaps.tanggalDibayar,
     });
+
+  // Guru yang bersangkutan diberi tahu hanya saat statusnya benar-benar
+  // berubah menjadi dibayar, bukan setiap kali rekornya diperbarui.
+  if (dibayar && sebelumnya?.statusPembayaran !== "dibayar") {
+    await catatNotifikasi(
+      "gaji_dibayar",
+      `Gaji ${formatPeriode(periode)} sebesar ${formatRupiah(tersimpan.totalGaji)} sudah dibayar.`,
+      [guruId],
+    );
+  }
 
   return { status: "tersimpan", pembayaran: tersimpan };
 }

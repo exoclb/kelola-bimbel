@@ -24,6 +24,7 @@ import {
 } from "@/db/schema";
 import { formatJam } from "@/lib/jurnal";
 import { tanggalISO } from "@/lib/tanggal";
+import { penerimaNotifikasi } from "@/services/notifikasi.service";
 import type {
   KoreksiJurnalInput,
   ListJurnalInput,
@@ -153,6 +154,18 @@ export async function simpanJurnal(
     .where(eq(user.id, guruId))
     .limit(1);
 
+  // Penerima dihitung sebelum transaksi: peran pemilik/admin disaring lagi oleh
+  // pengaturan notifikasi masing-masing akun.
+  const calonPenerima = sudahAda
+    ? []
+    : (
+        await db
+          .select({ id: user.id })
+          .from(user)
+          .where(or(ilike(user.role, "%owner%"), ilike(user.role, "%admin%")))
+      ).map((pemilik) => pemilik.id);
+  const penerima = await penerimaNotifikasi("jurnal_baru", calonPenerima);
+
   return db.transaction(async (tx) => {
     const [jurnal] = await tx
       .insert(teachingJournals)
@@ -198,21 +211,14 @@ export async function simpanJurnal(
       );
     }
 
-    if (!sudahAda) {
-      const penerima = await tx
-        .select({ id: user.id })
-        .from(user)
-        .where(or(ilike(user.role, "%owner%"), ilike(user.role, "%admin%")));
-
-      if (penerima.length > 0) {
-        await tx.insert(notifications).values(
-          penerima.map((pemilik) => ({
-            userId: pemilik.id,
-            tipe: "jurnal_baru",
-            pesan: `Jurnal ${jadwal.namaKelas} sudah dikirim ${guru?.nama ?? "guru"} · ${formatJam(jadwal.jamMengajar)}`,
-          })),
-        );
-      }
+    if (penerima.length > 0) {
+      await tx.insert(notifications).values(
+        penerima.map((userId) => ({
+          userId,
+          tipe: "jurnal_baru",
+          pesan: `Jurnal ${jadwal.namaKelas} sudah dikirim ${guru?.nama ?? "guru"} · ${formatJam(jadwal.jamMengajar)}`,
+        })),
+      );
     }
 
     const kehadiran = await tx

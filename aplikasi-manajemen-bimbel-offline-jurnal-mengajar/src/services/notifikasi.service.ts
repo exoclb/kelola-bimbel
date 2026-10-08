@@ -1,7 +1,8 @@
 import "server-only";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { notifications } from "@/db/schema";
+import { notificationPreferences, notifications } from "@/db/schema";
+import { JENIS_NOTIFIKASI, type JenisNotifikasi } from "@/lib/notifikasi";
 import type {
   ListNotifikasiInput,
   TandaiBacaInput,
@@ -24,6 +25,57 @@ const fields = {
   sudahDibaca: notifications.sudahDibaca,
   createdAt: notifications.createdAt,
 };
+
+/**
+ * Penerima yang masih mau menerima satu jenis notifikasi. Akun yang belum
+ * pernah mengubah pengaturannya mengikuti `bawaanAktif` jenis itu — jadi jenis
+ * yang bawaannya mati (`laporan_bulanan`) hanya terkirim setelah dinyalakan.
+ */
+export async function penerimaNotifikasi(
+  jenis: JenisNotifikasi,
+  kandidatIds: string[],
+): Promise<string[]> {
+  const kandidat = [...new Set(kandidatIds)];
+  if (kandidat.length === 0) return [];
+
+  const bawaan =
+    JENIS_NOTIFIKASI.find((item) => item.jenis === jenis)?.bawaanAktif ?? true;
+  const pilihan = await db
+    .select({
+      userId: notificationPreferences.userId,
+      aktif: notificationPreferences.aktif,
+    })
+    .from(notificationPreferences)
+    .where(
+      and(
+        eq(notificationPreferences.jenisNotifikasi, jenis),
+        inArray(notificationPreferences.userId, kandidat),
+      ),
+    );
+
+  const diatur = new Map(pilihan.map((baris) => [baris.userId, baris.aktif]));
+  return kandidat.filter((id) => diatur.get(id) ?? bawaan);
+}
+
+/**
+ * Menulis satu notifikasi untuk tiap penerima yang masih mau menerimanya.
+ * Dipakai alur internal aplikasi (jurnal baru masuk, gaji ditandai dibayar),
+ * bukan dari klien. Mengembalikan jumlah notifikasi yang benar-benar dibuat.
+ */
+export async function catatNotifikasi(
+  jenis: JenisNotifikasi,
+  pesan: string,
+  kandidatIds: string[],
+): Promise<number> {
+  const penerima = await penerimaNotifikasi(jenis, kandidatIds);
+  if (penerima.length === 0) return 0;
+
+  const dibuat = await db
+    .insert(notifications)
+    .values(penerima.map((userId) => ({ userId, tipe: jenis, pesan })))
+    .returning({ id: notifications.id });
+  return dibuat.length;
+}
 
 /** Notifikasi milik satu akun, terbaru lebih dulu, dengan jumlah belum dibaca. */
 export async function listNotifikasi(
