@@ -195,92 +195,89 @@ export function PerkembanganAnakPortal({
             </KartuPortal>
           </div>
 
-          <KartuPortal
-            className="mt-4"
-            judul="Grafik Perkembangan"
-            ikon={TrendingUp}
-            keterangan={`Nilai ${dipilih.nama} tiap pertemuan, terbaru lebih dulu.`}
-          >
-            {grafik.length === 0 ? (
+          {daftarCatatan.length === 0 ? (
+            <KartuPortal className="mt-4" judul="Catatan Evaluasi">
               <PesanKosong
-                judul="Belum ada nilai"
-                keterangan="Grafik muncul setelah guru mencatat nilai anak."
+                judul="Belum ada catatan evaluasi"
+                keterangan="Nilai, sikap, dan catatan guru akan muncul di sini setelah guru mencatatnya."
               />
-            ) : (
-              <div className="space-y-4">
-                {grafik.map((baris) => (
-                  <BarProgres
-                    key={baris.id}
-                    nilai={baris.nilai}
-                    label={tanggalRingkas.format(
-                      new Date(`${baris.tanggal}T00:00:00`),
-                    )}
-                    ariaLabel={`Nilai ${dipilih.nama} pada ${formatTanggalLengkap(baris.tanggal)}`}
-                    keterangan={`Sikap ${baris.sikap} · ${baris.guruNama}`}
-                  />
-                ))}
-              </div>
-            )}
-          </KartuPortal>
+            </KartuPortal>
+          ) : (
+            <>
+              <KartuPortal
+                className="mt-4"
+                judul="Grafik Perkembangan"
+                ikon={TrendingUp}
+                keterangan={`Nilai ${dipilih.nama} tiap pertemuan, terbaru lebih dulu.`}
+              >
+                <div className="space-y-4">
+                  {grafik.map((baris) => (
+                    <BarProgres
+                      key={baris.id}
+                      nilai={baris.nilai}
+                      label={tanggalRingkas.format(
+                        new Date(`${baris.tanggal}T00:00:00`),
+                      )}
+                      ariaLabel={`Nilai ${dipilih.nama} pada ${formatTanggalLengkap(baris.tanggal)}`}
+                      keterangan={`Sikap ${baris.sikap} · ${baris.guruNama}`}
+                    />
+                  ))}
+                </div>
+              </KartuPortal>
 
-          <KartuPortal
-            className="mt-4"
-            judul="Catatan Evaluasi"
-            keterangan="Nilai, sikap, dan catatan guru tiap pertemuan, terbaru lebih dulu."
-          >
-            {daftarCatatan.length === 0 ? (
-              <PesanKosong
-                judul="Belum ada catatan"
-                keterangan="Catatan guru akan muncul di sini setelah dicatat."
-              />
-            ) : (
-              <div className="space-y-5">
-                {[...perPeriode].map(([periode, catatan]) => (
-                  <div key={periode} className="space-y-3">
-                    <div className="flex flex-wrap items-baseline justify-between gap-2">
-                      <h3 className="text-sm font-semibold">{periode}</h3>
-                      <p className="text-muted-foreground text-xs">
-                        {catatan.length} catatan · rata-rata{" "}
-                        {angkaTampil.format(
-                          catatan.reduce(
-                            (jumlah, baris) => jumlah + baris.nilai,
-                            0,
-                          ) / catatan.length,
-                        )}
-                      </p>
-                    </div>
-                    <ul className="space-y-3">
-                      {catatan.map((baris) => (
-                        <li
-                          key={baris.id}
-                          className="rounded-xl border px-3 py-3"
-                        >
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <p className="flex items-baseline gap-1.5">
-                              <span className="text-muted-foreground text-xs">
-                                Nilai
+              <KartuPortal
+                className="mt-4"
+                judul="Catatan Evaluasi"
+                keterangan="Nilai, sikap, dan catatan guru tiap pertemuan, terbaru lebih dulu."
+              >
+                <div className="space-y-5">
+                  {[...perPeriode].map(([periode, catatan]) => (
+                    <div key={periode} className="space-y-3">
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <h3 className="text-sm font-semibold">{periode}</h3>
+                        <p className="text-muted-foreground text-xs">
+                          {catatan.length} catatan · rata-rata{" "}
+                          {angkaTampil.format(
+                            catatan.reduce(
+                              (jumlah, baris) => jumlah + baris.nilai,
+                              0,
+                            ) / catatan.length,
+                          )}
+                        </p>
+                      </div>
+                      <ul className="space-y-3">
+                        {catatan.map((baris) => (
+                          <li
+                            key={baris.id}
+                            className="rounded-xl border px-3 py-3"
+                          >
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <p className="flex items-baseline gap-1.5">
+                                <span className="text-muted-foreground text-xs">
+                                  Nilai
+                                </span>
+                                <span className="text-xl font-semibold tabular-nums">
+                                  {angkaTampil.format(baris.nilai)}
+                                </span>
+                              </p>
+                              <span className="bg-muted text-muted-foreground rounded-full border px-2.5 py-0.5 text-xs">
+                                Sikap {baris.sikap}
                               </span>
-                              <span className="text-xl font-semibold tabular-nums">
-                                {angkaTampil.format(baris.nilai)}
-                              </span>
+                            </div>
+                            <p className="text-muted-foreground mt-1 text-xs">
+                              {formatTanggalLengkap(baris.tanggal)} ·{" "}
+                              {baris.guruNama}
                             </p>
-                            <span className="bg-muted text-muted-foreground rounded-full border px-2.5 py-0.5 text-xs">
-                              Sikap {baris.sikap}
-                            </span>
-                          </div>
-                          <p className="text-muted-foreground mt-1 text-xs">
-                            {formatTanggalLengkap(baris.tanggal)} ·{" "}
-                            {baris.guruNama}
-                          </p>
-                          <p className="mt-2 text-sm">{baris.catatan}</p>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            )}
-          </KartuPortal>
+                            <p className="mt-2 text-sm">{baris.catatan}</p>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </KartuPortal>
+            </>
+          )}
 
           <KartuPortal className="mt-4" judul="Rekap Kehadiran per Sesi">
             {sesi.length === 0 ? (
