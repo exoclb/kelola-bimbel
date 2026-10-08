@@ -706,11 +706,9 @@ test("panel detail cabang menangani cabang yang tidak ditemukan", async ({
 
     await masukPeramban(page);
     await page.goto("/app/cabang");
-    const kartu = page
-      .locator("li")
-      .filter({
-        has: page.getByRole("button", { name: `Detail cabang ${nama}` }),
-      });
+    const kartu = page.locator("li").filter({
+      has: page.getByRole("button", { name: `Detail cabang ${nama}` }),
+    });
     const panel = page.locator(`#detail-${id}`);
 
     // 1) Detail tampil dari API: nama, status, kontak, dan alamatnya.
@@ -732,5 +730,34 @@ test("panel detail cabang menangani cabang yang tidak ditemukan", async ({
   } finally {
     await db.query("DELETE FROM cabang WHERE nama = $1", [nama]);
     await db.end();
+  }
+});
+
+/**
+ * Kontrak `/api/cabang/:id` untuk cabang yang tidak ada: id yang bukan UUID
+ * ditolak validasi (422) — id tiruan lama seperti `cbg-1` termasuk — sedangkan
+ * UUID yang tidak terdaftar dijawab 404, bukan 500 karena kolomnya bertipe uuid.
+ */
+test("api cabang menolak id yang tidak sah dan tidak ditemukan", async ({
+  request,
+}) => {
+  await jadikanOwner();
+  await masukApi(request);
+
+  const hilang = `00000000-0000-4000-8000-${randomUUID().slice(-12)}`;
+  const casing = [
+    { jalur: "/api/cabang/cbg-1", metode: "get", kode: 422 },
+    { jalur: `/api/cabang/${hilang}`, metode: "get", kode: 404 },
+    { jalur: "/api/cabang/bukan-uuid", metode: "patch", kode: 422 },
+    { jalur: `/api/cabang/${hilang}`, metode: "patch", kode: 404 },
+  ] as const;
+
+  for (const { jalur, metode, kode } of casing) {
+    const jawaban = await request[metode](jalur, {
+      headers,
+      ...(metode === "patch" ? { data: { kontak: "0800-0000" } } : {}),
+    });
+    expect(jawaban.status()).toBe(kode);
+    expect((await jawaban.json()).error).toBeTruthy();
   }
 });
