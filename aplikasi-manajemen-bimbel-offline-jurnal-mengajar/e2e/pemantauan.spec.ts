@@ -644,6 +644,14 @@ test("jurnal yang masuk membuat pemberitahuan owner yang bisa ditandai dibaca", 
   expect(kelas.status()).toBe(201);
   const kelasId = (await kelas.json()).data.id as string;
 
+  // Kehadiran jurnal hanya boleh memuat murid kelas itu, jadi muridnya
+  // ditempatkan lebih dulu.
+  const tempatkan = await request.post(`/api/kelas/${kelasId}/murid`, {
+    headers,
+    data: { muridId },
+  });
+  expect(tempatkan.status()).toBe(201);
+
   const jadwal = await request.post(`/api/kelas/${kelasId}/jadwal`, {
     headers,
     data: { hari, jamMulai: "06:00", jamSelesai: "07:00" },

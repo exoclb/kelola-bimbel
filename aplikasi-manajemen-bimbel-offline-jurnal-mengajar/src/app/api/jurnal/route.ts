@@ -36,12 +36,20 @@ export function POST(request: Request) {
         422,
         "MURID_TIDAK_ADA",
         "Ada murid yang tidak dikenal.",
-        [
-          ...hasil.muridIds.map((muridId) => ({
-            field: "kehadiran",
-            message: `Murid ${muridId} tidak dikenal.`,
-          })),
-        ],
+        hasil.muridIds.map((muridId) => ({
+          field: "kehadiran",
+          message: `Murid ${muridId} tidak dikenal.`,
+        })),
+      );
+    if (hasil.status === "murid_tidak_di_kelas")
+      throw new ApiError(
+        422,
+        "MURID_TIDAK_DI_KELAS",
+        "Ada murid yang tidak terdaftar di kelas ini.",
+        hasil.muridIds.map((muridId) => ({
+          field: "kehadiran",
+          message: `Murid ${muridId} tidak terdaftar di kelas ini.`,
+        })),
       );
 
     return Response.json(

@@ -20,6 +20,7 @@ import {
   students,
   teachingJournals,
   user,
+  studentEnrollments,
 } from "@/db/schema";
 import { formatJam } from "@/lib/jurnal";
 import { tanggalISO } from "@/lib/tanggal";
@@ -33,7 +34,8 @@ export type HasilSimpanJurnal =
   | { status: "tersimpan"; jurnal: JurnalTersimpan }
   | { status: "jadwal_tidak_ada" }
   | { status: "jadwal_tidak_valid" }
-  | { status: "murid_tidak_ada"; muridIds: string[] };
+  | { status: "murid_tidak_ada"; muridIds: string[] }
+  | { status: "murid_tidak_di_kelas"; muridIds: string[] };
 
 export type JurnalTersimpan = {
   id: string;
@@ -66,6 +68,41 @@ const fields = {
  * tidak pernah terhitung dua kali saat rekap gaji. Kelas, tanggal, dan jam
  * mengajar selalu diambil dari jadwal milik guru yang sedang masuk.
  */
+/**
+ * Pisahkan murid yang tidak dikenal dari murid yang dikenal tetapi tidak
+ * terdaftar di kelas itu. Kehadiran hanya boleh mencatat murid kelas tersebut:
+ * kalau tidak, daftar kehadiran kelas (dan rekap yang dibaca wali) bisa berisi
+ * anak dari kelas lain.
+ */
+async function klasifikasiMuridKelas(classId: string, muridIds: string[]) {
+  if (muridIds.length === 0)
+    return { tidakDikenal: [] as string[], tidakDiKelas: [] as string[] };
+
+  const dikenal = await db
+    .select({ id: students.id })
+    .from(students)
+    .where(inArray(students.id, muridIds));
+  const ketemu = new Set(dikenal.map((murid) => murid.id));
+  const tidakDikenal = muridIds.filter((muridId) => !ketemu.has(muridId));
+
+  const terdaftar = await db
+    .select({ studentId: studentEnrollments.studentId })
+    .from(studentEnrollments)
+    .where(
+      and(
+        eq(studentEnrollments.classId, classId),
+        eq(studentEnrollments.status, "aktif"),
+        inArray(studentEnrollments.studentId, muridIds),
+      ),
+    );
+  const diKelas = new Set(terdaftar.map((baris) => baris.studentId));
+  const tidakDiKelas = muridIds.filter(
+    (muridId) => ketemu.has(muridId) && !diKelas.has(muridId),
+  );
+
+  return { tidakDikenal, tidakDiKelas };
+}
+
 export async function simpanJurnal(
   guruId: string,
   input: SimpanJurnalInput,
@@ -85,16 +122,14 @@ export async function simpanJurnal(
   if (!(jadwal.jamMengajar > 0)) return { status: "jadwal_tidak_valid" };
 
   const muridIds = input.kehadiran.map((baris) => baris.muridId);
-  if (muridIds.length > 0) {
-    const dikenal = await db
-      .select({ id: students.id })
-      .from(students)
-      .where(inArray(students.id, muridIds));
-    const ketemu = new Set(dikenal.map((murid) => murid.id));
-    const tidakDikenal = muridIds.filter((id) => !ketemu.has(id));
-    if (tidakDikenal.length > 0)
-      return { status: "murid_tidak_ada", muridIds: tidakDikenal };
-  }
+  const { tidakDikenal, tidakDiKelas } = await klasifikasiMuridKelas(
+    jadwal.classId,
+    muridIds,
+  );
+  if (tidakDikenal.length > 0)
+    return { status: "murid_tidak_ada", muridIds: tidakDikenal };
+  if (tidakDiKelas.length > 0)
+    return { status: "murid_tidak_di_kelas", muridIds: tidakDiKelas };
 
   const tanggal = tanggalISO(new Date());
 
@@ -355,7 +390,8 @@ export type HasilKoreksiJurnal =
       jurnal: NonNullable<Awaited<ReturnType<typeof getJurnalGuru>>>;
     }
   | { status: "tidak_ada" }
-  | { status: "murid_tidak_ada"; muridIds: string[] };
+  | { status: "murid_tidak_ada"; muridIds: string[] }
+  | { status: "murid_tidak_di_kelas"; muridIds: string[] };
 
 /**
  * Mengoreksi isi jurnal yang pernah dikirim: materi, catatan, dan/atau
@@ -369,7 +405,7 @@ export async function koreksiJurnal(
   input: KoreksiJurnalInput,
 ): Promise<HasilKoreksiJurnal> {
   const [milik] = await db
-    .select({ id: teachingJournals.id })
+    .select({ id: teachingJournals.id, classId: teachingJournals.classId })
     .from(teachingJournals)
     .where(
       and(eq(teachingJournals.id, id), eq(teachingJournals.guruId, guruId)),
@@ -378,16 +414,14 @@ export async function koreksiJurnal(
   if (!milik) return { status: "tidak_ada" };
 
   const muridIds = input.kehadiran?.map((baris) => baris.muridId) ?? [];
-  if (muridIds.length > 0) {
-    const dikenal = await db
-      .select({ id: students.id })
-      .from(students)
-      .where(inArray(students.id, muridIds));
-    const ketemu = new Set(dikenal.map((murid) => murid.id));
-    const tidakDikenal = muridIds.filter((muridId) => !ketemu.has(muridId));
-    if (tidakDikenal.length > 0)
-      return { status: "murid_tidak_ada", muridIds: tidakDikenal };
-  }
+  const { tidakDikenal, tidakDiKelas } = await klasifikasiMuridKelas(
+    milik.classId,
+    muridIds,
+  );
+  if (tidakDikenal.length > 0)
+    return { status: "murid_tidak_ada", muridIds: tidakDikenal };
+  if (tidakDiKelas.length > 0)
+    return { status: "murid_tidak_di_kelas", muridIds: tidakDiKelas };
 
   await db.transaction(async (tx) => {
     await tx
