@@ -190,6 +190,13 @@
       "when": 1791484192366,
       "tag": "0026_notifikasi_backup_invarian",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1791492253585,
+      "tag": "0027_tabel_cabang",
+      "breakpoints": true
     }
   ]
 }
