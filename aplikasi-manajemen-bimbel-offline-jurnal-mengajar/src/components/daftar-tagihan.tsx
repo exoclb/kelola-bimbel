@@ -90,19 +90,19 @@ export function DaftarTagihan({ daftar, periodeTampil }: DaftarTagihanProps) {
             : `Belum ada tagihan yang tercatat untuk bulan ${periodeTampil}.`}
         </p>
         <div className="flex flex-wrap items-center gap-2">
-          <Button asChild variant="outline" size="sm">
+          <Button asChild variant="outline" size="aksi">
             <Link href="/app/tagihan/pengingat">
               <BellRing aria-hidden="true" />
               Menunggak
             </Link>
           </Button>
-          <Button asChild variant="outline" size="sm">
+          <Button asChild variant="outline" size="aksi">
             <Link href="/app/tagihan/rekap">
               <PiggyBank aria-hidden="true" />
               Rekap pemasukan
             </Link>
           </Button>
-          <Button asChild size="sm">
+          <Button asChild size="aksi">
             <Link href="/app/tagihan/baru">
               <CalendarPlus aria-hidden="true" />
               Buat tagihan
@@ -213,7 +213,7 @@ export function DaftarTagihan({ daftar, periodeTampil }: DaftarTagihanProps) {
                       <Button
                         type="button"
                         variant="ghost"
-                        size="sm"
+                        size="aksi"
                         disabled={pending}
                         onClick={() => {
                           void ubahStatus(
@@ -233,6 +233,7 @@ export function DaftarTagihan({ daftar, periodeTampil }: DaftarTagihanProps) {
                             Tanggal bayar
                           </Label>
                           <Input
+                            className="h-[var(--target-sentuh-portal)] md:text-base"
                             id={`bayar-${tagihan.id}`}
                             type="date"
                             value={tanggalBayar}
@@ -243,7 +244,7 @@ export function DaftarTagihan({ daftar, periodeTampil }: DaftarTagihanProps) {
                         </div>
                         <Button
                           type="button"
-                          size="sm"
+                          size="aksi"
                           disabled={pending}
                           onClick={() => {
                             void ubahStatus(
@@ -259,7 +260,7 @@ export function DaftarTagihan({ daftar, periodeTampil }: DaftarTagihanProps) {
                         <Button
                           type="button"
                           variant="ghost"
-                          size="sm"
+                          size="aksi"
                           disabled={pending}
                           onClick={() => setBukaId(null)}
                         >
@@ -270,7 +271,7 @@ export function DaftarTagihan({ daftar, periodeTampil }: DaftarTagihanProps) {
                       <Button
                         type="button"
                         variant="outline"
-                        size="sm"
+                        size="aksi"
                         onClick={() => {
                           setTanggalBayar(tanggalISO(new Date()));
                           setBukaId(tagihan.id);
