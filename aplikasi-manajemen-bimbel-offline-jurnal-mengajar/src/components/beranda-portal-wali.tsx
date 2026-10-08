@@ -208,23 +208,33 @@ export function BerandaPortalWali({
               href: `/portal/jadwal?anak=${dipilih.muridId}`,
               label: "Jadwal belajar",
               Ikon: CalendarDays,
+              baru: false,
             },
             {
               href: `/portal/tagihan?anak=${dipilih.muridId}`,
               label: "Tagihan SPP",
               Ikon: Receipt,
+              baru: tagihanBaru,
             },
             {
               href: `/portal/perkembangan?anak=${dipilih.muridId}`,
               label: "Progres belajar",
               Ikon: GraduationCap,
+              baru: perkembanganBaru,
             },
-          ].map(({ href, label, Ikon }) => (
+          ].map(({ href, label, Ikon, baru }) => (
             <Link
               key={href}
               href={href}
-              className="hover:bg-secondary flex min-h-24 flex-col items-center justify-center gap-2 rounded-[var(--radius-kartu-portal)] border px-2 py-3 text-center text-sm font-medium transition-colors"
+              className="hover:bg-secondary relative flex min-h-24 flex-col items-center justify-center gap-2 rounded-[var(--radius-kartu-portal)] border px-2 py-3 text-center text-sm font-medium transition-colors"
             >
+              {/* Petak pintasan ikut menandai bagian yang belum dibaca, jadi
+                  wali tahu ke mana harus membuka tanpa menebak. */}
+              {baru && (
+                <span className="absolute top-1.5 right-1.5">
+                  <LencanaBaru />
+                </span>
+              )}
               <Ikon className="size-5 shrink-0" aria-hidden="true" />
               <span>{label}</span>
             </Link>
