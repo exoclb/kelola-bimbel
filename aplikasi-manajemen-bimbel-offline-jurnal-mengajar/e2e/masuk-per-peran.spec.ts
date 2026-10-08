@@ -92,8 +92,13 @@ test("wali masuk lewat halaman masuk dan mendarat di portal", async ({
   await expect(page.getByText("Portal Wali").first()).toBeVisible();
   await expect(page.getByText("Orang tua", { exact: true })).toBeVisible();
 
-  // Menu portal tersedia, sedangkan menu guru/owner tidak bocor.
-  await expect(page.getByRole("link", { name: "Tagihan SPP" })).toBeVisible();
+  // Tab bawah portal tersedia lengkap, sedangkan menu guru/owner tidak bocor.
+  const navigasiPortal = page.getByRole("navigation", { name: "Navigasi portal" });
+  for (const tab of ["Beranda", "Jadwal", "Tagihan", "Progres", "Akun"]) {
+    await expect(
+      navigasiPortal.getByRole("link", { name: tab, exact: true }),
+    ).toBeVisible();
+  }
   await expect(
     page.getByRole("link", { name: "Pemantauan", exact: true }),
   ).toHaveCount(0);
