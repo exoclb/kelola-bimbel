@@ -16,6 +16,11 @@ import { getDaftarCabang } from "../../src/lib/mock-cabang.ts";
  * yang tak peka huruf besar-kecil (indeks `cabang_nama_unik_idx`), jadi nama
  * yang sudah ada dilewati — menjalankan ulang tidak menambah baris baru.
  *
+ * Sengaja `DO NOTHING`, bukan `DO UPDATE`: cabang yang sudah ada tidak pernah
+ * ditimpa, sehingga alamat, kontak, atau status yang sudah diubah pemilik lewat
+ * halaman cabang tetap utuh walau seeder dijalankan lagi (dan data contoh di
+ * `src/lib/mock-cabang.ts` berubah).
+ *
  * Nama kembar di dalam daftarnya sendiri ditolak lebih dulu: `ON CONFLICT`
  * hanya akan melewatinya, sehingga jumlah cabang yang masuk diam-diam lebih
  * sedikit daripada yang ada di daftar.

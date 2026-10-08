@@ -921,3 +921,41 @@ test("seeder cabang mengisi sekali dan aman dijalankan ulang", async () => {
 
   await dbJurnal.query("DELETE FROM cabang");
 });
+
+/**
+ * Cabang yang sudah ada tidak boleh ditimpa seeder (`ON CONFLICT DO NOTHING`):
+ * alamat, kontak, dan status aktif yang sudah diubah pemilik lewat halaman
+ * cabang harus tetap utuh walau data contoh di repo berubah dan seeder
+ * dijalankan lagi.
+ */
+test("seeder cabang tidak menimpa cabang yang sudah ada", async () => {
+  const { seedCabang } = await import("../scripts/lib/seed-cabang.mjs");
+  await siapkanJurnal();
+
+  await dbJurnal.query("DELETE FROM cabang");
+  await dbJurnal.query(
+    `INSERT INTO cabang (nama, alamat, kontak, status_aktif)
+     VALUES ($1, $2, $3, $4)`,
+    ["Cabang Pusat", "Jl. Sudah Diubah No. 1", "0800-diubah", false],
+  );
+
+  const hasil = await seedCabang(dbJurnal);
+  // Satu baris (Cabang Pusat) sudah ada, sisanya baru dibuat.
+  assert.equal(hasil.dibuat, hasil.jumlah - 1);
+  assert.equal(hasil.dilewati, 1);
+
+  const { rows } = await dbJurnal.query(
+    "SELECT nama, alamat, kontak, status_aktif FROM cabang WHERE lower(btrim(nama)) = lower(btrim($1))",
+    ["Cabang Pusat"],
+  );
+  assert.deepEqual(rows, [
+    {
+      nama: "Cabang Pusat",
+      alamat: "Jl. Sudah Diubah No. 1",
+      kontak: "0800-diubah",
+      status_aktif: false,
+    },
+  ]);
+
+  await dbJurnal.query("DELETE FROM cabang");
+});
