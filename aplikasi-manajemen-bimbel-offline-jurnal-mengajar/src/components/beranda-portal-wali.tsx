@@ -201,7 +201,7 @@ export function BerandaPortalWali({
         ikon={Compass}
         keterangan={`Langsung menuju bagian ${dipilih.nama} yang paling sering dibuka.`}
       >
-        <div className="grid gap-2">
+        <div className="grid grid-cols-3 gap-3">
           {[
             {
               href: `/portal/jadwal?anak=${dipilih.muridId}`,
@@ -219,12 +219,14 @@ export function BerandaPortalWali({
               Ikon: GraduationCap,
             },
           ].map(({ href, label, Ikon }) => (
-            <Button key={href} asChild variant="outline" size="aksi">
-              <Link href={href} className="justify-start">
-                <Ikon aria-hidden="true" />
-                {label}
-              </Link>
-            </Button>
+            <Link
+              key={href}
+              href={href}
+              className="hover:bg-secondary flex min-h-24 flex-col items-center justify-center gap-2 rounded-[var(--radius-kartu-portal)] border px-2 py-3 text-center text-sm font-medium transition-colors"
+            >
+              <Ikon className="size-5 shrink-0" aria-hidden="true" />
+              <span>{label}</span>
+            </Link>
           ))}
         </div>
       </KartuPortal>
