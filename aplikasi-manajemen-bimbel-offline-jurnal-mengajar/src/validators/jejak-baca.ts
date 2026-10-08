@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BAGIAN_PORTAL } from "@/lib/mock-portal-wali";
+import { BAGIAN_PORTAL } from "@/lib/portal-wali";
 
 // Validasi API jejak baca Portal Wali. `anak` sengaja tetap teks bebas (bukan
 // UUID): layanan yang memutuskan tertaut atau tidak lewat tabel `wali_murid`,

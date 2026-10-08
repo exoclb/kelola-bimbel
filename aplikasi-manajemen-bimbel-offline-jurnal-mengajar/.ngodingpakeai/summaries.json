@@ -1031,9 +1031,6 @@
     "src/lib/tagihan.ts": {
         "summary": "Hitungan, tipe, dan format tagihan murid (sisi pemasukan, melengkapi `src/lib/gaji.ts` dan `src/lib/pengeluaran.ts`): tipe `StatusTagihan` ('belum_lunas' | 'lunas') dan `Tagihan` (id, muridId, muridNama, kelasNama untuk tampilan, periodeBulan, periodeTahun, nominal, status, tanggalBayar, sudahDiingatkan, dibuatPada — bentuk kolom tabel `student_invoices`). Helper: `periodeTagihan(tanggal)` (YYYY-MM bulan berjalan), `periodeDariTagihan(baris)`, `geserPeriode()`, `selisihBulan()`, `menunggak(periode, periodeBerjalan, status)`, `formatPeriodeTagihan()`, `labelStatusTagihan()`, dan `hitungRekapTagihan()`. Tipe dan helper di sini dipakai halaman maupun penyimpanan, sehingga komponen UI tidak perlu mengimpor berkas data contoh."
     },
-    "src/lib/mock-tagihan.ts": {
-        "summary": "Data contoh tagihan bulanan murid (pengganti `GET /api/tagihan`): mengimpor tipe `Tagihan` dari `@/lib/tagihan` dan mengekspornya ulang, menyimpan 16 baris contoh untuk periode berjalan dan dua bulan sebelumnya — termasuk empat tunggakan contoh (satu sudah diingatkan, satu milik anak portal) — dibuat dengan offset `geserBulan` + `tanggalBayarHari`. Getter: `getSemuaTagihan()`, `getTagihanPeriode()`, `getPeriodeTagihanTersedia()`, `getMuridTagihan()`, dan `getTagihanMurid()` memakai `periodeDariTagihan` dari modul domain."
-    },
     "src/components/label-status-tagihan.tsx": {
         "summary": "Lencana status tagihan murid dengan pembeda yang tidak bergantung warna saja: ikon `CheckCircle2` + 'Lunas' bergaya netral (border + `bg-secondary`, teks foreground) dan ikon `Clock3` + 'Belum lunas' bergaya peringatan (`border-destructive/30 bg-destructive/10 text-destructive`). Dipakai halaman daftar tagihan dan halaman berikutnya."
     },
@@ -1075,9 +1072,6 @@
     },
     "src/app/(protected)/app/tagihan/pengingat/loading.tsx": {
         "summary": "Tampilan memuat halaman pengingat tagihan: `StatusMemuat` 'Mengumpulkan tagihan menunggak…' dengan empat baris, mengikuti pola `loading.tsx` halaman owner lain."
-    },
-    "src/lib/mock-portal-wali.ts": {
-        "summary": "Data contoh Portal Wali. Anak yang tampil diambil dari penautan akun wali (`mock-wali.ts`, memakai `WALI_PORTAL`) sehingga daftar di portal sama dengan daftar penautan yang dilihat owner. Tipe `AnakWali`, `CatatanPerkembangan` (tanggal, nilai, sikap, catatan), dan `AnakPortal` (anak + catatan + rekap kehadiran) mengikuti kolom `students`/`student_progress`. `getAnakPortal()` menyusun anak tertaut (nama dari `getDaftarMurid`), catatan contoh bertanggal relatif (lima catatan untuk Bima, empat untuk Hana, tersebar ~1 bulan terakhir), dan kehadiran dari `getRiwayatJurnal()`; `anakTertaut(muridId)` serta `anakTertautAtauPertama(muridId)` menjadi satu-satunya aturan pemisahan data per anak di halaman portal."
     },
     "src/components/beranda-portal-wali.tsx": {
         "summary": "Beranda portal wali (klien, hanya baca): identitas bimbel dari profil, `PemilihAnak`, kartu anak terpilih, kartu 'Tagihan Terdekat' (nominal, lencana, periode, tanggal bayar, peringatan menunggak, tautan 'Lihat semua tagihan') dari `tagihan-store`, dan kartu 'Sorotan Perkembangan' (rekap kehadiran + tiga catatan terbaru) dari `getAnakPortal()`. Helper `periodeDariTagihan` dan tipe tagihan berasal dari modul domain `@/lib/tagihan`, bukan berkas contoh."
@@ -1375,5 +1369,8 @@
     },
     "src/app/api/presensi-guru/rekap/route.ts": {
         "summary": "Route API rekap presensi guru: menghitung jumlah per status dari seluruh baris yang cocok (daftar dibatasi 100 terbaru); owner boleh membaca semua guru lewat `?guruId=`, sedangkan guru lain ditolak 403."
+    },
+    "src/lib/portal-wali.ts": {
+        "summary": "Tipe dan konstanta bersama Portal Wali tanpa data contoh: `BAGIAN_PORTAL` (kehadiran/perkembangan/tagihan), tipe `WaktuBagian`/`StatusBagianPortal`/`StatusJejakPortal`, dan dokumentasi definisi `terbaru` per bagian — kehadiran dari tanggal sesi jurnal terakhir, perkembangan dari tanggal catatan terakhir, tagihan dari tanggal tagihan diterbitkan atau dibayar (mana yang terbaru); nilai null berarti bagian belum punya isi sehingga tidak pernah bertanda baru. Menggantikan `mock-portal-wali.ts` yang sudah dihapus."
     }
 }

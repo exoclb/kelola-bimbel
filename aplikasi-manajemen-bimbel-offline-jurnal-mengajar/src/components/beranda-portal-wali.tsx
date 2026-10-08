@@ -15,7 +15,7 @@ import { PemilihAnak } from "@/components/pemilih-anak";
 import { LabelStatusTagihan } from "@/components/label-status-tagihan";
 import { LencanaBaru } from "@/components/lencana-baru";
 import { formatRupiah } from "@/lib/gaji";
-import type { AnakPortal, StatusJejakPortal } from "@/lib/mock-portal-wali";
+import type { AnakPortal, StatusJejakPortal } from "@/lib/portal-wali";
 import type { ProfilBimbel } from "@/lib/mock-pengaturan";
 import { periodeDariTagihan, type Tagihan } from "@/lib/tagihan";
 import {
@@ -49,9 +49,8 @@ const namaHariBulan = new Intl.DateTimeFormat("id-ID", {
 
 /**
  * Beranda Portal Wali: identitas bimbel, pemilih anak, ringkasan tagihan anak
- * yang dipilih, dan sorotan perkembangan terbarunya. Semuanya hanya baca.
- * Daftar anak dan tagihan datang dari basis data (lihat `portal.service` dan
- * `tagihan.service`), sedangkan catatan dan kehadiran per anak masih tiruan.
+ * yang dipilih, dan sorotan perkembangan terbarunya. Semuanya hanya baca dan
+ * datang dari basis data (lihat `muatIsiPortalWali` dan `tagihan.service`).
  */
 export function BerandaPortalWali({
   anak,
@@ -311,12 +310,6 @@ export function BerandaPortalWali({
           </Button>
         </CardContent>
       </Card>
-
-      <p className="mt-6 text-xs leading-5 text-muted-foreground">
-        Catatan: daftar anak dan tagihannya sudah diambil dari database,
-        sedangkan catatan perkembangan dan kehadiran masih data contoh sampai
-        sumber keduanya tersambung.
-      </p>
     </div>
   );
 }

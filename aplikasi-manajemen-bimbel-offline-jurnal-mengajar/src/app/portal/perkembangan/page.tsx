@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PerkembanganAnakPortal } from "@/components/perkembangan-anak-portal";
 import { statusSemuaAnak } from "@/services/jejak-baca.service";
-import { listAnakPortalWali } from "@/services/portal.service";
+import { muatIsiPortalWali } from "@/services/portal.service";
 import { requireSession } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Perkembangan Anak" };
@@ -13,8 +13,9 @@ export default async function PerkembanganAnakPage({
 }) {
   const session = await requireSession();
 
-  // Anak yang tampil diambil dari basis data untuk wali yang sedang masuk.
-  const anak = await listAnakPortalWali(session.user.id);
+  // Anak yang tampil beserta catatan dan kehadirannya diambil dari basis data
+  // untuk wali yang sedang masuk.
+  const { anak } = await muatIsiPortalWali(session.user.id);
   const params = await searchParams;
   // Hanya anak yang tertaut ke akun wali ini yang boleh dipakai dari alamat.
   const terpilih =

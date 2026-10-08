@@ -10,7 +10,7 @@ import {
   type StatusJejakAnak,
   type StatusJejakPortal,
   type WaktuBagian,
-} from "@/lib/mock-portal-wali";
+} from "@/lib/portal-wali";
 import { bagianPortalAnak } from "@/services/portal.service";
 import { tanggalISO } from "@/lib/tanggal";
 
@@ -28,10 +28,11 @@ export type {
 // baca milik akun wali yang sedang masuk, sehingga dua wali yang menautkan anak
 // yang sama tidak saling menutup penanda "baru".
 //
-// Sumber datanya sudah tabel basis data: penautan anak di `wali_murid` dan
-// tanggal baca di `jejak_baca_portal`. Indeks unik `jejak_baca_portal` inilah
-// yang membuat penandaan ulang idempoten. Yang masih tiruan hanya tanggal isi
-// tiap bagian (`terbaru`), yang datang dari `src/lib/mock-portal-wali.ts`.
+// Seluruh sumbernya tabel basis data: penautan anak di `wali_murid`, tanggal
+// baca di `jejak_baca_portal`, dan tanggal isi tiap bagian (`terbaru`) dihitung
+// `portal.service` dari catatan perkembangan, sesi jurnal, dan tagihan anak.
+// Indeks unik `jejak_baca_portal` inilah yang membuat penandaan ulang
+// idempoten.
 //
 // Semua fungsi yang menyentuh basis data `async`, jadi halaman server (RSC) dan
 // route handler sama-sama menunggunya. Tidak ada keadaan yang disimpan di
@@ -86,28 +87,20 @@ export async function muridTertaut(
 function statusDari(
   muridId: string,
   bagian: BagianPortal,
-  waktu: WaktuBagian | null,
+  waktu: WaktuBagian,
   catatan: Map<string, Date>,
 ): StatusBagianPortal {
   const dicatat = catatan.get(`${muridId}|${bagian}`) ?? null;
-  const terbaru = waktu?.terbaru ?? null;
-  // Tanggal baca yang dipakai: catatan wali ini kalau ada, selain itu tanggal
-  // baca bawaan data tiruan. Nilainya bisa berupa `Date` (kolom `timestamptz`)
-  // atau string `YYYY-MM-DD` (data tiruan), jadi bentuknya disamakan di bawah.
-  const dibaca: Date | string | null = dicatat ?? waktu?.terakhirDibaca ?? null;
+  const terbaru = waktu.terbaru;
+  // Tanggal baca yang dipakai hanya catatan wali ini di `jejak_baca_portal`;
+  // tidak ada lagi tanggal baca bawaan. Kolomnya `timestamptz`, jadi
+  // dinormalkan ke resolusi hari (waktu setempat, `YYYY-MM-DD`) supaya
+  // sebanding dengan `terbaru` yang berupa tanggal basis data.
+  const terakhirDibaca = dicatat ? tanggalISO(dicatat) : null;
 
   // PERBANDINGAN WAKTU — satu-satunya tempat sebuah bagian disebut "baru":
-  // isinya (`terbaru`) lebih baru daripada waktu baca terakhir. Bagian tanpa isi
-  // tidak pernah bertanda "baru". `dibaca` dari kolom `timestamptz` dinormalkan
-  // di sini ke resolusi hari (waktu setempat, `YYYY-MM-DD`) supaya sebanding
-  // dengan `terbaru` yang berupa tanggal dari data tiruan — hasilnya sama
-  // seperti saat kolomnya masih bertipe `date`, bukan perbandingan jam.
-  const terakhirDibaca =
-    dibaca === null
-      ? null
-      : typeof dibaca === "string"
-        ? dibaca.slice(0, 10)
-        : tanggalISO(dibaca);
+  // isinya (`terbaru`) lebih baru daripada waktu baca terakhir, atau belum
+  // pernah dibaca sama sekali. Bagian tanpa isi tidak pernah bertanda "baru".
   const baru =
     terbaru !== null && (terakhirDibaca === null || terbaru > terakhirDibaca);
 
@@ -116,13 +109,13 @@ function statusDari(
 
 function susunStatusAnak(
   muridId: string,
-  bagian: Record<BagianPortal, WaktuBagian> | null,
+  bagian: Record<BagianPortal, WaktuBagian>,
   catatan: Map<string, Date>,
 ): StatusJejakAnak {
   return Object.fromEntries(
     BAGIAN_PORTAL.map((nama) => [
       nama,
-      statusDari(muridId, nama, bagian?.[nama] ?? null, catatan),
+      statusDari(muridId, nama, bagian[nama], catatan),
     ]),
   ) as StatusJejakAnak;
 }
@@ -132,15 +125,19 @@ export async function statusAnak(
   waliId: string,
   muridId: string,
 ): Promise<StatusJejakAnak> {
-  const catatan = await catatanWali(waliId);
-  return susunStatusAnak(muridId, bagianPortalAnak(muridId), catatan);
+  const [catatan, bagian] = await Promise.all([
+    catatanWali(waliId),
+    bagianPortalAnak(muridId),
+  ]);
+  return susunStatusAnak(muridId, bagian, catatan);
 }
 
 /**
  * Status seluruh anak yang tertaut ke wali ini, berkunci `muridId`. Daftar
- * anaknya sudah dimuat halaman lewat `listAnakPortalWali` (portal.service),
- * jadi tidak di-query ulang di sini — anak milik akun lain tidak ikut karena
- * daftar itu memang hasil query `wali_murid` milik wali ini.
+ * anaknya sudah dimuat halaman lewat `muatIsiPortalWali` (portal.service)
+ * beserta waktu isi tiap bagiannya, jadi tidak di-query ulang di sini — anak
+ * milik akun lain tidak ikut karena daftar itu memang hasil query `wali_murid`
+ * milik wali ini.
  */
 export async function statusSemuaAnak(
   waliId: string,

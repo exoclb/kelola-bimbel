@@ -8,7 +8,7 @@ import {
   BAGIAN_PORTAL,
   type AnakWali,
   type StatusJejakPortal,
-} from "@/lib/mock-portal-wali";
+} from "@/lib/portal-wali";
 
 type PemilihAnakProps = {
   anak: AnakWali[];

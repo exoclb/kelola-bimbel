@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CalendarCheck, GraduationCap } from "lucide-react";
@@ -10,8 +10,7 @@ import { PemilihAnak } from "@/components/pemilih-anak";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { cn } from "cn";
 import { tandaiTerbacaBanyak } from "@/lib/jejak-baca-portal-store";
-import { getRiwayatJurnal } from "@/lib/mock-jurnal";
-import type { AnakPortal, StatusJejakPortal } from "@/lib/mock-portal-wali";
+import type { AnakPortal, StatusJejakPortal } from "@/lib/portal-wali";
 import { formatTanggalLengkap } from "@/lib/tanggal";
 
 type PerkembanganAnakPortalProps = {
@@ -73,20 +72,11 @@ export function PerkembanganAnakPortal({
       : []),
   ];
 
-  // Kehadiran per sesi dibaca dari jurnal guru yang sudah ada.
-  const sesi = useMemo(() => {
-    if (!dipilih) return [];
-    return getRiwayatJurnal()
-      .map((jurnal) => ({
-        jurnal,
-        baris: jurnal.murid.find((murid) => murid.id === dipilih.sumberTiruan),
-      }))
-      .filter((item) => item.baris)
-      .sort((a, b) => b.jurnal.tanggal.localeCompare(a.jurnal.tanggal));
-  }, [dipilih]);
-
+  // Kehadiran per sesi datang dari basis data bersama anaknya (`kehadiran.daftar`
+  // diisi `portal.service` dari `journal_attendances` → `teaching_journals`).
+  const sesi = dipilih?.kehadiran.daftar ?? [];
   const daftarCatatan = dipilih?.catatan ?? [];
-  const hadir = sesi.filter((item) => item.baris?.hadir).length;
+  const hadir = dipilih?.kehadiran.hadir ?? 0;
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -129,11 +119,11 @@ export function PerkembanganAnakPortal({
                 Kehadiran
               </p>
               <p className="text-xl font-semibold">
-                {hadir} dari {sesi.length} sesi
+                {hadir} dari {dipilih.kehadiran.sesi} sesi
               </p>
               <p className="text-xs text-muted-foreground">
-                {sesi[0]
-                  ? `terakhir ${formatTanggalLengkap(sesi[0].jurnal.tanggal)}`
+                {dipilih.kehadiran.terakhir
+                  ? `terakhir ${formatTanggalLengkap(dipilih.kehadiran.terakhir)}`
                   : "belum ada sesi tercatat"}
               </p>
             </Card>
@@ -182,10 +172,7 @@ export function PerkembanganAnakPortal({
               ) : (
                 <ul className="space-y-3">
                   {daftarCatatan.map((baris) => (
-                    <li
-                      key={`${baris.tanggal}-${baris.nilai}-${baris.sikap}`}
-                      className="rounded-lg border px-3 py-2"
-                    >
+                    <li key={baris.id} className="rounded-lg border px-3 py-2">
                       <div className="flex flex-wrap items-center gap-2 text-sm">
                         <span className="font-medium">
                           Nilai {angkaTampil.format(baris.nilai)}
@@ -194,7 +181,8 @@ export function PerkembanganAnakPortal({
                           Sikap {baris.sikap}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {formatTanggalLengkap(baris.tanggal)}
+                          {formatTanggalLengkap(baris.tanggal)} ·{" "}
+                          {baris.guruNama}
                         </span>
                       </div>
                       <p className="mt-1 text-sm text-muted-foreground">
@@ -221,25 +209,29 @@ export function PerkembanganAnakPortal({
                 <ul className="divide-y">
                   {sesi.map((item) => (
                     <li
-                      key={`${item.jurnal.id}-${item.jurnal.tanggal}`}
+                      key={item.jurnalId}
                       className="flex flex-wrap items-center justify-between gap-3 py-2.5 text-sm"
                     >
                       <div className="min-w-0">
-                        <p className="font-medium">{item.jurnal.namaKelas}</p>
+                        <p className="font-medium">{item.kelasNama}</p>
                         <p className="text-xs text-muted-foreground">
-                          {formatTanggalLengkap(item.jurnal.tanggal)} ·{" "}
-                          {item.jurnal.jamMulai}–{item.jurnal.jamSelesai}
+                          {formatTanggalLengkap(item.tanggal)} · {item.guruNama}
                         </p>
+                        {item.catatan ? (
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {item.catatan}
+                          </p>
+                        ) : null}
                       </div>
                       <span
                         className={cn(
                           "rounded-full border px-2.5 py-0.5 text-xs font-medium",
-                          item.baris?.hadir
+                          item.hadir
                             ? "border-primary/30 bg-primary/10 text-primary"
                             : "border-destructive/30 bg-destructive/10 text-destructive",
                         )}
                       >
-                        {item.baris?.hadir ? "Hadir" : "Tidak hadir"}
+                        {item.hadir ? "Hadir" : "Tidak hadir"}
                       </span>
                     </li>
                   ))}
@@ -265,11 +257,6 @@ export function PerkembanganAnakPortal({
           </Link>
         </Button>
       </div>
-
-      <p className="mt-6 text-xs leading-5 text-muted-foreground">
-        Catatan: riwayat ini masih data tiruan — nanti dibaca dari catatan
-        perkembangan dan presensi jurnal yang tersimpan di database.
-      </p>
     </div>
   );
 }

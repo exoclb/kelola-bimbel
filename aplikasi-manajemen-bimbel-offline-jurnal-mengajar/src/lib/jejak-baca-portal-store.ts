@@ -12,7 +12,7 @@
 // lukisan pertama sudah benar tanpa keadaan memuat dan tanpa lencana yang
 // berkedip.
 
-import type { BagianPortal } from "@/lib/mock-portal-wali";
+import type { BagianPortal } from "@/lib/portal-wali";
 
 export type { BagianPortal };
 

@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { TagihanSppAnak } from "@/components/tagihan-spp-anak";
 import { statusSemuaAnak } from "@/services/jejak-baca.service";
-import { listAnakPortalWali } from "@/services/portal.service";
-import { listTagihanMurid } from "@/services/tagihan.service";
+import { muatIsiPortalWali } from "@/services/portal.service";
 import { requireSession } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Tagihan SPP Anak" };
@@ -14,14 +13,11 @@ export default async function TagihanSppAnakPage({
 }) {
   const session = await requireSession();
 
-  // Anak yang tampil diambil dari basis data untuk wali yang sedang masuk.
-  const anak = await listAnakPortalWali(session.user.id);
+  // Anak yang tampil beserta tagihannya diambil dari basis data untuk wali yang
+  // sedang masuk, jadi id di luar daftar itu tidak pernah punya data untuk
+  // ditampilkan; pemilihan anaknya sendiri disaring komponen lewat `?anak=`.
+  const { anak, tagihan } = await muatIsiPortalWali(session.user.id);
   const params = await searchParams;
-
-  // Tagihan diambil hanya untuk anak yang tertaut ke wali ini, jadi id di luar
-  // daftar itu tidak pernah punya data untuk ditampilkan; pemilihan anaknya
-  // sendiri disaring komponen lewat `?anak=`.
-  const tagihan = await listTagihanMurid(anak.map((baris) => baris.muridId));
 
   return (
     <TagihanSppAnak

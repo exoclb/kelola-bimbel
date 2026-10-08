@@ -2,13 +2,23 @@ import "server-only";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { classes, studentEnrollments, students, waliMurid } from "@/db/schema";
-import { idMuridTiruan } from "@/lib/id-murid.mjs";
+import type {
+  AnakPortal,
+  BagianPortal,
+  CatatanPerkembangan,
+  SesiKehadiran,
+  WaktuBagian,
+} from "@/lib/portal-wali";
+import type { Tagihan } from "@/lib/tagihan";
 import {
-  isiAnakTiruan,
-  type AnakPortal,
-  type BagianPortal,
-  type WaktuBagian,
-} from "@/lib/mock-portal-wali";
+  listKehadiranAnak,
+  type KehadiranTersimpan,
+} from "@/services/kehadiran.service";
+import {
+  listCatatanPerkembanganAnak,
+  type CatatanPerkembanganTersimpan,
+} from "@/services/perkembangan.service";
+import { listTagihanMurid } from "@/services/tagihan.service";
 
 // Layanan baca Portal Wali.
 //
@@ -18,13 +28,12 @@ import {
 // masuk, siap dipakai tampilan. Keduanya membaca tabel yang sama (`wali_murid`,
 // `students`) tanpa saling memanggil.
 //
-// Identitas anak datang dari basis data — id, nama, nama/kontak orang tua,
-// status aktif, dan kelas aktif dari penempatan murid (`student_enrollments` →
-// `classes`). Kalau tabel kelas/penempatan belum berisi apa pun, `kelasNama`
-// bernilai `null`; nama kelas tidak pernah dikarang dari data tiruan. Hanya isi
-// per anak (catatan perkembangan, kehadiran, tagihan) yang masih tiruan,
-// diambil `isiAnakTiruan` lewat jembatan id `id-murid.mjs` supaya id anak sama
-// dengan yang divalidasi `wali_murid` dan dipakai `/api/jejak-baca`.
+// Seluruhnya dari basis data: identitas anak (`wali_murid` → `students`), kelas
+// aktif dari penempatan murid (`student_enrollments` → `classes`, `null` bila
+// belum ada), catatan perkembangan (`student_progress`), kehadiran per sesi
+// (`journal_attendances` → `teaching_journals`), dan tagihan
+// (`student_invoices`). Query-nya dibatching per daftar anak supaya tidak
+// memicu N+1. Tidak ada lagi data contoh di jalur baca ini.
 
 /**
  * Kelas aktif tiap murid, berkunci id murid. Satu query untuk semua murid
@@ -55,14 +64,104 @@ async function kelasAktifPerMurid(muridIds: string[]) {
   return peta;
 }
 
+/** Tanggal (`YYYY-MM-DD`) paling akhir dari daftar, atau `null` bila kosong. */
+function tanggalTerbaru(daftar: string[]): string | null {
+  let terbaru: string | null = null;
+  for (const tanggal of daftar)
+    if (terbaru === null || tanggal > terbaru) terbaru = tanggal;
+  return terbaru;
+}
+
 /**
- * Anak yang tertaut ke akun wali ini, urut nama. Kosong bila akunnya belum
- * menautkan murid mana pun — keadaan kosong itu yang ditampilkan portal, bukan
- * galat dan bukan anak milik akun lain.
+ * Tanggal terbaru sebuah tagihan: saat diterbitkan (`dibuatPada`) atau saat
+ * dibayar (`tanggalBayar`), mana yang lebih akhir — sama seperti perubahan isi
+ * yang dipakai penanda "baru" bagian tagihan.
  */
-export async function listAnakPortalWali(
+function tanggalTerbaruTagihan(daftar: Tagihan[]): string | null {
+  return tanggalTerbaru(
+    daftar
+      .flatMap((baris) => [baris.dibuatPada.slice(0, 10), baris.tanggalBayar])
+      .filter((nilai): nilai is string => Boolean(nilai)),
+  );
+}
+
+/** Bentuk tampilan satu catatan perkembangan dari baris basis datanya. */
+function catatanTampil(
+  baris: CatatanPerkembanganTersimpan[],
+): CatatanPerkembangan[] {
+  return baris.map((satu) => ({
+    id: satu.id,
+    tanggal: satu.tanggal,
+    nilai: satu.nilai,
+    sikap: satu.sikap,
+    catatan: satu.catatanPerkembangan,
+    guruNama: satu.guruNama,
+  }));
+}
+
+/** Bentuk tampilan satu sesi kehadiran dari baris basis datanya. */
+function kehadiranTampil(baris: KehadiranTersimpan[]): SesiKehadiran[] {
+  return baris.map((satu) => ({
+    jurnalId: satu.jurnalId,
+    tanggal: satu.tanggal,
+    kelasNama: satu.kelasNama,
+    guruNama: satu.guruNama,
+    hadir: satu.hadir,
+    catatan: satu.catatan,
+  }));
+}
+
+/** Menyusun waktu isi tiap bagian dari isi nyata anak. */
+function bagianDari(
+  catatan: CatatanPerkembangan[],
+  kehadiran: SesiKehadiran[],
+  tagihan: Tagihan[],
+): Record<BagianPortal, WaktuBagian> {
+  return {
+    kehadiran: {
+      terbaru: tanggalTerbaru(kehadiran.map((satu) => satu.tanggal)),
+    },
+    perkembangan: {
+      terbaru: tanggalTerbaru(catatan.map((satu) => satu.tanggal)),
+    },
+    tagihan: { terbaru: tanggalTerbaruTagihan(tagihan) },
+  };
+}
+
+/** Daftar baris dikelompokkan menurut kuncinya, urutan asli dipertahankan. */
+function kelompokkan<T>(
+  baris: T[],
+  kunci: (satu: T) => string,
+): Map<string, T[]> {
+  const peta = new Map<string, T[]>();
+  for (const satu of baris) {
+    const id = kunci(satu);
+    const daftar = peta.get(id);
+    if (daftar) daftar.push(satu);
+    else peta.set(id, [satu]);
+  }
+  return peta;
+}
+
+/** Seluruh isi Portal Wali satu akun wali: daftar anak dan tagihannya. */
+export type IsiPortalWali = {
+  anak: AnakPortal[];
+  tagihan: Tagihan[];
+};
+
+/**
+ * Anak yang tertaut ke akun wali ini beserta isinya, dan tagihan anak-anak itu
+ * — semuanya dari basis data, dibaca sekali jalan. Kosong bila akunnya belum
+ * menautkan murid mana pun; keadaan kosong itulah yang ditampilkan portal,
+ * bukan galat dan bukan anak milik akun lain.
+ *
+ * Tagihan ikut dimuat di sini karena waktu isi bagian tagihan ikut menentukan
+ * penanda "baru"; halaman yang butuh kartu tagihannya memakai daftar yang sama
+ * sehingga tabel `student_invoices` tidak dibaca dua kali.
+ */
+export async function muatIsiPortalWali(
   waliId: string,
-): Promise<AnakPortal[]> {
+): Promise<IsiPortalWali> {
   const baris = await db
     .select({
       muridId: students.id,
@@ -76,30 +175,67 @@ export async function listAnakPortalWali(
     .where(eq(waliMurid.waliId, waliId))
     .orderBy(asc(students.nama), asc(students.id));
 
-  const kelas = await kelasAktifPerMurid(baris.map((satu) => satu.muridId));
-  return baris.map((satu) => {
-    const sumberTiruan: string | null = idMuridTiruan(satu.muridId);
+  const muridIds = baris.map((satu) => satu.muridId);
+  const [kelas, catatan, kehadiran, tagihan] = await Promise.all([
+    kelasAktifPerMurid(muridIds),
+    listCatatanPerkembanganAnak(muridIds),
+    listKehadiranAnak(muridIds),
+    listTagihanMurid(muridIds),
+  ]);
+
+  const catatanPerMurid = kelompokkan(catatan, (satu) => satu.muridId);
+  const kehadiranPerMurid = kelompokkan(kehadiran, (satu) => satu.muridId);
+  const tagihanPerMurid = kelompokkan(tagihan, (satu) => satu.muridId);
+
+  const anak = baris.map((satu) => {
+    const daftarCatatan = catatanTampil(
+      catatanPerMurid.get(satu.muridId) ?? [],
+    );
+    const daftarKehadiran = kehadiranTampil(
+      kehadiranPerMurid.get(satu.muridId) ?? [],
+    );
     return {
       muridId: satu.muridId,
-      sumberTiruan,
       nama: satu.nama,
       namaOrangTua: satu.namaOrangTua ?? "",
       kontakOrangTua: satu.kontakOrangTua ?? "",
       kelasNama: kelas.get(satu.muridId) ?? null,
       statusAktif: satu.statusAktif,
-      ...isiAnakTiruan(sumberTiruan),
+      catatan: daftarCatatan,
+      kehadiran: {
+        sesi: daftarKehadiran.length,
+        hadir: daftarKehadiran.filter((baris) => baris.hadir).length,
+        terakhir: tanggalTerbaru(daftarKehadiran.map((baris) => baris.tanggal)),
+        daftar: daftarKehadiran,
+      },
+      bagian: bagianDari(
+        daftarCatatan,
+        daftarKehadiran,
+        tagihanPerMurid.get(satu.muridId) ?? [],
+      ),
     };
   });
+
+  return { anak, tagihan };
 }
 
 /**
- * Waktu isi tiap bagian satu anak (dari data tiruan), atau `null` bila idnya
- * bukan anak yang punya padanan data contoh. Dipakai layanan jejak baca untuk
- * menghitung penanda "baru" tanpa memuat identitas anaknya.
+ * Waktu isi tiap bagian satu anak, dihitung langsung dari basis data. Dipakai
+ * layanan jejak baca untuk menghitung penanda "baru" satu anak tanpa memuat
+ * identitasnya. Id yang bukan murid mana pun cukup menghasilkan waktu kosong
+ * (`terbaru: null`), bukan galat.
  */
-export function bagianPortalAnak(
+export async function bagianPortalAnak(
   muridId: string,
-): Record<BagianPortal, WaktuBagian> | null {
-  const sumberTiruan: string | null = idMuridTiruan(muridId);
-  return sumberTiruan ? isiAnakTiruan(sumberTiruan).bagian : null;
+): Promise<Record<BagianPortal, WaktuBagian>> {
+  const [catatan, kehadiran, tagihan] = await Promise.all([
+    listCatatanPerkembanganAnak([muridId]),
+    listKehadiranAnak([muridId]),
+    listTagihanMurid([muridId]),
+  ]);
+  return bagianDari(
+    catatanTampil(catatan),
+    kehadiranTampil(kehadiran),
+    tagihan,
+  );
 }

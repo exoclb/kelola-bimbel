@@ -172,6 +172,25 @@ export async function listCatatanPerkembangan({
   };
 }
 
+/**
+ * Riwayat catatan beberapa anak sekaligus, terbaru lebih dulu — dipakai Portal
+ * Wali supaya seluruh catatan anak yang tertaut ke satu akun wali terbaca dalam
+ * satu permintaan, bukan satu query per anak. Daftar id kosong menghasilkan
+ * daftar kosong tanpa menyentuh basis data.
+ */
+export async function listCatatanPerkembanganAnak(
+  muridIds: string[],
+): Promise<CatatanPerkembanganTersimpan[]> {
+  if (muridIds.length === 0) return [];
+  return pilihCatatan()
+    .where(inArray(studentProgress.studentId, muridIds))
+    .orderBy(
+      desc(studentProgress.tanggal),
+      desc(studentProgress.createdAt),
+      asc(studentProgress.id),
+    );
+}
+
 /** Satu catatan beserta nama anak dan guru penulisnya, atau null. */
 export async function getCatatanPerkembangan(
   id: string,

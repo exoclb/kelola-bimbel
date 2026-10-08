@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   classes,
@@ -125,6 +125,34 @@ export async function listKehadiran(
       tidakHadir: total - hadir,
     },
   };
+}
+
+/**
+ * Seluruh kehadiran beberapa anak sekaligus, terbaru lebih dulu — dipakai
+ * Portal Wali supaya semua sesi anak yang tertaut ke satu akun wali terbaca
+ * dalam satu permintaan, bukan satu query per anak. Daftar id kosong
+ * menghasilkan daftar kosong tanpa menyentuh basis data.
+ */
+export async function listKehadiranAnak(
+  muridIds: string[],
+): Promise<KehadiranTersimpan[]> {
+  if (muridIds.length === 0) return [];
+  return db
+    .select(fields)
+    .from(journalAttendances)
+    .innerJoin(
+      teachingJournals,
+      eq(journalAttendances.journalId, teachingJournals.id),
+    )
+    .innerJoin(classes, eq(teachingJournals.classId, classes.id))
+    .innerJoin(students, eq(journalAttendances.studentId, students.id))
+    .innerJoin(user, eq(teachingJournals.guruId, user.id))
+    .where(inArray(journalAttendances.studentId, muridIds))
+    .orderBy(
+      desc(teachingJournals.tanggal),
+      asc(students.nama),
+      asc(journalAttendances.id),
+    );
 }
 
 /** Jumlah pertemuan dan kehadiran satu murid, dipakai laporan agregat. */

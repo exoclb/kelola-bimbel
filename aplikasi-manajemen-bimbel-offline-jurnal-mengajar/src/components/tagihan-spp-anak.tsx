@@ -11,7 +11,7 @@ import { LabelStatusTagihan } from "@/components/label-status-tagihan";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { formatRupiah } from "@/lib/gaji";
 import { tandaiTerbaca } from "@/lib/jejak-baca-portal-store";
-import type { AnakWali, StatusJejakPortal } from "@/lib/mock-portal-wali";
+import type { AnakWali, StatusJejakPortal } from "@/lib/portal-wali";
 import { periodeDariTagihan, type Tagihan } from "@/lib/tagihan";
 import { formatPeriodeTagihan, hitungRekapTagihan } from "@/lib/tagihan";
 
