@@ -15,6 +15,7 @@ import { KartuPortal } from "@/components/kartu-portal";
 import { PemilihAnak } from "@/components/pemilih-anak";
 import { LayarPortal } from "@/components/layar-portal";
 import { PesanKosong } from "@/components/status-antarmuka";
+import { PilPortal } from "@/components/pil-portal";
 import { cn } from "cn";
 import { tandaiTerbacaBanyak } from "@/lib/jejak-baca-portal-store";
 import type {
@@ -260,9 +261,9 @@ export function PerkembanganAnakPortal({
                                   {angkaTampil.format(baris.nilai)}
                                 </span>
                               </p>
-                              <span className="bg-muted text-muted-foreground rounded-full border px-2.5 py-0.5 text-xs">
+                              <PilPortal className="bg-muted text-muted-foreground">
                                 Sikap {baris.sikap}
-                              </span>
+                              </PilPortal>
                             </div>
                             <p className="text-muted-foreground mt-1 text-xs">
                               {formatTanggalLengkap(baris.tanggal)} ·{" "}
@@ -303,16 +304,15 @@ export function PerkembanganAnakPortal({
                         </p>
                       ) : null}
                     </div>
-                    <span
+                    <PilPortal
                       className={cn(
-                        "rounded-full border px-2.5 py-0.5 text-xs font-medium",
                         item.hadir
                           ? "border-primary/30 bg-primary/10 text-primary"
                           : "border-destructive/30 bg-destructive/10 text-destructive",
                       )}
                     >
                       {item.hadir ? "Hadir" : "Tidak hadir"}
-                    </span>
+                    </PilPortal>
                   </li>
                 ))}
               </ul>

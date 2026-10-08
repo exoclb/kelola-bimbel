@@ -1,4 +1,5 @@
 import { cn } from "cn";
+import { KELAS_PIL } from "@/components/pil-portal";
 
 /**
  * Lencana kecil "Baru" untuk menandai bagian Portal Wali yang belum dibaca.
@@ -10,7 +11,8 @@ export function LencanaBaru({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "border-primary/30 bg-primary/10 text-brand-800 dark:text-primary inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium",
+        KELAS_PIL,
+        "border-primary/30 bg-primary/10 text-brand-800 dark:text-primary",
         className,
       )}
     >

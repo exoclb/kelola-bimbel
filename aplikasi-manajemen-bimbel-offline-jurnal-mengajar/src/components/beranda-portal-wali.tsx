@@ -12,6 +12,7 @@ import {
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PilPortal } from "@/components/pil-portal";
 import { KartuPortal } from "@/components/kartu-portal";
 import { PemilihAnak } from "@/components/pemilih-anak";
 import { LayarPortal } from "@/components/layar-portal";
@@ -324,9 +325,9 @@ export function BerandaPortalWali({
                   <span className="font-medium">
                     Nilai {nilaiTampil.format(catatan.nilai)}
                   </span>
-                  <span className="bg-muted text-muted-foreground rounded-full border px-2.5 py-0.5 text-xs">
+                  <PilPortal className="bg-muted text-muted-foreground">
                     Sikap {catatan.sikap}
-                  </span>
+                  </PilPortal>
                   <span className="text-muted-foreground text-xs">
                     {namaHariBulan.format(
                       new Date(`${catatan.tanggal}T00:00:00`),

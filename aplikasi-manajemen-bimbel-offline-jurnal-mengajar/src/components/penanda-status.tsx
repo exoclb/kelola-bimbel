@@ -1,6 +1,7 @@
 import { AlertTriangle, CheckCircle2, Clock3 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "cn";
+import { KELAS_PIL } from "@/components/pil-portal";
 import type { StatusPembayaran } from "@/lib/tagihan";
 
 const GAYA: Record<StatusPembayaran, string> = {
@@ -45,7 +46,7 @@ export function PenandaStatus({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
+        KELAS_PIL,
         GAYA[status],
         className,
       )}

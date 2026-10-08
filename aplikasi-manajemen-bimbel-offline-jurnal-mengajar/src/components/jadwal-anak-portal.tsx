@@ -24,6 +24,7 @@ import {
   urutkanJadwal,
 } from "@/lib/tanggal";
 import { cn } from "cn";
+import { KELAS_PIL } from "@/components/pil-portal";
 
 /**
  * Pil penanda keadaan sesi hari ini terhadap jam sekarang: `berlangsung` saat
@@ -35,7 +36,7 @@ function PilSesi({ keadaan }: { keadaan: "berlangsung" | "berikutnya" }) {
   return (
     <span
       className={cn(
-        "rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap",
+        KELAS_PIL,
         berlangsung
           ? "border-primary/30 bg-primary/10 text-primary"
           : "border-border bg-muted text-foreground",
