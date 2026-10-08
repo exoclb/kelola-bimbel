@@ -21,7 +21,9 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
-  --color-input: var(--border);
+  /* Garis kotak isian dipisah dari garis pemisah: pembatas kontrol harus
+     terlihat jelas (WCAG non-teks 3:1), sedangkan pemisah kartu boleh halus. */
+  --color-input: var(--input);
   --color-ring: var(--primary);
   /* Skala hijau brand #83B520 (brand-50 terang → brand-900 gelap). */
   --color-brand-50: var(--brand-50);
@@ -138,6 +140,8 @@
   /* slate-600 tetap >=4.5:1 di atas kanvas, kartu, dan permukaan muted. */
   --muted-foreground: #475569;
   --border: #e2e8f0;
+  /* slate-500: batas kontrol >=3:1 di atas kartu putih maupun kanvas. */
+  --input: #64748b;
   --destructive: #b91c1c;
   --destructive-foreground: #ffffff;
 
@@ -183,6 +187,8 @@
   /* slate-300 tetap >=4.5:1 di atas kanvas, kartu, dan permukaan muted. */
   --muted-foreground: #cbd5e1;
   --border: #334155;
+  /* slate-400: batas kontrol tetap >=3:1 di atas latar isian yang gelap. */
+  --input: #94a3b8;
   --destructive: #ff8a8a;
   --destructive-foreground: #ffffff;
 
