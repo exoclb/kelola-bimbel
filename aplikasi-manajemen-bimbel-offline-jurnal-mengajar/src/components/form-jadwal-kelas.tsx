@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState, type FormEvent } from "react";
-import { CalendarPlus, Plus } from "lucide-react";
+import { CalendarPlus, Plus, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { IsianPilih, IsianTeks } from "@/components/isian-form";
 import type { JadwalKelas } from "@/lib/mock-kelas";
@@ -71,6 +71,18 @@ export function FormJadwalKelas({
       return;
     }
 
+    // Jam yang beririsan dengan jadwal kelas ini juga ditolak, walaupun jam
+    // mulainya berbeda — mis. 09:00–10:00 lalu 09:30–10:30.
+    const bentrokKelas = jadwalAda.find((jadwal) =>
+      bentrokJam({ hari, jamMulai, jamSelesai }, jadwal),
+    );
+    if (bentrokKelas) {
+      setGalatUmum(
+        `Jam itu bentrok dengan jadwal kelas ini: ${bentrokKelas.hari} ${bentrokKelas.jamMulai}–${bentrokKelas.jamSelesai}.`,
+      );
+      return;
+    }
+
     // Guru tidak mungkin mengajar dua kelas sekaligus, jadi jadwal yang
     // jamnya beririsan dengan jadwalnya yang lain ditolak.
     const bentrok = jadwalGuruAda.find((jadwal) =>
@@ -115,6 +127,7 @@ export function FormJadwalKelas({
         <IsianPilih
           id={`${idForm}-hari`}
           label="Hari"
+          ukuran="sentuh"
           value={hari}
           onChange={(event) => {
             setHari(event.target.value);
@@ -132,6 +145,7 @@ export function FormJadwalKelas({
           label="Jam mulai"
           type="time"
           required
+          ukuran="sentuh"
           value={jamMulai}
           onChange={(event) => {
             setJamMulai(event.target.value);
@@ -144,6 +158,7 @@ export function FormJadwalKelas({
           label="Jam selesai"
           type="time"
           required
+          ukuran="sentuh"
           value={jamSelesai}
           error={galatJam}
           onChange={(event) => {
@@ -154,33 +169,44 @@ export function FormJadwalKelas({
       </div>
 
       {jadwalGuruAda.length > 0 && (
-        <p className="text-xs leading-5 text-muted-foreground">
-          Jadwal {guruNama} yang sudah ada:{" "}
-          {jadwalGuruAda
-            .map(
-              (jadwal) =>
-                `${jadwal.namaKelas} ${jadwal.hari} ${jadwal.jamMulai}–${jadwal.jamSelesai}`,
-            )
-            .join(", ")}
-          .
-        </p>
+        <div className="space-y-1">
+          <p className="text-xs leading-5 text-muted-foreground">
+            Jadwal {guruNama} yang sudah ada — jadi acuan supaya tidak bentrok:
+          </p>
+          <ul className="space-y-0.5 text-xs leading-5 text-muted-foreground">
+            {jadwalGuruAda.map((jadwal, urutan) => (
+              <li key={`${jadwal.namaKelas}-${jadwal.hari}-${urutan}`}>
+                {jadwal.namaKelas} · {jadwal.hari} {jadwal.jamMulai}–
+                {jadwal.jamSelesai}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {galatUmum && (
-        <p role="alert" className="text-sm text-destructive">
+        <p
+          role="alert"
+          className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm leading-6 text-destructive"
+        >
+          <TriangleAlert
+            className="mt-0.5 size-4 shrink-0"
+            aria-hidden="true"
+          />
           {galatUmum}
         </p>
       )}
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Button type="submit" size="sm">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <Button type="submit" size="aksi" className="w-full sm:w-auto">
           <Plus aria-hidden="true" />
           Simpan jadwal
         </Button>
         <Button
           type="button"
           variant="ghost"
-          size="sm"
+          size="aksi"
+          className="w-full sm:w-auto"
           onClick={() => {
             setTerbuka(false);
             setGalatJam("");
