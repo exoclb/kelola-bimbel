@@ -17,7 +17,6 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { cn } from "cn";
 import { formatRupiah, formatPeriode } from "@/lib/gaji";
-import { getRekapGajiBulanan } from "@/lib/mock-gaji";
 import { getProfilBimbel } from "@/lib/mock-pengaturan";
 import { rekapTagihanKosong, type RekapTagihanPeriode } from "@/lib/tagihan";
 
@@ -37,18 +36,26 @@ type LaporanLabaRugiProps = {
   rekapPengeluaran: { periode: string; total: number }[];
   /** Ringkasan tagihan per periode (`YYYY-MM`) dari tabel `student_invoices`. */
   rekapPemasukan: RekapTagihanPeriode[];
+  /** Total honor guru per periode (`YYYY-MM`) dari jurnal & pengaturan gaji. */
+  rekapHonor: { periode: string; total: number }[];
 };
 
 /**
  * Laporan laba rugi bulanan: pemasukan SPP yang sudah lunas dikurangi biaya
- * honor guru dan pengeluaran operasional. Pemasukan SPP dan pengeluaran
- * operasional dibaca dari basis data lewat prop server; honor guru masih
- * membaca modul tiruan.
+ * honor guru dan pengeluaran operasional. Ketiga angkanya dibaca dari basis
+ * data lewat prop server.
  */
 export function LaporanLabaRugi({
   rekapPengeluaran,
   rekapPemasukan,
+  rekapHonor,
 }: LaporanLabaRugiProps) {
+  const biayaHonorPeriode = useMemo(
+    () =>
+      new Map(rekapHonor.map((baris) => [baris.periode, baris.total] as const)),
+    [rekapHonor],
+  );
+
   const totalOperasional = useMemo(
     () =>
       new Map(
@@ -75,12 +82,8 @@ export function LaporanLabaRugi({
   );
 
   const biayaHonor = useMemo(
-    () =>
-      getRekapGajiBulanan(periode).daftar.reduce(
-        (jumlah, baris) => jumlah + baris.totalGaji,
-        0,
-      ),
-    [periode],
+    () => biayaHonorPeriode.get(periode) ?? 0,
+    [biayaHonorPeriode, periode],
   );
 
   const biayaOperasional = useMemo(
@@ -297,8 +300,8 @@ export function LaporanLabaRugi({
       </div>
 
       <p className="mt-6 text-xs leading-5 text-muted-foreground">
-        Catatan: pemasukan SPP dan pengeluaran operasional sudah dibaca dari
-        database. Honor guru masih dijumlahkan dari modul tiruan.
+        Catatan: pemasukan SPP, honor guru, dan pengeluaran operasional sudah
+        dibaca dari database.
       </p>
     </div>
   );

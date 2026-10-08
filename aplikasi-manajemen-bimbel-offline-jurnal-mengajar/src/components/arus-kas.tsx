@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "cn";
 import { formatPeriode, formatRupiah } from "@/lib/gaji";
-import { getRekapGajiBulanan } from "@/lib/mock-gaji";
 import {
   geserPeriode,
   periodeTagihan,
@@ -32,15 +31,26 @@ type ArusKasProps = {
   rekapPengeluaran: { periode: string; total: number }[];
   /** Ringkasan tagihan per periode (`YYYY-MM`) dari tabel `student_invoices`. */
   rekapPemasukan: RekapTagihanPeriode[];
+  /** Total honor guru per periode (`YYYY-MM`) dari jurnal & pengaturan gaji. */
+  rekapHonor: { periode: string; total: number }[];
 };
 
 /**
  * Arus kas bimbel: tren bulanan pemasukan SPP, pengeluaran (honor guru +
- * operasional), dan laba bersih dalam satu tampilan. Pemasukan SPP dan
- * pengeluaran operasional datang dari basis data lewat prop server; honor guru
- * masih membaca modul tiruan.
+ * operasional), dan laba bersih dalam satu tampilan. Ketiga angkanya datang
+ * dari basis data lewat prop server.
  */
-export function ArusKas({ rekapPengeluaran, rekapPemasukan }: ArusKasProps) {
+export function ArusKas({
+  rekapPengeluaran,
+  rekapPemasukan,
+  rekapHonor,
+}: ArusKasProps) {
+  const totalHonor = useMemo(
+    () =>
+      new Map(rekapHonor.map((baris) => [baris.periode, baris.total] as const)),
+    [rekapHonor],
+  );
+
   const totalOperasional = useMemo(
     () =>
       new Map(
@@ -65,10 +75,7 @@ export function ArusKas({ rekapPengeluaran, rekapPemasukan }: ArusKasProps) {
     return bulan.map((periode) => {
       const rekap =
         pemasukanPeriode.get(periode) ?? rekapTagihanKosong(periode);
-      const honor = getRekapGajiBulanan(periode).daftar.reduce(
-        (jumlah, baris) => jumlah + baris.totalGaji,
-        0,
-      );
+      const honor = totalHonor.get(periode) ?? 0;
       const operasional = totalOperasional.get(periode) ?? 0;
       return {
         periode,
@@ -79,7 +86,7 @@ export function ArusKas({ rekapPengeluaran, rekapPemasukan }: ArusKasProps) {
         laba: rekap.nominalLunas - honor - operasional,
       };
     });
-  }, [pemasukanPeriode, totalOperasional, periodeBerjalan]);
+  }, [pemasukanPeriode, totalHonor, totalOperasional, periodeBerjalan]);
 
   const maksimum = Math.max(
     1,
@@ -221,9 +228,8 @@ export function ArusKas({ rekapPengeluaran, rekapPemasukan }: ArusKasProps) {
       </div>
 
       <p className="mt-6 text-xs leading-5 text-muted-foreground">
-        Catatan: pemasukan SPP dan pengeluaran operasional sudah dibaca dari
-        database. Honor guru masih dari modul tiruan, dan unduhan laporan
-        menyusul.
+        Catatan: pemasukan SPP, honor guru, dan pengeluaran operasional sudah
+        dibaca dari database. Unduhan laporan menyusul.
       </p>
     </div>
   );

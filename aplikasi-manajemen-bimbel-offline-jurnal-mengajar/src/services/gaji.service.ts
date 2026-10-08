@@ -79,6 +79,22 @@ async function tarifBerlaku(periode: string) {
   return (await aturanGajiBerlaku(akhir))?.tarifPerJam;
 }
 
+/**
+ * Tarif yang berlaku pada sebuah periode: pengaturan terbaru yang
+ * `berlaku_sejak`-nya tidak melewati akhir bulan itu. `pengaturan` harus urut
+ * dari yang paling baru supaya temuan pertama memang yang berlaku; kalau belum
+ * ada pengaturan sama sekali, tarifnya nol.
+ */
+function tarifPadaAkhirPeriode(
+  pengaturan: { berlakuSejak: string; tarifPerJam: number }[],
+  periode: string,
+) {
+  const { akhir } = rentangBulan(periode);
+  return (
+    pengaturan.find((baris) => baris.berlakuSejak <= akhir)?.tarifPerJam ?? 0
+  );
+}
+
 async function rincianPeriode(awal: string, akhir: string, guruId?: string) {
   const syarat = [
     gte(teachingJournals.tanggal, awal),
@@ -450,21 +466,63 @@ export async function riwayatGajiAny(
   );
 
   return {
-    daftar: agregat.map((baris) => {
-      // Tarif yang berlaku: pengaturan terbaru yang tidak melewati akhir bulan
-      // itu (daftar `tarif` sudah urut dari yang paling baru).
-      const akhirBulan = rentangBulan(baris.periode).akhir;
-      const nilaiTarif =
-        tarif.find((pengaturan) => pengaturan.berlakuSejak <= akhirBulan)
-          ?.tarifPerJam ?? 0;
-      return {
-        periode: baris.periode,
-        jumlahGuru: baris.jumlahGuru,
-        totalJam: baris.totalJam,
-        totalGaji: hitungGaji(baris.totalJam, nilaiTarif),
-        jumlahDibayar: dibayarPerPeriode.get(baris.periode) ?? 0,
-      };
-    }),
+    daftar: agregat.map((baris) => ({
+      periode: baris.periode,
+      jumlahGuru: baris.jumlahGuru,
+      totalJam: baris.totalJam,
+      totalGaji: hitungGaji(
+        baris.totalJam,
+        tarifPadaAkhirPeriode(tarif, baris.periode),
+      ),
+      jumlahDibayar: dibayarPerPeriode.get(baris.periode) ?? 0,
+    })),
     tahunTersedia: tahunBaris.map((baris) => baris.tahun),
   };
+}
+
+/**
+ * Total honor guru per periode (`YYYY-MM`) untuk laporan keuangan (arus kas &
+ * laba rugi). Angkanya memakai aturan yang sama dengan `rekapGajiAnyBulanan`
+ * yang jadi acuan halaman gaji: jumlah jam mengajar di jurnal bulan itu
+ * dikalikan tarif yang berlaku pada akhir bulan tersebut.
+ *
+ * Sumbernya jurnal, bukan `salary_recaps`: tabel itu hanya menyimpan salinan
+ * saat pembayaran ditandai (bukti audit), jadi periode yang pembayarannya
+ * belum pernah ditandai tidak boleh hilang dari laporan. Periode tanpa jurnal
+ * tidak muncul di hasil; pemanggil memperlakukannya sebagai nol. Kalau belum
+ * ada pengaturan tarif, tarifnya nol sehingga honornya juga nol.
+ */
+export async function rekapHonorBulanan(): Promise<
+  { periode: string; total: number }[]
+> {
+  const [agregat, tarif] = await Promise.all([
+    db
+      .select({
+        periode:
+          sql<string>`to_char(${teachingJournals.tanggal}, 'YYYY-MM')`.as(
+            "periode",
+          ),
+        totalJam:
+          sql<number>`coalesce(sum(${teachingJournals.jamMengajar}), 0)::float8`.as(
+            "total_jam",
+          ),
+      })
+      .from(teachingJournals)
+      .groupBy(sql`to_char(${teachingJournals.tanggal}, 'YYYY-MM')`),
+    db
+      .select({
+        berlakuSejak: salarySettings.berlakuSejak,
+        tarifPerJam: salarySettings.tarifPerJam,
+      })
+      .from(salarySettings)
+      .orderBy(desc(salarySettings.berlakuSejak)),
+  ]);
+
+  return agregat.map((baris) => ({
+    periode: baris.periode,
+    total: hitungGaji(
+      baris.totalJam,
+      tarifPadaAkhirPeriode(tarif, baris.periode),
+    ),
+  }));
 }
