@@ -3,12 +3,13 @@
 import { useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Receipt, UserRound } from "lucide-react";
+import { ArrowLeft, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KartuPortal } from "@/components/kartu-portal";
 import { PemilihAnak } from "@/components/pemilih-anak";
 import { LayarPortal } from "@/components/layar-portal";
 import { PenandaStatus } from "@/components/penanda-status";
+import { RingkasanTagihanAnak } from "@/components/ringkasan-tagihan-anak";
 import { TombolAksiLengket } from "@/components/tombol-aksi-lengket";
 import { TombolCetakUnduh } from "@/components/tombol-cetak-unduh";
 import { PesanKosong } from "@/components/status-antarmuka";
@@ -18,7 +19,6 @@ import type { AnakWali, StatusJejakPortal } from "@/lib/portal-wali";
 import { periodeDariTagihan, type Tagihan } from "@/lib/tagihan";
 import {
   formatPeriodeTagihan,
-  hitungRekapTagihan,
   periodeTagihan,
   statusPembayaran,
 } from "@/lib/tagihan";
@@ -87,7 +87,6 @@ export function TagihanSppAnak({
     [tagihan, dipilih?.muridId],
   );
 
-  const rekap = hitungRekapTagihan(daftar);
   const periodeBerjalan = periodeTagihan(new Date());
 
   return (
@@ -117,40 +116,11 @@ export function TagihanSppAnak({
           </div>
 
           <div id="bukti-tagihan-anak" className="mt-6 space-y-3">
-            <KartuPortal
-              judul={dipilih.nama}
-              ikon={UserRound}
-              keterangan={`Rincian tagihan SPP${dipilih.kelasNama ? ` · ${dipilih.kelasNama}` : ""}`}
-              penanda={
-                daftar[0] ? (
-                  <PenandaStatus
-                    status={statusPembayaran(daftar[0], periodeBerjalan)}
-                  />
-                ) : undefined
-              }
-            >
-              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-                <dt className="text-muted-foreground">Total tagihan</dt>
-                <dd className="text-right font-medium tabular-nums">
-                  {formatRupiah(
-                    rekap.nominalLunas + rekap.nominalBelumLunas,
-                  )}
-                </dd>
-                <dt className="text-muted-foreground">Sudah dibayar</dt>
-                <dd className="text-right tabular-nums">
-                  {formatRupiah(rekap.nominalLunas)}
-                </dd>
-                <dt className="text-muted-foreground">Belum dibayar</dt>
-                <dd className="text-right tabular-nums">
-                  {formatRupiah(rekap.nominalBelumLunas)}
-                </dd>
-              </dl>
-              <p className="text-muted-foreground text-xs">
-                {rekap.jumlah > 0
-                  ? `${rekap.jumlah} tagihan · ${rekap.jumlahLunas} lunas · ${rekap.jumlahBelumLunas} belum lunas`
-                  : "Belum ada tagihan yang tercatat untuk anak ini."}
-              </p>
-            </KartuPortal>
+            <RingkasanTagihanAnak
+              anak={dipilih}
+              daftar={daftar}
+              periodeBerjalan={periodeBerjalan}
+            />
 
             {daftar.length === 0 ? (
               <PesanKosong
