@@ -169,4 +169,37 @@ test("rekap jam mengajar, presensi guru, dan kehadiran murid sejalan", async ({
   });
   // Akun baru belum punya izin `gaji: read-any`, jadi rekapnya tertutup.
   expect(admin.status()).toBe(403);
+  // Jurnal kedua di kelas lain (1,5 jam) membuat rekap dihitung ulang dari
+  // jurnalnya, bukan dari angka yang tersimpan. Pendaftaran akun owner di atas
+  // mengganti sesi permintaan, jadi sesi guru dipulihkan lebih dulu.
+  await masuk(request, email);
+  const kelasKedua = await request.post("/api/kelas", {
+    headers,
+    data: {
+      namaKelas: "Kelas Rekap Kedua",
+      cabang: "Cabang Rekap",
+      guruId,
+      jadwal: [{ hari: hariIni(), jamMulai: "07:00", jamSelesai: "08:30" }],
+    },
+  });
+  expect(kelasKedua.status()).toBe(201);
+  const jadwalKeduaId = (await kelasKedua.json()).data.jadwal[0].id as string;
+  const jurnalKedua = await request.post("/api/jurnal", {
+    headers,
+    data: {
+      jadwalId: jadwalKeduaId,
+      materi: "Materi rekap kedua",
+      catatan: "",
+      kehadiran: [],
+    },
+  });
+  expect(jurnalKedua.status()).toBe(200);
+
+  const gajiSetelah = await request.get(`/api/gaji?periode=${bulanIni()}`, {
+    headers,
+  });
+  const isiGajiSetelah = (await gajiSetelah.json()).data;
+  expect(isiGajiSetelah.guru.jumlahJurnal).toBe(2);
+  expect(isiGajiSetelah.guru.totalJam).toBe(2.5);
+  expect(isiGajiSetelah.guru.rincian).toHaveLength(2);
 });
