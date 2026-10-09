@@ -98,10 +98,11 @@ export async function PengaturanBimbel({ bolehKelola }: PengaturanBimbelProps) {
     {
       href: "/app/pengaturan/wali",
       ikon: Users,
-      judul: "Penautan Akun Wali",
+      judul: "Akun Wali",
       ringkasan: `${ringkasWali.jumlahTertaut} dari ${ringkasWali.jumlahAkun} akun tertaut ke murid`,
-      keterangan: "Lihat akun wali beserta murid yang tertaut padanya.",
-      tombol: "Lihat penautan",
+      keterangan:
+        "Buat akun wali, atur akses portalnya, lalu tautkan ke murid.",
+      tombol: "Kelola akun wali",
     },
     {
       href: "/app/pengaturan/ekspor",

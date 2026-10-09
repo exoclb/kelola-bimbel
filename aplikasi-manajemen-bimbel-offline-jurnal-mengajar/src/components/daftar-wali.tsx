@@ -4,6 +4,7 @@ import { AksiLepasTautanWali } from "@/components/aksi-lepas-tautan-wali";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FormTambahTautanWali } from "@/components/form-tambah-tautan-wali";
+import { FormTambahWali } from "@/components/form-tambah-wali";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { RiwayatStatusWali } from "@/components/riwayat-status-wali";
 import { SaklarAksesPortalWali } from "@/components/saklar-akses-portal-wali";
@@ -29,10 +30,12 @@ function ringkasPenautan(daftar: AkunWali[]) {
 
 /**
  * Daftar akun wali beserta murid yang tertaut padanya, dibaca dari basis data
- * lewat `listAkunWali()`. Taulannya ditambah lewat formulir di atas daftar,
- * yang mengirim ke `POST /api/wali/:id/murid` lalu menyegarkan halaman ini.
- * Pencabutan satu tautan dan saklar akses portal dikerjakan komponen klien di
- * dalam tiap kartu, yang menyegarkan halaman yang sama.
+ * lewat `listAkunWali()`. Di atas daftar ada dua formulir berdampingan: yang
+ * kiri membuat akun wali baru lewat `POST /api/wali`, yang kanan menautkan
+ * akun yang sudah ada ke murid lewat `POST /api/wali/:id/murid`; keduanya
+ * menyegarkan halaman ini sesudah tersimpan. Pencabutan satu tautan dan saklar
+ * akses portal dikerjakan komponen klien di dalam tiap kartu, yang menyegarkan
+ * halaman yang sama.
  */
 export function DaftarWali({ daftar, daftarMurid }: DaftarWaliProps) {
   const ringkas = ringkasPenautan(daftar);
@@ -50,7 +53,7 @@ export function DaftarWali({ daftar, daftarMurid }: DaftarWaliProps) {
 
       <p className="mb-3 text-sm font-medium text-primary">Pengaturan Bimbel</p>
       <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-        Penautan Akun Wali
+        Pengelolaan Akun Wali
       </h1>
       <p className="mt-3 text-base leading-7 text-muted-foreground">
         {daftar.length > 0
@@ -58,11 +61,33 @@ export function DaftarWali({ daftar, daftarMurid }: DaftarWaliProps) {
           : "Belum ada akun wali yang terdaftar."}
       </p>
 
-      {daftar.length > 0 && (
-        <div className="mt-6">
-          <FormTambahTautanWali daftar={daftar} daftarMurid={daftarMurid} />
-        </div>
-      )}
+      {/*
+        Dua formulir berdampingan: membuat akun wali, lalu menautkan akun yang
+        sudah ada ke murid. Di layar sempit keduanya bertumpuk supaya isiannya
+        tetap lega, dan formulir penautan baru muncul kalau akun walinya ada.
+      */}
+      <div className="mt-6 grid items-start gap-6 lg:grid-cols-2">
+        <section aria-labelledby="judul-tambah-wali">
+          <h2 id="judul-tambah-wali" className="sr-only">
+            Tambah akun wali
+          </h2>
+          <FormTambahWali daftar={daftar} />
+        </section>
+
+        <section aria-labelledby="judul-tautan-wali" className="space-y-3">
+          <h2 id="judul-tautan-wali" className="sr-only">
+            Tautan wali–murid
+          </h2>
+          {daftar.length > 0 ? (
+            <FormTambahTautanWali daftar={daftar} daftarMurid={daftarMurid} />
+          ) : (
+            <p className="text-sm leading-6 text-muted-foreground">
+              Penautan anak terbuka setelah ada akun wali. Buat akun walinya
+              dulu di formulir sebelah.
+            </p>
+          )}
+        </section>
+      </div>
 
       {daftar.length === 0 ? (
         <PesanKosong
