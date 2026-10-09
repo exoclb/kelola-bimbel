@@ -1,7 +1,7 @@
 import "server-only";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { notificationPreferences, notifications } from "@/db/schema";
+import { notificationPreferences, notifications, user } from "@/db/schema";
 import { JENIS_NOTIFIKASI, type JenisNotifikasi } from "@/lib/notifikasi";
 import type {
   ListNotifikasiInput,
@@ -63,6 +63,31 @@ export async function penerimaNotifikasi(
 
   const diatur = new Map(pilihan.map((baris) => [baris.userId, baris.aktif]));
   return kandidat.filter((id) => diatur.get(id) ?? bawaan);
+}
+
+/**
+ * Penerima pemberitahuan operasional bimbel: akun berperan owner atau admin.
+ * Peran guru tidak ikut karena pemberitahuan ini menyangkut keputusan pemilik
+ * bimbel. Preferensi masing-masing akun tetap disaring terpisah oleh
+ * `penerimaNotifikasi`, jadi di sini yang ditentukan hanya siapa yang berhak
+ * menerimanya sama sekali.
+ */
+export async function penerimaPemilik(
+  eksekutor: EksekutorNotifikasi = db,
+): Promise<string[]> {
+  const baris = await eksekutor
+    .select({ id: user.id })
+    .from(user)
+    .where(or(ilike(user.role, "%owner%"), ilike(user.role, "%admin%")));
+  return baris.map((pemilik) => pemilik.id);
+}
+
+/**
+ * Kunci anti-duplikasi notifikasi laporan bulanan: satu periode hanya boleh
+ * memberitahu akun yang sama sekali, walau laporannya dibuka berulang kali.
+ */
+export function kunciLaporanBulanan(periode: string) {
+  return `laporan_bulanan:${periode}`;
 }
 
 /**

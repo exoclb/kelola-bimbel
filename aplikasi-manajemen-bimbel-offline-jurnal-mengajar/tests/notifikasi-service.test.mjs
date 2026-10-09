@@ -33,7 +33,7 @@ registerHooks({
   },
 });
 
-const { buatNotifikasi } =
+const { buatNotifikasi, kunciLaporanBulanan, penerimaPemilik } =
   await import("../src/services/notifikasi.service.ts");
 const { db } = await import("../src/db/index.ts");
 
@@ -49,13 +49,12 @@ async function bersihkan() {
   await pool.query('DELETE FROM "user" WHERE email LIKE $1', [`${PENANDA}%`]);
 }
 
-async function buatAkun(nama) {
+async function buatAkun(nama, role = "guru") {
   const id = randomUUID();
-  await pool.query('INSERT INTO "user" (id, name, email) VALUES ($1, $2, $3)', [
-    id,
-    nama,
-    `${PENANDA}-${id}@example.test`,
-  ]);
+  await pool.query(
+    'INSERT INTO "user" (id, name, email, role) VALUES ($1, $2, $3, $4)',
+    [id, nama, `${PENANDA}-${id}@example.test`, role],
+  );
   return id;
 }
 
@@ -67,6 +66,46 @@ async function jumlahNotifikasi(userId, tipe) {
   );
   return rows[0].jumlah;
 }
+
+/**
+ * Pemberitahuan operasional ditujukan ke akun pemilik/admin saja, termasuk akun
+ * yang perannya ditulis sebagai daftar dipisah koma. Guru, wali, dan akun tanpa
+ * peran pemilik tidak ikut.
+ */
+test("penerimaPemilik hanya mengembalikan akun owner/admin", async () => {
+  await bersihkan();
+  const owner = await buatAkun("Owner Penerima", "owner");
+  const admin = await buatAkun("Admin Penerima", "admin");
+  const keduanya = await buatAkun("Owner Admin Penerima", "owner,admin");
+  const guru = await buatAkun("Guru Penerima");
+  const wali = await buatAkun("Wali Penerima", "orang-tua");
+
+  const penerima = await penerimaPemilik();
+  for (const id of [owner, admin, keduanya])
+    assert.ok(penerima.includes(id), `${id} seharusnya menerima`);
+  assert.ok(!penerima.includes(guru));
+  assert.ok(!penerima.includes(wali));
+  assert.equal(
+    new Set(penerima).size,
+    penerima.length,
+    "tidak ada yang kembar",
+  );
+
+  await bersihkan();
+});
+
+/**
+ * Kunci laporan bulanan ditentukan periode, bukan waktu pengiriman: membuka
+ * laporan yang sama dua kali adalah satu peristiwa, periode lain bukan.
+ */
+test("kunciLaporanBulanan satu per periode", () => {
+  assert.equal(kunciLaporanBulanan("2097-05"), "laporan_bulanan:2097-05");
+  assert.equal(kunciLaporanBulanan("2097-05"), kunciLaporanBulanan("2097-05"));
+  assert.notEqual(
+    kunciLaporanBulanan("2097-05"),
+    kunciLaporanBulanan("2097-06"),
+  );
+});
 
 /**
  * Inti idempotensi: kunci peristiwa yang sama tidak pernah menghasilkan baris

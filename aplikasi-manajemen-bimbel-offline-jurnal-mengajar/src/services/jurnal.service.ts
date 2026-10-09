@@ -1,16 +1,5 @@
 import "server-only";
-import {
-  and,
-  asc,
-  desc,
-  eq,
-  gte,
-  ilike,
-  inArray,
-  lte,
-  or,
-  sql,
-} from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   classes,
@@ -24,7 +13,10 @@ import {
 } from "@/db/schema";
 import { formatJam } from "@/lib/jurnal";
 import { tanggalISO } from "@/lib/tanggal";
-import { penerimaNotifikasi } from "@/services/notifikasi.service";
+import {
+  penerimaNotifikasi,
+  penerimaPemilik,
+} from "@/services/notifikasi.service";
 import type {
   KoreksiJurnalInput,
   ListJurnalInput,
@@ -154,16 +146,9 @@ export async function simpanJurnal(
     .where(eq(user.id, guruId))
     .limit(1);
 
-  // Penerima dihitung sebelum transaksi: peran pemilik/admin disaring lagi oleh
+  // Penerima dihitung sebelum transaksi: akun pemilik/admin disaring lagi oleh
   // pengaturan notifikasi masing-masing akun.
-  const calonPenerima = sudahAda
-    ? []
-    : (
-        await db
-          .select({ id: user.id })
-          .from(user)
-          .where(or(ilike(user.role, "%owner%"), ilike(user.role, "%admin%")))
-      ).map((pemilik) => pemilik.id);
+  const calonPenerima = sudahAda ? [] : await penerimaPemilik();
   const penerima = await penerimaNotifikasi("jurnal_baru", calonPenerima);
 
   return db.transaction(async (tx) => {
