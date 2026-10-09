@@ -27,6 +27,13 @@ const fields = {
 };
 
 /**
+ * Koneksi basis data biasa atau transaksi yang sedang berjalan. Pemicu yang
+ * harus ikut batal bersama transaksi induknya mengirim `tx`-nya ke sini.
+ */
+type EksekutorNotifikasi =
+  typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/**
  * Penerima yang masih mau menerima satu jenis notifikasi. Akun yang belum
  * pernah mengubah pengaturannya mengikuti `bawaanAktif` jenis itu — jadi jenis
  * yang bawaannya mati (`laporan_bulanan`) hanya terkirim setelah dinyalakan.
@@ -34,13 +41,14 @@ const fields = {
 export async function penerimaNotifikasi(
   jenis: JenisNotifikasi,
   kandidatIds: string[],
+  eksekutor: EksekutorNotifikasi = db,
 ): Promise<string[]> {
   const kandidat = [...new Set(kandidatIds)];
   if (kandidat.length === 0) return [];
 
   const bawaan =
     JENIS_NOTIFIKASI.find((item) => item.jenis === jenis)?.bawaanAktif ?? true;
-  const pilihan = await db
+  const pilihan = await eksekutor
     .select({
       userId: notificationPreferences.userId,
       aktif: notificationPreferences.aktif,
@@ -58,23 +66,79 @@ export async function penerimaNotifikasi(
 }
 
 /**
- * Menulis satu notifikasi untuk tiap penerima yang masih mau menerimanya.
- * Dipakai alur internal aplikasi (jurnal baru masuk, gaji ditandai dibayar),
- * bukan dari klien. Mengembalikan jumlah notifikasi yang benar-benar dibuat.
+ * Penulis tunggal tabel `notifications`. `kunci` berisi identitas peristiwa;
+ * kalau `null`, baris selalu ditulis (dipakai pemanggilan yang tidak punya
+ * peristiwa yang bisa diulang). Kalau ada kunci, baris yang sudah ada dilewati
+ * sehingga aksi yang diulang atau dua permintaan bersamaan tidak menggandakan
+ * notifikasi untuk akun yang sama.
+ */
+async function tulisNotifikasi(
+  jenis: JenisNotifikasi,
+  pesan: string,
+  kandidatIds: string[],
+  kunci: string | null,
+  eksekutor: EksekutorNotifikasi,
+): Promise<number> {
+  const penerima = await penerimaNotifikasi(jenis, kandidatIds, eksekutor);
+  if (penerima.length === 0) return 0;
+
+  const baris = penerima.map((userId) => ({
+    userId,
+    tipe: jenis,
+    pesan,
+    kunci,
+  }));
+  const dibuat =
+    kunci === null
+      ? await eksekutor
+          .insert(notifications)
+          .values(baris)
+          .returning({ id: notifications.id })
+      : await eksekutor
+          .insert(notifications)
+          .values(baris)
+          .onConflictDoNothing({
+            target: [
+              notifications.userId,
+              notifications.tipe,
+              notifications.kunci,
+            ],
+          })
+          .returning({ id: notifications.id });
+  return dibuat.length;
+}
+
+/**
+ * Menulis satu notifikasi untuk tiap penerima yang masih mau menerimanya,
+ * tanpa kunci peristiwa. Dipakai alur yang sudah ada; alur yang aksinya bisa
+ * diulang (pemicu notifikasi) memakai `buatNotifikasi` supaya tepat satu baris
+ * per peristiwa. Mengembalikan jumlah notifikasi yang benar-benar dibuat.
  */
 export async function catatNotifikasi(
   jenis: JenisNotifikasi,
   pesan: string,
   kandidatIds: string[],
 ): Promise<number> {
-  const penerima = await penerimaNotifikasi(jenis, kandidatIds);
-  if (penerima.length === 0) return 0;
+  return tulisNotifikasi(jenis, pesan, kandidatIds, null, db);
+}
 
-  const dibuat = await db
-    .insert(notifications)
-    .values(penerima.map((userId) => ({ userId, tipe: jenis, pesan })))
-    .returning({ id: notifications.id });
-  return dibuat.length;
+/**
+ * Membuat notifikasi untuk satu peristiwa, idempoten: `kunci` adalah identitas
+ * peristiwanya (mis. id jurnal, atau `"<guruId>:<periode>"` untuk honor satu
+ * periode) dan penjaganya indeks unik `notifications_user_tipe_kunci_idx`.
+ * Peristiwa yang sama karena itu tidak pernah menghasilkan baris kedua untuk
+ * akun yang sama, walau aksinya diulang atau dua permintaan berjalan
+ * bersamaan. Penerima tetap disaring preferensi notifikasi masing-masing akun.
+ * Mengembalikan jumlah baris yang benar-benar dibuat (0 kalau sudah ada).
+ */
+export async function buatNotifikasi(
+  jenis: JenisNotifikasi,
+  pesan: string,
+  kandidatIds: string[],
+  kunci: string,
+  eksekutor: EksekutorNotifikasi = db,
+): Promise<number> {
+  return tulisNotifikasi(jenis, pesan, kandidatIds, kunci, eksekutor);
 }
 
 /** Notifikasi milik satu akun, terbaru lebih dulu, dengan jumlah belum dibaca. */

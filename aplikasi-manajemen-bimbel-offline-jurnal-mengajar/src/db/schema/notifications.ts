@@ -6,6 +6,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -23,6 +24,12 @@ export const notifications = pgTable(
       .references(() => user.id, { onDelete: "cascade" }),
     tipe: varchar("tipe", { length: 40 }).notNull(),
     pesan: text("pesan").notNull(),
+    // Identitas peristiwa yang memicu notifikasi (mis. id jurnal, atau
+    // "<guruId>:<periode>" untuk honor satu periode). Satu peristiwa hanya
+    // boleh menghasilkan satu baris per akun. Bernilai `null` untuk notifikasi
+    // yang dibuat tanpa kunci — indeks unik mengabaikan nilai kosong, jadi
+    // baris lama dan pemanggilan lama tidak pernah bentrok.
+    kunci: varchar("kunci", { length: 160 }),
     sudahDibaca: boolean("sudah_dibaca").default(false).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
@@ -38,6 +45,13 @@ export const notifications = pgTable(
     index("notifications_user_created_idx").on(
       table.userId,
       table.createdAt.desc(),
+    ),
+    // Penjaga idempotensi: satu peristiwa (`kunci`) satu jenis hanya sekali
+    // untuk tiap akun, walau aksinya diulang atau berjalan bersamaan.
+    uniqueIndex("notifications_user_tipe_kunci_idx").on(
+      table.userId,
+      table.tipe,
+      table.kunci,
     ),
     // Pemberitahuan tanpa tipe atau pesan tidak bisa ditampilkan maupun
     // dikelompokkan, jadi tidak boleh masuk sama sekali.
