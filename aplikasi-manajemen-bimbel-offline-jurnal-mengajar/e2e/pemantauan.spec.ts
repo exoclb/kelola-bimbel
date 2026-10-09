@@ -599,12 +599,14 @@ test("preferensi notifikasi tersimpan per akun", async ({ request }) => {
   const nilai = (daftar: { jenis: string; aktif: boolean }[], jenis: string) =>
     daftar.find((item) => item.jenis === jenis)?.aktif;
 
-  // Semua jenis yang dikenal aplikasi muncul, lengkap dengan judulnya.
+  // Semua jenis yang dikenal aplikasi muncul, lengkap dengan judulnya, dan
+  // urutannya mengikuti katalog `JENIS_NOTIFIKASI`.
   const awal = await ambil();
   expect(awal.map((item) => item.jenis)).toEqual([
     "jurnal_baru",
     "kelas_kosong",
     "gaji_dibayar",
+    "rekap_honor",
     "laporan_bulanan",
   ]);
 
