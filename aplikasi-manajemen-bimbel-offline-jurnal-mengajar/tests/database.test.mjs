@@ -1232,3 +1232,62 @@ test("seeder kelas menunjuk cabang terdaftar dan aman dijalankan ulang", async (
     ]);
   }
 });
+
+/**
+ * Migrasi modul cabang (`0027_tabel_cabang.sql` sampai
+ * `0030_indeks_cabang_kelas.sql`) aman dijalankan ulang di basis data yang
+ * sudah berisi data: baris cabang dan kelasnya tetap utuh, dan relasinya masih
+ * menolak cabang yang tidak terdaftar.
+ */
+test("migrasi cabang aman dijalankan ulang dengan data yang sudah ada", async () => {
+  const url = process.env.STARTER_TEST_DATABASE_URL;
+  await siapkanJurnal();
+  await pastikanCabang("Cabang Migrasi Uji");
+  const kelas = await dbJurnal.query(
+    "INSERT INTO classes (nama_kelas, cabang) VALUES ($1, $2) RETURNING id",
+    ["Kelas Migrasi Uji", "Cabang Migrasi Uji"],
+  );
+
+  const hasil = spawnSync(process.execPath, ["scripts/migrate.mjs"], {
+    cwd: root,
+    env: {
+      ...process.env,
+      DATABASE_URL: url,
+      MIGRATION_DATABASE_URL: url,
+    },
+    encoding: "utf8",
+  });
+  assert.equal(hasil.status, 0, hasil.stderr);
+
+  const { rows: cabang } = await dbJurnal.query(
+    "SELECT nama, alamat, kontak, status_aktif FROM cabang WHERE nama = $1",
+    ["Cabang Migrasi Uji"],
+  );
+  assert.deepEqual(cabang, [
+    {
+      nama: "Cabang Migrasi Uji",
+      alamat: "Jl. Uji No. 1",
+      kontak: "0800-0000",
+      status_aktif: true,
+    },
+  ]);
+
+  const { rows: barisKelas } = await dbJurnal.query(
+    "SELECT nama_kelas, cabang FROM classes WHERE id = $1",
+    [kelas.rows[0].id],
+  );
+  assert.deepEqual(barisKelas, [
+    { nama_kelas: "Kelas Migrasi Uji", cabang: "Cabang Migrasi Uji" },
+  ]);
+
+  const asing = await ditolak(
+    "INSERT INTO classes (nama_kelas, cabang) VALUES ($1, $2)",
+    ["Kelas Cabang Asing Uji", "Cabang Entah Uji"],
+  );
+  assert.equal(asing.code, "23503");
+
+  await dbJurnal.query("DELETE FROM classes WHERE id = $1", [kelas.rows[0].id]);
+  await dbJurnal.query("DELETE FROM cabang WHERE nama = $1", [
+    "Cabang Migrasi Uji",
+  ]);
+});
