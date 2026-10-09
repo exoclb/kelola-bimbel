@@ -244,6 +244,72 @@ test("hasil seeder cabang dan kelas konsisten dengan data contoh", async () => {
   ]);
 });
 
+/**
+ * Murid dihitung sekali walau aktif di dua kelas cabang yang sama, penempatan
+ * yang sudah selesai tidak dihitung, dan jurnal dihitung per sesi.
+ */
+test("ringkasanPerCabang menghitung murid unik yang masih aktif", async () => {
+  await bersihkan();
+
+  const cabang = `${PENANDA} Unik`;
+  await pool.query(
+    "INSERT INTO cabang (nama, alamat, kontak) VALUES ($1, 'Jl. Uji No. 4', '0800-4')",
+    [cabang],
+  );
+  await pool.query(
+    `INSERT INTO "user" (id, name, email)
+     VALUES ($1, 'Guru Ringkasan', 'guru-ringkasan-uji@example.test')
+     ON CONFLICT (id) DO NOTHING`,
+    [GURU],
+  );
+
+  const { rows: kelas } = await pool.query(
+    "INSERT INTO classes (nama_kelas, cabang) VALUES ($1, $2), ($3, $4) RETURNING id",
+    [`${PENANDA} Unik A`, cabang, `${PENANDA} Unik B`, cabang],
+  );
+  const murid = async (nama) =>
+    (
+      await pool.query("INSERT INTO students (nama) VALUES ($1) RETURNING id", [
+        nama,
+      ])
+    ).rows[0].id;
+  const aktif = await murid(`${PENANDA} Murid Aktif`);
+  const selesai = await murid(`${PENANDA} Murid Selesai`);
+
+  // Satu murid aktif di dua kelas cabang yang sama.
+  await pool.query(
+    "INSERT INTO student_enrollments (student_id, class_id, tanggal_mulai) VALUES ($1, $2, '2026-01-05'), ($1, $3, '2026-01-05')",
+    [aktif, kelas[0].id, kelas[1].id],
+  );
+  // Penempatan lama yang sudah selesai tidak dihitung.
+  await pool.query(
+    "INSERT INTO student_enrollments (student_id, class_id, tanggal_mulai, status) VALUES ($1, $2, '2025-01-05', 'selesai')",
+    [selesai, kelas[0].id],
+  );
+
+  // Dua jurnal: satu di tiap kelas.
+  for (const [urutan, barisKelas] of kelas.entries())
+    await pool.query(
+      `INSERT INTO teaching_journals (guru_id, class_id, tanggal, materi, jam_mengajar)
+       VALUES ($1, $2, $3, $4, 1.5)`,
+      [GURU, barisKelas.id, `2026-01-0${urutan + 7}`, `Materi unik ${urutan}`],
+    );
+
+  const baris = (await ringkasanPerCabang()).find(
+    (satu) => satu.nama === cabang,
+  );
+  assert.deepEqual(baris, {
+    nama: cabang,
+    statusAktif: true,
+    jumlahKelas: 2,
+    jumlahMurid: 1,
+    jurnalTerisi: 2,
+    belumAdaJurnal: 0,
+  });
+
+  await bersihkan();
+});
+
 test.after(async () => {
   await bersihkan();
   await pool.query('DELETE FROM "user" WHERE id = $1', [GURU]);
