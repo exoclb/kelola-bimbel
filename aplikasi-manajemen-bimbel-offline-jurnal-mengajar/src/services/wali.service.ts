@@ -1,9 +1,12 @@
 import "server-only";
+import { generateRandomString, hashPassword } from "better-auth/crypto";
 import { and, asc, eq, ilike, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { students, user, waliMurid } from "@/db/schema";
+import { account, students, user, waliMurid } from "@/db/schema";
+import { pelanggaranUnik } from "@/lib/db-error";
 import { rapikanEmail, type AkunBeremail } from "@/lib/email-akun";
 import { peranDariRole } from "@/lib/peran";
+import type { TambahWaliInput } from "@/validators/wali";
 
 // Layanan pengelolaan akun wali dan penautannya ke murid.
 //
@@ -307,6 +310,11 @@ export type HasilAksesPortal =
 // dinonaktifkan lewat pengaturan guru.
 const ALASAN_PORTAL_DIMATIKAN = "Akses portal wali dimatikan";
 
+// Peran akun wali di kolom `role`. Nilainya sama dengan yang dipakai seeder
+// (`scripts/seed-wali.mjs`) dan yang dicari `listAkunWali`, jadi wali yang baru
+// dibuat lewat aplikasi langsung terbaca sebagai akun wali.
+const PERAN_WALI = "orang-tua";
+
 /**
  * Menyalakan atau mematikan akses portal satu akun wali (lihat catatan
  * `banned` di atas). Mematikan berarti akunnya tidak bisa masuk lagi dan sesi
@@ -337,4 +345,75 @@ export async function setAksesPortal(
   const wali = await getAkunWali(waliId);
   if (!wali) return { status: "wali_tidak_ada" };
   return { status: "tersimpan", berubah: true, wali };
+}
+
+export type HasilBuatAkunWali =
+  { status: "tersimpan"; wali: AkunWali } | { status: "email_sudah_dipakai" };
+
+/**
+ * Membuat satu akun wali baru beserta akun masuknya.
+ *
+ * Barisnya ditulis langsung ke `user` + `account`, sama seperti `tambahGuru` di
+ * `pengaturan.service.ts`, bukan lewat `signUpEmail`: alur itu ikut membuat
+ * sesi dan menulis cookie sesi akun baru ke respons endpoint ini, sehingga
+ * owner yang menambah wali bisa tanpa sengaja masuk sebagai wali itu. Sandi
+ * awal ditetapkan owner dan di-hash memakai `hashPassword` Better Auth — aturan
+ * dan formatnya sama dengan pendaftaran biasa — dan sandinya tidak pernah
+ * dikembalikan ke pemanggil maupun dicetak.
+ *
+ * Email yang sudah terdaftar ditolak sebelum baris apa pun dibuat. Pemeriksaan
+ * lebih dulu (`emailSudahTerdaftar`, tak peka huruf besar-kecil dan spasi tepi)
+ * menangkap alamat yang sama dengan penulisan berbeda, sedangkan pelanggaran
+ * indeks unik `user.email` ditangkap sebagai jawaban yang sama supaya dua
+ * permintaan yang berbarengan tidak menghasilkan akun kembar.
+ *
+ * `aksesPortal: false` disimpan sebagai `banned` — sama dengan `setAksesPortal`
+ * di berkas ini dan `scripts/seed-wali.mjs`: akunnya ada dan bisa ditautkan ke
+ * murid, tetapi belum bisa masuk sampai portalnya dinyalakan.
+ */
+export async function buatAkunWali(
+  input: TambahWaliInput,
+): Promise<HasilBuatAkunWali> {
+  const nama = input.nama.trim();
+  const email = input.email.trim();
+  if (await emailSudahTerdaftar(email))
+    return { status: "email_sudah_dipakai" };
+
+  // Di-hash sebelum transaksi supaya kunci kata sandi (yang paling lama) tidak
+  // menahan transaksi basis datanya.
+  const sandi = await hashPassword(input.sandi);
+
+  try {
+    const waliId = await db.transaction(async (tx) => {
+      const id = generateRandomString(32);
+      await tx.insert(user).values({
+        id,
+        name: nama,
+        email,
+        emailVerified: false,
+        role: PERAN_WALI,
+        banned: !input.aksesPortal,
+        banReason: input.aksesPortal ? null : ALASAN_PORTAL_DIMATIKAN,
+        banExpires: null,
+      });
+
+      await tx.insert(account).values({
+        id: generateRandomString(32),
+        accountId: id,
+        providerId: "credential",
+        userId: id,
+        password: sandi,
+      });
+
+      return id;
+    });
+
+    const wali = await getAkunWali(waliId);
+    if (!wali) throw new Error("Akun wali gagal dibuat.");
+    return { status: "tersimpan", wali };
+  } catch (error) {
+    // Email unik dijaga indeks basis data; tabrakan tetap berarti email terpakai.
+    if (pelanggaranUnik(error)) return { status: "email_sudah_dipakai" };
+    throw error;
+  }
 }

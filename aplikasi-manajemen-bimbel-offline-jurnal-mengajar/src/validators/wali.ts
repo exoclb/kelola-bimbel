@@ -32,3 +32,26 @@ export const ubahAksesWaliSchema = z
   .strict();
 
 export type UbahAksesWaliInput = z.infer<typeof ubahAksesWaliSchema>;
+
+// Isi `POST /api/wali`: akun wali baru. Peran dan kolom akunnya tidak pernah
+// datang dari isi permintaan (layanan yang menetapkan `orang-tua`), dan sandi
+// awal yang ditetapkan owner tidak pernah dikembalikan ke klien. Status portal
+// dikirim sekalian supaya akun yang belum boleh masuk tidak perlu diubah lagi
+// setelah dibuat; field lain ditolak.
+export const tambahWaliSchema = z
+  .object({
+    nama: z
+      .string()
+      .trim()
+      .min(2, "Nama wali minimal 2 karakter.")
+      .max(120, "Nama wali maksimal 120 karakter."),
+    email: z.email("Email tidak sah.").max(254, "Email maksimal 254 karakter."),
+    sandi: z
+      .string()
+      .min(8, "Sandi minimal 8 karakter.")
+      .max(128, "Sandi maksimal 128 karakter."),
+    aksesPortal: z.boolean("Akses portal harus true atau false."),
+  })
+  .strict();
+
+export type TambahWaliInput = z.infer<typeof tambahWaliSchema>;

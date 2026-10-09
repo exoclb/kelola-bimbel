@@ -23,7 +23,10 @@ test("email dirapikan sebelum dibandingkan", () => {
 });
 
 test("email yang sama persis dikenali sebagai duplikat", () => {
-  assert.equal(akunPemakaiEmail("ratna@bimbel.test", DAFTAR)?.nama, "Ibu Ratna");
+  assert.equal(
+    akunPemakaiEmail("ratna@bimbel.test", DAFTAR)?.nama,
+    "Ibu Ratna",
+  );
 });
 
 test("besar-kecil huruf dan spasi tepi tidak membuat email lolos", () => {
