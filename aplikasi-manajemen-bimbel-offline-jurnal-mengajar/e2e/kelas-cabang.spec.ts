@@ -1257,3 +1257,70 @@ test("panel ringkasan cabang menampilkan jumlah, cabang kosong, dan cabang nonak
     await db.end();
   }
 });
+
+/**
+ * Mengganti nama cabang lewat `PATCH /api/cabang/:id` ikut memindahkan kelas
+ * yang menunjuknya (relasi `on update cascade`), sedangkan nama yang sudah
+ * dipakai cabang lain ditolak tanpa mengubah apa pun.
+ */
+test("ganti nama cabang lewat API memindahkan kelasnya", async ({
+  request,
+}) => {
+  await jadikanOwner();
+  const penanda = randomUUID().slice(0, 8);
+  const awal = `Cabang Pindah ${penanda}`;
+  const baru = `Cabang Pindah Baru ${penanda}`;
+  const tetangga = `Cabang Pindah Tetangga ${penanda}`;
+  await siapkanCabang(awal, true);
+  await siapkanCabang(tetangga, true);
+
+  const db = await pool();
+  try {
+    const { rows: cabang } = await db.query<{ id: string }>(
+      "SELECT id FROM cabang WHERE nama = $1",
+      [awal],
+    );
+    const id = cabang[0].id;
+    const kelas = await db.query<{ id: string }>(
+      "INSERT INTO classes (nama_kelas, cabang) VALUES ($1, $2) RETURNING id",
+      [`Kelas Pindah ${penanda}`, awal],
+    );
+    const kelasId = kelas.rows[0].id;
+    await masukApi(request);
+
+    // Nama yang sudah dipakai cabang lain: ditolak, kelasnya tidak berpindah.
+    const ditolak = await request.patch(`/api/cabang/${id}`, {
+      headers,
+      data: { nama: tetangga },
+    });
+    expect(ditolak.status()).toBe(409);
+    expect((await ditolak.json()).error.code).toBe("NAMA_SUDAH_DIPAKAI");
+    const tetap = await db.query<{ cabang: string }>(
+      "SELECT cabang FROM classes WHERE id = $1",
+      [kelasId],
+    );
+    expect(tetap.rows[0].cabang).toBe(awal);
+
+    // Nama baru: kelasnya ikut pindah.
+    const sah = await request.patch(`/api/cabang/${id}`, {
+      headers,
+      data: { nama: baru },
+    });
+    expect(sah.status()).toBe(200);
+    expect((await sah.json()).data.nama).toBe(baru);
+    const pindah = await db.query<{ cabang: string }>(
+      "SELECT cabang FROM classes WHERE id = $1",
+      [kelasId],
+    );
+    expect(pindah.rows[0].cabang).toBe(baru);
+  } finally {
+    await db.query(
+      "DELETE FROM classes WHERE id IN (SELECT id FROM classes WHERE cabang = ANY($1))",
+      [[awal, baru]],
+    );
+    await db.query("DELETE FROM cabang WHERE nama = ANY($1)", [
+      [awal, baru, tetangga],
+    ]);
+    await db.end();
+  }
+});
