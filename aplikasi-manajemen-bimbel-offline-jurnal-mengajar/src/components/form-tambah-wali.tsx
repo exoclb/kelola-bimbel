@@ -2,7 +2,7 @@
 
 import { useId, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, UserPlus } from "lucide-react";
+import { AlertTriangle, CheckCircle2, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { IsianPilih, IsianTeks } from "@/components/isian-form";
-import { galatEmailKembar } from "@/lib/email-akun";
+import { galatEmailKembar, KODE_EMAIL_SUDAH_DIPAKAI } from "@/lib/email-akun";
 import type { AkunWali } from "@/services/wali.service";
 
 type Galat = {
@@ -42,11 +42,14 @@ const PANJANG_SANDI_MAKS = 128;
  * Baca galat dari jawaban `/api/wali`. Validator API mengirim pemeriksaan
  * per-isian di `error.details` (mis. nama kurang panjang), jadi pesan itu
  * dipakai lebih dulu supaya kesalahannya menempel di isian yang salah — bukan
- * sebagai pesan umum. `cadangan` untuk jawaban yang tidak berbentuk galat API.
+ * sebagai pesan umum. Kode galatnya (`error.code`) ikut dibaca supaya penolakan
+ * "email sudah terdaftar" dikenali dari sebabnya, bukan hanya dari status 409.
+ * `cadangan` untuk jawaban yang tidak berbentuk galat API.
  */
 async function galatApi(jawaban: Response, cadangan: string) {
   const isi = (await jawaban.json().catch(() => null)) as {
     error?: {
+      code?: string;
       message?: string;
       details?: { field?: string; message?: string }[];
     };
@@ -57,6 +60,7 @@ async function galatApi(jawaban: Response, cadangan: string) {
       : [],
   );
   return {
+    kode: isi?.error?.code,
     pesan: rincian[0]?.message ?? isi?.error?.message ?? cadangan,
     rincian,
   };
@@ -89,6 +93,10 @@ export function FormTambahWali({ daftar }: FormTambahWaliProps) {
   const [aksesPortal, setAksesPortal] = useState(true);
   const [galat, setGalat] = useState<Galat>({});
   const [galatUmum, setGalatUmum] = useState("");
+  // Alasan penolakan "email sudah terdaftar" yang tampil sebagai kotak peringatan
+  // di atas tombol: pesannya menyebut email yang bentrok, jadi owner tidak perlu
+  // menebak kenapa akun barunya tidak dibuat.
+  const [penolakanEmail, setPenolakanEmail] = useState("");
   const [pending, setPending] = useState(false);
   const [tersimpan, setTersimpan] = useState<WaliTersimpan | null>(null);
 
@@ -121,7 +129,10 @@ export function FormTambahWali({ daftar }: FormTambahWaliProps) {
       // sini dan tidak pernah memanggil `/api/wali`, jadi tidak ada akun kembar
       // yang ikut terbentuk karena percobaan yang gagal.
       const galatEmail = periksaEmail(emailRapi);
-      if (galatEmail) masalah.email = galatEmail;
+      if (galatEmail) {
+        masalah.email = galatEmail;
+        setPenolakanEmail(galatEmail);
+      }
     }
     if (sandi.length < PANJANG_SANDI_MIN) {
       masalah.sandi = `Sandi minimal ${PANJANG_SANDI_MIN} huruf.`;
@@ -131,6 +142,9 @@ export function FormTambahWali({ daftar }: FormTambahWaliProps) {
 
     if (Object.keys(masalah).length > 0) {
       setGalat(masalah);
+      // Isian selain email dikosongkan peringatannya: yang sedang dibicarakan
+      // kotak peringatan adalah emailnya.
+      if (!masalah.email) setPenolakanEmail("");
       return;
     }
 
@@ -149,14 +163,16 @@ export function FormTambahWali({ daftar }: FormTambahWaliProps) {
       });
 
       if (!jawaban.ok) {
-        const { pesan, rincian } = await galatApi(
+        const { kode, pesan, rincian } = await galatApi(
           jawaban,
           `Akun wali ${namaRapi} belum bisa dibuat. Coba lagi sebentar lagi.`,
         );
-        // Email kembar dijawab 409 supaya pesannya menempel di isian email,
+        // Email kembar dijawab 409 dengan kode `EMAIL_SUDAH_DIPAKAI` supaya
+        // pesannya menempel di isian email sekaligus muncul di kotak penolakan —
         // bukan sebagai galat umum di bawah formulir.
-        if (jawaban.status === 409) {
+        if (jawaban.status === 409 || kode === KODE_EMAIL_SUDAH_DIPAKAI) {
           setGalat({ email: pesan });
+          setPenolakanEmail(pesan);
         } else if (rincian.length > 0) {
           const perIsian: Galat = {};
           const sisa: string[] = [];
@@ -184,6 +200,7 @@ export function FormTambahWali({ daftar }: FormTambahWaliProps) {
       setSandi("");
       setAksesPortal(true);
       setGalat({});
+      setPenolakanEmail("");
       // Daftar akun di halaman ini datang dari server, jadi daftarnya dibaca
       // ulang supaya akun baru langsung muncul dan bisa ditautkan.
       router.refresh();
@@ -199,6 +216,7 @@ export function FormTambahWali({ daftar }: FormTambahWaliProps) {
   function tambahLagi() {
     setTersimpan(null);
     setGalatUmum("");
+    setPenolakanEmail("");
   }
 
   if (tersimpan) {
@@ -294,7 +312,10 @@ export function FormTambahWali({ daftar }: FormTambahWaliProps) {
               value={email}
               error={galat.email}
               onChange={(event) => {
+                // Alamat yang sedang diperbaiki tidak lagi dianggap ditolak:
+                // kotak peringatannya hilang begitu emailnya diubah.
                 setEmail(event.target.value);
+                setPenolakanEmail("");
                 setGalat((sebelumnya) => ({ ...sebelumnya, email: undefined }));
               }}
               onBlur={(event) => {
@@ -345,6 +366,30 @@ export function FormTambahWali({ daftar }: FormTambahWaliProps) {
             </p>
           )}
 
+          {/*
+            Penolakan email yang sudah terdaftar dibaca dua lapis: pesannya
+            menempel di isian email (isi `galat.email`) dan sebabnya diulang di
+            sini bersama langkah berikutnya, karena solusinya bukan di formulir
+            ini melainkan menautkan akun yang sudah ada.
+          */}
+          {penolakanEmail && (
+            <div
+              role="alert"
+              className="space-y-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm leading-6 text-destructive"
+            >
+              <p className="flex items-center gap-2 font-medium">
+                <AlertTriangle className="size-4" aria-hidden="true" />
+                Email sudah terdaftar
+              </p>
+              <p>{penolakanEmail}</p>
+              <p>
+                Akun wali barunya tidak dibuat. Pakai email lain, atau tautkan
+                akun wali yang sudah terdaftar ke murid lewat formulir penautan
+                di sebelah.
+              </p>
+            </div>
+          )}
+
           <div className="flex flex-wrap items-center gap-2">
             <Button type="submit" size="sm" disabled={pending}>
               <UserPlus aria-hidden="true" />
@@ -362,6 +407,7 @@ export function FormTambahWali({ daftar }: FormTambahWaliProps) {
                 setAksesPortal(true);
                 setGalat({});
                 setGalatUmum("");
+                setPenolakanEmail("");
               }}
             >
               Kosongkan

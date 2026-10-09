@@ -1,8 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
   akunPemakaiEmail,
   galatEmailKembar,
+  KODE_EMAIL_SUDAH_DIPAKAI,
   pesanEmailKembar,
   rapikanEmail,
 } from "../src/lib/email-akun.ts";
@@ -63,4 +65,14 @@ test("alasan penolakan menyebut email dan akun pemakainya", () => {
 
 test("email bebas tanpa catatan duplikat", () => {
   assert.equal(galatEmailKembar("wali-baru@bimbel.test", DAFTAR), undefined);
+});
+
+// Kalau kode ini berbeda dari jawaban API, penolakan email dari server tidak
+// lagi dikenali formulir sebagai "email sudah terdaftar".
+test("kode penolakan email sama dengan yang dipakai API akun", () => {
+  const ruteAkun = readFileSync(
+    new URL("../src/app/api/akun/route.ts", import.meta.url),
+    "utf8",
+  );
+  assert.match(ruteAkun, new RegExp(KODE_EMAIL_SUDAH_DIPAKAI));
 });

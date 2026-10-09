@@ -36,11 +36,19 @@ export function akunPemakaiEmail<T extends AkunBeremail>(
 }
 
 /**
- * Alasan penolakan yang dibaca owner di bawah isian email: menyebut email yang
- * bentrok dan akun pemakainya, supaya jelas kenapa akun barunya tidak dibuat.
+ * Kode galat API untuk alamat yang sudah dipakai akun lain; `src/app/api/akun`
+ * memakai kode yang sama untuk penolakan email unik.
+ */
+export const KODE_EMAIL_SUDAH_DIPAKAI = "EMAIL_SUDAH_DIPAKAI";
+
+/**
+ * Sebab penolakan yang dibaca owner di bawah isian email: menyebut email yang
+ * bentrok beserta akun pemakainya. Langkah berikutnya (pakai email lain atau
+ * tautkan akun yang sudah ada) ditambahkan formulir, karena hanya di sana
+ * diketahui ada formulir penautan di sebelahnya.
  */
 export function pesanEmailKembar(email: string, pemakai: AkunBeremail): string {
-  return `Email ${rapikanEmail(email)} sudah dipakai akun ${pemakai.nama} (${pemakai.email}). Pakai email lain, atau tautkan akun yang sudah ada ke murid lewat formulir di sebelah.`;
+  return `Email ${rapikanEmail(email)} sudah dipakai akun ${pemakai.nama} (${pemakai.email}).`;
 }
 
 /**
