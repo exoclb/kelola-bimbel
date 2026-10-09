@@ -1420,3 +1420,38 @@ test("halaman cabang hanya untuk owner", async ({ page }) => {
   await expect(page.getByText(/This page isn.t here/)).toBeVisible();
   await aturPeran("owner");
 });
+
+/**
+ * Saklar status cabang tidak mengirim dua permintaan saat diklik dua kali:
+ * tombolnya dinonaktifkan selama permintaan berjalan, jadi statusnya berubah
+ * sekali (bukan kembali seperti semula).
+ */
+test("saklar status cabang tidak terkirim dobel", async ({ page }) => {
+  await jadikanOwner();
+  const penanda = randomUUID().slice(0, 8);
+  const nama = `Cabang Dobel ${penanda}`;
+  await siapkanCabang(nama, true);
+
+  const db = await pool();
+  try {
+    await masukPeramban(page);
+    await page.goto("/app/cabang");
+    const kartu = page.locator("li").filter({
+      has: page.getByRole("button", { name: new RegExp(`cabang ${nama}$`) }),
+    });
+
+    await kartu
+      .getByRole("button", { name: `Nonaktifkan cabang ${nama}` })
+      .dblclick();
+
+    await expect(kartu.getByText("Nonaktif", { exact: true })).toBeVisible();
+    const { rows } = await db.query<{ status_aktif: boolean }>(
+      "SELECT status_aktif FROM cabang WHERE nama = $1",
+      [nama],
+    );
+    expect(rows[0].status_aktif).toBe(false);
+  } finally {
+    await db.query("DELETE FROM cabang WHERE nama = $1", [nama]);
+    await db.end();
+  }
+});
