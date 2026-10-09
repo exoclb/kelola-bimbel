@@ -1389,3 +1389,34 @@ test("kontrak route /api/cabang dan detailnya tetap sama", async ({
     await db.end();
   }
 });
+
+/**
+ * Izin halaman pengaturan cabang tetap seperti sebelumnya: hanya owner yang
+ * boleh membukanya, dan izin itu hilang begitu perannya dicabut (tanpa perlu
+ * masuk ulang).
+ */
+test("halaman cabang hanya untuk owner", async ({ page }) => {
+  const { getDaftarCabang } = await import("../src/lib/mock-cabang");
+  await siapkanCabang(getDaftarCabang()[0].nama, true);
+
+  await aturPeran("user");
+  await masukPeramban(page);
+  await page.goto("/app/cabang");
+  await expect(page.getByText(/This page isn.t here/)).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Daftar Cabang" }),
+  ).toHaveCount(0);
+
+  await aturPeran("owner");
+  await page.goto("/app/cabang");
+  await expect(
+    page.getByRole("heading", { name: "Daftar Cabang" }),
+  ).toBeVisible();
+
+  // Perannya diambil lagi supaya berkas uji lain melihat akun bersama ini
+  // seperti sebelumnya.
+  await aturPeran("user");
+  await page.goto("/app/cabang");
+  await expect(page.getByText(/This page isn.t here/)).toBeVisible();
+  await aturPeran("owner");
+});
