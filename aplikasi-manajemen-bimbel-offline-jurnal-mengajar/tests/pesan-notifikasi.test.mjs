@@ -29,7 +29,7 @@ registerHooks({
   },
 });
 
-const { pesanGajiDibayar, pesanRekapHonor } =
+const { pesanGajiDibayar, pesanLaporanBulanan, pesanRekapHonor } =
   await import("../src/lib/pesan-notifikasi.ts");
 
 // Pesan ini yang dibaca guru di kotak notifikasi, jadi periodenya wajib
@@ -55,5 +55,40 @@ test("pesan gaji dibayar menyebut periode dan nominalnya", () => {
   assert.equal(
     pesanGajiDibayar("2026-09", 450_000),
     "Gaji September 2026 sebesar Rp450.000 sudah dibayar.",
+  );
+});
+
+// Ringkasan inilah isi notifikasi laporan bulanan, jadi periodenya dan ketiga
+// angkanya (pemasukan, pengeluaran, laba) harus selalu muncul.
+test("pesan laporan bulanan memuat pemasukan, pengeluaran, dan labanya", () => {
+  assert.equal(
+    pesanLaporanBulanan("2026-10", {
+      pemasukan: 12_500_000,
+      pengeluaran: 4_200_000,
+      laba: 8_300_000,
+    }),
+    "Laporan bulan Oktober 2026 sudah siap ditinjau. Pendapatan Rp12.500.000, pengeluaran Rp4.200.000, laba bersih Rp8.300.000.",
+  );
+});
+
+test("laporan bulanan yang rugi ditulis sebagai rugi bersih", () => {
+  const pesan = pesanLaporanBulanan("2097-02", {
+    pemasukan: 1_000_000,
+    pengeluaran: 1_750_000,
+    laba: -750_000,
+  });
+  assert.match(pesan, /Laporan bulan Februari 2097 sudah siap ditinjau/);
+  assert.match(pesan, /rugi bersih Rp750\.000\.$/);
+  assert.doesNotMatch(pesan, /-/);
+});
+
+test("laporan bulanan tanpa selisih tetap dihitung sebagai laba", () => {
+  assert.match(
+    pesanLaporanBulanan("2097-03", {
+      pemasukan: 0,
+      pengeluaran: 0,
+      laba: 0,
+    }),
+    /laba bersih Rp0\.$/,
   );
 });

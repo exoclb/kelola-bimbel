@@ -30,3 +30,31 @@ export function pesanRekapHonor(
 export function pesanGajiDibayar(periode: string, totalGaji: number) {
   return `Gaji ${formatPeriode(periode)} sebesar ${formatRupiah(totalGaji)} sudah dibayar.`;
 }
+
+/** Angka ringkas laporan bulanan satu periode, dalam rupiah. */
+export type AngkaLaporanBulanan = {
+  /** Pemasukan periode, yaitu SPP yang sudah lunas. */
+  pemasukan: number;
+  /** Seluruh pengeluaran periode, termasuk honor guru. */
+  pengeluaran: number;
+  /** `pemasukan - pengeluaran`; negatif berarti rugi. */
+  laba: number;
+};
+
+/**
+ * Pesan laporan bulanan yang siap ditinjau, lengkap dengan ringkasan
+ * pemasukan, pengeluaran, dan labanya, mis. "Laporan bulan Juli 2097 sudah
+ * siap ditinjau. Pendapatan Rp5.000.000, pengeluaran Rp2.150.000, laba bersih
+ * Rp2.850.000." Kalau labanya negatif, angkanya ditulis sebagai rugi bersih
+ * tanpa tanda minus.
+ */
+export function pesanLaporanBulanan(
+  periode: string,
+  angka: AngkaLaporanBulanan,
+) {
+  const untung = angka.laba >= 0;
+  return [
+    `Laporan bulan ${formatPeriode(periode)} sudah siap ditinjau.`,
+    `Pendapatan ${formatRupiah(angka.pemasukan)}, pengeluaran ${formatRupiah(angka.pengeluaran)}, ${untung ? "laba" : "rugi"} bersih ${formatRupiah(Math.abs(angka.laba))}.`,
+  ].join(" ");
+}
