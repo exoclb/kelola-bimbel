@@ -1,9 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { BadgeCheck, Wallet } from "lucide-react";
+import { Wallet } from "lucide-react";
 import { cn } from "cn";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -11,11 +9,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { TombolTandaiBaca } from "@/components/tombol-tandai-baca";
+import type { NotifikasiTersimpan } from "@/services/notifikasi.service";
 import { formatTanggalLengkap } from "@/lib/tanggal";
-import {
-  NOTIFIKASI_HONOR_TIRUAN,
-  type NotifikasiHonorTiruan,
-} from "@/lib/mock-notifikasi-honor";
 
 const jamKirim = new Intl.DateTimeFormat("id-ID", {
   hour: "2-digit",
@@ -24,41 +20,26 @@ const jamKirim = new Intl.DateTimeFormat("id-ID", {
 
 type KotakNotifikasiHonorGuruProps = {
   /**
-   * Data notifikasi honor; bawaannya memakai data tiruan. Saat endpoint
-   * notifikasi honor siap, kirim data asli dari sini.
+   * Notifikasi honor guru dari tabel `notifications` (tipe `rekap_honor`).
+   * Bisa kosong kalau belum ada rekap yang memicu notifikasi.
    */
-  data?: NotifikasiHonorTiruan[];
+  notifikasi: NotifikasiTersimpan[];
+  belumDibaca: number;
 };
 
 /**
  * Kotak pemberitahuan rekap honor guru yang sudah tersedia. Menampilkan daftar
- * notifikasi dengan tanda belum/sudah dibaca dan tombol tandai satu per satu
- * atau sekaligus.
- *
- * Komponen ini masih memakai data tiruan — status dibaca disimpan di state
- * lokal. Saat endpoint `rekap_honor` siap, ganti sumber data dan hubungkan
- * tombol ke `PATCH /api/notifikasi`.
+ * notifikasi bertipe `rekap_honor` dengan tanda belum/sudah dibaca dan tombol
+ * tandai satu per satu atau sekaligus — memakai `TombolTandaiBaca` yang
+ * memanggil `PATCH /api/notifikasi`.
  */
 export function KotakNotifikasiHonorGuru({
-  data = NOTIFIKASI_HONOR_TIRUAN,
+  notifikasi,
+  belumDibaca,
 }: KotakNotifikasiHonorGuruProps) {
-  const [daftar, setDaftar] = useState<NotifikasiHonorTiruan[]>(data);
-
-  const belumDibaca = daftar.filter((baris) => !baris.sudahDibaca).length;
-
-  function tandaiSatu(id: string) {
-    setDaftar((sebelumnya) =>
-      sebelumnya.map((baris) =>
-        baris.id === id ? { ...baris, sudahDibaca: true } : baris,
-      ),
-    );
-  }
-
-  function tandaiSemua() {
-    setDaftar((sebelumnya) =>
-      sebelumnya.map((baris) => ({ ...baris, sudahDibaca: true })),
-    );
-  }
+  const belumDibacaIds = notifikasi
+    .filter((baris) => !baris.sudahDibaca)
+    .map((baris) => baris.id);
 
   return (
     <Card>
@@ -73,22 +54,22 @@ export function KotakNotifikasiHonorGuru({
           )}
         </CardTitle>
         <CardDescription>
-          {daftar.length === 0
+          {notifikasi.length === 0
             ? "Belum ada rekap honor yang dikirim."
             : belumDibaca === 0
               ? "Semua pemberitahuan rekap honor sudah dibaca."
-              : `${belumDibaca} dari ${daftar.length} pemberitahuan rekap honor belum dibaca.`}
+              : `${belumDibaca} dari ${notifikasi.length} pemberitahuan rekap honor belum dibaca.`}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
-        {daftar.length === 0 ? (
+        {notifikasi.length === 0 ? (
           <p className="text-sm leading-6 text-muted-foreground">
             Pemberitahuan rekap honor guru muncul di sini setelah owner membuat
             rekap gaji satu periode.
           </p>
         ) : (
           <ul className="space-y-2">
-            {daftar.map((baris) => (
+            {notifikasi.map((baris) => (
               <li
                 key={baris.id}
                 className={cn(
@@ -108,38 +89,23 @@ export function KotakNotifikasiHonorGuru({
                     {baris.sudahDibaca ? " · sudah dibaca" : ""}
                   </span>
                 </span>
-                {!baris.sudahDibaca && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="aksi"
-                    onClick={() => tandaiSatu(baris.id)}
-                  >
-                    <BadgeCheck aria-hidden="true" />
-                    Tandai dibaca
-                  </Button>
+                {baris.sudahDibaca ? (
+                  <TombolTandaiBaca
+                    ids={[baris.id]}
+                    dibaca={false}
+                    label="Tandai belum dibaca"
+                  />
+                ) : (
+                  <TombolTandaiBaca ids={[baris.id]} label="Tandai dibaca" />
                 )}
               </li>
             ))}
           </ul>
         )}
 
-        {belumDibaca > 1 && (
-          <Button
-            type="button"
-            variant="outline"
-            size="aksi"
-            onClick={tandaiSemua}
-          >
-            <BadgeCheck aria-hidden="true" />
-            Tandai semua sudah dibaca
-          </Button>
+        {belumDibacaIds.length > 1 && (
+          <TombolTandaiBaca semua label="Tandai semua sudah dibaca" />
         )}
-
-        <p className="text-xs leading-5 text-muted-foreground">
-          Catatan: data ini masih tiruan — status dibaca disimpan secara lokal.
-          Penyimpanan ke database menyusul bersama endpoint rekap honor.
-        </p>
       </CardContent>
     </Card>
   );
