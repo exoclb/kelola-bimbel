@@ -37,6 +37,7 @@ const {
   getCabangByNama,
   listCabang,
   namaCabangDipakai,
+  periksaCabangKelas,
   ringkasCabang,
   setStatusAktif,
   tambahCabang,
@@ -92,6 +93,45 @@ test("baris cabang memuat kolom yang dipakai komponen", async () => {
     );
     assert.equal("createdAt" in baris, false, `penanda waktu dari ${label}`);
   }
+});
+
+/**
+ * `periksaCabangKelas` dipakai jalur simpan kelas: cabang yang belum terdaftar
+ * dan yang nonaktif ditolak dengan kodenya masing-masing, sedangkan nama yang
+ * cuma beda huruf besar-kecil atau spasi tepi dikembalikan sebagai nama
+ * kanonik barisnya (itulah yang disimpan kolom `classes.cabang`).
+ */
+test("periksaCabangKelas menolak cabang tak terdaftar dan nonaktif", async () => {
+  await bersihkan();
+  const aktif = `${PENANDA} Periksa`;
+  const nonaktif = `${PENANDA} Periksa Nonaktif`;
+  await tambahCabang({
+    nama: aktif,
+    alamat: "Jl. Uji No. 8",
+    kontak: "0800-8",
+    statusAktif: true,
+  });
+  await tambahCabang({
+    nama: nonaktif,
+    alamat: "Jl. Uji No. 9",
+    kontak: "0800-9",
+    statusAktif: false,
+  });
+
+  const takAda = await periksaCabangKelas(`  ${PENANDA} Entah  `);
+  assert.equal(takAda.ok, false);
+  assert.equal(takAda.kode, "CABANG_TIDAK_ADA");
+  assert.match(takAda.pesan, new RegExp(`${PENANDA} Entah`));
+
+  const mati = await periksaCabangKelas(nonaktif);
+  assert.equal(mati.ok, false);
+  assert.equal(mati.kode, "CABANG_NONAKTIF");
+  assert.match(mati.pesan, /nonaktif/);
+
+  const sah = await periksaCabangKelas(`  ${aktif.toUpperCase()} `);
+  assert.equal(sah.ok, true);
+  assert.equal(sah.cabang.nama, aktif);
+  assert.equal(sah.cabang.statusAktif, true);
 });
 
 test.after(async () => {
