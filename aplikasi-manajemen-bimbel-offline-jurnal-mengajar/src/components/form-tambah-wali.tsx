@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type FormEvent } from "react";
+import { useId, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, CheckCircle2, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -86,6 +86,9 @@ type WaliTersimpan = {
 export function FormTambahWali({ daftar }: FormTambahWaliProps) {
   const idForm = useId();
   const router = useRouter();
+  // Isian email dipakai lagi saat pembuatan ditolak karena emailnya sudah
+  // terdaftar: fokus dipindah ke sini supaya owner tinggal memperbaikinya.
+  const refEmail = useRef<HTMLInputElement>(null);
 
   const [nama, setNama] = useState("");
   const [email, setEmail] = useState("");
@@ -111,12 +114,30 @@ export function FormTambahWali({ daftar }: FormTambahWaliProps) {
     return galatEmailKembar(emailBaru, daftar);
   }
 
+  /**
+   * Menolak pembuatan karena emailnya sudah terdaftar. Isian lain dibiarkan apa
+   * adanya — nama, sandi, dan pilihan portal yang sudah diketik tidak dihapus —
+   * jadi yang perlu diperbaiki hanya alamat emailnya; fokusnya dipindah ke
+   * isian itu supaya owner bisa langsung mengetik gantinya. Galat umum yang
+   * mungkin tersisa dari percobaan sebelumnya dibersihkan agar alasan yang
+   * terbaca hanya penolakan emailnya.
+   */
+  function tolakEmail(alasan: string) {
+    setPenolakanEmail(alasan);
+    setGalatUmum("");
+    refEmail.current?.focus();
+  }
+
   async function simpan(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const namaRapi = nama.trim();
     const emailRapi = email.trim();
+    // Semua isian yang bermasalah dikumpulkan sekaligus, dan isian yang sudah
+    // benar tidak disentuh: formulir yang ditolak tetap terisi seperti yang
+    // baru saja diketik.
     const masalah: Galat = {};
+    let penolakanEmailBaru = "";
     if (namaRapi.length < 2) {
       masalah.nama = "Nama wali wajib diisi, minimal 2 huruf.";
     } else if (namaRapi.length > 120) {
@@ -131,7 +152,7 @@ export function FormTambahWali({ daftar }: FormTambahWaliProps) {
       const galatEmail = periksaEmail(emailRapi);
       if (galatEmail) {
         masalah.email = galatEmail;
-        setPenolakanEmail(galatEmail);
+        penolakanEmailBaru = galatEmail;
       }
     }
     if (sandi.length < PANJANG_SANDI_MIN) {
@@ -142,9 +163,11 @@ export function FormTambahWali({ daftar }: FormTambahWaliProps) {
 
     if (Object.keys(masalah).length > 0) {
       setGalat(masalah);
-      // Isian selain email dikosongkan peringatannya: yang sedang dibicarakan
-      // kotak peringatan adalah emailnya.
-      if (!masalah.email) setPenolakanEmail("");
+      // Kotak penolakan hanya milik email: kalau kali ini yang salah bukan
+      // email, kotak itu ditutup. Isian yang sudah diketik tidak direset di sini
+      // — nama, sandi, dan pilihan portal tetap seperti semula.
+      if (penolakanEmailBaru) tolakEmail(penolakanEmailBaru);
+      else setPenolakanEmail("");
       return;
     }
 
@@ -172,7 +195,7 @@ export function FormTambahWali({ daftar }: FormTambahWaliProps) {
         // bukan sebagai galat umum di bawah formulir.
         if (jawaban.status === 409 || kode === KODE_EMAIL_SUDAH_DIPAKAI) {
           setGalat({ email: pesan });
-          setPenolakanEmail(pesan);
+          tolakEmail(pesan);
         } else if (rincian.length > 0) {
           const perIsian: Galat = {};
           const sisa: string[] = [];
@@ -303,6 +326,7 @@ export function FormTambahWali({ daftar }: FormTambahWaliProps) {
             />
             <IsianTeks
               id={`${idForm}-email`}
+              ref={refEmail}
               label="Email"
               type="email"
               required
