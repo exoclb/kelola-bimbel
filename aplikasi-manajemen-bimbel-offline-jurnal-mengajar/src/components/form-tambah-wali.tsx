@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { IsianPilih, IsianTeks } from "@/components/isian-form";
+import { galatEmailKembar } from "@/lib/email-akun";
 import type { AkunWali } from "@/services/wali.service";
 
 type Galat = {
@@ -91,12 +92,15 @@ export function FormTambahWali({ daftar }: FormTambahWaliProps) {
   const [pending, setPending] = useState(false);
   const [tersimpan, setTersimpan] = useState<WaliTersimpan | null>(null);
 
-  /** Email yang sudah dipakai akun lain, dibandingkan tanpa peduli besar-kecil. */
-  function emailDipakai(emailBaru: string) {
-    const rapi = emailBaru.trim().toLocaleLowerCase("id");
-    return daftar.some(
-      (baris) => baris.email.trim().toLocaleLowerCase("id") === rapi,
-    );
+  /**
+   * Pesan penolakan email kembar untuk isian email, atau `undefined` kalau
+   * alamatnya masih bebas. Aturannya ada di `src/lib/email-akun.ts` supaya
+   * sejalan dengan kolom unik `user.email`, dan diperiksa dua kali: saat isian
+   * email ditinggalkan (owner tahu sebelum menekan Simpan) dan sekali lagi saat
+   * formulirnya benar-benar dikirim.
+   */
+  function periksaEmail(emailBaru: string) {
+    return galatEmailKembar(emailBaru, daftar);
   }
 
   async function simpan(event: FormEvent<HTMLFormElement>) {
@@ -112,8 +116,12 @@ export function FormTambahWali({ daftar }: FormTambahWaliProps) {
     }
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailRapi)) {
       masalah.email = "Email belum berbentuk alamat email yang benar.";
-    } else if (emailDipakai(emailRapi)) {
-      masalah.email = `Email ${emailRapi} sudah dipakai akun lain.`;
+    } else {
+      // Email kembar membatalkan pembuatan sepenuhnya: formulir ini berhenti di
+      // sini dan tidak pernah memanggil `/api/wali`, jadi tidak ada akun kembar
+      // yang ikut terbentuk karena percobaan yang gagal.
+      const galatEmail = periksaEmail(emailRapi);
+      if (galatEmail) masalah.email = galatEmail;
     }
     if (sandi.length < PANJANG_SANDI_MIN) {
       masalah.sandi = `Sandi minimal ${PANJANG_SANDI_MIN} huruf.`;
@@ -282,11 +290,18 @@ export function FormTambahWali({ daftar }: FormTambahWaliProps) {
               required
               maxLength={254}
               placeholder="nama@bimbel.test"
+              keterangan="Satu email hanya untuk satu akun. Email yang sudah dipakai akun lain ditolak di sini."
               value={email}
               error={galat.email}
               onChange={(event) => {
                 setEmail(event.target.value);
                 setGalat((sebelumnya) => ({ ...sebelumnya, email: undefined }));
+              }}
+              onBlur={(event) => {
+                setGalat((sebelumnya) => ({
+                  ...sebelumnya,
+                  email: periksaEmail(event.target.value),
+                }));
               }}
             />
             <IsianTeks
