@@ -24,6 +24,12 @@ export const JENIS_NOTIFIKASI = [
     bawaanAktif: true,
   },
   {
+    jenis: "rekap_honor",
+    judul: "Rekap honor guru",
+    keterangan: "Rekap honor satu periode sudah tersedia untuk guru.",
+    bawaanAktif: true,
+  },
+  {
     jenis: "laporan_bulanan",
     judul: "Laporan bulanan",
     keterangan: "Ringkasan bimbel dikirim tiap awal bulan.",
