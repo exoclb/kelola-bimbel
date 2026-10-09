@@ -9,7 +9,8 @@ import {
   teachingJournals,
   user,
 } from "@/db/schema";
-import { formatPeriode, formatRupiah, hitungGaji } from "@/lib/gaji";
+import { hitungGaji } from "@/lib/gaji";
+import { pesanGajiDibayar, pesanRekapHonor } from "@/lib/pesan-notifikasi";
 import { tanggalISO } from "@/lib/tanggal";
 import { buatNotifikasi } from "@/services/notifikasi.service";
 
@@ -378,7 +379,7 @@ export async function tandaiPembayaranGaji(
   if (sebelumnya === undefined) {
     await buatNotifikasi(
       "rekap_honor",
-      `Rekap honor ${formatPeriode(periode)} sudah tersedia: ${totalJam} jam mengajar, ${formatRupiah(tersimpan.totalGaji)}.`,
+      pesanRekapHonor(periode, totalJam, tersimpan.totalGaji),
       [guruId],
       `rekap_honor:${guruId}:${periode}`,
     );
@@ -390,7 +391,7 @@ export async function tandaiPembayaranGaji(
   if (dibayar && sebelumnya?.statusPembayaran !== "dibayar") {
     await buatNotifikasi(
       "gaji_dibayar",
-      `Gaji ${formatPeriode(periode)} sebesar ${formatRupiah(tersimpan.totalGaji)} sudah dibayar.`,
+      pesanGajiDibayar(periode, tersimpan.totalGaji),
       [guruId],
       `gaji_dibayar:${guruId}:${periode}`,
     );
