@@ -1291,3 +1291,60 @@ test("migrasi cabang aman dijalankan ulang dengan data yang sudah ada", async ()
     "Cabang Migrasi Uji",
   ]);
 });
+
+/**
+ * Seeder gabungan (`scripts/seed-contoh.mjs`) mengisi cabang lebih dulu lalu
+ * kelas yang menunjuk cabang itu, dan aman dijalankan ulang: jumlah barisnya
+ * tidak bertambah pada jalan kedua.
+ */
+test("seeder contoh mengisi cabang lalu kelas dan idempoten", async () => {
+  const url = process.env.STARTER_TEST_DATABASE_URL;
+  const { getDaftarCabang } = await import("../src/lib/mock-cabang.ts");
+  const { getDaftarKelas } = await import("../src/lib/mock-kelas.ts");
+  await siapkanJurnal();
+
+  const jalankan = () =>
+    spawnSync(process.execPath, ["scripts/seed-contoh.mjs"], {
+      cwd: root,
+      env: {
+        ...process.env,
+        DATABASE_URL: url,
+        MIGRATION_DATABASE_URL: url,
+      },
+      encoding: "utf8",
+    });
+  const jumlah = async () =>
+    (
+      await dbJurnal.query(
+        `SELECT (SELECT count(*)::int FROM cabang) AS cabang,
+                (SELECT count(*)::int FROM classes) AS kelas`,
+      )
+    ).rows[0];
+
+  const pertama = jalankan();
+  assert.equal(pertama.status, 0, pertama.stderr);
+  const setelahPertama = await jumlah();
+
+  const cabangContoh = getDaftarCabang().map((cabang) => cabang.nama);
+  const { rows: adaCabang } = await dbJurnal.query(
+    "SELECT nama FROM cabang WHERE nama = ANY($1)",
+    [cabangContoh],
+  );
+  assert.equal(adaCabang.length, cabangContoh.length);
+
+  const kelasContoh = getDaftarKelas();
+  const { rows: adaKelas } = await dbJurnal.query(
+    "SELECT nama_kelas, cabang FROM classes WHERE nama_kelas = ANY($1)",
+    [kelasContoh.map((kelas) => kelas.namaKelas)],
+  );
+  assert.equal(adaKelas.length, kelasContoh.length);
+  for (const kelas of adaKelas)
+    assert.ok(
+      cabangContoh.includes(kelas.cabang),
+      `${kelas.nama_kelas} menunjuk cabang yang terdaftar`,
+    );
+
+  const kedua = jalankan();
+  assert.equal(kedua.status, 0, kedua.stderr);
+  assert.deepEqual(await jumlah(), setelahPertama);
+});

@@ -32,6 +32,7 @@ The agent can use `npm run predev` then `npm run doctor` when dependencies alrea
 | `npm run db:seed:wali`   | Link the example wali accounts to their children (`students` + `wali_murid`); idempotent, needs `SEED_WALI_PASSWORD` while any wali account is still missing |
 | `npm run db:seed:cabang` | Fill the example branches in `cabang`; idempotent, never overwrites existing rows, development only                                                          |
 | `npm run db:seed:kelas`  | Fill the example classes in `classes`, pointing at those branches (run `db:seed:cabang` first); idempotent, development only                                 |
+| `npm run db:seed:contoh` | Fill the example branches and classes in the right order (`cabang` then `classes`); idempotent, development only                                             |
 | `npm run doctor`         | Verify connection, auth tables, and project tooling files; note whether an example branch still has to be seeded with `npm run db:seed:cabang`               |
 
 Tes unit (`npm test`) dijalankan dengan `--conditions=react-server`, jadi modul ber-`server-only` seperti layanan di `src/services/` dan `src/db/` bisa diuji langsung tanpa peramban — contohnya `tests/cabang-service.test.mjs`. Pemeriksaan rantai migrasi ada di `npx drizzle-kit check`.
