@@ -1324,3 +1324,68 @@ test("ganti nama cabang lewat API memindahkan kelasnya", async ({
     await db.end();
   }
 });
+
+/**
+ * Kontrak route cabang tidak berubah setelah sumbernya pindah ke basis data:
+ * baca daftar, baca satu, tambah, dan ubah semuanya menjawab `{ data }` dengan
+ * kolom yang sama, dan jawabannya tidak boleh di-cache.
+ */
+test("kontrak route /api/cabang dan detailnya tetap sama", async ({
+  request,
+}) => {
+  await jadikanOwner();
+  await masukApi(request);
+  const penanda = randomUUID().slice(0, 8);
+  const nama = `Cabang Kontrak ${penanda}`;
+  const kolom = ["alamat", "id", "kontak", "nama", "statusAktif"];
+
+  const db = await pool();
+  try {
+    const daftar = await request.get("/api/cabang", { headers });
+    expect(daftar.status()).toBe(200);
+    expect(daftar.headers()["cache-control"]).toContain("no-store");
+    const isiDaftar = (await daftar.json()) as {
+      data: Record<string, unknown>[];
+    };
+    expect(Object.keys(isiDaftar)).toEqual(["data"]);
+    expect(Array.isArray(isiDaftar.data)).toBe(true);
+    for (const baris of isiDaftar.data)
+      expect(Object.keys(baris).sort()).toEqual(kolom);
+
+    const tambah = await request.post("/api/cabang", {
+      headers,
+      data: { nama, alamat: "Jl. Kontrak No. 1", kontak: "0800-1" },
+    });
+    expect(tambah.status()).toBe(201);
+    const isiTambah = (await tambah.json()) as {
+      data: Record<string, unknown>;
+    };
+    expect(Object.keys(isiTambah)).toEqual(["data"]);
+    expect(Object.keys(isiTambah.data).sort()).toEqual(kolom);
+    expect(isiTambah.data).toMatchObject({
+      nama,
+      alamat: "Jl. Kontrak No. 1",
+      kontak: "0800-1",
+      statusAktif: true,
+    });
+
+    const id = isiTambah.data.id as string;
+    const satu = await request.get(`/api/cabang/${id}`, { headers });
+    expect(satu.status()).toBe(200);
+    const isiSatu = (await satu.json()) as { data: Record<string, unknown> };
+    expect(Object.keys(isiSatu)).toEqual(["data"]);
+    expect(Object.keys(isiSatu.data).sort()).toEqual(kolom);
+
+    const ubah = await request.patch(`/api/cabang/${id}`, {
+      headers,
+      data: { kontak: "0800-2" },
+    });
+    expect(ubah.status()).toBe(200);
+    const isiUbah = (await ubah.json()) as { data: Record<string, unknown> };
+    expect(Object.keys(isiUbah)).toEqual(["data"]);
+    expect(isiUbah.data).toMatchObject({ id, kontak: "0800-2", nama });
+  } finally {
+    await db.query("DELETE FROM cabang WHERE nama = $1", [nama]);
+    await db.end();
+  }
+});
