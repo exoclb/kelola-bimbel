@@ -90,6 +90,30 @@ test("rekap honor periodik hanya memberi tahu sekali per periode", async () => {
 });
 
 /**
+ * Preferensi tetap berlaku untuk pemicu honor: guru yang mematikan jenis
+ * `rekap_honor` tidak menerima notifikasi rekapnya, sementara jenis lain
+ * (`gaji_dibayar`) tetap sampai karena preferensinya per jenis.
+ */
+test("guru yang mematikan rekap_honor tidak dikirimi", async () => {
+  await bersihkan();
+  const mematikan = await buatGuru("Guru Tanpa Rekap Honor");
+  const memakai = await buatGuru("Guru Dengan Rekap Honor");
+  await pool.query(
+    "INSERT INTO notification_preferences (user_id, jenis_notifikasi, aktif) VALUES ($1, $2, $3)",
+    [mematikan, "rekap_honor", false],
+  );
+
+  await tandaiPembayaranGaji(mematikan, "2097-10", true);
+  await tandaiPembayaranGaji(memakai, "2097-10", true);
+
+  assert.equal((await daftarPesan(mematikan, "rekap_honor")).length, 0);
+  assert.equal((await daftarPesan(mematikan, "gaji_dibayar")).length, 1);
+  assert.equal((await daftarPesan(memakai, "rekap_honor")).length, 1);
+
+  await bersihkan();
+});
+
+/**
  * Dua jenis notifikasi honor tetap terpisah: `rekap_honor` saat rekapitulasi
  * pertama dicatat, dan `gaji_dibayar` saat pembayarannya ditandai — masing-
  * masing sekali per guru + periode walau aksinya diulang.

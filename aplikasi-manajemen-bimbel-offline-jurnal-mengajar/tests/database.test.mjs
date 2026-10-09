@@ -791,7 +791,8 @@ test("profil bimbel dijaga tunggal, namanya terisi, dan logonya data URL", async
 
 /**
  * Invarian notifikasi dan catatan backup (`drizzle/0013_notifikasi.sql`,
- * `0014_backup_runs.sql`, dan `0026_notifikasi_backup_invarian.sql`): tipe/pesan
+ * `0014_backup_runs.sql`, `0026_notifikasi_backup_invarian.sql`, dan
+ * `0031_notifikasi_kunci_idempoten.sql`): tipe/pesan
  * notifikasi dan jenis preferensi harus terisi, preferensi unik per akun per
  * jenis, dan status backup harus sejalan dengan waktu selesainya.
  */
@@ -815,6 +816,33 @@ test("notifikasi dan backup dijaga isi, keunikan, dan statusnya", async () => {
     [guru, "jurnal_baru", "Jurnal baru masuk"],
   );
   assert.equal(notifikasi.rowCount, 1);
+
+  // Notifikasi tanpa kunci peristiwa (perilaku lama) tetap boleh berulang:
+  // baris NULL tidak saling dianggap sama oleh indeks unik.
+  const tanpaKunci = await dbJurnal.query(
+    "INSERT INTO notifications (user_id, tipe, pesan) VALUES ($1, $2, $3) RETURNING id",
+    [guru, "jurnal_baru", "Jurnal baru masuk lagi"],
+  );
+  assert.equal(tanpaKunci.rowCount, 1);
+
+  // Kunci peristiwa (`0031_notifikasi_kunci_idempoten.sql`): satu peristiwa
+  // hanya boleh menghasilkan satu notifikasi per akun per jenis, sedangkan
+  // peristiwa lain (periode lain) tetap boleh.
+  await dbJurnal.query(
+    "INSERT INTO notifications (user_id, tipe, pesan, kunci) VALUES ($1, $2, $3, $4)",
+    [guru, "rekap_honor", "Rekap honor Juli 2097", `${guru}:2097-07`],
+  );
+  const kunciKembar = await ditolak(
+    "INSERT INTO notifications (user_id, tipe, pesan, kunci) VALUES ($1, $2, $3, $4)",
+    [guru, "rekap_honor", "Rekap honor Juli 2097 lagi", `${guru}:2097-07`],
+  );
+  assert.equal(kunciKembar.code, "23505");
+
+  const peristiwaLain = await dbJurnal.query(
+    "INSERT INTO notifications (user_id, tipe, pesan, kunci) VALUES ($1, $2, $3, $4) RETURNING id",
+    [guru, "rekap_honor", "Rekap honor Agustus 2097", `${guru}:2097-08`],
+  );
+  assert.equal(peristiwaLain.rowCount, 1);
 
   const jenisKosong = await ditolak(
     "INSERT INTO notification_preferences (user_id, jenis_notifikasi) VALUES ($1, $2)",
