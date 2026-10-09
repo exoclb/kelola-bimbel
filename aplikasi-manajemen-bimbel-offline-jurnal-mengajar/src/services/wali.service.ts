@@ -1,7 +1,8 @@
 import "server-only";
-import { and, asc, eq, ilike, inArray } from "drizzle-orm";
+import { and, asc, eq, ilike, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { students, user, waliMurid } from "@/db/schema";
+import { rapikanEmail, type AkunBeremail } from "@/lib/email-akun";
 import { peranDariRole } from "@/lib/peran";
 
 // Layanan pengelolaan akun wali dan penautannya ke murid.
@@ -167,6 +168,42 @@ export async function getAkunWali(waliId: string): Promise<AkunWali | null> {
 
   const [wali] = await susunAkun([baris]);
   return wali ?? null;
+}
+
+/**
+ * Satu akun menurut alamat emailnya, atau `null` kalau alamat itu belum
+ * terdaftar. Yang dicari bukan hanya akun wali: kolom `user.email` dipakai
+ * bersama semua peran, jadi alamat milik guru atau owner pun membuat pembuatan
+ * akun wali ditolak. Bentuknya `AkunBeremail` supaya pesan penolakan yang sama
+ * dengan formulir bisa disusun dari baris ini (`pesanEmailKembar`).
+ *
+ * Pembandingnya `lower(btrim(email))` — sama dengan aturan yang dipakai
+ * formulir lewat `rapikanEmail`. Kolom `email` sendiri hanya unik secara persis,
+ * sedangkan yang ingin dicegah adalah dua akun dengan alamat yang sama tetapi
+ * beda huruf besar-kecil atau spasi tepi.
+ */
+export async function getAkunByEmail(
+  email: string,
+): Promise<AkunBeremail | null> {
+  const rapi = rapikanEmail(email);
+  if (rapi === "") return null;
+
+  const [baris] = await db
+    .select({ nama: user.name, email: user.email })
+    .from(user)
+    .where(sql`lower(btrim(${user.email})) = ${rapi}`)
+    .limit(1);
+  return baris ?? null;
+}
+
+/**
+ * Apakah satu alamat email sudah terdaftar pada akun mana pun — bukan hanya
+ * akun wali. Dipakai jalur pembuatan akun wali supaya email kembar dijawab
+ * sebelum baris akunnya dibuat, dengan jawaban yang sama seperti yang dibaca
+ * owner di formulir.
+ */
+export async function emailSudahTerdaftar(email: string): Promise<boolean> {
+  return (await getAkunByEmail(email)) !== null;
 }
 
 /**
