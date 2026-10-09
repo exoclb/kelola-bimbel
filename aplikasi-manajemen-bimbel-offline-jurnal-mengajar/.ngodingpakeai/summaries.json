@@ -770,7 +770,7 @@
     "summary": "Tampilan memuat halaman daftar penautan akun wali: `StatusMemuat` 'Memuat penautan akun wali…' dengan empat baris."
   },
   "src/app/(protected)/app/pengaturan/wali/page.tsx": {
-    "summary": "Halaman daftar penautan akun wali (`/app/pengaturan/wali`) untuk owner: dijaga `requirePermission({ pengaturan: [\"read\"] })`, lalu merender `DaftarWali` dengan `getDaftarWali()`."
+    "summary": "Halaman `/app/pengaturan/wali` berjudul \"Pengelolaan Akun Wali\" untuk owner: dijaga `requirePermission({ pengaturan: [\"read\"] })`, lalu merender `DaftarWali` dengan `getDaftarWali()` — halamannya sekarang mencakup pembuatan akun wali baru sekaligus penautannya ke murid."
   },
   "src/app/(protected)/app/pengeluaran/loading.tsx": {
     "summary": "Tampilan memuat halaman pengeluaran operasional: `StatusMemuat` 'Memuat pengeluaran…' dengan empat baris, mengikuti pola `loading.tsx` halaman owner lain."
@@ -1007,7 +1007,7 @@
     "summary": "Route `PATCH /api/tagihan/<id>` berizin `tagihan: write-any`: mengubah status tagihan (lunas beserta tanggal bayar, atau kembali belum lunas), membalas `{data: Tagihan}` atau 404 NOT_FOUND bila id tidak ada. Runtime nodejs, `params` di-await (Next 16)."
   },
   "src/app/api/wali/route.ts": {
-    "summary": "Route API wali: `GET /api/wali` (izin pengaturan read) mengembalikan daftar akun wali beserta murid tertaut dan status akses portal. Pola withApiPermission + runtime nodejs."
+    "summary": "Route API wali: `GET /api/wali` (izin `pengaturan: read`) mengembalikan daftar akun wali beserta murid tertaut dan status akses portalnya, sedangkan `POST /api/wali` (izin `pengaturan: write`) membuat akun wali baru — isinya diperiksa `tambahWaliSchema` lalu dikerjakan `buatAkunWali`, dijawab 201 berisi data akunnya, dan email yang sudah terdaftar dijawab 409 `EMAIL_SUDAH_DIPAKAI` tanpa membuat baris akun. Keduanya lewat `withApiPermission` dan `runtime = \"nodejs\"`."
   },
   "src/app/api/wali/[id]/murid/route.ts": {
     "summary": "Route API tautan wali↔murid: `POST /api/wali/<id>/murid` dengan `{muridId}` menautkan murid ke akun wali — idempoten (ON CONFLICT DO NOTHING) dan mengembalikan meta.dibuat true/false sesuai apakah baris baru benar-benar dibuat. 404 bila wali/murid tidak ada, 422 bila muridId bukan UUID."
@@ -1145,7 +1145,7 @@
     "summary": "Komponen presentasional halaman status variabel lingkungan: kartu ringkasan (variabel terdaftar/wajib/belum terpasang), banner peringatan bahwa halaman hanya memeriksa ada-tidaknya variabel dan tidak menampilkan nilainya, serta tiga kelompok baris (Wajib/Opsional/Otomatis) berisi nama variabel, lencana status, dan keterangan pengisinya. Hanya menerima data tanpa nilai (nama + boolean)."
   },
   "src/components/daftar-wali.tsx": {
-    "summary": "Komponen server daftar penautan akun wali: tombol kembali ke pengaturan, judul, ringkasan ('N akun wali · M portal aktif · K nonaktif · X sudah tertaut · J murid tertaut'), keadaan kosong `PesanKosong`, dan kartu per akun wali berisi nama, email, kontak, dua lencana (jumlah murid atau 'Belum tertaut', serta 'Portal aktif'/'Portal nonaktif' dengan warna berbeda), daftar chip murid tertaut ('Nama · Kelas'), atau keterangan bila belum ditautkan."
+    "summary": "Komponen server daftar akun wali: tombol kembali ke pengaturan, judul, ringkasan ('N akun wali · M portal aktif · K nonaktif · X sudah tertaut · J murid tertaut'), `FormTambahWali` untuk membuat akun wali baru, `FormTambahTautanWali` untuk menautkan murid, dan kartu per akun wali berisi nama, email, dua lencana (jumlah murid atau 'Belum tertaut', serta 'Portal aktif'/'Portal nonaktif'), `SaklarAksesPortalWali`, `RiwayatStatusWali`, daftar chip murid tertaut ('Nama · Kelas') beserta `AksiLepasTautanWali`, atau keterangan bila belum ditautkan."
   },
   "src/components/detail-jurnal.tsx": {
     "summary": "Halaman detail satu sesi jurnal (data tiruan) dengan dua mode. Mode lihat menampilkan kelas, tanggal, cabang, status, ringkasan (jam mengajar, jumlah murid hadir, materi, catatan), dan kartu \"Kehadiran murid\": \"N dari M murid hadir\" beserta daftar tiap murid dengan ikon hadir/tidak hadir, alasan ketidakhadiran, dan nama murid yang bertaut ke halaman detail murid. Mode \"Koreksi jurnal\" membuka form untuk memperbaiki materi, catatan, dan centang kehadiran (dengan kolom alasan), lalu menyimpan lewat API/simpanan tiruan dan menampilkan pesan konfirmasi."
@@ -1370,7 +1370,7 @@
     ]
   },
   "src/components/pengaturan-bimbel.tsx": {
-    "summary": "Halaman pengaturan bimbel (server) yang menyusun kartu navigasi: bagian pemilik (Profil Bimbel, Aturan Gaji & Tarif, Kelola Guru, dan Penautan Akun Wali dengan ringkasan 'N dari M akun tertaut ke murid'), kartu Backup Database bila statusnya tersedia, serta kartu Preferensi Notifikasi untuk semua akun; kartu pemilik hanya muncul bagi akun berizin `pengaturan: read`. Bagian bawah menampilkan ringkasan profil, akun, dan status backup dengan tautan ke halamannya masing-masing."
+    "summary": "Halaman pengaturan bimbel (server) yang menyusun kartu navigasi: bagian pemilik (Profil Bimbel, Aturan Gaji & Tarif, Kelola Guru, dan kartu Akun Wali — 'Buat akun wali, atur akses portalnya, lalu tautkan ke murid.'), kartu Backup Database bila statusnya tersedia, serta kartu Preferensi Notifikasi untuk semua akun; kartu pemilik hanya muncul bagi akun berizin `pengaturan: read`. Bagian bawah menampilkan ringkasan profil, akun, dan status backup dengan tautan ke halamannya masing-masing."
   },
   "src/components/penjaga-izin.tsx": {
     "summary": "Komponen klien `PenjagaIzin` yang hanya menampilkan isinya kalau akun yang sedang masuk memiliki izin yang diminta; selama sesi masih dibaca, isi cadangan yang tampil supaya bagian berizin tidak berkedip. Hanya untuk tampilan — penjagaan sebenarnya ada di halaman (`requirePermission`) dan endpoint (`withApiPermission`)."
@@ -1817,7 +1817,27 @@
     "summary": "Layanan database tagihan SPP di atas tabel `student_invoices`: `listTagihan({periode})` (join ke `students` untuk nama dan ke kelas aktif pertama lewat `student_enrollments`+`classes`, urut nama murid, keluaran bentuk `Tagihan`), `daftarMuridSudahDitagih({periode})`, `createTagihan({periode,nominal,muridIds})` (insert banyak baris `onConflictDoNothing` pada indeks unik murid+periode, mengembalikan `{dibuat, dilewati}` berisi nama yang sudah ditagih), dan `updateTagihan(id,{status,tanggalBayar})` (lunas mengisi tanggal bayar + mereset penanda diingatkan, belum_lunas mengosongkan tanggal; `null` bila id tidak ada)."
   },
   "src/services/wali.service.ts": {
-    "summary": "Layanan pengelolaan wali berbasis tabel (bukan data tiruan): daftar akun wali = baris `user` berperan orang-tua (disaring lewat aturan tampilan peranDariRole), murid = `students`, tautan = `wali_murid` — tabel yang sama yang dibaca portal dan /api/jejak-baca sehingga tautan di halaman pengaturan tidak bisa berbeda dari yang bisa dibuka wali. Menyediakan daftar/detail wali, tambah tautan (INSERT ... ON CONFLICT (waliId, muridId) DO NOTHING — idempoten, dijaga indeks unik), lepas tautan (DELETE tanpa syarat, 0 baris tetap sukses), dan ubah akses portal (aksesPortal = !user.banned; nilai yang sudah berlaku tidak menyentuh baris). Status akses portal sengaja memakai `banned` karena skema tidak punya kolom portal dan seeder sudah menuliskan pemetaan itu; mematikan portal tidak menghapus akun maupun tautannya. Tipe AkunWali/MuridTertaut diekspor untuk UI fase berikutnya."
+    "summary": "Layanan pengelolaan akun wali berbasis tabel (bukan data tiruan): akun wali = baris `user` berperan orang-tua (disaring lewat aturan tampilan `peranDariRole`), murid = `students`, tautan = `wali_murid` yang dijaga indeks unik, dan status akses portal = kolom `banned` yang sama dibaca `withApiSession` dan ditulis seeder. Menyediakan daftar/detail akun wali, `getAkunByEmail`/`emailSudahTerdaftar` (pencarian `lower(btrim(email))` supaya alamat kembar yang beda huruf besar-kecil atau spasi tetap terbaca), `buatAkunWali` (menulis `user` + `account` dalam satu transaksi dengan `hashPassword` Better Auth, peran selalu orang-tua, sandi tidak pernah dikembalikan, dan alamat yang sudah terdaftar dijawab `email_sudah_dipakai`), penautan/pelepasan murid (`tautkanMurid`, `lepasTautan`), serta penyalaan/pematian akses portal (`setAksesPortal`).",
+    "sections": [
+      {
+        "symbol": "getAkunByEmail",
+        "startLine": 188,
+        "endLine": 206,
+        "summary": "Mencari satu akun mana pun (bukan hanya wali) menurut `lower(btrim(email))`, mengembalikan nama dan emailnya dalam bentuk `AkunBeremail` supaya pesan penolakan bisa disusun seperti di formulir."
+      },
+      {
+        "symbol": "emailSudahTerdaftar",
+        "startLine": 208,
+        "endLine": 210,
+        "summary": "Jawaban ya/tidak yang dipakai jalur pembuatan akun wali sebelum baris apa pun dibuat."
+      },
+      {
+        "symbol": "buatAkunWali",
+        "startLine": 350,
+        "endLine": 419,
+        "summary": "Membuat akun wali baru beserta akun masuknya di dalam satu transaksi: peran `orang-tua`, sandi awal di-hash `hashPassword`, `aksesPortal: false` disimpan sebagai `banned`, email yang sudah terdaftar ditolak lebih dulu maupun lewat pelanggaran indeks unik sehingga tidak ada akun kembar."
+      }
+    ]
   },
   "src/validators/akun.ts": {
     "summary": "Skema Zod `daftarAkunSchema` (strict) untuk pendaftaran akun: nama 2–120 karakter, email tervalidasi maks 254, dan sandi `MIN_SANDI`=8 hingga `MAX_SANDI`=128 yang disamakan dengan konfigurasi Better Auth. Peran sengaja tidak ada karena akun baru selalu berperan guru; mengekspor tipe `DaftarAkunInput`."
@@ -1883,7 +1903,7 @@
     "summary": "Skema Zod tanggal: `skemaTanggal` memvalidasi format `YYYY-MM-DD` sekaligus memastikan tanggal benar-benar ada di kalender, dan `skemaPeriodeBulan` memvalidasi bulan `YYYY-MM`. Dipakai bersama validator lain untuk mencegah error database akibat tanggal tak valid."
   },
   "src/validators/wali.ts": {
-    "summary": "Skema Zod untuk API pengelolaan wali: validasi id wali, `muridId` wajib UUID, dan badan PATCH hanya boleh berisi `aksesPortal` boolean (field lain ditolak 422)."
+    "summary": "Skema Zod untuk API pengelolaan wali: id wali (id akun Better Auth), `muridId` wajib UUID, badan PATCH yang hanya boleh berisi `aksesPortal` boolean, dan `tambahWaliSchema`/`TambahWaliInput` untuk `POST /api/wali` — nama 2–120 karakter, email, sandi 8–128 karakter, dan `aksesPortal` boolean, dengan field lain ditolak 422. Pesannya berbahasa Indonesia supaya formulir bisa menempelkan kesalahannya ke isian yang salah."
   },
   "starter.config.json": {
     "summary": "Metadata starter dalam format JSON: id 'postgres', nama 'Base Postgres', deskripsi fondasi ramah AI dengan Drizzle dan PostgreSQL, `baseVersion` 0.1.0, serta penanda `database` postgresql."
@@ -2064,5 +2084,101 @@
   },
   "tsconfig.json": {
     "summary": "Konfigurasi TypeScript proyek: strict mode, target ES2017, moduleResolution bundler, jsx react-jsx, dan alias path \"@/*\" ke ./src/*. Mengaktifkan plugin \"next\" serta menyertakan next-env.d.ts, seluruh .ts/.tsx, dan tipe hasil generate Next.js, sambil mengecualikan node_modules."
+  },
+  "src/lib/email-akun.ts": {
+    "summary": "Aturan email akun yang dipakai bersama formulir dan layanan: `rapikanEmail` (buang spasi tepi lalu seragamkan huruf kecil), `akunPemakaiEmail`/`galatEmailKembar` untuk menemukan alamat yang sudah dipakai salah satu akun wali, `pesanEmailKembar` penyusun alasan penolakannya, dan `KODE_EMAIL_SUDAH_DIPAKAI` yang harus sama dengan kode galat 409 pada `src/app/api/akun/route.ts` dan `src/app/api/wali/route.ts`. Dipakai formulir tambah wali supaya email kembar ditolak sebelum dikirim, dan dipakai layanan wali supaya penolakan dari server berbunyi sama.",
+    "sections": [
+      {
+        "symbol": "rapikanEmail",
+        "startLine": 20,
+        "endLine": 28,
+        "summary": "Kunci pembanding alamat email: spasi tepi dibuang dan huruf diseragamkan ke huruf kecil menurut locale `id`, sama dengan aturan yang dipakai formulir tambah wali."
+      },
+      {
+        "symbol": "akunPemakaiEmail",
+        "startLine": 29,
+        "endLine": 41,
+        "summary": "Mencari akun pada daftar wali yang memakai satu alamat email setelah dirapikan, atau `undefined` kalau alamatnya masih bebas."
+      },
+      {
+        "symbol": "KODE_EMAIL_SUDAH_DIPAKAI dan pesanEmailKembar",
+        "startLine": 42,
+        "endLine": 58,
+        "summary": "Kode galat yang dipakai route saat menolak email kembar, dan penyusun pesannya yang menyebut alamat beserta nama akun pemakainya."
+      },
+      {
+        "symbol": "galatEmailKembar",
+        "startLine": 59,
+        "endLine": 66,
+        "summary": "Jawaban siap pakai untuk isian email: pesan penolakan kalau alamatnya sudah terdaftar, `undefined` kalau belum."
+      }
+    ]
+  },
+  "src/components/form-tambah-wali.tsx": {
+    "summary": "Formulir klien `FormTambahWali` di halaman pengaturan wali: isian nama, email, sandi awal, dan akses portal dikirim ke `POST /api/wali` (izin `pengaturan: write`). Email yang sudah terdaftar ditolak dua kali — saat isian email ditinggalkan dan sekali lagi sebelum dikirim (`galatEmailKembar`/`KODE_EMAIL_SUDAH_DIPAKAI`) — lalu tampil sebagai galat isian sekaligus kotak peringatan `role=\"alert\"` berisi alasan dan langkah berikutnya, tanpa mengosongkan nama, sandi, atau pilihan portalnya. Setelah akun tersimpan, formulir dikosongkan dan `router.refresh()` menyegarkan daftar akun supaya akun baru bisa langsung ditautkan ke murid.",
+    "sections": [
+      {
+        "symbol": "galatApi",
+        "startLine": 49,
+        "endLine": 67,
+        "summary": "Membaca jawaban galat `/api/wali`: kode dan pesan dari `error.code`/`error.message`, serta pemeriksaan per-isian di `error.details` supaya pesannya menempel di isian yang salah."
+      },
+      {
+        "symbol": "FormTambahWali (keadaan dan pemeriksaan email)",
+        "startLine": 86,
+        "endLine": 130,
+        "summary": "Menyimpan isian formulir di state, memeriksa email terhadap daftar akun yang tampil (`periksaEmail`), dan `tolakEmail` yang menampilkan alasan penolakan sambil memindahkan fokus ke isian email."
+      },
+      {
+        "symbol": "FormTambahWali.simpan",
+        "startLine": 131,
+        "endLine": 237,
+        "summary": "Mengumpulkan semua isian yang bermasalah sekaligus, menolak email kembar sebelum memanggil `/api/wali`, menerjemahkan jawaban 409 `EMAIL_SUDAH_DIPAKAI` atau pemeriksaan per-isian dari server, lalu mengosongkan formulir dan menyegarkan daftar setelah berhasil dibuat."
+      },
+      {
+        "symbol": "tambahLagi dan penolong render",
+        "startLine": 239,
+        "endLine": 292,
+        "summary": "Pembantu tampilan: mengembalikan formulir ke keadaan kosong untuk akun berikutnya dan penolong yang menyusun keterangan status portal di kartu konfirmasi."
+      },
+      {
+        "symbol": "FormTambahWali (tampilan)",
+        "startLine": 294,
+        "endLine": 444,
+        "summary": "Kartu formulir: isian nama, email, sandi awal, dan saklar akses portal; kotak penolakan email di atas tombol; kartu konfirmasi akun yang baru dibuat tanpa menampilkan sandinya."
+      }
+    ]
+  },
+  "tests/email-akun.test.mjs": {
+    "summary": "Tes `node:test` untuk aturan email akun di `src/lib/email-akun.ts`: spasi tepi dan besar-kecil huruf tidak membuat alamat lolos sebagai alamat baru, alamat yang belum dipakai tidak ikut ditolak, dan pesan penolakan menyebut alamat beserta nama pemakainya. Satu tes kontrak membaca `src/app/api/akun/route.ts` untuk memastikan kode `EMAIL_SUDAH_DIPAKAI` yang dipakai formulir masih sama dengan kode galat 409 di route itu."
+  },
+  "tests/wali-service.test.mjs": {
+    "summary": "Tes jalur basis data untuk `src/services/wali.service.ts`, mengikuti pola tests/cabang-service.test.mjs: alias `@/` di-resolve lewat `registerHooks` dan koneksinya Pool `pg` dari `DATABASE_URL`. Menguji `buatAkunWali` menyimpan akun berperan `orang-tua` dengan sandi terenkripsi yang tetap bisa diverifikasi `verifyPassword` serta `banned` saat akses portalnya mati, penolakan `email_sudah_dipakai` tidak menambah baris `user`/`account` dan tidak mengubah nama akun yang sudah ada, dan `emailSudahTerdaftar`/`getAkunByEmail` tak peka huruf besar-kecil maupun spasi tepi. Membutuhkan PostgreSQL sekali pakai dari `npm test`.",
+    "sections": [
+      {
+        "symbol": "bersihkan, hitungAkun, akunMasuk, barisAkun",
+        "startLine": 50,
+        "endLine": 88,
+        "summary": "Pembantu tes: menghapus akun uji berpenanda, menghitung baris `user` untuk satu alamat, membaca sandi terenkripsi di `account`, dan membaca kolom akun yang tidak dibawa pulang layanan."
+      },
+      {
+        "symbol": "buatAkunWali menyimpan akun wali beserta sandinya",
+        "startLine": 90,
+        "endLine": 137,
+        "summary": "Memastikan akun wali tersimpan dengan peran `orang-tua`, sandi tersimpan terenkripsi dan bisa diverifikasi, wali tanpa akses portal tersimpan `banned`, dan wali dengan portal menyala langsung bisa masuk."
+      },
+      {
+        "symbol": "email yang sudah terdaftar ditolak tanpa menyimpan akun kembar",
+        "startLine": 139,
+        "endLine": 173,
+        "summary": "Membuat akun, lalu mencoba alamat yang sama dengan huruf besar-kecil dan spasi berbeda: jawabannya `email_sudah_dipakai`, jumlah baris `user` maupun `account` tetap satu, dan nama akun lama tidak berubah."
+      },
+      {
+        "symbol": "pemeriksa email terdaftar tidak peka huruf besar-kecil",
+        "startLine": 175,
+        "endLine": 197,
+        "summary": "Menguji pemeriksa yang dipakai formulir dan route: alamat terdaftar terbaca walau penulisannya berbeda, alamat kosong dijawab `null`, dan alamat yang belum dipakai tidak pernah ditolak."
+      }
+    ]
   }
 }
