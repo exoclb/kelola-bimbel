@@ -486,9 +486,12 @@ test("laporan bulanan memberitahu pemilik yang menyalakannya sekali per periode"
   });
   expect(pengeluaran.status()).toBe(201);
 
+  // Halaman terbuka setelah angkanya dihitung; labanya bisa untung atau rugi
+  // tergantung data yang sudah ada di basis data uji, jadi yang ditunggu label
+  // yang pasti ada.
   const bukaLaporan = async () => {
     await page.goto("/app/laba-rugi");
-    await expect(page.getByText("Laba bersih").first()).toBeVisible();
+    await expect(page.getByText("Pemasukan SPP").first()).toBeVisible();
   };
 
   const bacaPesan = async (email: string) => {
@@ -529,7 +532,11 @@ test("laporan bulanan memberitahu pemilik yang menyalakannya sekali per periode"
   expect(pemasukanPesan).toBeGreaterThanOrEqual(pemasukan);
   expect(pengeluaranPesan).toBeGreaterThanOrEqual(operasional);
   expect(labaPesan).toBe(pemasukanPesan - pengeluaranPesan);
-  await expect(page.getByText(rupiah(labaPesan)).first()).toBeVisible();
+  // Halaman menulis besarnya selisih tanpa tanda minus (untung/rugi ada di
+  // labelnya), jadi yang dibandingkan nilai mutlaknya.
+  await expect(
+    page.getByText(rupiah(Math.abs(labaPesan))).first(),
+  ).toBeVisible();
 
   // Membuka ulang laporan periode yang sama adalah peristiwa yang sama.
   await bukaLaporan();
