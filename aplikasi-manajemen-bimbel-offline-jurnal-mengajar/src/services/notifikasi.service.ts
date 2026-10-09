@@ -3,6 +3,10 @@ import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { notificationPreferences, notifications, user } from "@/db/schema";
 import { JENIS_NOTIFIKASI, type JenisNotifikasi } from "@/lib/notifikasi";
+import {
+  pesanLaporanBulanan,
+  type AngkaLaporanBulanan,
+} from "@/lib/pesan-notifikasi";
 import type {
   ListNotifikasiInput,
   TandaiBacaInput,
@@ -88,6 +92,24 @@ export async function penerimaPemilik(
  */
 export function kunciLaporanBulanan(periode: string) {
   return `laporan_bulanan:${periode}`;
+}
+
+/**
+ * Pemicu notifikasi laporan bulanan: dipanggil begitu angka satu periode
+ * selesai dihitung, jadi pesannya tidak pernah mendahului angkanya. Pemilik
+ * yang mengaktifkan jenis ini (`laporan_bulanan` bawaannya mati) diberi tahu
+ * sekali per periode. Mengembalikan jumlah baris yang benar-benar dibuat.
+ */
+export async function beritahuLaporanBulanan(
+  periode: string,
+  angka: AngkaLaporanBulanan,
+): Promise<number> {
+  return buatNotifikasi(
+    "laporan_bulanan",
+    pesanLaporanBulanan(periode, angka),
+    await penerimaPemilik(),
+    kunciLaporanBulanan(periode),
+  );
 }
 
 /**

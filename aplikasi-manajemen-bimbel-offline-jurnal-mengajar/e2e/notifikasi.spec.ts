@@ -83,6 +83,19 @@ async function masuk(client: APIRequestContext, email: string) {
   expect(response.status()).toBe(200);
 }
 
+/** Format uang dan periode sama seperti yang dipakai aplikasi. */
+function rupiah(nilai: number) {
+  return `Rp${nilai.toLocaleString("id-ID", { maximumFractionDigits: 0 })}`;
+}
+
+function formatBulan(periode: string) {
+  const [tahun, bulan] = periode.split("-").map(Number);
+  return new Intl.DateTimeFormat("id-ID", {
+    month: "long",
+    year: "numeric",
+  }).format(new Date(tahun, bulan - 1, 1));
+}
+
 type Notifikasi = { id: string; tipe: string; pesan: string };
 
 /**
@@ -405,4 +418,123 @@ test("gaji dibayar memberi tahu gurunya sekali saja", async ({ request }) => {
       (baris) => baris.tipe === "gaji_dibayar",
     ),
   ).toHaveLength(0);
+});
+
+/**
+ * Notifikasi laporan bulanan: begitu halaman laporan laba rugi menghitung angka
+ * bulan berjalan, pemilik yang menyalakan jenis ini menerima ringkasannya —
+ * sekali per periode, walau halamannya dibuka berulang kali. Pemilik yang
+ * membiarkan pengaturannya (bawaannya mati) tidak dikirimi.
+ */
+test("laporan bulanan memberitahu pemilik yang menyalakannya sekali per periode", async ({
+  page,
+  request,
+}) => {
+  const emailPemilik = await daftar(request, "Pemilik Notifikasi Laporan");
+  const emailSepi = await daftar(request, "Pemilik Sepi Notifikasi Laporan");
+  await setRole(emailPemilik, "owner");
+  await setRole(emailSepi, "owner");
+
+  // Angka bulan berjalan: satu tagihan lunas dan satu catatan operasional.
+  const sekarang = new Date();
+  const periode = `${sekarang.getFullYear()}-${String(sekarang.getMonth() + 1).padStart(2, "0")}`;
+  const pemasukan = 300000;
+  const operasional = 45000;
+
+  await masuk(request, emailPemilik);
+  const aktifkan = await request.patch("/api/pengaturan/notifikasi", {
+    headers,
+    data: { jenis: "laporan_bulanan", aktif: true },
+  });
+  expect(aktifkan.status()).toBe(200);
+
+  const murid = await request.post("/api/murid", {
+    headers,
+    data: { nama: "Murid Notifikasi Laporan", tanggalLahir: "2013-04-04" },
+  });
+  expect(murid.status()).toBe(201);
+  const muridId = (await murid.json()).data.id as string;
+
+  const terbit = await request.post("/api/tagihan", {
+    headers,
+    data: { periode, nominal: pemasukan, muridIds: [muridId] },
+  });
+  expect(terbit.status()).toBe(201);
+  const daftarTagihan = await request.get(`/api/tagihan?periode=${periode}`, {
+    headers,
+  });
+  const tagihan = (await daftarTagihan.json()).data[0] as { id: string };
+  const pelunasan = await request.patch(`/api/tagihan/${tagihan.id}`, {
+    headers,
+    data: { status: "lunas", tanggalBayar: `${periode}-05` },
+  });
+  expect(pelunasan.status()).toBe(200);
+
+  const kategori = await request.post("/api/pengeluaran/kategori", {
+    headers,
+    data: { nama: `Operasional Notifikasi ${randomUUID().slice(0, 6)}` },
+  });
+  expect(kategori.status()).toBe(201);
+  const pengeluaran = await request.post("/api/pengeluaran", {
+    headers,
+    data: {
+      kategoriId: (await kategori.json()).data.id,
+      nominal: operasional,
+      tanggal: `${periode}-06`,
+      catatan: "Uji notifikasi laporan bulanan",
+    },
+  });
+  expect(pengeluaran.status()).toBe(201);
+
+  const bukaLaporan = async () => {
+    await page.goto("/app/laba-rugi");
+    await expect(page.getByText("Laba bersih").first()).toBeVisible();
+  };
+
+  const bacaPesan = async (email: string) => {
+    await masuk(request, email);
+    const jawaban = await request.get("/api/notifikasi", { headers });
+    expect(jawaban.status()).toBe(200);
+    const isi = (await jawaban.json()).data as {
+      tipe: string;
+      pesan: string;
+    }[];
+    return isi
+      .filter((baris) => baris.tipe === "laporan_bulanan")
+      .map((baris) => baris.pesan);
+  };
+
+  await page.goto("/sign-in");
+  await page.getByLabel("Email", { exact: true }).fill(emailPemilik);
+  await page.getByLabel("Password", { exact: true }).fill(sandi);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.waitForURL((url) => !url.pathname.startsWith("/sign-in"));
+
+  await bukaLaporan();
+  const pesan = await bacaPesan(emailPemilik);
+  expect(pesan).toHaveLength(1);
+  expect(pesan[0]).toContain(`Laporan bulan ${formatBulan(periode)}`);
+
+  // Angka di pesan harus sama dengan yang dihitung halaman: pengeluaran =
+  // honor + operasional, dan labanya selisihnya. Basis data uji dipakai bersama
+  // berkas lain, jadi yang dipastikan "paling sedikit" sebesar data uji ini.
+  const cocok = pesan[0].match(
+    /Pendapatan Rp([\d.]+), pengeluaran Rp([\d.]+), (laba|rugi) bersih Rp([\d.]+)\.$/,
+  );
+  expect(cocok).not.toBeNull();
+  const angka = (teks: string) => Number(teks.replaceAll(".", ""));
+  const pemasukanPesan = angka(cocok![1]);
+  const pengeluaranPesan = angka(cocok![2]);
+  const labaPesan = cocok![3] === "rugi" ? -angka(cocok![4]) : angka(cocok![4]);
+  expect(pemasukanPesan).toBeGreaterThanOrEqual(pemasukan);
+  expect(pengeluaranPesan).toBeGreaterThanOrEqual(operasional);
+  expect(labaPesan).toBe(pemasukanPesan - pengeluaranPesan);
+  await expect(page.getByText(rupiah(labaPesan)).first()).toBeVisible();
+
+  // Membuka ulang laporan periode yang sama adalah peristiwa yang sama.
+  await bukaLaporan();
+  expect(await bacaPesan(emailPemilik)).toHaveLength(1);
+
+  // Jenis ini bawaannya mati, jadi pemilik yang tidak menyalakannya tidak dapat.
+  expect(await bacaPesan(emailSepi)).toHaveLength(0);
 });

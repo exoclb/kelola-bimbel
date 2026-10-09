@@ -33,8 +33,12 @@ registerHooks({
   },
 });
 
-const { buatNotifikasi, kunciLaporanBulanan, penerimaPemilik } =
-  await import("../src/services/notifikasi.service.ts");
+const {
+  beritahuLaporanBulanan,
+  buatNotifikasi,
+  kunciLaporanBulanan,
+  penerimaPemilik,
+} = await import("../src/services/notifikasi.service.ts");
 const { db } = await import("../src/db/index.ts");
 
 const PENANDA = "notifikasi-service-uji";
@@ -105,6 +109,59 @@ test("kunciLaporanBulanan satu per periode", () => {
     kunciLaporanBulanan("2097-05"),
     kunciLaporanBulanan("2097-06"),
   );
+});
+
+/**
+ * Pemicu laporan bulanan dinilai dari sisi pemilik: jenis ini bawaannya mati,
+ * jadi pemilik yang belum menyalakannya tidak dikirimi; yang menyalakan
+ * menerima satu baris berisi ringkasan angkanya, dan perhitungan ulang periode
+ * yang sama tidak menambah baris kedua.
+ */
+test("beritahuLaporanBulanan sekali per periode dan hanya untuk yang menyalakannya", async () => {
+  await bersihkan();
+  const pemilik = await buatAkun("Pemilik Laporan", "owner");
+  const pemilikBisu = await buatAkun("Pemilik Bisu Laporan", "owner");
+  const angka = {
+    pemasukan: 5_000_000,
+    pengeluaran: 2_150_000,
+    laba: 2_850_000,
+  };
+
+  assert.equal(
+    await beritahuLaporanBulanan("2097-07", angka),
+    0,
+    "bawaan jenis ini mati, jadi belum ada penerima",
+  );
+  assert.equal(await jumlahNotifikasi(pemilik, "laporan_bulanan"), 0);
+
+  await pool.query(
+    "INSERT INTO notification_preferences (user_id, jenis_notifikasi, aktif) VALUES ($1, $2, true), ($3, $4, false)",
+    [pemilik, "laporan_bulanan", pemilikBisu, "laporan_bulanan"],
+  );
+
+  // Jumlahnya bergantung pada pemilik lain di basis data uji, jadi yang
+  // dipastikan di sini adalah akun uji ini menerima tepat satu baris.
+  assert.ok(await beritahuLaporanBulanan("2097-07", angka));
+  assert.equal(
+    await beritahuLaporanBulanan("2097-07", angka),
+    0,
+    "periode yang sama tidak memberitahu dua kali",
+  );
+  assert.equal(await jumlahNotifikasi(pemilik, "laporan_bulanan"), 1);
+  assert.equal(await jumlahNotifikasi(pemilikBisu, "laporan_bulanan"), 0);
+
+  const { rows } = await pool.query(
+    "SELECT pesan FROM notifications WHERE user_id = $1 AND tipe = 'laporan_bulanan'",
+    [pemilik],
+  );
+  assert.match(rows[0].pesan, /Laporan bulan Juli 2097/);
+  assert.match(rows[0].pesan, /Rp5\.000\.000/);
+
+  // Periode berikutnya adalah peristiwa baru.
+  assert.ok(await beritahuLaporanBulanan("2097-08", angka));
+  assert.equal(await jumlahNotifikasi(pemilik, "laporan_bulanan"), 2);
+
+  await bersihkan();
 });
 
 /**

@@ -19,6 +19,7 @@ import { cn } from "cn";
 import { formatRupiah, formatPeriode } from "@/lib/gaji";
 import type { ProfilDokumen } from "@/lib/dokumen-html";
 import { rekapTagihanKosong, type RekapTagihanPeriode } from "@/lib/tagihan";
+import { ringkasanLabaRugi } from "@/lib/laporan-bulanan";
 
 const NAMA_BULAN = new Intl.DateTimeFormat("id-ID", { month: "long" });
 const bulanTampil = (bulan: number) =>
@@ -94,7 +95,13 @@ export function LaporanLabaRugi({
     [totalOperasional, periode],
   );
 
-  const labaBersih = rekapTagihan.nominalLunas - biayaHonor - biayaOperasional;
+  // Rumusnya sama dengan yang dipakai notifikasi laporan bulanan, jadi angka
+  // di layar dan di kotak notifikasi tidak bisa berbeda.
+  const { laba: labaBersih } = ringkasanLabaRugi({
+    pemasukan: rekapTagihan.nominalLunas,
+    biayaHonor,
+    biayaOperasional,
+  });
   const untung = labaBersih >= 0;
 
   const baris = [
