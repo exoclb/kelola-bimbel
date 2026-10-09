@@ -11,7 +11,7 @@ import {
 } from "@/db/schema";
 import { formatPeriode, formatRupiah, hitungGaji } from "@/lib/gaji";
 import { tanggalISO } from "@/lib/tanggal";
-import { catatNotifikasi } from "@/services/notifikasi.service";
+import { buatNotifikasi } from "@/services/notifikasi.service";
 
 export type RincianGaji = {
   tanggal: string;
@@ -370,13 +370,29 @@ export async function tandaiPembayaranGaji(
       tanggalDibayar: salaryRecaps.tanggalDibayar,
     });
 
+  // Rekap periode ini baru tercatat untuk guru ini (angka jam & tarifnya
+  // disalin di atas): gurunya diberi tahu bahwa rekapitulasi honornya sudah
+  // tersedia. Kuncinya per guru + periode, jadi menandai ulang bulan yang sama
+  // — atau dua permintaan yang berjalan bersamaan — tidak pernah menambah
+  // notifikasi kedua.
+  if (sebelumnya === undefined) {
+    await buatNotifikasi(
+      "rekap_honor",
+      `Rekap honor ${formatPeriode(periode)} sudah tersedia: ${totalJam} jam mengajar, ${formatRupiah(tersimpan.totalGaji)}.`,
+      [guruId],
+      `rekap_honor:${guruId}:${periode}`,
+    );
+  }
+
   // Guru yang bersangkutan diberi tahu hanya saat statusnya benar-benar
-  // berubah menjadi dibayar, bukan setiap kali rekornya diperbarui.
+  // berubah menjadi dibayar, bukan setiap kali rekornya diperbarui. Kuncinya
+  // juga per guru + periode, jadi pengiriman ulang tetap satu baris.
   if (dibayar && sebelumnya?.statusPembayaran !== "dibayar") {
-    await catatNotifikasi(
+    await buatNotifikasi(
       "gaji_dibayar",
       `Gaji ${formatPeriode(periode)} sebesar ${formatRupiah(tersimpan.totalGaji)} sudah dibayar.`,
       [guruId],
+      `gaji_dibayar:${guruId}:${periode}`,
     );
   }
 
