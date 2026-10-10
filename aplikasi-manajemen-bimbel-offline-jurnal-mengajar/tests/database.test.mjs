@@ -127,11 +127,15 @@ async function pastikanCabang(nama) {
  * karena seluruh berkas tes berjalan bersamaan di satu basis data uji ini.
  */
 async function hapusCabangContoh(daftarContoh) {
+  // `NOT EXISTS`, bukan `NOT IN`: kelas lama boleh punya `cabang` kosong, dan
+  // satu nilai NULL saja membuat `NOT IN` tidak pernah bernilai benar sehingga
+  // tidak ada satu pun baris yang terhapus.
   await dbJurnal.query(
     `DELETE FROM cabang
       WHERE lower(btrim(nama)) = ANY($1::text[])
-        AND lower(btrim(nama)) NOT IN (
-          SELECT lower(btrim(cabang)) FROM classes
+        AND NOT EXISTS (
+          SELECT 1 FROM classes
+           WHERE lower(btrim(classes.cabang)) = lower(btrim(cabang.nama))
         )`,
     [daftarContoh.map((satu) => rapiNama(satu.nama))],
   );
