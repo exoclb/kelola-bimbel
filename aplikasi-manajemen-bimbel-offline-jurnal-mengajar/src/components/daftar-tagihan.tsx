@@ -3,18 +3,36 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { BellRing, CalendarPlus, Check, PiggyBank, Undo2 } from "lucide-react";
+import {
+  BellRing,
+  CalendarPlus,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  PiggyBank,
+  Undo2,
+} from "lucide-react";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
+import { NativeSelect } from "@/components/ui/native-select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { LabelStatusTagihan } from "@/components/label-status-tagihan";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { formatRupiah } from "@/lib/gaji";
 import {
   formatPeriodeTagihan,
+  geserPeriode,
   hitungRekapTagihan,
+  menunggak,
   periodeDariTagihan,
   type Tagihan,
 } from "@/lib/tagihan";
@@ -24,8 +42,19 @@ type DaftarTagihanProps = {
   daftar: Tagihan[];
   periode: string;
   periodeTampil: string;
+  /** Periode berjalan, dipakai tombol kembali dan penanda tunggakan. */
+  periodeSekarang: string;
+  /** Tahun yang boleh dipilih pemilih periode (berisi tahun berjalan). */
+  tahunTersedia: number[];
   muridSudahDitagih: string[];
 };
+
+/** Saringan status di layar; nilainya sama dengan kolom `student_invoices`. */
+type Saringan = "semua" | "belum_lunas" | "lunas";
+
+const NAMA_BULAN = new Intl.DateTimeFormat("id-ID", { month: "long" });
+const bulanTampil = (bulan: number) =>
+  NAMA_BULAN.format(new Date(2026, bulan - 1, 1));
 
 const tanggalTampil = new Intl.DateTimeFormat("id-ID", {
   day: "numeric",
@@ -39,7 +68,13 @@ const tanggalTampil = new Intl.DateTimeFormat("id-ID", {
  * jadi bedanya terlihat sekilas tanpa mengandalkan warna saja. Datanya dibaca
  * dari server, dan penandaan lunas dikirim ke API lalu halaman dimuat ulang.
  */
-export function DaftarTagihan({ daftar, periodeTampil }: DaftarTagihanProps) {
+export function DaftarTagihan({
+  daftar,
+  periode,
+  periodeTampil,
+  periodeSekarang,
+  tahunTersedia,
+}: DaftarTagihanProps) {
   const router = useRouter();
 
   // Tagihan yang sedang ditandai lunas, dan tanggal bayar yang diisi owner.
@@ -50,8 +85,28 @@ export function DaftarTagihan({ daftar, periodeTampil }: DaftarTagihanProps) {
   const [pendingId, setPendingId] = useState<string | null>(null);
   // Tagihan yang status lunasnya sedang dikonfirmasi untuk dibatalkan.
   const [batalId, setBatalId] = useState<string | null>(null);
+  // Saringan status di layar, supaya tagihan yang belum lunas tetap mudah
+  // ditemukan pada periode yang ramai.
+  const [saring, setSaring] = useState<Saringan>("semua");
 
   const rekap = hitungRekapTagihan(daftar);
+  const [tahunTerpilih, bulanTerpilih] = periode.split("-").map(Number);
+  const periodeBerjalan = periode === periodeSekarang;
+
+  const tampil =
+    saring === "semua"
+      ? daftar
+      : daftar.filter((baris) => baris.status === saring);
+
+  const pilihanSaring = [
+    { nilai: "semua" as const, label: "Semua", jumlah: rekap.jumlah },
+    {
+      nilai: "belum_lunas" as const,
+      label: "Belum lunas",
+      jumlah: rekap.jumlahBelumLunas,
+    },
+    { nilai: "lunas" as const, label: "Sudah lunas", jumlah: rekap.jumlahLunas },
+  ];
 
   async function ubahStatus(
     tagihan: Tagihan,
@@ -113,6 +168,82 @@ export function DaftarTagihan({ daftar, periodeTampil }: DaftarTagihanProps) {
         </div>
       </div>
 
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Pilih periode</CardTitle>
+          <CardDescription>
+            Tagihan dibaca per bulan, dan statusnya bisa diubah untuk periode
+            mana pun — termasuk bulan-bulan yang sudah lewat.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form method="get" className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="bulan">Bulan</Label>
+              <NativeSelect
+                className="h-[var(--target-sentuh-portal)] md:text-base"
+                id="bulan"
+                name="bulan"
+                defaultValue={bulanTerpilih}
+              >
+                {Array.from({ length: 12 }, (_, urutan) => urutan + 1).map(
+                  (nilai) => (
+                    <option key={nilai} value={nilai}>
+                      {bulanTampil(nilai)}
+                    </option>
+                  ),
+                )}
+              </NativeSelect>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tahun">Tahun</Label>
+              <NativeSelect
+                className="h-[var(--target-sentuh-portal)] md:text-base"
+                id="tahun"
+                name="tahun"
+                defaultValue={tahunTerpilih}
+              >
+                {tahunTersedia.map((nilai) => (
+                  <option key={nilai} value={nilai}>
+                    {nilai}
+                  </option>
+                ))}
+              </NativeSelect>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
+              <Button type="submit" size="aksi">
+                <Filter aria-hidden="true" />
+                Tampilkan
+              </Button>
+              <Button asChild variant="outline" size="aksi">
+                <Link href={`/app/tagihan?periode=${geserPeriode(periode, -1)}`}>
+                  <ChevronLeft aria-hidden="true" />
+                  Bulan sebelumnya
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="aksi">
+                <Link href={`/app/tagihan?periode=${geserPeriode(periode, 1)}`}>
+                  Bulan berikutnya
+                  <ChevronRight aria-hidden="true" />
+                </Link>
+              </Button>
+              {!periodeBerjalan && (
+                <Button asChild variant="ghost" size="aksi">
+                  <Link href="/app/tagihan">Kembali ke periode berjalan</Link>
+                </Button>
+              )}
+            </div>
+          </form>
+          {!periodeBerjalan && (
+            <p className="mt-3 text-sm text-muted-foreground">
+              {rekap.jumlahBelumLunas > 0
+                ? `${rekap.jumlahBelumLunas} tagihan ${periodeTampil} belum lunas dan sudah lewat jatuh temponya; tandai lunas dari barisnya kalau pembayarannya menyusul.`
+                : `Tidak ada tagihan ${periodeTampil} yang tertinggal.`}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
       <p role="status" className="mt-4 text-sm text-muted-foreground">
         {pesan}
       </p>
@@ -154,15 +285,50 @@ export function DaftarTagihan({ daftar, periodeTampil }: DaftarTagihanProps) {
         </div>
       )}
 
+      {daftar.length > 0 && (
+        <div
+          role="group"
+          aria-label="Saring status tagihan"
+          className="mt-6 flex flex-wrap items-center gap-2"
+        >
+          {pilihanSaring.map((pilihan) => (
+            <Button
+              key={pilihan.nilai}
+              type="button"
+              variant={saring === pilihan.nilai ? "default" : "outline"}
+              size="aksi"
+              aria-pressed={saring === pilihan.nilai}
+              onClick={() => setSaring(pilihan.nilai)}
+            >
+              {pilihan.label} ({pilihan.jumlah})
+            </Button>
+          ))}
+        </div>
+      )}
+
       {daftar.length === 0 ? (
         <PesanKosong
           className="mt-6"
-          judul="Belum ada tagihan bulan ini"
+          judul={`Belum ada tagihan ${periodeTampil}`}
           keterangan="Tekan Buat tagihan untuk menerbitkan tagihan periode ini."
+        />
+      ) : tampil.length === 0 ? (
+        <PesanKosong
+          className="mt-6"
+          judul={
+            saring === "lunas"
+              ? "Belum ada tagihan lunas"
+              : `Semua tagihan ${periodeTampil} sudah lunas`
+          }
+          keterangan={
+            saring === "lunas"
+              ? "Belum ada tagihan periode ini yang ditandai lunas."
+              : "Tidak ada tagihan yang menunggu pembayaran pada periode ini."
+          }
         />
       ) : (
         <ul className="mt-6 space-y-3">
-          {daftar.map((tagihan) => {
+          {tampil.map((tagihan) => {
             const lunas = tagihan.status === "lunas";
             const pending = pendingId === tagihan.id;
             return (
@@ -181,7 +347,18 @@ export function DaftarTagihan({ daftar, periodeTampil }: DaftarTagihanProps) {
                         {tagihan.kelasNama}
                       </p>
                     </div>
-                    <LabelStatusTagihan status={tagihan.status} />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <LabelStatusTagihan status={tagihan.status} />
+                      {menunggak(
+                        periodeDariTagihan(tagihan),
+                        periodeSekarang,
+                        tagihan.status,
+                      ) && (
+                        <span className="rounded-full border border-destructive/30 bg-destructive/10 px-2.5 py-0.5 text-xs font-medium text-destructive">
+                          Menunggak
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex flex-wrap items-center justify-between gap-3">

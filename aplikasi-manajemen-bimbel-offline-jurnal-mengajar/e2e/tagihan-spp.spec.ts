@@ -236,3 +236,125 @@ test("halaman tagihan menandai lunas dari layar dan menyimpannya", async ({
     await db.end();
   }
 });
+
+/**
+ * Kontrol status untuk periode lain: halaman tagihan bisa dipindah ke bulan
+ * mana pun lewat pemilihnya, baris periode lampau yang belum lunas ditandai
+ * menunggak, penyaring status menyisakan baris yang sesuai, dan penandaan
+ * lunas dari periode lampau pun tersimpan di database.
+ */
+test("halaman tagihan bisa dipilih per periode dan statusnya disaring", async ({
+  page,
+  request,
+}) => {
+  const email = await daftar(request, "Owner Tagihan Periode");
+  await setRole(email, "owner");
+  await masuk(request, email);
+
+  const buat = await request.post("/api/murid", {
+    headers,
+    data: { nama: "Murid Tagihan Periode", tanggalLahir: "2015-06-06" },
+  });
+  expect(buat.status()).toBe(201);
+  const muridId = (await buat.json()).data.id as string;
+
+  // Periode lampau supaya pemeriksaan ini tidak bergantung pada isi periode
+  // berjalan yang diubah pemeriksaan lain.
+  const lalu = new Date();
+  lalu.setDate(1);
+  lalu.setMonth(lalu.getMonth() - 1);
+  const bulanLalu = lalu.getMonth() + 1;
+  const tahunLalu = lalu.getFullYear();
+  const periode = `${tahunLalu}-${String(bulanLalu).padStart(2, "0")}`;
+
+  const terbit = await request.post("/api/tagihan", {
+    headers,
+    data: { periode, nominal: 210000, muridIds: [muridId] },
+  });
+  expect(terbit.status()).toBe(201);
+
+  const daftarPeriode = await request.get(`/api/tagihan?periode=${periode}`, {
+    headers,
+  });
+  expect(daftarPeriode.status()).toBe(200);
+  const tagihan = (
+    (await daftarPeriode.json()).data as { id: string; muridId: string }[]
+  ).find((baris) => baris.muridId === muridId)!;
+
+  await page.goto("/sign-in");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password").fill(sandi);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/app\/pemantauan$/);
+
+  // Periode berjalan tidak memuat tagihan periode lampau itu.
+  await page.goto("/app/tagihan");
+  await expect(
+    page.getByRole("heading", { name: "Daftar Tagihan" }),
+  ).toBeVisible();
+  await expect(page.getByText("Murid Tagihan Periode")).toHaveCount(0);
+
+  // Pemilih periode memindahkan halaman ke bulan sebelumnya.
+  await page.getByLabel("Bulan").selectOption(String(bulanLalu));
+  await page.getByLabel("Tahun").selectOption(String(tahunLalu));
+  await page.getByRole("button", { name: "Tampilkan" }).click();
+  await expect(page).toHaveURL(`/app/tagihan?bulan=${bulanLalu}&tahun=${tahunLalu}`);
+
+  const baris = page.locator("li").filter({ hasText: "Murid Tagihan Periode" });
+  await expect(baris.getByText("Rp210.000").first()).toBeVisible();
+  await expect(baris.getByText("Belum lunas")).toBeVisible();
+  // Periode lampau yang belum lunas sudah lewat jatuh temponya.
+  await expect(baris.getByText("Menunggak")).toBeVisible();
+
+  // Saringan status menyisakan baris yang sesuai, dan baris itu bisa ditandai
+  // lunas tanpa berpindah periode.
+  await page.getByRole("button", { name: /^Sudah lunas \(/ }).click();
+  await expect(page.getByText("Belum ada tagihan lunas")).toBeVisible();
+  await expect(page.getByText("Murid Tagihan Periode")).toHaveCount(0);
+
+  await page.getByRole("button", { name: /^Belum lunas \(/ }).click();
+  await expect(baris.getByText("Rp210.000").first()).toBeVisible();
+  await baris.getByRole("button", { name: "Tandai lunas" }).click();
+  await baris.getByRole("button", { name: "Simpan" }).click();
+  await expect(page.getByText(/ditandai lunas/).first()).toBeVisible();
+
+  await page.getByRole("button", { name: /^Sudah lunas \(/ }).click();
+  await expect(baris.getByText("Lunas", { exact: true })).toBeVisible();
+
+  // Tautan bulan sebelumnya tetap bekerja dari periode yang dipilih.
+  await page.getByRole("button", { name: /^Semua \(/ }).click();
+  await page.getByRole("link", { name: "Bulan sebelumnya" }).click();
+  const sebelum = new Date(tahunLalu, bulanLalu - 2, 1);
+  await expect(page).toHaveURL(
+    `/app/tagihan?periode=${sebelum.getFullYear()}-${String(sebelum.getMonth() + 1).padStart(2, "0")}`,
+  );
+
+  // Tombol kembali hanya muncul di luar periode berjalan.
+  await page.getByRole("link", { name: "Kembali ke periode berjalan" }).click();
+  await expect(page).toHaveURL(/\/app\/tagihan$/);
+  // Pesan keberhasilan masih menempel di halaman, jadi yang diperiksa adalah
+  // barisnya: tidak ada lagi li murid itu pada periode berjalan.
+  await expect(
+    page.locator("ul li").filter({ hasText: "Murid Tagihan Periode" }),
+  ).toHaveCount(0);
+
+  const db = new Pool({
+    connectionString: process.env.STARTER_TEST_DATABASE_URL,
+    max: 1,
+  });
+  try {
+    const { rows } = await db.query(
+      "SELECT status FROM student_invoices WHERE id = $1",
+      [tagihan.id],
+    );
+    expect(rows[0]?.status).toBe("lunas");
+
+    // Dikembalikan seperti semula supaya pemeriksaan lain tidak terbawa.
+    await db.query(
+      "UPDATE student_invoices SET status = 'belum_lunas', tanggal_bayar = NULL WHERE id = $1",
+      [tagihan.id],
+    );
+  } finally {
+    await db.end();
+  }
+});
