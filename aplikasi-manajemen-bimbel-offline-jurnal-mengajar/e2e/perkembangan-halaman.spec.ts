@@ -450,3 +450,73 @@ test("riwayat anak memakai formulir yang sama untuk mengubah dan menghapus catat
   await expect(page.getByText("Perkalian sudah lancar.")).toHaveCount(0);
   await expect(page.getByText(/· 1 catatan$/)).toBeVisible();
 });
+
+/**
+ * Pemilih murid di dalam formulir catatan: tombol "Tambah catatan" di kepala
+ * halaman selalu membuka formulir untuk satu anak lebih dulu, dan pemilih
+ * "Murid" di dalamnya memindahkan sasaran simpan ke anak yang dipilih —
+ * terlihat dari judul formulirnya dan dari kartu anak mana yang akhirnya
+ * berisi catatan itu.
+ */
+test("pemilih murid memindahkan sasaran simpan formulir catatan", async ({
+  page,
+  request,
+}) => {
+  const email = await daftar(request, "Guru Pemilih Murid");
+  await masukLayar(page, email);
+
+  // Dua anak tanpa catatan: yang tersimpan nanti hanya boleh milik anak yang
+  // terakhir dipilih, bukan anak yang dibuka pertama kali.
+  const pertama = namaAnak("Dewi Pemilih");
+  const kedua = namaAnak("Eka Pemilih");
+  await buatMurid(request, pertama);
+  await buatMurid(request, kedua);
+
+  await page.goto("/app/perkembangan");
+  await page.getByRole("button", { name: "Tambah catatan" }).first().click();
+
+  const pilihMurid = page.getByLabel("Murid");
+  await expect(
+    pilihMurid.locator("option").filter({ hasText: pertama }),
+  ).toHaveCount(1);
+  await expect(
+    pilihMurid.locator("option").filter({ hasText: kedua }),
+  ).toHaveCount(1);
+
+  // Pilih anak kedua sambil mengetik isiannya, lalu pindah ke anak pertama:
+  // judul formulirnya mengikuti pilihan terakhir, sedangkan isian yang sudah
+  // diketik tidak ikut hilang.
+  await pilihMurid.selectOption({ label: kedua });
+  const formKedua = page.getByRole("form", {
+    name: `Catatan perkembangan ${kedua}`,
+  });
+  await expect(
+    formKedua.getByText(`Catatan baru untuk ${kedua}`),
+  ).toBeVisible();
+  await formKedua.getByLabel("Nilai").fill("88");
+
+  await pilihMurid.selectOption({ label: pertama });
+  const form = page.getByRole("form", {
+    name: `Catatan perkembangan ${pertama}`,
+  });
+  await expect(form.getByText(`Catatan baru untuk ${pertama}`)).toBeVisible();
+  await expect(form.getByLabel("Nilai")).toHaveValue("88");
+
+  await form.getByLabel("Tanggal").fill(tanggalISO());
+  await form.getByLabel("Sikap").selectOption("Baik");
+  await form.getByLabel("Catatan (opsional)").fill("Latihan membaca puisi.");
+  await form.getByRole("button", { name: "Simpan catatan" }).click();
+
+  await expect(
+    page.getByText(hanyaTeks(`Catatan baru untuk ${pertama} tersimpan.`)),
+  ).toBeVisible();
+
+  // Catatannya milik anak pertama saja; anak kedua belum punya catatan sama
+  // sekali sehingga belum dibuatkan kartu.
+  const kartu = kartuAnak(page, pertama);
+  await expect(kartu.getByText("Nilai 88", { exact: true })).toBeVisible();
+  await expect(
+    kartu.getByText("Latihan membaca puisi.", { exact: true }),
+  ).toBeVisible();
+  await expect(kartuAnak(page, kedua)).toHaveCount(0);
+});
