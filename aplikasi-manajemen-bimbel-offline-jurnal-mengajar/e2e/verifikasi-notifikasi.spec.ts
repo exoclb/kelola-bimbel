@@ -85,6 +85,19 @@ test("owner membuka ringkasan verifikasi notifikasi dari kartu pengaturan", asyn
 
   await expect(page.getByText("Perlu ditinjau").first()).toBeVisible();
   await expect(page.getByText("Belum diperiksa").first()).toBeVisible();
+
+  // Tabel hasil uji menyandingkan peristiwa, penerimanya, kunci, dan tesnya;
+  // baris jurnal menunjukkan peristiwa yang dijaga tanpa kunci.
+  await expect(page.getByText("Hasil uji per peristiwa")).toBeVisible();
+  await expect(page.getByText("Tanpa kunci")).toBeVisible();
+  await expect(
+    page.getByText("gaji_dibayar:<guruId>:<periode>").first(),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      "tests/notifikasi-gaji.test.mjs · tandai dibayar menambah notifikasi gaji sekali saja",
+    ),
+  ).toBeVisible();
 });
 
 test("guru tidak menemukan halaman verifikasi notifikasi", async ({

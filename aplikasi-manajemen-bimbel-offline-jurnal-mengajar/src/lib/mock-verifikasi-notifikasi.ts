@@ -147,6 +147,84 @@ export const KASUS_VERIFIKASI: KasusVerifikasi[] = [
   },
 ];
 
+export type HasilUjiPeristiwa = {
+  id: string;
+  /** Peristiwa yang memicu pemberitahuan, dalam bahasa operasional. */
+  peristiwa: string;
+  jenis: JenisNotifikasi;
+  /** Siapa yang menerima pemberitahuannya. */
+  penerima: string;
+  /** Kunci identitas peristiwa; `null` kalau dijaga dengan cara lain. */
+  kunci: string | null;
+  /** Cara baris kedua dicegah saat peristiwanya tidak punya kunci. */
+  penjaga: string;
+  /** Letak pemicunya di kode, untuk penelusuran. */
+  pemicu: string;
+  /** Nama tes yang mengunci perilaku peristiwa ini. */
+  tes: string[];
+};
+
+//
+// Setiap titik tulis yang benar-benar mengirim pemberitahuan, beserta tes yang
+// mengunci perilakunya. Yang tidak ada di sini juga temuan: `kelas_kosong` belum
+// punya pemicu sama sekali, dan kanal surel/WhatsApp belum punya penyedia.
+export const PERISTIWA_UJI: HasilUjiPeristiwa[] = [
+  {
+    id: "jurnal-pertama",
+    peristiwa: "Jurnal mengajar pertama kali masuk untuk jadwal hari itu",
+    jenis: "jurnal_baru",
+    penerima: "Pemilik/admin yang menyalakan jenisnya",
+    kunci: null,
+    penjaga:
+      "Dijaga pemeriksaan jurnal yang sudah ada, bukan kunci: kirim ulang jurnal yang sama tidak menambah pemberitahuan.",
+    pemicu: "src/services/jurnal.service.ts · simpanJurnal",
+    tes: [
+      "e2e/notifikasi.spec.ts · jurnal baru hanya memberi tahu pemilik yang masih mengaktifkannya",
+    ],
+  },
+  {
+    id: "rekap-honor-baru",
+    peristiwa: "Rekap honor seorang guru untuk satu periode baru tercatat",
+    jenis: "rekap_honor",
+    penerima: "Guru yang bersangkutan",
+    kunci: "rekap_honor:<guruId>:<periode>",
+    penjaga: "Kunci per guru dan periode, ditopang indeks unik.",
+    pemicu: "src/services/gaji.service.ts · tandaiPembayaranGaji",
+    tes: [
+      "tests/notifikasi-gaji.test.mjs · rekap honor periodik hanya memberi tahu sekali per periode",
+      "tests/notifikasi-gaji.test.mjs · guru yang mematikan rekap_honor tidak dikirimi",
+    ],
+  },
+  {
+    id: "gaji-dibayar",
+    peristiwa: "Status gaji satu periode berubah menjadi sudah dibayar",
+    jenis: "gaji_dibayar",
+    penerima: "Guru yang bersangkutan",
+    kunci: "gaji_dibayar:<guruId>:<periode>",
+    penjaga:
+      "Kunci per guru dan periode, dan hanya dikirim saat statusnya benar-benar berubah.",
+    pemicu: "src/services/gaji.service.ts · tandaiPembayaranGaji",
+    tes: [
+      "tests/notifikasi-gaji.test.mjs · tandai dibayar menambah notifikasi gaji sekali saja",
+      "e2e/notifikasi.spec.ts · gaji dibayar memberi tahu gurunya sekali saja",
+    ],
+  },
+  {
+    id: "laporan-bulanan-selesai",
+    peristiwa: "Angka laporan bulanan satu periode selesai dihitung",
+    jenis: "laporan_bulanan",
+    penerima: "Pemilik/admin yang menyalakan jenisnya (bawaannya mati)",
+    kunci: "laporan_bulanan:<periode>",
+    penjaga: "Kunci per periode, dan penerimanya wajib menyalakan jenisnya.",
+    pemicu:
+      "src/services/notifikasi.service.ts · beritahuLaporanBulanan · dipanggil halaman /app/laba-rugi",
+    tes: [
+      "tests/notifikasi-service.test.mjs · beritahuLaporanBulanan sekali per periode dan hanya untuk yang menyalakannya",
+      "e2e/notifikasi.spec.ts · laporan bulanan memberitahu pemilik yang menyalakannya sekali per periode",
+    ],
+  },
+];
+
 export type RingkasanVerifikasi = {
   total: number;
   lulus: number;

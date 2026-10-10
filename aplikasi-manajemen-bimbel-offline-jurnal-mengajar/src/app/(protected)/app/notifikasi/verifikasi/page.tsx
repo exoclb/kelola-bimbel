@@ -7,10 +7,12 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import { DaftarVerifikasiNotifikasi } from "@/components/daftar-verifikasi-notifikasi";
+import { HasilUjiPerPeristiwa } from "@/components/hasil-uji-per-peristiwa";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
   KASUS_VERIFIKASI,
+  PERISTIWA_UJI,
   ringkasVerifikasi,
 } from "@/lib/mock-verifikasi-notifikasi";
 import { requirePermission } from "@/lib/session";
@@ -90,6 +92,18 @@ export default async function VerifikasiNotifikasiPage() {
       </div>
 
       <div className="mt-6">
+        <HasilUjiPerPeristiwa peristiwa={PERISTIWA_UJI} />
+      </div>
+
+      <h2 className="mt-10 text-lg font-semibold tracking-tight">
+        Pemeriksaan perilaku
+      </h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Apa yang dibuktikan setiap pemeriksaan, apa yang terlihat saat
+        diperiksa, dan apa yang perlu diputuskan.
+      </p>
+
+      <div className="mt-4">
         <DaftarVerifikasiNotifikasi kasus={kasus} />
       </div>
 
