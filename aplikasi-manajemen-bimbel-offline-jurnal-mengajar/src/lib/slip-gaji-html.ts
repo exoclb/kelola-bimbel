@@ -3,7 +3,8 @@
 // unduh slip supaya owner bisa menyimpan atau mengirimkannya ke guru.
 
 import {
-  kontakProfilDokumen,
+  amanHtml,
+  kopDokumenHtml,
   namaProfilDokumen,
   type ProfilDokumen,
 } from "@/lib/dokumen-html";
@@ -18,20 +19,6 @@ type SlipGajiHtmlProps = {
   /** Identitas bimbel untuk kop dokumen; sama dengan kop di pratinjau layar. */
   profil: ProfilDokumen;
 };
-
-/**
- * Amankan nilai dari basis data sebelum ditulis ke dokumen HTML. Nama guru,
- * email, dan nama kelas bisa berisi tanda `<` atau `&`, jadi tanpa ini dokumen
- * slip yang dibuka di peramban bisa menjalankan skrip yang disisipkan.
- */
-function amanHtml(nilai: string) {
-  return nilai
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
 
 /** Nama berkas yang aman untuk diunduh. */
 export function namaBerkasSlip(namaGuru: string, periode: string) {
@@ -106,15 +93,14 @@ export function slipGajiHtml({
 <body>
   <div class="slip">
     <div class="kepala">
-      <div>
-        <h1>${amanHtml(namaProfilDokumen(profil))}</h1>
-        <p class="periode">${amanHtml(kontakProfilDokumen(profil))}</p>
-        <p>Slip gaji guru · ${periodeTampil}</p>
-      </div>
-      <p class="status">
+      ${kopDokumenHtml({
+        profil,
+        judul: `Slip gaji guru · ${periodeTampil}`,
+        kanan: `<p class="status">
         ${sudahDibayar ? "Sudah dibayar" : "Belum dibayar"}
         ${baris.tanggalDibayar ? `<br><span class="periode">${formatTanggalLengkap(baris.tanggalDibayar)}</span>` : ""}
-      </p>
+      </p>`,
+      })}
     </div>
 
     <dl>

@@ -3,7 +3,11 @@
 // dari portal wali. Dipakai endpoint unduh bukti tagihan.
 
 import { formatRupiah } from "@/lib/gaji";
-import { kontakProfilDokumen, namaProfilDokumen } from "@/lib/dokumen-html";
+import {
+  amanHtml,
+  kopDokumenHtml,
+  type ProfilDokumen,
+} from "@/lib/dokumen-html";
 import {
   formatPeriodeTagihan,
   jatuhTempoTagihan,
@@ -17,25 +21,14 @@ type BuktiTagihanHtmlProps = {
   /** Baris tagihan satu anak; baris pertama dipakai untuk identitas anak. */
   daftar: Tagihan[];
   periodeBerjalan: string;
-  /** Identitas bimbel untuk kop; bentuknya sama dengan `ProfilDokumen`. */
-  profil: { nama: string; alamat: string; telepon: string; email: string };
+  /**
+   * Identitas bimbel untuk kop; bentuknya sama dengan `ProfilDokumen` yang
+   * dipakai kop di layar dan dokumen mandiri lain, termasuk logonya.
+   */
+  profil: ProfilDokumen;
   /** Tanggal dokumen dibuat, untuk catatan kaki. */
   dibuatPada: Date;
 };
-
-/**
- * Amankan nilai dari basis data sebelum ditulis ke dokumen HTML. Nama anak,
- * kelas, dan nama bimbel bisa berisi tanda `<` atau `&`, jadi tanpa ini dokumen
- * yang dibuka di peramban bisa menjalankan skrip yang disisipkan.
- */
-function amanHtml(nilai: string) {
-  return nilai
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
 
 /** Nama berkas yang aman untuk diunduh. */
 export function namaBerkasBuktiTagihan(namaAnak: string, periode: string) {
@@ -125,14 +118,13 @@ export function buktiTagihanHtml({
 <body>
   <div class="bukti">
     <div class="kepala">
-      <div>
-        <h1>${amanHtml(namaProfilDokumen(profil))}</h1>
-        <p class="periode">${amanHtml(kontakProfilDokumen(profil))}</p>
-      </div>
-      <p class="kanan">
+      ${kopDokumenHtml({
+        profil,
+        kanan: `<p class="kanan">
         Bukti tagihan SPP<br>
         <span class="periode">${amanHtml(tanggalTampil(dibuatPada))}</span>
-      </p>
+      </p>`,
+      })}
     </div>
 
     <dl>
