@@ -8,22 +8,16 @@ import {
   IsianTeks,
   IsianTeksPanjang,
 } from "@/components/isian-form";
+import {
+  PILIHAN_SIKAP,
+  isianCatatanAwal,
+  susunCatatan,
+  validasiCatatanPerkembangan,
+  type GalatCatatan,
+  type IsianCatatan,
+  type IsiCatatan,
+} from "@/lib/perkembangan";
 import { tanggalISO } from "@/lib/tanggal";
-
-/** Pilihan cepat sikap anak selama belajar. */
-const PILIHAN_SIKAP = [
-  "Baik",
-  "Sangat baik",
-  "Cukup",
-  "Perlu perhatian",
-] as const;
-
-export type IsiCatatan = {
-  tanggal: string;
-  nilai: number;
-  sikap: string;
-  catatanPerkembangan: string;
-};
 
 type FormCatatanAnakProps = {
   namaMurid: string;
@@ -35,7 +29,8 @@ type FormCatatanAnakProps = {
 
 /**
  * Formulir catatan perkembangan satu anak: tanggal, nilai, sikap, dan catatan
- * singkat. Dipakai untuk menambah catatan baru maupun mengubah yang sudah ada.
+ * singkat. Dipakai untuk menambah catatan baru maupun mengubah yang sudah ada,
+ * jadi aturan isiannya tinggal di `src/lib/perkembangan.ts`.
  */
 export function FormCatatanAnak({
   namaMurid,
@@ -44,57 +39,25 @@ export function FormCatatanAnak({
   onBatal,
 }: FormCatatanAnakProps) {
   const idForm = useId();
-  const [tanggal, setTanggal] = useState(
-    catatanAwal?.tanggal ?? tanggalISO(new Date()),
+  const [isian, setIsian] = useState<IsianCatatan>(() =>
+    isianCatatanAwal(catatanAwal, tanggalISO(new Date())),
   );
-  const [nilai, setNilai] = useState(
-    catatanAwal ? String(catatanAwal.nilai) : "",
-  );
-  const [sikap, setSikap] = useState<string>(
-    catatanAwal?.sikap ?? PILIHAN_SIKAP[0],
-  );
-  const [catatan, setCatatan] = useState(
-    catatanAwal?.catatanPerkembangan ?? "",
-  );
-  const [galatTanggal, setGalatTanggal] = useState("");
-  const [galatNilai, setGalatNilai] = useState("");
-  const [galatSikap, setGalatSikap] = useState("");
+  const [galat, setGalat] = useState<GalatCatatan>({});
+
+  /** Ubah satu isian sekaligus hilangkan peringatan yang lama di kolomnya. */
+  function ubah(kolom: keyof IsianCatatan, nilaiBaru: string) {
+    setIsian((lama) => ({ ...lama, [kolom]: nilaiBaru }));
+    setGalat((lama) => ({ ...lama, [kolom]: undefined }));
+  }
 
   function simpan(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    setGalatTanggal("");
-    setGalatNilai("");
-    setGalatSikap("");
+    const masalah = validasiCatatanPerkembangan(isian, tanggalISO(new Date()));
+    setGalat(masalah);
+    if (Object.keys(masalah).length > 0) return;
 
-    if (!tanggal) {
-      setGalatTanggal("Tanggal catatan wajib diisi.");
-      return;
-    }
-    if (tanggal > tanggalISO(new Date())) {
-      setGalatTanggal("Tanggal catatan tidak boleh melewati hari ini.");
-      return;
-    }
-    const angka = Number(nilai);
-    if (nilai.trim() === "" || Number.isNaN(angka)) {
-      setGalatNilai("Nilai wajib diisi dengan angka.");
-      return;
-    }
-    if (angka < 0 || angka > 100) {
-      setGalatNilai("Nilai harus antara 0 sampai 100.");
-      return;
-    }
-    if (!sikap.trim()) {
-      setGalatSikap("Sikap anak wajib dipilih.");
-      return;
-    }
-
-    onSimpan({
-      tanggal,
-      nilai: angka,
-      sikap,
-      catatanPerkembangan: catatan.trim(),
-    });
+    onSimpan(susunCatatan(isian));
   }
 
   return (
@@ -121,13 +84,10 @@ export function FormCatatanAnak({
           type="date"
           required
           ukuran="sentuh"
-          value={tanggal}
+          value={isian.tanggal}
           max={tanggalISO(new Date())}
-          error={galatTanggal}
-          onChange={(event) => {
-            setTanggal(event.target.value);
-            setGalatTanggal("");
-          }}
+          error={galat.tanggal}
+          onChange={(event) => ubah("tanggal", event.target.value)}
         />
         <IsianTeks
           id={`${idForm}-nilai`}
@@ -138,25 +98,19 @@ export function FormCatatanAnak({
           ukuran="sentuh"
           min={0}
           max={100}
-          value={nilai}
+          value={isian.nilai}
           placeholder="0–100"
-          error={galatNilai}
-          onChange={(event) => {
-            setNilai(event.target.value);
-            setGalatNilai("");
-          }}
+          error={galat.nilai}
+          onChange={(event) => ubah("nilai", event.target.value)}
         />
         <IsianPilih
           id={`${idForm}-sikap`}
           label="Sikap"
           required
           ukuran="sentuh"
-          value={sikap}
-          error={galatSikap}
-          onChange={(event) => {
-            setSikap(event.target.value);
-            setGalatSikap("");
-          }}
+          value={isian.sikap}
+          error={galat.sikap}
+          onChange={(event) => ubah("sikap", event.target.value)}
         >
           {PILIHAN_SIKAP.map((pilihan) => (
             <option key={pilihan} value={pilihan}>
@@ -171,13 +125,13 @@ export function FormCatatanAnak({
           id={`${idForm}-catatan`}
           label="Catatan (opsional)"
           ukuran="sentuh"
-          value={catatan}
+          value={isian.catatanPerkembangan}
           maxLength={500}
           placeholder="Misalnya: sudah lancar perkalian, perlu latihan soal cerita."
-          onChange={(event) => setCatatan(event.target.value)}
+          onChange={(event) => ubah("catatanPerkembangan", event.target.value)}
         />
         <p className="text-right text-xs text-muted-foreground tabular-nums">
-          {catatan.length}/500
+          {isian.catatanPerkembangan.length}/500
         </p>
       </div>
 

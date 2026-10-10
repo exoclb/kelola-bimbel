@@ -14,10 +14,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { CatatanSikapKehadiran } from "@/components/catatan-sikap-kehadiran";
-import {
-  FormCatatanAnak,
-  type IsiCatatan,
-} from "@/components/form-catatan-anak";
+import { FormCatatanAnak } from "@/components/form-catatan-anak";
 import { LencanaNilai } from "@/components/lencana-nilai";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { Button } from "@/components/ui/button";
@@ -28,6 +25,7 @@ import type {
   CatatanPerkembanganTersimpan,
   RingkasanPerkembanganTersimpan,
 } from "@/services/perkembangan.service";
+import type { IsiCatatan } from "@/lib/perkembangan";
 import { formatTanggalLengkap } from "@/lib/tanggal";
 
 type MuridRingkas = { id: string; nama: string };

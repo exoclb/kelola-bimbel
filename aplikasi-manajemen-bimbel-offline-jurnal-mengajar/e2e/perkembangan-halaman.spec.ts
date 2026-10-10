@@ -10,6 +10,14 @@ const origin = "http://localhost:3101";
 const headers = { Origin: origin };
 const sandi = "Perkembangan-halaman-123!";
 
+/** Tanggal hari ini dalam bentuk `YYYY-MM-DD`, sama seperti isian formulir. */
+function tanggalISO() {
+  const sekarang = new Date();
+  const bulan = String(sekarang.getMonth() + 1).padStart(2, "0");
+  const hari = String(sekarang.getDate()).padStart(2, "0");
+  return `${sekarang.getFullYear()}-${bulan}-${hari}`;
+}
+
 /** Akun dibuat lewat endpoint yang sama dengan layar "Buat akun". */
 async function daftar(client: APIRequestContext, nama: string) {
   const email = `perkembangan-halaman-${randomUUID()}@example.com`;
@@ -80,8 +88,11 @@ function hanyaTeks(kalimat: string) {
  * `src/services/perkembangan.service.ts` lewat `/api/perkembangan`. Berkas ini
  * mengunci apa yang terlihat di layar — ringkasannya, isi kartu tiap anak,
  * perilaku anak yang belum dicatat, formulir tambah/ubahnya, dan tautan ke
- * laporan serta riwayatnya. Sebelumnya halaman itu hanya disentuh satu baris di
- * `e2e/pemantauan.spec.ts` (cek izin), jadi seluruh isinya belum pernah diuji.
+ * laporan serta riwayatnya. Riwayat satu anak ikut diuji di sini karena
+ * memakai formulir catatan yang sama dari pintu kedua. Sebelumnya halaman itu
+ * hanya disentuh satu baris di `e2e/pemantauan.spec.ts` (cek izin) dan
+ * `e2e/perkembangan.spec.ts` (API-nya saja), jadi seluruh isinya belum pernah
+ * diuji.
  *
  * Basis data uji dipakai bersama seluruh suite, jadi jumlah murid maupun
  * catatan globalnya tidak pernah dipatok angkanya; yang dipatok adalah bentuk
@@ -180,7 +191,20 @@ test("formulir tambah catatan menolak isian salah lalu menyimpan lewat API", asy
   });
   await expect(form.getByText(`Catatan baru untuk ${nama}`)).toBeVisible();
 
+  // Tanggalnya dikosongkan: catatan tanpa tanggal tidak bisa ditelusuri lagi.
+  await form.getByLabel("Tanggal").fill("");
+  await form.getByRole("button", { name: "Simpan catatan" }).click();
+  await expect(form.getByText("Tanggal catatan wajib diisi.")).toBeVisible();
+
+  // Tanggal di masa depan juga ditolak, bukan cuma dibatasi pemilih tanggal.
+  await form.getByLabel("Tanggal").fill("2030-01-01");
+  await form.getByRole("button", { name: "Simpan catatan" }).click();
+  await expect(
+    form.getByText("Tanggal catatan tidak boleh melewati hari ini."),
+  ).toBeVisible();
+
   // Nilai belum diisi.
+  await form.getByLabel("Tanggal").fill(tanggalISO());
   await form.getByRole("button", { name: "Simpan catatan" }).click();
   await expect(form.getByText("Nilai wajib diisi dengan angka.")).toBeVisible();
 
@@ -190,7 +214,20 @@ test("formulir tambah catatan menolak isian salah lalu menyimpan lewat API", asy
   await expect(
     form.getByText("Nilai harus antara 0 sampai 100."),
   ).toBeVisible();
+  await form.getByLabel("Nilai").fill("-1");
+  await form.getByRole("button", { name: "Simpan catatan" }).click();
+  await expect(
+    form.getByText("Nilai harus antara 0 sampai 100."),
+  ).toBeVisible();
 
+  // Semua penolakan di atas belum mengirim apa pun: belum ada kabar tersimpan
+  // dan anaknya belum muncul sebagai kartu di daftar.
+  await expect(
+    page.getByText(/^Catatan baru untuk .+ tersimpan\.$/),
+  ).toHaveCount(0);
+  await expect(kartuAnak(page, nama)).toHaveCount(0);
+
+  // Isian yang salah tidak mengirim apa pun: sampai di sini barulah tersimpan.
   await form.getByLabel("Nilai").fill("77");
   await form.getByLabel("Sikap").selectOption("Cukup");
   await form
@@ -323,4 +360,93 @@ test("kartu anak menautkan laporan orang tua dan riwayat perkembangannya", async
       ),
     )
     .toBe(true);
+});
+
+/**
+ * Riwayat satu anak memakai formulir catatan yang sama, hanya saja dari pintu
+ * kedua: isiannya datang sudah terisi catatan yang mau diperbaiki, dan tiap
+ * catatan bisa dihapus setelah dikonfirmasi di tempat. Sebelumnya riwayat hanya
+ * diuji lewat API, jadi pemakaian ulang formulir di halaman ini belum terjaga.
+ */
+test("riwayat anak memakai formulir yang sama untuk mengubah dan menghapus catatan", async ({
+  page,
+  request,
+}) => {
+  const email = await daftar(request, "Guru Riwayat Evaluasi");
+  await masukLayar(page, email);
+
+  const nama = namaAnak("Fina Evaluasi");
+  const muridId = await buatMurid(request, nama);
+  await catat(request, muridId, {
+    tanggal: "2026-03-02",
+    nilai: 80,
+    sikap: "Baik",
+    catatan: "Perkalian sudah lancar.",
+  });
+  await catat(request, muridId, {
+    tanggal: "2026-03-09",
+    nilai: 92,
+    sikap: "Sangat baik",
+    catatan: "Sudah lancar soal cerita.",
+  });
+
+  await page.goto(`/app/perkembangan/riwayat?murid=${muridId}`);
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Riwayat Perkembangan" }),
+  ).toBeVisible();
+  await expect(page.getByText(/· 2 catatan$/)).toBeVisible();
+  await expect(
+    page.getByText("Belum ada catatan kehadiran.", { exact: true }),
+  ).toBeVisible();
+
+  // Catatan terbaru yang diubah, bukan yang lain.
+  const catatanDiubah = page
+    .locator("li")
+    .filter({ hasText: "Sudah lancar soal cerita." });
+  await catatanDiubah.getByRole("button", { name: "Ubah catatan ini" }).click();
+
+  const form = page.getByRole("form", {
+    name: `Catatan perkembangan ${nama}`,
+  });
+  await expect(form.getByText(`Ubah catatan untuk ${nama}`)).toBeVisible();
+  await expect(form.getByLabel("Tanggal")).toHaveValue("2026-03-09");
+  await expect(form.getByLabel("Nilai")).toHaveValue("92");
+  await expect(form.getByLabel("Sikap")).toHaveValue("Sangat baik");
+  await expect(form.getByLabel("Catatan (opsional)")).toHaveValue(
+    "Sudah lancar soal cerita.",
+  );
+
+  await form.getByLabel("Nilai").fill("55");
+  await form.getByLabel("Sikap").selectOption("Perlu perhatian");
+  await form.getByRole("button", { name: "Simpan perubahan" }).click();
+
+  await expect(
+    page.getByText(hanyaTeks(`Catatan ${nama} diperbarui.`)),
+  ).toBeVisible();
+  const catatanBaru = page
+    .locator("li")
+    .filter({ hasText: "Sudah lancar soal cerita." });
+  await expect(
+    catatanBaru.getByText("Nilai 55", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    catatanBaru.getByText("Perlu perhatian", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText(/· 2 catatan$/)).toBeVisible();
+
+  // Catatan lama dihapus setelah dikonfirmasi di tempat.
+  const catatanDihapus = page
+    .locator("li")
+    .filter({ hasText: "Perkalian sudah lancar." });
+  await catatanDihapus.getByRole("button", { name: "Hapus catatan" }).click();
+  await expect(
+    page.getByText(hanyaTeks("Hapus catatan Senin, 2 Maret 2026 ini?")),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Ya, hapus" }).click();
+  await expect(
+    page.getByText(hanyaTeks(`Catatan ${nama} dihapus.`)),
+  ).toBeVisible();
+  await expect(page.getByText("Perkalian sudah lancar.")).toHaveCount(0);
+  await expect(page.getByText(/· 1 catatan$/)).toBeVisible();
 });

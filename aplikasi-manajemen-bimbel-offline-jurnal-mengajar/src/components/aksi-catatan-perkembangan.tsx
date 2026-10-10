@@ -3,11 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Trash2 } from "lucide-react";
-import {
-  FormCatatanAnak,
-  type IsiCatatan,
-} from "@/components/form-catatan-anak";
+import { FormCatatanAnak } from "@/components/form-catatan-anak";
 import { Button } from "@/components/ui/button";
+import type { IsiCatatan } from "@/lib/perkembangan";
 import { formatTanggalLengkap } from "@/lib/tanggal";
 
 type AksiCatatanPerkembanganProps = {
