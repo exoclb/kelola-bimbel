@@ -98,9 +98,21 @@ test("halaman arus kas bisa dibuka per periode dan mengunduh laporannya", async 
 
   const baris = page.locator("li").filter({ hasText: "Mei 2097" });
   await expect(baris).toHaveCount(1);
+
+  // Tabel rekap bulanan menampilkan angka yang sama dalam rupiah: pemasukan,
+  // honor, operasional, pengeluaran, dan laba bersih, plus baris totalnya.
   await expect(
-    baris.getByText("Operasional Rp321.000", { exact: false }),
+    page.getByText("Rekap arus kas bulanan (rupiah)"),
   ).toBeVisible();
+  const rekap = page.locator("table tbody tr").filter({ hasText: "Mei 2097" });
+  await expect(rekap).toHaveCount(1);
+  await expect(rekap.locator("td").nth(2)).toHaveText("Rp321.000");
+  await expect(rekap.locator("td").nth(3)).toHaveText("Rp321.000");
+  await expect(rekap.locator("td").nth(4)).toHaveText("−Rp321.000");
+  await expect(page.locator("table tfoot tr")).toContainText("Total 4 bulan");
+  await expect(page.locator("table tfoot tr")).toContainText("Rp321.000");
+  // Tidak ada angka mentah di layar: semuanya lewat format rupiah.
+  await expect(page.getByText("321000", { exact: true })).toHaveCount(0);
 
   // Tombol geser mengubah bulan terakhir satu per satu; jendela empat bulan
   // ikut bergeser sehingga bulan terlama keluar dari tren.

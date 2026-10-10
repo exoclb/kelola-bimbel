@@ -63,6 +63,46 @@ const NAMA_BULAN = new Intl.DateTimeFormat("id-ID", { month: "long" });
 const bulanTampil = (bulan: number) =>
   NAMA_BULAN.format(new Date(2026, bulan - 1, 1));
 
+/** Judul kolom rekap — dipakai tabel di layar dan lembar yang diunduh. */
+const KOLOM_ARUS_KAS = [
+  "Periode",
+  "Pemasukan SPP (Rp)",
+  "Honor Guru (Rp)",
+  "Operasional (Rp)",
+  "Pengeluaran (Rp)",
+  "Laba Bersih (Rp)",
+];
+
+/** Bulan yang rugi ditulis dengan tanda minus, bukan angka rupiah negatif. */
+function nilaiTampil(nilai: number) {
+  return nilai < 0 ? `−${formatRupiah(-nilai)}` : formatRupiah(nilai);
+}
+
+/**
+ * Satu sel tabel rekap: kolom pertama jadi label barisnya, sisanya angka
+ * rupiah yang rata kanan supaya bisa dibandingkan per kolom.
+ */
+function SelRekap({ nilai, kolomKe }: { nilai: string | number; kolomKe: number }) {
+  if (kolomKe === 0) {
+    return (
+      <th scope="row" className="py-2 pr-3 font-medium whitespace-nowrap">
+        {String(nilai)}
+      </th>
+    );
+  }
+  const angka = Number(nilai);
+  return (
+    <td
+      className={cn(
+        "py-2 pr-3 text-right tabular-nums",
+        kolomKe === 5 && angka < 0 && "text-destructive",
+      )}
+    >
+      {kolomKe === 5 ? nilaiTampil(angka) : formatRupiah(angka)}
+    </td>
+  );
+}
+
 /**
  * Arus kas bimbel: tren bulanan pemasukan SPP, pengeluaran (honor guru +
  * operasional), dan laba bersih dalam satu tampilan. Ketiga angkanya datang
@@ -127,11 +167,45 @@ export function ArusKas({
   const total = daftar.reduce(
     (jumlah, baris) => ({
       pemasukan: jumlah.pemasukan + baris.pemasukan,
+      honor: jumlah.honor + baris.honor,
+      operasional: jumlah.operasional + baris.operasional,
       pengeluaran: jumlah.pengeluaran + baris.pengeluaran,
       laba: jumlah.laba + baris.laba,
     }),
-    { pemasukan: 0, pengeluaran: 0, laba: 0 },
+    {
+      pemasukan: 0,
+      honor: 0,
+      operasional: 0,
+      pengeluaran: 0,
+      laba: 0,
+    },
   );
+
+  // Satu daftar baris dipakai dua kali: tabel rekap di layar dan lembar yang
+  // diunduh, jadi berkasnya tidak mungkin memuat angka yang berbeda.
+  const barisLaporan = useMemo<(string | number)[][]>(
+    () => [
+      ...daftar.map((baris) => [
+        formatPeriode(baris.periode),
+        baris.pemasukan,
+        baris.honor,
+        baris.operasional,
+        baris.pengeluaran,
+        baris.laba,
+      ]),
+      [
+        `Total ${JUMLAH_BULAN} bulan`,
+        total.pemasukan,
+        total.honor,
+        total.operasional,
+        total.pengeluaran,
+        total.laba,
+      ],
+    ],
+    [daftar, total],
+  );
+  const barisBulan = barisLaporan.slice(0, -1);
+  const barisTotal = barisLaporan[barisLaporan.length - 1];
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -283,14 +357,6 @@ export function ArusKas({
                     />
                   </div>
                 </div>
-                <p className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                  <span>Masuk {formatRupiah(baris.pemasukan)}</span>
-                  <span>Keluar {formatRupiah(baris.pengeluaran)}</span>
-                  <span>
-                    Honor {formatRupiah(baris.honor)} · Operasional{" "}
-                    {formatRupiah(baris.operasional)}
-                  </span>
-                </p>
               </li>
             ))}
           </ul>
@@ -321,37 +387,76 @@ export function ArusKas({
         </CardContent>
       </Card>
 
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Rekap Bulanan</CardTitle>
+          <CardDescription>
+            Angka tiap bulan dalam rupiah, kolom demi kolom sama dengan lembar
+            yang diunduh di bawah.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {/* Tabelnya bisa digeser mendatar di ponsel tanpa membuat halaman
+              ikut melebar. */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              {/* Judul tabel jadi caption, bukan paragraf terpisah, supaya
+                  pembaca layar mendapat nama tabelnya sekaligus. */}
+              <caption className="pb-2 text-left text-sm font-medium">
+                Rekap arus kas bulanan (rupiah)
+              </caption>
+              <thead>
+                <tr className="border-b text-muted-foreground">
+                  {KOLOM_ARUS_KAS.map((judulKolom, kolomKe) => (
+                    <th
+                      key={judulKolom}
+                      scope="col"
+                      className={cn(
+                        "py-2 pr-3 font-medium whitespace-nowrap",
+                        kolomKe > 0 && "text-right",
+                      )}
+                    >
+                      {judulKolom}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {barisBulan.map((isi) => (
+                  <tr key={String(isi[0])} className="border-b last:border-0">
+                    {isi.map((sel, kolomKe) => (
+                      <SelRekap
+                        key={`${kolomKe}-${sel}`}
+                        nilai={sel}
+                        kolomKe={kolomKe}
+                      />
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t font-medium">
+                  {barisTotal.map((sel, kolomKe) => (
+                    <SelRekap
+                      key={`${kolomKe}-${sel}`}
+                      nilai={sel}
+                      kolomKe={kolomKe}
+                    />
+                  ))}
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="mt-6">
         <TombolUnduhLaporan
           judul="Arus Kas"
           periode={`${formatPeriode(daftar[0].periode)} – ${formatPeriode(periodeAkhir)}`}
           profil={profil}
-          kolom={[
-            "Periode",
-            "Pemasukan SPP (Rp)",
-            "Honor Guru (Rp)",
-            "Operasional (Rp)",
-            "Pengeluaran (Rp)",
-            "Laba Bersih (Rp)",
-          ]}
-          baris={[
-            ...daftar.map((baris) => [
-              formatPeriode(baris.periode),
-              baris.pemasukan,
-              baris.honor,
-              baris.operasional,
-              baris.pengeluaran,
-              baris.laba,
-            ]),
-            [
-              `Total ${JUMLAH_BULAN} bulan`,
-              total.pemasukan,
-              daftar.reduce((jumlah, baris) => jumlah + baris.honor, 0),
-              daftar.reduce((jumlah, baris) => jumlah + baris.operasional, 0),
-              total.pengeluaran,
-              total.laba,
-            ],
-          ]}
+          kolom={KOLOM_ARUS_KAS}
+          baris={barisLaporan}
         />
       </div>
 
@@ -369,8 +474,8 @@ export function ArusKas({
 
       <p className="mt-6 text-xs leading-5 text-muted-foreground">
         Catatan: pemasukan SPP, honor guru, dan pengeluaran operasional dibaca
-        dari database; unduhan laporan memuat angka bulan-bulan di tren ini,
-        persis seperti di layar.
+        dari database; tabel rekap dan unduhan laporan memuat angka bulan-bulan
+        di tren ini, persis seperti di layar.
       </p>
     </div>
   );
