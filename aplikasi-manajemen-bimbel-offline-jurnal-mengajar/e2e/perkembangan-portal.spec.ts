@@ -9,8 +9,9 @@ import { expect, test, type APIRequestContext } from "@playwright/test";
 // jurnal, dan tujuh catatan evaluasi), lalu memeriksa layarnya dari sudut
 // pandang wali: kalimat pengantarnya, tiga kartu ringkasan, grafik beserta
 // keterangan rentangnya, arah nilai tiap catatan, pengelompokan per bulan,
-// rincian rekap kehadiran per sesi (kelas, guru, tanggal, dan urutannya),
-// pemilih anak, keadaan kosong, dan tidak adanya
+// rincian tiap catatan (nilai, sikap, penulis, tanggal, dan isinya) beserta
+// pemisahannya antar anak, rincian rekap kehadiran per sesi (kelas, guru,
+// tanggal, dan urutannya), pemilih anak, keadaan kosong, dan tidak adanya
 // satu pun alat penyuntingan.
 //
 // Endpoint portalnya sendiri sudah dikunci berkas lain: `e2e/portal-isolasi.spec.ts`
@@ -483,7 +484,7 @@ test("rekap kehadiran menyebut kelas, guru, dan tanggal tiap sesi dengan yang te
   // Guru kedua punya akun sendiri, supaya tiap baris bisa dibedakan dari
   // nama gurunya — bukan hanya dari nama kelasnya.
   const emailGuruDua = await signUp(request, namaGuruDua, "guru-riwayat");
-  await setRole(emailGuruDua, "guru");
+  await setRole(emailGuruDua, "user");
   const guruDuaId = await idAkun(emailGuruDua);
   // Mendaftarkan akun baru membuat sesi berpindah ke akun itu, jadi pemilik
   // dimasukkan lagi sebelum menyiapkan kelasnya.
@@ -606,3 +607,180 @@ test("rekap kehadiran menyebut kelas, guru, dan tanggal tiap sesi dengan yang te
     page.getByRole("link", { name: "Tagihan SPP anak" }),
   ).toHaveAttribute("href", `/portal/tagihan?anak=${muridId}`);
 });
+
+test("catatan tiap guru tampil lengkap dan tidak menyusup ke anak lain", async ({
+  page,
+  request,
+}) => {
+  const kode = randomUUID().slice(0, 8);
+  const namaGuruSatu = `Guru Catatan Satu ${kode}`;
+  const namaGuruDua = `Guru Catatan Dua ${kode}`;
+  const namaA = `Catatan Anak A ${kode}`;
+  const namaB = `Catatan Anak B ${kode}`;
+
+  const emailOwner = await signUp(request, namaGuruSatu, "guru-catatan-satu");
+  await setRole(emailOwner, "owner");
+  await masuk(request, emailOwner);
+
+  // Guru kedua punya akun sendiri, supaya tiap catatan bisa dipastikan
+  // menyebut penulisnya — bukan selalu guru yang sama. Peran guru yang
+  // tersimpan adalah `user` (ditampilkan sebagai "Guru"); hanya peran itu yang
+  // punya izin menulis catatan perkembangan.
+  const emailGuruDua = await signUp(request, namaGuruDua, "guru-catatan-dua");
+  await setRole(emailGuruDua, "user");
+  await masuk(request, emailOwner);
+
+  const buatMurid = async (nama: string) => {
+    const murid = await request.post("/api/murid", {
+      headers,
+      data: { nama, tanggalLahir: "2014-09-09" },
+    });
+    expect(murid.status()).toBe(201);
+    return (await murid.json()).data.id as string;
+  };
+  const muridA = await buatMurid(namaA);
+  const muridB = await buatMurid(namaB);
+
+  const catat = (muridId: string, data: Record<string, unknown>) =>
+    request.post("/api/perkembangan", {
+      headers,
+      data: { muridId, ...data },
+    });
+
+  // Anak A punya dua catatan dari dua guru berbeda, nilai dan sikapnya pun
+  // berbeda supaya salah pasang baris langsung terlihat.
+  expect(
+    (
+      await catat(muridA, {
+        tanggal: "2026-05-04",
+        nilai: 68,
+        sikap: "Cukup",
+        catatanPerkembangan: `Perkalian perlu diulang ${kode}`,
+      })
+    ).status(),
+  ).toBe(201);
+  // Pengirim catatan diambil dari sesi, jadi catatan guru kedua memang dicatat
+  // sebagai guru kedua.
+  await masuk(request, emailGuruDua);
+  expect(
+    (
+      await catat(muridA, {
+        tanggal: "2026-05-11",
+        nilai: 96,
+        sikap: "Baik",
+        catatanPerkembangan: `Pecahan sudah lancar ${kode}`,
+      })
+    ).status(),
+  ).toBe(201);
+  await masuk(request, emailOwner);
+  expect(
+    (
+      await catat(muridB, {
+        tanggal: "2026-05-11",
+        nilai: 74,
+        sikap: "Baik",
+        catatanPerkembangan: `Catatan anak lain ${kode}`,
+      })
+    ).status(),
+  ).toBe(201);
+
+  const emailWali = await signUp(request, "Wali Catatan", "wali-catatan");
+  await setRole(emailWali, "orang-tua");
+  const waliId = await idAkun(emailWali);
+  await masuk(request, emailOwner);
+  for (const muridId of [muridA, muridB]) {
+    const tautan = await request.post(`/api/wali/${waliId}/murid`, {
+      headers,
+      data: { muridId },
+    });
+    expect(tautan.status()).toBe(201);
+  }
+
+  await page.goto("/sign-in");
+  await page.getByLabel("Email", { exact: true }).fill(emailWali);
+  await page.getByLabel("Password", { exact: true }).fill(sandi);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page).toHaveURL(/\/portal$/);
+  await page.goto(`/portal/perkembangan?anak=${muridA}`);
+
+  // Catatan saja sudah cukup: anak ini belum punya sesi jurnal sama sekali.
+  await expect(page.getByText("0 dari 0 sesi", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("belum ada sesi tercatat", { exact: true }),
+  ).toBeVisible();
+
+  // Ringkasan: jumlah catatan, tanggal terbaru, dan rata-rata (68 dan 96).
+  await expect(page.getByText("2 catatan", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText(`terbaru ${tanggalLengkap("2026-05-11")}`, { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("82", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("dari 2 catatan", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Mei 2026", level: 3 }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("2 catatan · rata-rata 82", { exact: true }),
+  ).toBeVisible();
+
+  // Tiap baris catatan menyebut nilainya, sikapnya, penulisnya, tanggalnya,
+  // dan isi catatannya.
+  const daftar = page.getByRole("region", { name: "Catatan Evaluasi" });
+  const baris = daftar.getByRole("listitem");
+  await expect(baris).toHaveCount(2);
+
+  await expect(baris.nth(0)).toContainText("96");
+  await expect(baris.nth(0)).toContainText(`Pecahan sudah lancar ${kode}`);
+  await expect(
+    baris.nth(0).getByText("Sikap Baik", { exact: true }),
+  ).toBeVisible();
+  await expect(baris.nth(0)).toContainText(
+    `${tanggalLengkap("2026-05-11")} · ${namaGuruDua}`,
+  );
+  await expect(baris.nth(0)).toContainText("Naik 28 dari catatan sebelumnya");
+
+  await expect(baris.nth(1)).toContainText("68");
+  await expect(baris.nth(1)).toContainText(`Perkalian perlu diulang ${kode}`);
+  await expect(
+    baris.nth(1).getByText("Sikap Cukup", { exact: true }),
+  ).toBeVisible();
+  await expect(baris.nth(1)).toContainText(
+    `${tanggalLengkap("2026-05-04")} · ${namaGuruSatu}`,
+  );
+  // Catatan paling lama tidak punya pembanding.
+  await expect(baris.nth(1).getByText(/catatan sebelumnya/)).toHaveCount(0);
+
+  // Catatan anak lain tidak ikut tampil di layar anak ini.
+  await expect(page.getByText(`Catatan anak lain ${kode}`)).toHaveCount(0);
+
+  // Pindah ke anak kedua: catatannya sendiri yang tampil, tanpa pembanding
+  // karena hanya ada satu.
+  await page
+    .getByRole("radiogroup", { name: "Pilih anak" })
+    .getByRole("radio", { name: /Catatan Anak B/ })
+    .click();
+  await expect(page).toHaveURL(new RegExp(`anak=${muridB}`));
+  await expect(page.getByText("1 catatan", { exact: true })).toBeVisible();
+  await expect(page.getByText(`Catatan anak lain ${kode}`)).toBeVisible();
+  await expect(page.getByText("74", { exact: true }).first()).toBeVisible();
+  const barisB = daftar.getByRole("listitem");
+  await expect(barisB).toHaveCount(1);
+  await expect(barisB.nth(0)).toContainText(
+    `${tanggalLengkap("2026-05-11")} · ${namaGuruSatu}`,
+  );
+  await expect(barisB.nth(0).getByText(/catatan sebelumnya/)).toHaveCount(0);
+  await expect(page.getByText(`Pecahan sudah lancar ${kode}`)).toHaveCount(0);
+  await expect(page.getByText(`Perkalian perlu diulang ${kode}`)).toHaveCount(
+    0,
+  );
+});
+
+/** Tanggal `YYYY-MM-DD` dalam bentuk panjang, mis. "Senin, 11 Mei 2026". */
+function tanggalLengkap(tanggal: string) {
+  return new Intl.DateTimeFormat("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date(`${tanggal}T00:00:00`));
+}
