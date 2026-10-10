@@ -3,7 +3,15 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CalendarDays, History, Info, LoaderCircle, Send } from "lucide-react";
+import {
+  CalendarDays,
+  CheckCheck,
+  CircleDashed,
+  History,
+  Info,
+  LoaderCircle,
+  Send,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -21,27 +29,20 @@ import {
 } from "@/components/konfirmasi-jurnal";
 import { PemilihJadwal } from "@/components/pemilih-jadwal";
 import { PemilihMateri } from "@/components/pemilih-materi";
+import { StatusSesiJurnal } from "@/components/status-sesi-jurnal";
 import {
   catatanDariPresensi,
-  formatJam,
   hitungJamMengajar,
+  statusSimpanJurnal,
+  type IsianJurnal,
   type Jadwal,
   type JurnalInput,
+  type JurnalTersimpanHari,
   type StatusPresensiMurid,
+  type StatusSimpanJurnal,
 } from "@/lib/jurnal";
 import { pesanGalatApi } from "@/lib/pesan-api";
-
-/** Isi jurnal hari ini yang sudah tersimpan untuk satu sesi mengajar. */
-export type JurnalTersimpanHari = {
-  /** Pilihan cepat materi yang sudah tercatat. */
-  materi: string;
-  /** Topik bebas setelah pemisah materi. */
-  topik: string;
-  catatan: string;
-  /** Status presensi per id murid dan alasan bebasnya. */
-  presensi: Record<string, StatusPresensiMurid>;
-  alasan: Record<string, string>;
-};
+import { useMenitPerangkat } from "@/lib/tanggal-perangkat";
 
 type JurnalFormProps = {
   jadwal: Jadwal[];
@@ -50,7 +51,20 @@ type JurnalFormProps = {
   hari: string;
   namaGuru: string;
   tanggalTampil: string;
+  /** Menit sejak tengah malam menurut jam server, dasar pil keadaan sesi. */
+  menitServer: number;
 };
+
+/** Kalimat penanda status simpan yang tampil di dekat tombol kirim. */
+function pesanStatusSimpan(
+  status: StatusSimpanJurnal,
+  tersimpan: JurnalTersimpanHari | undefined,
+) {
+  if (status === "tersimpan" && tersimpan)
+    return `Tersimpan ${tersimpan.waktuSimpan} — semua isian sudah dikirim.`;
+  if (status === "belum-dikirim") return "Ada isian yang belum dikirim.";
+  return "Belum ada yang tersimpan untuk sesi ini.";
+}
 
 export function JurnalForm({
   jadwal,
@@ -58,8 +72,12 @@ export function JurnalForm({
   hari,
   namaGuru,
   tanggalTampil,
+  menitServer,
 }: JurnalFormProps) {
   const router = useRouter();
+  // Jam guru sendiri yang dipakai untuk keadaan sesi, bukan jam server, supaya
+  // zona waktu wadah produksi tidak menggeser "sedang berlangsung".
+  const menitSekarang = useMenitPerangkat(menitServer);
   const [jadwalId, setJadwalId] = useState("");
   const [presensi, setPresensi] = useState<Record<string, StatusPresensiMurid>>(
     {},
@@ -68,6 +86,8 @@ export function JurnalForm({
   const [materi, setMateri] = useState("");
   const [topik, setTopik] = useState("");
   const [catatan, setCatatan] = useState("");
+  // Isian yang dimuat saat sesinya dipilih; pembanding status simpan.
+  const [dimuat, setDimuat] = useState<IsianJurnal | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [errorJadwal, setErrorJadwal] = useState("");
@@ -75,6 +95,13 @@ export function JurnalForm({
   const [terkirim, setTerkirim] = useState<RingkasanJurnal | null>(null);
 
   const jadwalTerpilih = jadwal.find((item) => item.id === jadwalId);
+  const tersimpanTerpilih = jadwalTerpilih
+    ? sudahDiisi[jadwalTerpilih.id]
+    : undefined;
+  const isian: IsianJurnal = { materi, topik, catatan, presensi, alasan };
+  const statusSimpan = dimuat
+    ? statusSimpanJurnal(tersimpanTerpilih, dimuat, isian)
+    : "kosong";
 
   // Tombol kirim hanya aktif setelah data wajib lengkap, jadi guru tidak
   // pernah menekan tombol yang berakhir dengan error.
@@ -86,23 +113,32 @@ export function JurnalForm({
 
   function pilihJadwal(item: Jadwal) {
     const tersimpan = sudahDiisi[item.id];
-    setJadwalId(item.id);
-    setErrorJadwal("");
-    setErrorMateri("");
     // Sesi yang jurnalnya sudah diisi hari ini dimuat apa adanya: guru
     // mengoreksi catatan yang sama, bukan menimpanya dengan isian kosong.
-    setPresensi(
+    const presensiAwal: Record<string, StatusPresensiMurid> =
       Object.fromEntries(
         item.murid.map((murid) => [
           murid.id,
           tersimpan ? (tersimpan.presensi[murid.id] ?? "alpa") : "hadir",
         ]),
-      ),
-    );
+      );
+    setJadwalId(item.id);
+    setErrorJadwal("");
+    setErrorMateri("");
+    setPresensi(presensiAwal);
     setAlasan(tersimpan?.alasan ?? {});
     setMateri(tersimpan?.materi ?? "");
     setTopik(tersimpan?.topik ?? "");
     setCatatan(tersimpan?.catatan ?? "");
+    // Isian yang baru dimuat itu juga jadi pembanding status simpan, jadi
+    // begitu guru mengubah salah satunya formulir tahu ada yang belum dikirim.
+    setDimuat({
+      materi: tersimpan?.materi ?? "",
+      topik: tersimpan?.topik ?? "",
+      catatan: tersimpan?.catatan ?? "",
+      presensi: presensiAwal,
+      alasan: tersimpan?.alasan ?? {},
+    });
   }
 
   function ubahStatus(muridId: string, status: StatusPresensiMurid) {
@@ -203,6 +239,7 @@ export function JurnalForm({
     setMateri("");
     setTopik("");
     setCatatan("");
+    setDimuat(null);
     setError("");
     setErrorJadwal("");
     setErrorMateri("");
@@ -250,7 +287,18 @@ export function JurnalForm({
             onPilih={pilihJadwal}
             disabled={pending}
             error={errorJadwal}
+            menitSekarang={menitSekarang}
+            sudahDiisi={sudahDiisi}
           />
+
+          {jadwalTerpilih && (
+            <StatusSesiJurnal
+              namaKelas={jadwalTerpilih.namaKelas}
+              jamMulai={jadwalTerpilih.jamMulai}
+              jamSelesai={jadwalTerpilih.jamSelesai}
+              menitSekarang={menitSekarang}
+            />
+          )}
 
           {sudahDiisi[jadwalId] && (
             <p
@@ -327,21 +375,45 @@ export function JurnalForm({
               </Card>
 
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <p
-                  aria-live="polite"
-                  className="text-sm leading-6 text-muted-foreground"
-                >
-                  {!siapKirim
-                    ? `Tinggal lengkapi: ${bagianKurang.join(" dan ")}.`
-                    : jadwalTerpilih
-                      ? `Jam mengajar yang dicatat: ${formatJam(
-                          hitungJamMengajar(
-                            jadwalTerpilih.jamMulai,
-                            jadwalTerpilih.jamSelesai,
-                          ),
-                        )} — dipakai untuk rekap gaji.`
-                      : "Jam mengajar dihitung otomatis dari jadwal."}
-                </p>
+                <div className="space-y-1 text-sm leading-6 text-muted-foreground">
+                  {!siapKirim && (
+                    <p>Tinggal lengkapi: {bagianKurang.join(" dan ")}.</p>
+                  )}
+                  <p
+                    aria-live="polite"
+                    aria-busy={pending}
+                    className="flex items-start gap-2"
+                  >
+                    {pending ? (
+                      <LoaderCircle
+                        className="mt-0.5 size-4 shrink-0 animate-spin motion-reduce:animate-none"
+                        aria-hidden="true"
+                      />
+                    ) : statusSimpan === "tersimpan" ? (
+                      <CheckCheck
+                        className="mt-0.5 size-4 shrink-0 text-primary"
+                        aria-hidden="true"
+                      />
+                    ) : (
+                      <CircleDashed
+                        className="mt-0.5 size-4 shrink-0"
+                        aria-hidden="true"
+                      />
+                    )}
+                    <span>
+                      {!jadwalTerpilih
+                        ? "Pilih kelas & jam mengajar dulu; durasi sesinya dihitung otomatis dari jadwal."
+                        : pending
+                          ? "Menyimpan isian jurnal…"
+                          : error
+                            ? "Isian ini belum tersimpan."
+                            : pesanStatusSimpan(
+                                statusSimpan,
+                                tersimpanTerpilih,
+                              )}
+                    </span>
+                  </p>
+                </div>
                 <Button
                   type="submit"
                   size="aksi"

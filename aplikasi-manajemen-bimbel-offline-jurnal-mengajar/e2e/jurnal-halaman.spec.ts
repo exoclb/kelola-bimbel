@@ -165,6 +165,17 @@ test("guru mengisi jurnal dari jadwalnya hari ini dan kirim ulang memperbarui ca
 
   await kartuJadwal.check();
 
+  // Sesi yang dipilih langsung menunjukkan durasi dan keadaannya, dan karena
+  // jurnalnya belum pernah diisi, keduanya ditulis apa adanya.
+  await expect(page.getByText("Durasi sesi 1,5 jam")).toBeVisible();
+  await expect(
+    page.getByText(/^(Belum mulai|Sedang berlangsung|Sudah selesai)$/).first(),
+  ).toBeVisible();
+  await expect(page.getByText("Belum diisi")).toBeVisible();
+  await expect(
+    page.getByText("Belum ada yang tersimpan untuk sesi ini."),
+  ).toBeVisible();
+
   // Tiap murid punya tombol statusnya sendiri; bawaannya hadir.
   const presensiMurid = page.getByRole("group", {
     name: "Kehadiran Rani Halaman Jurnal",
@@ -241,6 +252,15 @@ test("guru mengisi jurnal dari jadwalnya hari ini dan kirim ulang memperbarui ca
   await expect(
     page.getByText("Jurnal sesi ini sudah diisi hari ini"),
   ).toBeVisible();
+  // Jurnalnya sudah tersimpan, jadi guru tidak perlu menebak apakah isiannya
+  // sudah terkirim: jam simpan terakhir ditulis di kartunya dan di dekat
+  // tombol kirim.
+  await expect(
+    page.getByText("Tersimpan baru saja", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Tersimpan baru saja — semua isian sudah dikirim."),
+  ).toBeVisible();
   await expect(
     page.getByRole("checkbox", { name: "Rani Halaman Jurnal", exact: true }),
   ).toHaveCount(0);
@@ -265,6 +285,8 @@ test("guru mengisi jurnal dari jadwalnya hari ini dan kirim ulang memperbarui ca
   await page
     .getByLabel("Topik spesifik (opsional)")
     .fill("pecahan campuran lanjutan");
+  // Ada koreksi yang belum dikirim: statusnya berubah, bukan tetap "tersimpan".
+  await expect(page.getByText("Ada isian yang belum dikirim.")).toBeVisible();
   await page.getByRole("button", { name: "Perbarui Jurnal" }).click();
   await expect(page.getByText("Jurnal terkirim ke owner")).toBeVisible();
 

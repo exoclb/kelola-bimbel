@@ -89,6 +89,26 @@ export function menitSekarang(tanggal = new Date()) {
 }
 
 /**
+ * Jarak waktu yang enak dibaca untuk penanda "terakhir tersimpan", mis.
+ * "12 menit lalu". Hasilnya berupa kalimat utuh tanpa jam, jadi tidak bergantung
+ * pada zona waktu server maupun peramban. Waktu di masa depan (jam yang tidak
+ * sinkron) ditulis "baru saja" supaya tidak pernah muncul angka negatif.
+ */
+export function jarakWaktuLalu(waktu: Date | string, sekarang = new Date()) {
+  const nilai = typeof waktu === "string" ? new Date(waktu) : waktu;
+  const selisihDetik = Math.floor(
+    (sekarang.getTime() - nilai.getTime()) / 1000,
+  );
+  if (selisihDetik < 60) return "baru saja";
+
+  const menit = Math.floor(selisihDetik / 60);
+  if (menit < 60) return `${menit} menit lalu`;
+  const jam = Math.floor(menit / 60);
+  if (jam < 24) return `${jam} jam lalu`;
+  return `${Math.floor(jam / 24)} hari lalu`;
+}
+
+/**
  * Selisih hari antara dua tanggal `YYYY-MM-DD`; positif kalau tanggal kedua
  * lebih baru. Keduanya dibaca sebagai tengah malam UTC supaya perhitungannya
  * tidak terpengaruh zona waktu peramban (mis. untuk menghitung "terlambat N
@@ -102,19 +122,26 @@ export function bedaHari(pertama: string, kedua: string) {
 }
 
 /**
+ * Menit menjadi kalimat durasi, mis. 90 → "1 jam 30 menit". Nol atau negatif
+ * tidak ditulis karena tidak ada durasi yang berguna untuk dikatakan.
+ */
+export function durasiJadiKata(totalMenit: number) {
+  if (totalMenit <= 0) return "";
+  const jam = Math.floor(totalMenit / 60);
+  const menit = totalMenit % 60;
+  return [jam > 0 ? `${jam} jam` : null, menit > 0 ? `${menit} menit` : null]
+    .filter(Boolean)
+    .join(" ");
+}
+
+/**
  * Lama satu sesi dari jam mulai dan jam selesai (`HH:MM`), mis. "1 jam 30
  * menit". String kosong dipakai bila jamnya tidak masuk akal (selesai sebelum
  * mulai), supaya tampilan tidak menampilkan angka negatif.
  */
 export function durasiSesi(jamMulai: string, jamSelesai: string) {
-  const [jam1, menit1] = jamMulai.split(":").map(Number);
-  const [jam2, menit2] = jamSelesai.split(":").map(Number);
-  const total = jam2 * 60 + menit2 - (jam1 * 60 + menit1);
-  if (!Number.isFinite(total) || total <= 0) return "";
-
-  const jam = Math.floor(total / 60);
-  const menit = total % 60;
-  return [jam > 0 ? `${jam} jam` : null, menit > 0 ? `${menit} menit` : null]
-    .filter(Boolean)
-    .join(" ");
+  const mulai = menitDariJam(jamMulai);
+  const selesai = menitDariJam(jamSelesai);
+  if (mulai === null || selesai === null) return "";
+  return durasiJadiKata(selesai - mulai);
 }

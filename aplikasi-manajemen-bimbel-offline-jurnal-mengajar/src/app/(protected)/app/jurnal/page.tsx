@@ -1,12 +1,19 @@
 import type { Metadata } from "next";
-import { JurnalForm, type JurnalTersimpanHari } from "@/components/jurnal-form";
+import { JurnalForm } from "@/components/jurnal-form";
 import {
   pisahMateri,
   presensiDariCatatan,
+  type JurnalTersimpanHari,
   type StatusPresensiMurid,
 } from "@/lib/jurnal";
 import { requireSession } from "@/lib/session";
-import { formatTanggalLengkap, namaHari, tanggalISO } from "@/lib/tanggal";
+import {
+  formatTanggalLengkap,
+  jarakWaktuLalu,
+  menitSekarang,
+  namaHari,
+  tanggalISO,
+} from "@/lib/tanggal";
 import { listJurnalGuruTanggal } from "@/services/jurnal.service";
 import { listSesiPresensiGuru } from "@/services/presensi-guru.service";
 
@@ -55,6 +62,9 @@ export default async function JurnalPage() {
       catatan: jurnal.catatan,
       presensi,
       alasan,
+      // Jarak waktu dihitung server supaya kalimatnya tidak bergantung zona
+      // waktu peramban dan tidak berubah lagi saat halaman terhidrasi.
+      waktuSimpan: jarakWaktuLalu(jurnal.diperbaruiPada, sekarang),
     };
   }
 
@@ -65,6 +75,7 @@ export default async function JurnalPage() {
       hari={namaHari(sekarang)}
       namaGuru={user.name}
       tanggalTampil={formatTanggalLengkap(sekarang)}
+      menitServer={menitSekarang(sekarang)}
     />
   );
 }

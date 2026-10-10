@@ -310,6 +310,8 @@ export type JurnalHarianGuru = {
   catatan: string;
   jamMengajar: number;
   status: "terkirim" | "direview";
+  /** Saat jurnal terakhir diperbarui; dasar penanda "tersimpan N menit lalu". */
+  diperbaruiPada: Date;
   kehadiran: { muridId: string; hadir: boolean; catatan: string }[];
 };
 
@@ -320,6 +322,7 @@ const fieldsHarian = {
   catatan: teachingJournals.catatan,
   jamMengajar: teachingJournals.jamMengajar,
   status: teachingJournals.status,
+  diperbaruiPada: teachingJournals.updatedAt,
 };
 
 /**
@@ -364,6 +367,7 @@ export async function listJurnalGuruTanggal(
       catatan: baris.catatan,
       jamMengajar: baris.jamMengajar,
       status: baris.status,
+      diperbaruiPada: baris.diperbaruiPada,
       kehadiran: [],
     };
     if (baris.muridId)

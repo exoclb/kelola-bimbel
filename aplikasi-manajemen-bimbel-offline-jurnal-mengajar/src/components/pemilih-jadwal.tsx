@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, MapPin, Users } from "lucide-react";
+import { CheckCheck, Clock, MapPin, Users } from "lucide-react";
 import { cn } from "cn";
 import {
   Card,
@@ -9,8 +9,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { formatJam, hitungJamMengajar } from "@/lib/jurnal";
-import type { Jadwal } from "@/lib/jurnal";
+import { KELAS_PIL } from "@/components/pil-portal";
+import {
+  formatJam,
+  hitungJamMengajar,
+  keadaanSesi,
+  keteranganWaktuSesi,
+  labelKeadaanSesi,
+  type Jadwal,
+  type JurnalTersimpanHari,
+} from "@/lib/jurnal";
 
 type PemilihJadwalProps = {
   jadwal: Jadwal[];
@@ -19,11 +27,21 @@ type PemilihJadwalProps = {
   onPilih: (jadwal: Jadwal) => void;
   disabled?: boolean;
   error?: string;
+  /**
+   * Menit sejak tengah malam menurut jam perangkat guru. Dipakai menandai sesi
+   * yang sedang berlangsung dan jarak waktunya; kalau kosong, penandanya tidak
+   * ditulis.
+   */
+  menitSekarang?: number | null;
+  /** Jurnal yang sudah tersimpan hari ini, dikunci per id jadwal. */
+  sudahDiisi?: Record<string, JurnalTersimpanHari>;
 };
 
 /**
  * Pemilih kelas & jam mengajar untuk hari ini. Guru cukup menekan satu kartu;
- * jam mengajar ikut terbaca karena nanti dipakai untuk rekap gaji.
+ * jam mengajar dan durasi sesinya ikut terbaca karena dipakai untuk rekap gaji,
+ * dan tiap kartu sudah memberi tahu sesinya sedang berjalan atau sudah lewat
+ * serta jurnalnya sudah tersimpan atau belum.
  */
 export function PemilihJadwal({
   jadwal,
@@ -32,6 +50,8 @@ export function PemilihJadwal({
   onPilih,
   disabled = false,
   error,
+  menitSekarang = null,
+  sudahDiisi = {},
 }: PemilihJadwalProps) {
   return (
     <Card>
@@ -59,6 +79,17 @@ export function PemilihJadwal({
             >
               {jadwal.map((item) => {
                 const terpilih = item.id === nilai;
+                const tersimpan = sudahDiisi[item.id];
+                const keadaan = keadaanSesi(
+                  item.jamMulai,
+                  item.jamSelesai,
+                  menitSekarang,
+                );
+                const keterangan = keteranganWaktuSesi(
+                  item.jamMulai,
+                  item.jamSelesai,
+                  menitSekarang,
+                );
                 return (
                   <label
                     key={item.id}
@@ -80,7 +111,7 @@ export function PemilihJadwal({
                       onChange={() => onPilih(item)}
                       className="mt-1 size-4 shrink-0 accent-primary"
                     />
-                    <span className="min-w-0 space-y-1.5">
+                    <span className="min-w-0 space-y-2">
                       <span className="block font-medium">
                         {item.namaKelas}
                       </span>
@@ -102,6 +133,44 @@ export function PemilihJadwal({
                           <MapPin className="size-3.5" aria-hidden="true" />
                           {item.cabang}
                         </span>
+                        {keterangan && <span>{keterangan}</span>}
+                      </span>
+                      <span className="flex flex-wrap items-center gap-2">
+                        {keadaan && (
+                          <span
+                            className={cn(
+                              KELAS_PIL,
+                              keadaan === "berlangsung"
+                                ? "border-primary/30 bg-primary/10 text-primary"
+                                : "border-border bg-muted text-foreground",
+                            )}
+                          >
+                            {labelKeadaanSesi(keadaan)}
+                          </span>
+                        )}
+                        {tersimpan ? (
+                          <span
+                            className={cn(
+                              KELAS_PIL,
+                              "border-primary/30 bg-primary/10 text-primary",
+                            )}
+                          >
+                            <CheckCheck
+                              className="size-3.5"
+                              aria-hidden="true"
+                            />
+                            Tersimpan {tersimpan.waktuSimpan}
+                          </span>
+                        ) : (
+                          <span
+                            className={cn(
+                              KELAS_PIL,
+                              "border-dashed text-muted-foreground",
+                            )}
+                          >
+                            Belum diisi
+                          </span>
+                        )}
                       </span>
                     </span>
                   </label>

@@ -3,6 +3,8 @@
 // dan fungsi murni tanpa data contoh, jadi aman dipakai di server maupun
 // peramban.
 
+import { durasiJadiKata, menitDariJam } from "@/lib/tanggal";
+
 /** Murid yang bisa dicatat kehadirannya pada satu sesi mengajar. */
 export type MuridKelas = {
   id: string;
@@ -112,6 +114,142 @@ export function hitungJamMengajar(jamMulai: string, jamSelesai: string) {
 /** "1.5" → "1,5 jam" (pemisah desimal khas Indonesia). */
 export function formatJam(nilai: number) {
   return `${nilai.toLocaleString("id-ID", { maximumFractionDigits: 1 })} jam`;
+}
+
+/**
+ * Keadaan satu sesi mengajar terhadap jam sekarang. Formulir jurnal memakainya
+ * untuk memberi tahu guru apakah sesinya belum mulai, sedang berjalan, atau
+ * sudah lewat — tanpa guru menghitung apa pun sendiri.
+ */
+export type KeadaanSesi = "belum-mulai" | "berlangsung" | "selesai";
+
+const LABEL_KEADAAN_SESI: Record<KeadaanSesi, string> = {
+  "belum-mulai": "Belum mulai",
+  berlangsung: "Sedang berlangsung",
+  selesai: "Sudah selesai",
+};
+
+/** "berlangsung" → "Sedang berlangsung". */
+export function labelKeadaanSesi(keadaan: KeadaanSesi) {
+  return LABEL_KEADAAN_SESI[keadaan];
+}
+
+/**
+ * Keadaan sesi menurut jam perangkat: `belum-mulai` sebelum jam mulainya,
+ * `berlangsung` selama jam mengajar, `selesai` sesudahnya. `null` dikembalikan
+ * kalau jam sekarang belum diketahui (render server) atau jam sesinya tidak
+ * masuk akal, supaya tampilan tidak menebak keadaan sesi.
+ */
+export function keadaanSesi(
+  jamMulai: string,
+  jamSelesai: string,
+  menitSekarangSekarang: number | null,
+): KeadaanSesi | null {
+  if (menitSekarangSekarang === null) return null;
+  const mulai = menitDariJam(jamMulai);
+  const selesai = menitDariJam(jamSelesai);
+  if (mulai === null || selesai === null) return null;
+  if (menitSekarangSekarang < mulai) return "belum-mulai";
+  if (menitSekarangSekarang <= selesai) return "berlangsung";
+  return "selesai";
+}
+
+/**
+ * Jarak sesi ke jam sekarang dalam kata-kata, mis. "Mulai 25 menit lagi",
+ * "Sisa 25 menit", atau "Selesai 1 jam lalu". String kosong dipakai kalau
+ * tidak ada yang bisa dikatakan (jam sekarang belum diketahui, jam sesinya
+ * tidak masuk akal, atau jaraknya di bawah satu menit).
+ */
+export function keteranganWaktuSesi(
+  jamMulai: string,
+  jamSelesai: string,
+  menitSekarangSekarang: number | null,
+): string {
+  const keadaan = keadaanSesi(jamMulai, jamSelesai, menitSekarangSekarang);
+  if (keadaan === null || menitSekarangSekarang === null) return "";
+  const mulai = menitDariJam(jamMulai);
+  const selesai = menitDariJam(jamSelesai);
+  if (mulai === null || selesai === null) return "";
+
+  if (keadaan === "belum-mulai") {
+    const jarak = durasiJadiKata(mulai - menitSekarangSekarang);
+    return jarak ? `Mulai ${jarak} lagi` : "";
+  }
+  if (keadaan === "berlangsung") {
+    const jarak = durasiJadiKata(selesai - menitSekarangSekarang);
+    return jarak ? `Sisa ${jarak}` : "";
+  }
+  const jarak = durasiJadiKata(menitSekarangSekarang - selesai);
+  return jarak ? `Selesai ${jarak} lalu` : "";
+}
+
+/**
+ * Isi formulir jurnal yang bisa dibandingkan dengan yang tersimpan hari ini:
+ * materi, catatan, dan presensi tiap murid.
+ */
+export type IsianJurnal = {
+  materi: string;
+  topik: string;
+  catatan: string;
+  presensi: Record<string, StatusPresensiMurid>;
+  alasan: Record<string, string>;
+};
+
+/**
+ * Isian jurnal yang sudah tersimpan hari ini, plus jam tersimpannya ("09:47",
+ * sudah diformat halaman). Dipakai formulir untuk memuat ulang isi sebelumnya
+ * sekaligus menampilkan status simpannya.
+ */
+export type JurnalTersimpanHari = IsianJurnal & {
+  waktuSimpan: string;
+};
+
+/**
+ * Benar kalau kedua isian sama persis. Alasan murid yang hadir tidak
+ * dibandingkan karena alasannya memang tidak ikut dikirim ke server.
+ */
+export function isianSama(pertama: IsianJurnal, kedua: IsianJurnal) {
+  if (
+    pertama.materi !== kedua.materi ||
+    pertama.topik !== kedua.topik ||
+    pertama.catatan !== kedua.catatan
+  )
+    return false;
+
+  const murid = new Set([
+    ...Object.keys(pertama.presensi),
+    ...Object.keys(kedua.presensi),
+  ]);
+  for (const id of murid) {
+    const status = pertama.presensi[id] ?? "hadir";
+    if (status !== (kedua.presensi[id] ?? "hadir")) return false;
+    if (status === "hadir") continue;
+    if ((pertama.alasan[id] ?? "") !== (kedua.alasan[id] ?? "")) return false;
+  }
+  return true;
+}
+
+/** Status simpan sesi yang sedang dibuka di formulir jurnal. */
+export type StatusSimpanJurnal = "kosong" | "belum-dikirim" | "tersimpan";
+
+/**
+ * Status simpan sesi yang sedang dibuka, dihitung dari isian yang dimuat saat
+ * sesinya dipilih (`dimuat`), isian yang sedang tampil (`isian`), dan jurnal
+ * yang sudah tersimpan hari ini.
+ *
+ * - `tersimpan` — isian sekarang sama persis dengan yang sudah tersimpan;
+ * - `belum-dikirim` — ada isian yang belum dikirim (termasuk kiriman pertama
+ *   yang sudah disentuh), jadi menutup halaman ini akan kehilangan isian itu;
+ * - `kosong` — belum pernah tersimpan dan isiannya masih seperti awal.
+ */
+export function statusSimpanJurnal(
+  tersimpan: JurnalTersimpanHari | undefined,
+  dimuat: IsianJurnal,
+  isian: IsianJurnal,
+): StatusSimpanJurnal {
+  const berubah = !isianSama(dimuat, isian);
+  if (tersimpan) return berubah ? "belum-dikirim" : "tersimpan";
+  return berubah ? "belum-dikirim" : "kosong";
 }
 
 /** Pilihan cepat materi supaya guru tidak perlu menulis panjang. */
