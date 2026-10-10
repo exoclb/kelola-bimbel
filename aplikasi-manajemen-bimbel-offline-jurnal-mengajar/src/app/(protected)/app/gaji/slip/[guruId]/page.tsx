@@ -6,7 +6,7 @@ import { SlipGaji } from "@/components/slip-gaji";
 import { TombolCetakUnduh } from "@/components/tombol-cetak-unduh";
 import { Button } from "@/components/ui/button";
 import { formatPeriode, periodeBulan } from "@/lib/gaji";
-import { getRekapGajiBulanan } from "@/lib/mock-gaji";
+import { rekapGajiAnyGuru } from "@/services/gaji.service";
 import { requirePermission } from "@/lib/session";
 import { ambilProfilBimbel } from "@/services/pengaturan.service";
 
@@ -28,9 +28,9 @@ export default async function SlipGajiPage({
     ? (query.periode ?? "")
     : periodeBulan(new Date());
 
-  const baris = getRekapGajiBulanan(periode).daftar.find(
-    (rekap) => rekap.guruId === guruId,
-  );
+  // Guru yang tidak ada dijawab 404 lewat `notFound()`, sama dengan API-nya;
+  // guru yang ada tetapi belum punya jurnal tetap dapat slip berisi nol jam.
+  const baris = (await rekapGajiAnyGuru(periode, guruId))?.guru;
   if (!baris) notFound();
 
   const namaBerkas = `slip-gaji-${baris.guruNama.toLowerCase().replaceAll(" ", "-")}-${periode}`;

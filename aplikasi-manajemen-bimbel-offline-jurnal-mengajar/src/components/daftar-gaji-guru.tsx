@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { BadgeCheck, Undo2 } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
@@ -8,22 +7,14 @@ import { PanelRincianJam } from "@/components/panel-rincian-jam";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { formatRupiah } from "@/lib/gaji";
 import { formatJam } from "@/lib/jurnal";
-import type { BarisRekapGaji, StatusPembayaran } from "@/lib/mock-gaji";
+import type { BarisRekapGaji, StatusPembayaran } from "@/lib/gaji";
 import Link from "next/link";
-
-export type StatusGajiGuru = {
-  status: StatusPembayaran;
-  tanggal: string | null;
-};
 
 type DaftarGajiGuruProps = {
   daftar: BarisRekapGaji[];
   periode: string;
-  /**
-   * Status pembayaran tiap guru. Dimiliki induk (`RekapGajiBulanan`) supaya
-   * kartu ringkasan dan berkas unduhan memakai angka yang sama dengan barisnya.
-   */
-  pembayaran: Record<string, StatusGajiGuru>;
+  /** Id guru yang statusnya sedang dikirim ke server, kalau ada. */
+  sedangDisimpan: string | null;
   onUbahStatus: (guruId: string, dibayar: boolean) => void;
 };
 
@@ -50,26 +41,20 @@ function LabelPembayaran({ status }: { status: StatusPembayaran }) {
 }
 
 /**
- * Daftar gaji tiap guru beserta kontrol penandaan pembayaran. Status disimpan
- * di state karena tabel `salary_recaps` (dan endpoint-nya) belum ada; begitu
- * endpoint gaji siap, kontrol ini tinggal memanggil API-nya.
+ * Daftar gaji tiap guru beserta kontrol penandaan pembayaran. Statusnya dibaca
+ * dari baris rekap yang datang dari server (tabel `salary_recaps`), dan setiap
+ * penandaan dikirim ke `PATCH /api/admin/gaji` oleh induknya — jadi barisnya
+ * tidak pernah menampilkan status yang belum tersimpan.
  */
 export function DaftarGajiGuru({
   daftar,
   periode,
-  pembayaran,
+  sedangDisimpan,
   onUbahStatus,
 }: DaftarGajiGuruProps) {
-  const belumDibayar = Object.values(pembayaran).filter(
-    (baris) => baris.status === "belum_dibayar",
+  const belumDibayar = daftar.filter(
+    (baris) => baris.statusPembayaran === "belum_dibayar",
   ).length;
-  /** Guru yang pembayarannya baru dibatalkan, supaya ada kabar di barisnya. */
-  const [dibatalkan, setDibatalkan] = useState<Record<string, boolean>>({});
-
-  function ubahStatus(guruId: string, dibayar: boolean) {
-    onUbahStatus(guruId, dibayar);
-    setDibatalkan((sebelumnya) => ({ ...sebelumnya, [guruId]: !dibayar }));
-  }
 
   return (
     <>
@@ -86,8 +71,8 @@ export function DaftarGajiGuru({
 
       <ul className="divide-y">
         {daftar.map((baris) => {
-          const status = pembayaran[baris.guruId];
-          const sudahDibayar = status.status === "dibayar";
+          const sudahDibayar = baris.statusPembayaran === "dibayar";
+          const mengirim = sedangDisimpan === baris.guruId;
           return (
             <li
               key={baris.guruId}
@@ -100,7 +85,7 @@ export function DaftarGajiGuru({
                     {baris.guruEmail}
                   </p>
                 </div>
-                <LabelPembayaran status={status.status} />
+                <LabelPembayaran status={baris.statusPembayaran} />
               </div>
 
               <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-muted-foreground">
@@ -130,39 +115,36 @@ export function DaftarGajiGuru({
                     type="button"
                     variant="ghost"
                     size="aksi"
-                    onClick={() => ubahStatus(baris.guruId, false)}
+                    disabled={mengirim}
+                    onClick={() => onUbahStatus(baris.guruId, false)}
                   >
                     <Undo2 aria-hidden="true" />
-                    Batalkan pembayaran
+                    {mengirim ? "Menyimpan…" : "Batalkan pembayaran"}
                   </Button>
                 ) : (
                   <Button
                     type="button"
                     size="aksi"
-                    onClick={() => ubahStatus(baris.guruId, true)}
+                    disabled={mengirim}
+                    onClick={() => onUbahStatus(baris.guruId, true)}
                   >
                     <BadgeCheck aria-hidden="true" />
-                    Tandai sudah dibayar
+                    {mengirim ? "Menyimpan…" : "Tandai sudah dibayar"}
                   </Button>
                 )}
               </div>
 
               <p role="status" className="text-sm text-muted-foreground">
-                {dibatalkan[baris.guruId]
-                  ? `Pembayaran gaji ${baris.guruNama} dibatalkan, statusnya kembali belum dibayar.`
-                  : sudahDibayar && status.tanggal
-                    ? `Gaji ${baris.guruNama} ditandai dibayar pada ${tanggalTampil.format(new Date(`${status.tanggal}T00:00:00`))}.`
+                {mengirim
+                  ? `Menyimpan status pembayaran ${baris.guruNama}…`
+                  : sudahDibayar && baris.tanggalDibayar
+                    ? `Gaji ${baris.guruNama} ditandai dibayar pada ${tanggalTampil.format(new Date(`${baris.tanggalDibayar}T00:00:00`))}.`
                     : ""}
               </p>
             </li>
           );
         })}
       </ul>
-
-      <p className="mt-4 text-xs leading-5 text-muted-foreground">
-        Catatan: penandaan pembayaran belum tersimpan di database —
-        penyimpanannya menyusul bersama endpoint rekap gaji.
-      </p>
     </>
   );
 }

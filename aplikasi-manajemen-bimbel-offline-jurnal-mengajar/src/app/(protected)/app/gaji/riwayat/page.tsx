@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { RiwayatGaji } from "@/components/riwayat-gaji";
-import { getRiwayatGaji } from "@/lib/mock-gaji";
+import { riwayatGajiAny } from "@/services/gaji.service";
 import { requirePermission } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Riwayat Gaji" };
@@ -15,28 +15,31 @@ export default async function RiwayatGajiPage({
   await requirePermission({ gaji: ["read-any"] });
 
   const params = await searchParams;
-  const semua = getRiwayatGaji();
-  const tahunTersedia = [
-    ...new Set(semua.map((baris) => Number(baris.periode.slice(0, 4)))),
-  ].sort((a, b) => b - a);
-
-  // Nilai saringan hanya dipakai kalau memang ada di daftar pilihan.
-  const tahunDiminta = Number(params.tahun ?? "");
-  const tahun = tahunTersedia.includes(tahunDiminta)
-    ? tahunDiminta
-    : (tahunTersedia[0] ?? new Date().getFullYear());
   const bulan = POLA_BULAN.test(params.bulan ?? "") ? (params.bulan ?? "") : "";
+  const diminta = Number(params.tahun ?? "");
 
-  const daftar = semua.filter(
-    (baris) =>
-      Number(baris.periode.slice(0, 4)) === tahun &&
-      (!bulan || baris.periode.slice(5, 7) === bulan),
-  );
+  // Tahun yang diminta hanya dipakai kalau di situ memang ada jurnal; kalau
+  // tidak, halamannya jatuh ke tahun terbaru yang punya data supaya saringan
+  // dan isinya tidak pernah saling bertentangan.
+  const tahunAwal =
+    Number.isInteger(diminta) && diminta >= 2000 && diminta <= 2100
+      ? diminta
+      : new Date().getFullYear();
+  let hasil = await riwayatGajiAny(tahunAwal, bulan || undefined);
+  if (hasil.tahunTersedia.length > 0 && !hasil.tahunTersedia.includes(tahunAwal)) {
+    hasil = await riwayatGajiAny(hasil.tahunTersedia[0], bulan || undefined);
+  }
+
+  const tahun = hasil.tahunTersedia.includes(tahunAwal)
+    ? tahunAwal
+    : (hasil.tahunTersedia[0] ?? tahunAwal);
 
   return (
     <RiwayatGaji
-      daftar={daftar}
-      tahunTersedia={tahunTersedia}
+      daftar={hasil.daftar}
+      tahunTersedia={[...new Set([tahun, ...hasil.tahunTersedia])].sort(
+        (a, b) => b - a,
+      )}
       nilai={{ tahun, bulan }}
       adaSaringan={bulan !== ""}
     />

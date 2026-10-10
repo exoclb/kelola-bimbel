@@ -3,7 +3,7 @@ import { KopDokumen } from "@/components/kop-dokumen";
 import type { ProfilDokumen } from "@/lib/dokumen-html";
 import { formatRupiah } from "@/lib/gaji";
 import { formatJam } from "@/lib/jurnal";
-import type { BarisRekapGaji } from "@/lib/mock-gaji";
+import type { BarisRekapGaji } from "@/lib/gaji";
 import { formatTanggalLengkap } from "@/lib/tanggal";
 
 type SlipGajiProps = {

@@ -1,6 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { Pool } from "pg";
-import { expect, test, type APIRequestContext } from "@playwright/test";
+import {
+  expect,
+  test,
+  type APIRequestContext,
+  type Page,
+} from "@playwright/test";
 
 const origin = "http://localhost:3101";
 const headers = { Origin: origin };
@@ -68,6 +73,11 @@ async function masuk(client: APIRequestContext, email: string) {
   expect(response.status()).toBe(200);
 }
 
+/** Satu baris guru di daftar rekap, dikenali dari tautan slipnya. */
+function barisGuru(page: Page, id: string) {
+  return page.locator("li").filter({ has: page.locator(`a[href*="${id}"]`) });
+}
+
 async function idAkun(email: string) {
   const db = await pool();
   try {
@@ -94,8 +104,21 @@ test.beforeAll(async ({ request }) => {
 
   const db = await pool();
   try {
+    // Bersih-bersih dulu: hook ini ikut jalan lagi kalau worker Playwright
+    // dimulai ulang setelah ada pemeriksaan yang gagal, dan isian gandanya
+    // akan membuat jam mengajar terhitung dua kali.
     await db.query(
-      "INSERT INTO salary_settings (tarif_per_jam, berlaku_sejak) VALUES ($1, $2)",
+      "DELETE FROM teaching_journals WHERE guru_id = $1 OR guru_id = $2",
+      [guruId, guruLainId],
+    );
+    await db.query("DELETE FROM classes WHERE guru_id = $1", [guruId]);
+    await db.query(
+      "DELETE FROM salary_recaps WHERE guru_id = $1 OR guru_id = $2",
+      [guruId, guruLainId],
+    );
+    await db.query(
+      `INSERT INTO salary_settings (tarif_per_jam, berlaku_sejak) VALUES ($1, $2)
+       ON CONFLICT (berlaku_sejak) DO NOTHING`,
       [50000, `${bulan}-01`],
     );
     // Kelas menunjuk nama cabang yang harus terdaftar (kolomnya ber-relasi ke
@@ -304,6 +327,14 @@ test("owner bisa melihat gaji setiap guru, dan penandaan pembayaran berlaku", as
     { headers },
   );
   expect(guruTidakAda.status()).toBe(404);
+
+  // Dikembalikan ke belum dibayar: pemeriksaan halaman di bawah memakai guru
+  // yang sama, dan penandaan pembayaran itu milik pemeriksaan ini saja.
+  const batal = await request.patch("/api/admin/gaji", {
+    headers: { ...headers, "Content-Type": "application/json" },
+    data: { guruId, periode: bulan, dibayar: false },
+  });
+  expect(batal.status()).toBe(200);
 });
 
 test("slip gaji meng-escape nilai dari basis data", async ({ request }) => {
@@ -378,4 +409,103 @@ test("halaman rekap gaji semua guru hanya untuk owner", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: "Rekap Gaji Bulanan" }),
   ).toBeVisible();
+});
+
+/**
+ * Halaman honor untuk owner kini membaca jurnal sungguhan dan menyimpan
+ * penandaan pembayarannya, jadi keduanya diuji lewat peramban: angkanya harus
+ * sama dengan jurnal yang ada di basis data, dan status yang ditandai harus
+ * tetap terbaca setelah halaman dimuat ulang.
+ */
+test("halaman rekap honor memakai jurnal sungguhan dan menyimpan penandaan pembayaran", async ({
+  page,
+  request,
+}) => {
+  const emailOwner = await signUp(request, "Owner Honor");
+  await setRole(emailOwner, "owner");
+
+  await page.goto("/sign-in");
+  await page.getByLabel("Email").fill(emailOwner);
+  await page.getByLabel("Password").fill(sandi);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  // Owner mendarat di pemantauan; ditunggu dulu supaya sesinya sudah tersimpan
+  // sebelum halaman honor dibuka.
+  await expect(page).toHaveURL(/\/app\/pemantauan$/);
+
+  await page.goto(`/app/gaji?periode=${bulan}`);
+  await expect(
+    page.getByRole("heading", { name: "Rekap Gaji Bulanan" }),
+  ).toBeVisible();
+
+  // 1,5 jam × Rp50.000 dari jurnal guru ini, bukan angka contoh.
+  const baris = barisGuru(page, guruId);
+  await expect(baris.getByText("1 jurnal")).toBeVisible();
+  await expect(baris.getByText("Rp75.000").first()).toBeVisible();
+  await expect(baris.getByRole("link", { name: "Slip gaji" })).toHaveAttribute(
+    "href",
+    `/app/gaji/slip/${guruId}?periode=${bulan}`,
+  );
+
+  await baris.getByRole("button", { name: "Tandai sudah dibayar" }).click();
+  await expect(
+    page.getByText(/ditandai sudah dibayar/).first(),
+  ).toBeVisible();
+
+  // Setelah dimuat ulang statusnya tetap ada — tandanya tersimpan di database,
+  // bukan cuma di layar.
+  await page.reload();
+  await expect(barisGuru(page, guruId).getByText("Sudah dibayar")).toBeVisible();
+
+  const db = await pool();
+  let statusTersimpan: string | undefined;
+  try {
+    const { rows } = await db.query(
+      "SELECT status_pembayaran FROM salary_recaps WHERE guru_id = $1 AND periode_bulan = $2",
+      [guruId, bulan],
+    );
+    statusTersimpan = rows[0]?.status_pembayaran;
+  } finally {
+    await db.end();
+  }
+  expect(statusTersimpan).toBe("dibayar");
+
+  // Slip gurunya memakai angka yang sama dengan baris di rekap.
+  await page.goto(`/app/gaji/slip/${guruId}?periode=${bulan}`);
+  await expect(page.getByText("Rp75.000").first()).toBeVisible();
+
+  // Riwayat gaji meringkas periode yang sama.
+  await page.goto(`/app/gaji/riwayat?tahun=${bulan.slice(0, 4)}`);
+  await expect(page.getByRole("heading", { name: "Riwayat Gaji" })).toBeVisible();
+  await expect(page.getByText(labelPeriode(bulan)).first()).toBeVisible();
+
+  // Dikembalikan ke belum dibayar supaya pemeriksaan lain tidak ikut terbawa.
+  await page.goto(`/app/gaji?periode=${bulan}`);
+  await barisGuru(page, guruId)
+    .getByRole("button", { name: "Batalkan pembayaran" })
+    .click();
+  await expect(barisGuru(page, guruId).getByText("Belum dibayar")).toBeVisible();
+});
+
+/**
+ * Halaman rekap milik guru sendiri: angkanya dari jurnal guru itu, dan isian
+ * bulannya sudah terisi periode yang sedang dilihat (bukan kosong saat guru
+ * belum punya jurnal bulan ini).
+ */
+test("halaman gaji guru menampilkan rekap jurnalnya sendiri", async ({
+  page,
+}) => {
+  await setRole(emailGuruLain, "user");
+  await page.goto("/sign-in");
+  await page.getByLabel("Email").fill(emailGuruLain);
+  await page.getByLabel("Password").fill(sandi);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/app\/jurnal$/);
+
+  await page.goto(`/app/gaji/saya?periode=${bulan}`);
+  await expect(
+    page.getByRole("heading", { name: "Rekap Gaji Saya" }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Bulan rekap")).toHaveValue(bulan);
+  // 2 jam × Rp50.000 dari jurnalnya sendiri.
+  await expect(page.getByText("Rp100.000").first()).toBeVisible();
 });

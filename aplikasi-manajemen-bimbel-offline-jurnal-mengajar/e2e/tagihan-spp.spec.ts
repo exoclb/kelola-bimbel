@@ -164,3 +164,75 @@ test("penerbitan tagihan SPP melewati murid yang sudah ditagih", async ({
     ).status(),
   ).toBe(403);
 });
+
+/**
+ * Halaman utama tagihan SPP: owner melihat tagihan bulan berjalan dari basis
+ * data, lalu menandai lunas dari layar. Penandaan itu harus tersimpan — kalau
+ * halaman dimuat ulang, statusnya masih lunas dan barisnya di database berubah.
+ */
+test("halaman tagihan menandai lunas dari layar dan menyimpannya", async ({
+  page,
+  request,
+}) => {
+  const email = await daftar(request, "Owner Tagihan Halaman");
+  await setRole(email, "owner");
+  await masuk(request, email);
+
+  const buat = await request.post("/api/murid", {
+    headers,
+    data: { nama: "Murid Tagihan Halaman", tanggalLahir: "2015-06-06" },
+  });
+  expect(buat.status()).toBe(201);
+  const muridId = (await buat.json()).data.id as string;
+
+  const sekarang = new Date();
+  const periode = `${sekarang.getFullYear()}-${String(sekarang.getMonth() + 1).padStart(2, "0")}`;
+  const terbit = await request.post("/api/tagihan", {
+    headers,
+    data: { periode, nominal: 190000, muridIds: [muridId] },
+  });
+  expect(terbit.status()).toBe(201);
+
+  await page.goto("/sign-in");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password").fill(sandi);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/app\/pemantauan$/);
+
+  await page.goto("/app/tagihan");
+  await expect(
+    page.getByRole("heading", { name: "Daftar Tagihan" }),
+  ).toBeVisible();
+
+  const baris = page.locator("li").filter({ hasText: "Murid Tagihan Halaman" });
+  await expect(baris.getByText("Rp190.000").first()).toBeVisible();
+  await expect(baris.getByText("Belum lunas")).toBeVisible();
+
+  await baris.getByRole("button", { name: "Tandai lunas" }).click();
+  await baris.getByRole("button", { name: "Simpan" }).click();
+  await expect(page.getByText(/ditandai lunas/).first()).toBeVisible();
+
+  // Status barunya datang dari database, bukan dari tampilan sementara.
+  await page.reload();
+  await expect(
+    page
+      .locator("li")
+      .filter({ hasText: "Murid Tagihan Halaman" })
+      .getByText("Lunas", { exact: true }),
+  ).toBeVisible();
+
+  const db = new Pool({
+    connectionString: process.env.STARTER_TEST_DATABASE_URL,
+    max: 1,
+  });
+  try {
+    const { rows } = await db.query(
+      "SELECT status, tanggal_bayar FROM student_invoices WHERE student_id = $1 AND periode_tahun = $2 AND periode_bulan = $3",
+      [muridId, Number(periode.slice(0, 4)), Number(periode.slice(5, 7))],
+    );
+    expect(rows[0]?.status).toBe("lunas");
+    expect(rows[0]?.tanggal_bayar).not.toBeNull();
+  } finally {
+    await db.end();
+  }
+});

@@ -10,41 +10,25 @@ import {
   user,
 } from "@/db/schema";
 import { hitungGaji } from "@/lib/gaji";
+import type {
+  BarisRekapGaji,
+  RekapGaji as RekapGajiBulanan,
+  RingkasanGajiBulanan,
+  RincianJam,
+} from "@/lib/gaji";
 import { pesanGajiDibayar, pesanRekapHonor } from "@/lib/pesan-notifikasi";
 import { tanggalISO } from "@/lib/tanggal";
 import { buatNotifikasi } from "@/services/notifikasi.service";
 
-export type RincianGaji = {
-  tanggal: string;
-  namaKelas: string;
-  jamMengajar: number;
-  jumlahHadir: number;
-  jumlahMurid: number;
-};
-
-export type BarisGajiGuru = {
-  guruId: string;
-  guruNama: string;
-  guruEmail: string;
-  jumlahJurnal: number;
-  totalJam: number;
-  tarifPerJam: number;
-  totalGaji: number;
-  /**
-   * Selama tabel `salary_recaps` belum ada, gaji tanpa catatan pembayaran
-   * memang berarti belum dibayar.
-   */
-  statusPembayaran: "belum_dibayar" | "dibayar";
-  tanggalDibayar: string | null;
-  rincian: RincianGaji[];
-};
-
-export type RekapGaji = {
-  periode: string;
-  tarifPerJam: number;
-  tarifDiatur: boolean;
-  daftar: BarisGajiGuru[];
-};
+/**
+ * Bentuk data gaji tinggal di `src/lib/gaji.ts` supaya komponen halaman bisa
+ * memakainya tanpa ikut menyeret koneksi basis data. Nama lama di bawah masih
+ * dipakai berkas dokumen (slip & pratinjau ekspor).
+ */
+export type RincianGaji = RincianJam;
+export type BarisGajiGuru = BarisRekapGaji;
+export type RekapGaji = RekapGajiBulanan;
+export type { RingkasanGajiBulanan };
 
 /** "2026-10" → tanggal pertama dan terakhir bulan itu. */
 function rentangBulan(periode: string) {
@@ -417,14 +401,6 @@ export async function rekapGajiAnyGuru(
   if (!guru) return null;
   return rekapGajiGuru(periode, guru);
 }
-
-export type RingkasanGajiBulanan = {
-  periode: string;
-  jumlahGuru: number;
-  totalJam: number;
-  totalGaji: number;
-  jumlahDibayar: number;
-};
 
 export type RiwayatGaji = {
   daftar: RingkasanGajiBulanan[];

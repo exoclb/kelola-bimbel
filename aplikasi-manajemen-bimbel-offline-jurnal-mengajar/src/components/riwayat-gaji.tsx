@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { formatPeriode, formatRupiah } from "@/lib/gaji";
 import { formatJam } from "@/lib/jurnal";
-import type { RingkasanGajiBulanan } from "@/lib/mock-gaji";
+import type { RingkasanGajiBulanan } from "@/lib/gaji";
 
 type RiwayatGajiProps = {
   daftar: RingkasanGajiBulanan[];

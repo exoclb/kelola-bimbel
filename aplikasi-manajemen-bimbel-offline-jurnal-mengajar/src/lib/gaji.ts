@@ -1,5 +1,52 @@
-// Hitungan dan format gaji. Angka tarif per jam nanti datang dari pengaturan
+// Hitungan, format, dan bentuk data gaji. Tarif per jam datang dari pengaturan
 // bimbel, jadi perhitungannya dibuat di satu tempat ini.
+//
+// Tipe di bawah adalah kontrak antara layanan gaji (`src/services/gaji.service.ts`)
+// dan komponen halaman: komponen hanya butuh bentuk datanya, bukan koneksi
+// basis datanya, jadi tipenya tinggal di modul murni ini.
+
+export type StatusPembayaran = "belum_dibayar" | "dibayar";
+
+/** Satu jurnal yang ikut dihitung ke honor: kapan, kelas apa, berapa jam. */
+export type RincianJam = {
+  tanggal: string;
+  namaKelas: string;
+  jamMengajar: number;
+  jumlahHadir: number;
+  jumlahMurid: number;
+};
+
+/** Rekap satu guru pada satu periode, lengkap dengan status pembayarannya. */
+export type BarisRekapGaji = {
+  guruId: string;
+  guruNama: string;
+  guruEmail: string;
+  jumlahJurnal: number;
+  totalJam: number;
+  tarifPerJam: number;
+  totalGaji: number;
+  statusPembayaran: StatusPembayaran;
+  tanggalDibayar: string | null;
+  rincian: RincianJam[];
+};
+
+/** Rekap honor semua guru pada satu periode (`YYYY-MM`). */
+export type RekapGaji = {
+  periode: string;
+  tarifPerJam: number;
+  /** `false` kalau belum ada aturan tarif yang berlaku untuk periode itu. */
+  tarifDiatur: boolean;
+  daftar: BarisRekapGaji[];
+};
+
+/** Ringkasan satu periode untuk halaman riwayat gaji. */
+export type RingkasanGajiBulanan = {
+  periode: string;
+  jumlahGuru: number;
+  totalJam: number;
+  totalGaji: number;
+  jumlahDibayar: number;
+};
 
 /** "1200000" → "Rp1.200.000". */
 export function formatRupiah(nilai: number) {

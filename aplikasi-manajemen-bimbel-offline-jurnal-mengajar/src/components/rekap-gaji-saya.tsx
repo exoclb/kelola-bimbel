@@ -14,10 +14,12 @@ import { TombolCetakUnduh } from "@/components/tombol-cetak-unduh";
 import { formatRupiah } from "@/lib/gaji";
 import { formatJam } from "@/lib/jurnal";
 import type { ProfilDokumen } from "@/lib/dokumen-html";
-import type { BarisRekapGaji } from "@/lib/mock-gaji";
+import type { BarisRekapGaji } from "@/lib/gaji";
 
 type RekapGajiSayaProps = {
   baris: BarisRekapGaji;
+  /** Periode yang sedang dilihat (`YYYY-MM`), jadi isian bulan selalu terisi. */
+  periode: string;
   periodeTampil: string;
   namaBerkas: string;
   /** Identitas bimbel untuk kop, dibaca halaman dari tabel `bimbel_profile`. */
@@ -26,10 +28,12 @@ type RekapGajiSayaProps = {
 
 /**
  * Rekap gaji milik guru yang sedang masuk: jam mengajar bulan ini, tarif, dan
- * slip gajinya. Guru hanya melihat datanya sendiri.
+ * slip gajinya. Datanya dihitung server dari jurnal guru itu sendiri, jadi
+ * angka di sini sama dengan rekap yang dipakai owner menandai pembayaran.
  */
 export function RekapGajiSaya({
   baris,
+  periode,
   periodeTampil,
   namaBerkas,
   profil,
@@ -87,7 +91,7 @@ export function RekapGajiSaya({
                 id="periode"
                 name="periode"
                 type="month"
-                defaultValue={baris.rincian[0]?.tanggal.slice(0, 7) ?? ""}
+                defaultValue={periode}
                 className="h-[var(--target-sentuh-portal)] w-44 md:text-base"
               />
             </div>

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { RekapGajiSaya } from "@/components/rekap-gaji-saya";
 import { formatPeriode, periodeBulan } from "@/lib/gaji";
-import { getRekapGajiSaya } from "@/lib/mock-gaji";
+import { rekapGajiGuru } from "@/services/gaji.service";
 import { ambilProfilBimbel } from "@/services/pengaturan.service";
 import { requireSession } from "@/lib/session";
 
@@ -21,15 +21,18 @@ export default async function RekapGajiSayaPage({
   const periode = POLA_PERIODE.test(params.periode ?? "")
     ? (params.periode ?? "")
     : periodeBulan(new Date());
-  const baris = getRekapGajiSaya(periode, {
+  // Rekapnya dihitung dari jurnal guru itu sendiri, jadi angkanya sama dengan
+  // yang dipakai owner menandai pembayaran di halaman rekap gaji.
+  const baris = (await rekapGajiGuru(periode, {
     id: user.id,
     nama: user.name,
     email: user.email,
-  });
+  })).guru;
 
   return (
     <RekapGajiSaya
       baris={baris}
+      periode={periode}
       periodeTampil={formatPeriode(periode)}
       namaBerkas={`slip-gaji-${periode}`}
       profil={await ambilProfilBimbel()}

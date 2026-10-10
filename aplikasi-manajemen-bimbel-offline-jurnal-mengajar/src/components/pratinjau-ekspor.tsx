@@ -19,7 +19,7 @@ import { SlipGaji } from "@/components/slip-gaji";
 import { formatJam } from "@/lib/jurnal";
 import { formatRupiah } from "@/lib/gaji";
 import type { ProfilDokumen } from "@/lib/dokumen-html";
-import type { BarisRekapGaji } from "@/lib/mock-gaji";
+import type { BarisRekapGaji } from "@/lib/gaji";
 
 type PratinjauEksporProps = {
   /** Periode yang sedang dilihat (`YYYY-MM`). */

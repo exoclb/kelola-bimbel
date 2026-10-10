@@ -6,7 +6,7 @@ import { cn } from "cn";
 import { Button } from "@/components/ui/button";
 import { formatJam } from "@/lib/jurnal";
 import { formatRupiah, hitungGaji } from "@/lib/gaji";
-import type { RincianJam } from "@/lib/mock-gaji";
+import type { RincianJam } from "@/lib/gaji";
 import { formatTanggalLengkap } from "@/lib/tanggal";
 
 type PanelRincianJamProps = {

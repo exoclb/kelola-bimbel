@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { RekapGajiBulanan } from "@/components/rekap-gaji-bulanan";
 import { formatPeriode, periodeBulan } from "@/lib/gaji";
-import { getRekapGajiBulanan } from "@/lib/mock-gaji";
+import { rekapGajiAnyBulanan } from "@/services/gaji.service";
 import { ambilProfilBimbel } from "@/services/pengaturan.service";
 import { requirePermission } from "@/lib/session";
 
@@ -21,11 +21,14 @@ export default async function RekapGajiPage({
   const periode = POLA_PERIODE.test(params.periode ?? "")
     ? (params.periode ?? "")
     : periodeBulan(new Date());
-  const profil = await ambilProfilBimbel();
+  const [rekap, profil] = await Promise.all([
+    rekapGajiAnyBulanan(periode),
+    ambilProfilBimbel(),
+  ]);
 
   return (
     <RekapGajiBulanan
-      rekap={getRekapGajiBulanan(periode)}
+      rekap={rekap}
       periodeTampil={formatPeriode(periode)}
       namaOwner={user.name}
       profil={profil}
