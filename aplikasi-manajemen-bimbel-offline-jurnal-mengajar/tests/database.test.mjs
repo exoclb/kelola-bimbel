@@ -121,22 +121,38 @@ async function pastikanCabang(nama) {
 }
 
 /**
- * Hapus cabang yang tidak dipakai kelas mana pun. Cabang yang masih ditunjuk
- * kelas tidak bisa dihapus (`classes_cabang_cabang_nama_fk`), jadi
- * pembersihannya harus menyisakan baris yang dipakai tes lain.
+ * Hapus cabang data contoh yang tidak dipakai kelas mana pun. Yang disentuh
+ * hanya nama dari daftar contoh itu: cabang buatan berkas tes lain — banyak
+ * yang memang sengaja dibiarkan tanpa kelas — tidak boleh ikut terhapus,
+ * karena seluruh berkas tes berjalan bersamaan di satu basis data uji ini.
  */
-async function hapusCabangTanpaKelas() {
+async function hapusCabangContoh(daftarContoh) {
   await dbJurnal.query(
-    "DELETE FROM cabang WHERE nama NOT IN (SELECT DISTINCT cabang FROM classes)",
+    `DELETE FROM cabang
+      WHERE lower(btrim(nama)) = ANY($1::text[])
+        AND lower(btrim(nama)) NOT IN (
+          SELECT lower(btrim(cabang)) FROM classes
+        )`,
+    [daftarContoh.map((satu) => rapiNama(satu.nama))],
   );
 }
 
-/** Jumlah baris tabel `cabang` di basis data uji. */
-async function jumlahCabang() {
+/**
+ * Jumlah baris `cabang` untuk nama data contoh saja. Menghitung seluruh isi
+ * tabel tidak bisa dipakai sebagai patokan: berkas tes lain menambah dan
+ * menghapus cabangnya sendiri sambil berjalan.
+ */
+async function jumlahCabangContoh(daftarContoh) {
   const { rows } = await dbJurnal.query(
-    "SELECT count(*)::int AS jumlah FROM cabang",
+    "SELECT count(*)::int AS jumlah FROM cabang WHERE lower(btrim(nama)) = ANY($1::text[])",
+    [daftarContoh.map((satu) => rapiNama(satu.nama))],
   );
   return rows[0].jumlah;
+}
+
+/** Bentuk nama cabang yang dipakai perbandingan: tanpa spasi tepi, huruf kecil. */
+function rapiNama(nama) {
+  return nama.trim().toLowerCase();
 }
 
 /** Benar kalau nama cabang itu sudah terdaftar (tak peka huruf besar-kecil). */
@@ -959,15 +975,20 @@ test("seeder cabang mengisi sekali dan aman dijalankan ulang", async () => {
   const { getDaftarCabang } = await import("../src/lib/mock-cabang.ts");
   await siapkanJurnal();
 
-  // Tes ini yang memiliki isi tabel cabang di basis data uji: cabang yang tidak
-  // dipakai kelas dihapus, cabang yang dipakai tes lain dibiarkan.
-  await hapusCabangTanpaKelas();
-  const sebelum = await jumlahCabang();
+  // Tes ini hanya memiliki cabang data contoh: sisa data contoh yang tidak
+  // dipakai kelas dihapus dulu, sedangkan cabang buatan berkas tes lain
+  // dibiarkan apa adanya — berkas tes lain berjalan bersamaan.
+  const daftarContoh = getDaftarCabang();
+  await hapusCabangContoh(daftarContoh);
+  const sebelum = await jumlahCabangContoh(daftarContoh);
 
   const pertama = await seedCabang(dbJurnal);
   assert.equal(pertama.dibuat, pertama.jumlah);
   assert.equal(pertama.dilewati, 0);
-  assert.equal(await jumlahCabang(), sebelum + pertama.jumlah);
+  assert.equal(
+    await jumlahCabangContoh(daftarContoh),
+    sebelum + pertama.jumlah,
+  );
   for (const satu of getDaftarCabang())
     assert.ok(
       await cabangTerdaftar(satu.nama),
@@ -977,7 +998,10 @@ test("seeder cabang mengisi sekali dan aman dijalankan ulang", async () => {
   const kedua = await seedCabang(dbJurnal);
   assert.equal(kedua.dibuat, 0);
   assert.equal(kedua.dilewati, kedua.jumlah);
-  assert.equal(await jumlahCabang(), sebelum + pertama.jumlah);
+  assert.equal(
+    await jumlahCabangContoh(daftarContoh),
+    sebelum + pertama.jumlah,
+  );
 
   // Nama yang sudah ada tidak ditambah walau beda huruf besar-kecil dan spasi.
   const contoh = await seedCabang(dbJurnal, [
@@ -990,9 +1014,12 @@ test("seeder cabang mengisi sekali dan aman dijalankan ulang", async () => {
   ]);
   assert.equal(contoh.dibuat, 0);
   assert.equal(contoh.dilewati, 1);
-  assert.equal(await jumlahCabang(), sebelum + pertama.jumlah);
+  assert.equal(
+    await jumlahCabangContoh(daftarContoh),
+    sebelum + pertama.jumlah,
+  );
 
-  await hapusCabangTanpaKelas();
+  await hapusCabangContoh(daftarContoh);
 });
 
 /**
@@ -1003,9 +1030,11 @@ test("seeder cabang mengisi sekali dan aman dijalankan ulang", async () => {
  */
 test("seeder cabang tidak menimpa cabang yang sudah ada", async () => {
   const { seedCabang } = await import("../scripts/lib/seed-cabang.mjs");
+  const { getDaftarCabang } = await import("../src/lib/mock-cabang.ts");
   await siapkanJurnal();
 
-  await hapusCabangTanpaKelas();
+  const daftarContoh = getDaftarCabang();
+  await hapusCabangContoh(daftarContoh);
   await dbJurnal.query(
     `INSERT INTO cabang (nama, alamat, kontak, status_aktif)
      VALUES ($1, $2, $3, $4)`,
@@ -1030,7 +1059,7 @@ test("seeder cabang tidak menimpa cabang yang sudah ada", async () => {
     },
   ]);
 
-  await hapusCabangTanpaKelas();
+  await hapusCabangContoh(daftarContoh);
 });
 
 /**
