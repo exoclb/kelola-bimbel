@@ -6,6 +6,7 @@ import {
   DatabaseBackup,
   FileDown,
   ServerCog,
+  ShieldCheck,
   Users,
   Wallet,
 } from "lucide-react";
@@ -24,6 +25,10 @@ import {
 } from "@/lib/mock-pengaturan";
 import { labelPeran } from "@/lib/peran";
 import { getDaftarWali, ringkasPenautan } from "@/lib/mock-wali";
+import {
+  KASUS_VERIFIKASI,
+  ringkasVerifikasi,
+} from "@/lib/mock-verifikasi-notifikasi";
 import { ambilStatusBackup } from "@/services/backup.service";
 import { ambilProfilBimbel } from "@/services/pengaturan.service";
 import { formatRupiah } from "@/lib/gaji";
@@ -58,6 +63,7 @@ export async function PengaturanBimbel({ bolehKelola }: PengaturanBimbelProps) {
   const guru = getDaftarGuru();
   const preferensi = getPreferensiNotifikasi();
 
+  const ringkas = ringkasVerifikasi(KASUS_VERIFIKASI);
   const guruAktif = guru.filter((akun) => akun.statusAktif).length;
   const preferensiAktif = preferensi.filter((item) => item.aktif).length;
   const ringkasWali = ringkasPenautan(getDaftarWali());
@@ -120,6 +126,15 @@ export async function PengaturanBimbel({ bolehKelola }: PengaturanBimbelProps) {
       keterangan:
         "Hanya status ada/tidak — nilai variabelnya tidak pernah ditampilkan.",
       tombol: "Lihat status",
+    },
+    {
+      href: "/app/notifikasi/verifikasi",
+      ikon: ShieldCheck,
+      judul: "Verifikasi Notifikasi",
+      ringkasan: `${ringkas.lulus} dari ${ringkas.total} pemeriksaan lulus`,
+      keterangan:
+        "Pastikan pemberitahuan terkirim sekali, menahan saat dimatikan, dan tidak menggandakan.",
+      tombol: "Lihat ringkasan",
     },
   ];
 
