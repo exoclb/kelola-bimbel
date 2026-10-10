@@ -5,8 +5,8 @@
 // hasil pemeriksaan, jadi daftar dan angkanya ditulis tetap di sini. Yang
 // diperiksa bukan karangan — setiap perilaku di bawah sudah dikunci tes
 // (`e2e/notifikasi.spec.ts`, `tests/notifikasi-service.test.mjs`,
-// `tests/notifikasi-gaji.test.mjs`, `tests/notifikasi-tagihan.test.mjs`,
-// `tests/pesan-notifikasi.test.mjs`), dan
+// `tests/notifikasi-tandai-dibaca.test.mjs`, `tests/notifikasi-gaji.test.mjs`,
+// `tests/notifikasi-tagihan.test.mjs`, `tests/pesan-notifikasi.test.mjs`), dan
 // sumber pemicunya ikut ditulis supaya bisa ditelusuri.
 //
 // Dua temuan yang sengaja ditampilkan apa adanya: jenis `kelas_kosong` sudah
@@ -355,28 +355,28 @@ export const UJI_TANDAI_DIBACA: UjiTandaiDibaca[] = [
     langkah: "ids: [<id milik sendiri>]",
     hasil:
       "1 baris berubah dan hitungan belum dibaca akun itu turun jadi 0.",
-    tes: "e2e/notifikasi.spec.ts · daftar dan tandai baca notifikasi terbatas pada akun sendiri",
+    tes: "tests/notifikasi-tandai-dibaca.test.mjs · tandaiNotifikasiDibaca mengubah status baris dan menurunkan hitungan belum dibaca · e2e/notifikasi.spec.ts · daftar dan tandai baca notifikasi terbatas pada akun sendiri",
   },
   {
     id: "dibalik",
     langkah: "ids: [<id sudah dibaca>], dibaca: false",
     hasil:
       "1 baris berubah kembali menjadi belum dibaca — penandaan bisa dibalik.",
-    tes: "e2e/notifikasi.spec.ts · daftar dan tandai baca notifikasi terbatas pada akun sendiri",
+    tes: "tests/notifikasi-tandai-dibaca.test.mjs · penandaan baca bisa dibalik dan mengulang aksi yang sama tidak mengubah baris · e2e/notifikasi.spec.ts · daftar dan tandai baca notifikasi terbatas pada akun sendiri",
   },
   {
     id: "id-akun-lain",
     langkah: "ids: [<id akun lain>]",
     hasil:
       "0 baris berubah; pemberitahuan akun lain tetap utuh miliknya.",
-    tes: "e2e/notifikasi.spec.ts · daftar dan tandai baca notifikasi terbatas pada akun sendiri · penandaan baca akun lain tidak mengubah notifikasi milik sendiri",
+    tes: "tests/notifikasi-tandai-dibaca.test.mjs · penandaan baca tidak menyentuh baris akun lain · e2e/notifikasi.spec.ts · daftar dan tandai baca notifikasi terbatas pada akun sendiri · penandaan baca akun lain tidak mengubah notifikasi milik sendiri",
   },
   {
     id: "semua",
     langkah: "semua: true",
     hasil:
       "Hanya baris milik akun yang sedang masuk yang berubah; akun lain tetap melihat 1 belum dibaca.",
-    tes: "e2e/notifikasi.spec.ts · penandaan baca akun lain tidak mengubah notifikasi milik sendiri",
+    tes: "tests/notifikasi-tandai-dibaca.test.mjs · penandaan baca tidak menyentuh baris akun lain · e2e/notifikasi.spec.ts · penandaan baca akun lain tidak mengubah notifikasi milik sendiri",
   },
   {
     id: "badan-kosong",
