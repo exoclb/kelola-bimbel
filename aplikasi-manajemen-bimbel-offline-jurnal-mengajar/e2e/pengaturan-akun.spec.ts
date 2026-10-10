@@ -283,3 +283,35 @@ test("endpoint data akun hanya menyentuh akun yang sedang masuk", async ({
   expect(await namaTersimpan(pengubah)).toBe("Guru Endpoint Akun");
   expect(await namaTersimpan(tetangga)).toBe("Guru Tetangga Akun");
 });
+
+test("halaman preferensi menjelaskan tiap jenis pemberitahuan secara operasional", async ({
+  page,
+}) => {
+  const email = await daftarAkun("Guru Teks Bantuan Notifikasi");
+  await masukHalaman(page, email);
+  await page.goto("/app/pengaturan/notifikasi");
+
+  // Kelima jenis katalognya tampil lengkap, masing-masing dengan teks bantuan
+  // yang menjelaskan kapan pemberitahuannya muncul dan apa tindak lanjutnya.
+  await expect(page.getByRole("checkbox")).toHaveCount(5);
+  await expect(
+    page.getByText(
+      /Memperbaiki jurnal yang sama tidak memicu pemberitahuan kedua/,
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/Pakai angkanya untuk mencocokkan honor yang diterima/),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      /Bawaannya mati, jadi nyalakan kalau ringkasannya memang mau diterima/,
+    ),
+  ).toBeVisible();
+
+  // Temuan apa adanya: kelas kosong belum punya pengirim di aplikasi ini, dan
+  // itu ditulis di teks bantuannya. Kalau pemicunya kelak dibuat, teks ini ikut
+  // diperbarui — tes ini yang menandainya.
+  await expect(
+    page.getByText(/Pengirimnya belum ada di aplikasi ini/),
+  ).toBeVisible();
+});
