@@ -9,7 +9,8 @@ import { expect, test, type APIRequestContext } from "@playwright/test";
 // jurnal, dan tujuh catatan evaluasi), lalu memeriksa layarnya dari sudut
 // pandang wali: kalimat pengantarnya, tiga kartu ringkasan, grafik beserta
 // keterangan rentangnya, arah nilai tiap catatan, pengelompokan per bulan,
-// rekap kehadiran per sesi, pemilih anak, keadaan kosong, dan tidak adanya
+// rincian rekap kehadiran per sesi (kelas, guru, tanggal, dan urutannya),
+// pemilih anak, keadaan kosong, dan tidak adanya
 // satu pun alat penyuntingan.
 //
 // Endpoint portalnya sendiri sudah dikunci berkas lain: `e2e/portal-isolasi.spec.ts`
@@ -83,6 +84,39 @@ async function idAkun(email: string) {
     ]);
     expect(rows.length).toBe(1);
     return rows[0].id as string;
+  } finally {
+    await db.end();
+  }
+}
+
+/** Id jurnal satu kelas yang baru saja diisi; satu kelas satu jurnal di sini. */
+async function idJurnal(kelasId: string) {
+  const db = await pool();
+  try {
+    const { rows } = await db.query(
+      "SELECT id FROM teaching_journals WHERE class_id = $1",
+      [kelasId],
+    );
+    expect(rows.length).toBe(1);
+    return rows[0].id as string;
+  } finally {
+    await db.end();
+  }
+}
+
+/**
+ * Geser tanggal satu sesi jurnal. Tanggal jurnal dihitung server dari jam
+ * sekarang, jadi riwayat beberapa pekan hanya bisa disiapkan langsung di basis
+ * data.
+ */
+async function geserTanggalJurnal(jurnalId: string, tanggal: string) {
+  const db = await pool();
+  try {
+    const { rowCount } = await db.query(
+      "UPDATE teaching_journals SET tanggal = $2::date WHERE id = $1",
+      [jurnalId, tanggal],
+    );
+    expect(rowCount).toBe(1);
   } finally {
     await db.end();
   }
@@ -423,4 +457,152 @@ test("pemilih anak memindah layar ke anak tanpa data dan menampilkan keadaan kos
   await expect(
     page.getByText("1 pertemuan terakhir · rata-rata 85."),
   ).toBeVisible();
+});
+
+test("rekap kehadiran menyebut kelas, guru, dan tanggal tiap sesi dengan yang terbaru lebih dulu", async ({
+  page,
+  request,
+}) => {
+  // Riwayat kehadiran dibaca per sesi jurnal: kelas, guru, tanggal, dan
+  // kehadirannya. Tanggal sesi hanya bisa datang dari server (klien tidak boleh
+  // mengarang tanggal jurnal), jadi baris jurnalnya digeser lewat basis data
+  // supaya urutan terbaru-dulu bisa diuji dengan dua tanggal yang pasti.
+  const kode = randomUUID().slice(0, 8);
+  const namaAnak = `Riwayat Anak ${kode}`;
+  const namaGuruSatu = `Guru Riwayat Satu ${kode}`;
+  const namaGuruDua = `Guru Riwayat Dua ${kode}`;
+  const kelasLama = `Kelas Riwayat Lama ${kode}`;
+  const kelasBaru = `Kelas Riwayat Baru ${kode}`;
+  const namaCabang = `Cabang Riwayat ${kode}`;
+
+  const emailOwner = await signUp(request, namaGuruSatu, "owner-riwayat");
+  await setRole(emailOwner, "owner");
+  await masuk(request, emailOwner);
+  const ownerId = await idAkun(emailOwner);
+
+  // Guru kedua punya akun sendiri, supaya tiap baris bisa dibedakan dari
+  // nama gurunya — bukan hanya dari nama kelasnya.
+  const emailGuruDua = await signUp(request, namaGuruDua, "guru-riwayat");
+  await setRole(emailGuruDua, "guru");
+  const guruDuaId = await idAkun(emailGuruDua);
+  // Mendaftarkan akun baru membuat sesi berpindah ke akun itu, jadi pemilik
+  // dimasukkan lagi sebelum menyiapkan kelasnya.
+  await masuk(request, emailOwner);
+
+  const murid = await request.post("/api/murid", {
+    headers,
+    data: { nama: namaAnak, tanggalLahir: "2015-08-08" },
+  });
+  expect(murid.status()).toBe(201);
+  const muridId = (await murid.json()).data.id as string;
+
+  await siapkanCabang(namaCabang);
+  const buatKelas = async (
+    namaKelas: string,
+    guruId: string,
+    jamMulai: string,
+  ) => {
+    const kelas = await request.post("/api/kelas", {
+      headers,
+      data: {
+        namaKelas,
+        cabang: namaCabang,
+        guruId,
+        jadwal: [{ hari: hariIni(), jamMulai, jamSelesai: "10:00" }],
+      },
+    });
+    expect(kelas.status()).toBe(201);
+    const isi = await kelas.json();
+    return {
+      kelasId: isi.data.id as string,
+      jadwalId: isi.data.jadwal[0].id as string,
+    };
+  };
+  const lama = await buatKelas(kelasLama, ownerId, "08:00");
+  const baru = await buatKelas(kelasBaru, guruDuaId, "09:00");
+
+  for (const kelas of [lama.kelasId, baru.kelasId]) {
+    const tempatkan = await request.post(`/api/kelas/${kelas}/murid`, {
+      headers,
+      data: { muridId },
+    });
+    expect(tempatkan.status()).toBe(201);
+  }
+
+  const tulisJurnal = (jadwalId: string, hadir: boolean, catatan: string) =>
+    request.post("/api/jurnal", {
+      headers,
+      data: {
+        jadwalId,
+        materi: "Materi riwayat kehadiran",
+        catatan: "",
+        kehadiran: [{ muridId, hadir, catatan }],
+      },
+    });
+  // Jurnal hanya boleh ditulis guru pengampu jadwalnya, jadi sesi kelas kedua
+  // dicatat sebagai guru kedua — sama seperti alur sungguhannya.
+  expect((await tulisJurnal(lama.jadwalId, true, "")).status()).toBe(200);
+  await masuk(request, emailGuruDua);
+  expect(
+    (await tulisJurnal(baru.jadwalId, false, "Sakit — demam")).status(),
+  ).toBe(200);
+
+  // Sesi kelas lama dipindah ke pekan sebelumnya, jadi urutan terbaru-dulu
+  // punya dua tanggal yang berbeda.
+  await geserTanggalJurnal(await idJurnal(lama.kelasId), "2026-04-06");
+  await geserTanggalJurnal(await idJurnal(baru.kelasId), "2026-04-13");
+
+  const emailWali = await signUp(request, "Wali Riwayat", "wali-riwayat");
+  await setRole(emailWali, "orang-tua");
+  const waliId = await idAkun(emailWali);
+  await masuk(request, emailOwner);
+  const tautan = await request.post(`/api/wali/${waliId}/murid`, {
+    headers,
+    data: { muridId },
+  });
+  expect(tautan.status()).toBe(201);
+
+  await page.goto("/sign-in");
+  await page.getByLabel("Email", { exact: true }).fill(emailWali);
+  await page.getByLabel("Password", { exact: true }).fill(sandi);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page).toHaveURL(/\/portal$/);
+  await page.goto(`/portal/perkembangan?anak=${muridId}`);
+
+  // Ringkasan kehadiran: satu dari dua sesi, dan sesi terakhirnya 13 April.
+  await expect(page.getByText("1 dari 2 sesi", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("terakhir Senin, 13 April 2026", { exact: true }),
+  ).toBeVisible();
+
+  const rekap = page.getByRole("region", {
+    name: "Rekap Kehadiran per Sesi",
+  });
+  await expect(rekap).toBeVisible();
+  const baris = rekap.getByRole("listitem");
+  await expect(baris).toHaveCount(2);
+
+  // Sesi terbaru lebih dulu, lengkap dengan kelas, guru, tanggal, dan hasilnya.
+  await expect(baris.nth(0)).toContainText(kelasBaru);
+  await expect(baris.nth(0)).toContainText(
+    `Senin, 13 April 2026 · ${namaGuruDua}`,
+  );
+  await expect(baris.nth(0)).toContainText("Tidak hadir");
+  await expect(baris.nth(0)).toContainText("Sakit — demam");
+
+  await expect(baris.nth(1)).toContainText(kelasLama);
+  await expect(baris.nth(1)).toContainText(
+    `Senin, 6 April 2026 · ${namaGuruSatu}`,
+  );
+  await expect(baris.nth(1)).toContainText("Hadir");
+  // Sesi tanpa catatan tidak diberi baris keterangan kosong.
+  await expect(baris.nth(1).getByText("Sakit — demam")).toHaveCount(0);
+
+  // Dua tautan penutup membawa anak yang sedang dibuka, bukan anak pertama.
+  await expect(
+    page.getByRole("link", { name: "Kembali ke beranda portal" }),
+  ).toHaveAttribute("href", `/portal?anak=${muridId}`);
+  await expect(
+    page.getByRole("link", { name: "Tagihan SPP anak" }),
+  ).toHaveAttribute("href", `/portal/tagihan?anak=${muridId}`);
 });
