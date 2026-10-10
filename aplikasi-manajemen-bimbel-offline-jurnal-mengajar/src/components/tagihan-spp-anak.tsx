@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Download, Printer, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KartuPortal } from "@/components/kartu-portal";
+import { KopDokumen } from "@/components/kop-dokumen";
 import { PemilihAnak } from "@/components/pemilih-anak";
 import { LayarPortal } from "@/components/layar-portal";
 import { PemberitahuanAnakNonaktif } from "@/components/pemberitahuan-anak-nonaktif";
@@ -14,6 +15,7 @@ import { RingkasanTagihanAnak } from "@/components/ringkasan-tagihan-anak";
 import { TombolAksiLengket } from "@/components/tombol-aksi-lengket";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { formatRupiah } from "@/lib/gaji";
+import type { ProfilDokumen } from "@/lib/dokumen-html";
 import { tandaiTerbaca } from "@/lib/jejak-baca-portal-store";
 import type { AnakWali, StatusJejakPortal } from "@/lib/portal-wali";
 import { bedaHari, tanggalISO } from "@/lib/tanggal";
@@ -34,6 +36,11 @@ type TagihanSppAnakProps = {
   statusAwal: StatusJejakPortal;
   /** Tagihan seluruh anak yang tertaut ke wali ini, dari tabel `student_invoices`. */
   tagihan: Tagihan[];
+  /**
+   * Identitas bimbel untuk kop bagian yang dicetak, dibaca halaman dari tabel
+   * `bimbel_profile` — sama dengan kop berkas bukti tagihan yang diunduh.
+   */
+  profil: ProfilDokumen;
   /** Tanggal hari ini menurut server (), dipakai sebelum jam perangkat siap. */
   tanggalServer: string;
 };
@@ -56,6 +63,7 @@ export function TagihanSppAnak({
   muridId,
   statusAwal,
   tagihan,
+  profil,
   tanggalServer,
 }: TagihanSppAnakProps) {
   const router = useRouter();
@@ -149,6 +157,12 @@ export function TagihanSppAnak({
       {dipilih && (
         <>
           <div id="bukti-tagihan-anak" className="mt-6 space-y-3">
+            {/* Kop masuk ke bagian yang dicetak supaya lembar hasil "Cetak /
+                simpan PDF" memuat identitas bimbel yang sama dengan berkas
+                bukti tagihan yang diunduh dari portal. Nama anak tidak diulang
+                di sini karena judul kartunya sudah menyebutkannya. */}
+            <KopDokumen judul="Bukti tagihan SPP" profil={profil} />
+
             {!dipilih.statusAktif && (
               <PemberitahuanAnakNonaktif nama={dipilih.nama} />
             )}

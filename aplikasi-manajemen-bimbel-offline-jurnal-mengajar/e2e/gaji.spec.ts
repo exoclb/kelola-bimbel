@@ -15,6 +15,17 @@ const sandi = "Gaji-test-password-123!";
 // selalu berisi jurnal ini.
 const bulan = new Date().toISOString().slice(0, 7);
 
+// Identitas bimbel untuk kop rekap; ditulis apa adanya supaya yang diperiksa
+// kop yang dibaca dari `bimbel_profile`, bukan nama cadangan.
+const profilKop = {
+  nama: "Bimbel Rekap Honor",
+  alamat: "Jl. Honor 5",
+  telepon: "081200000005",
+  email: "rekap-honor@bimbel.test",
+  logo: null,
+};
+const kontakKop = "Jl. Honor 5 · 081200000005 · rekap-honor@bimbel.test";
+
 /** Label periode seperti di dokumen slip, mis. "Oktober 2026". */
 function labelPeriode(periode: string) {
   const [tahun, bulanKe] = periode.split("-").map(Number);
@@ -424,6 +435,14 @@ test("halaman rekap honor memakai jurnal sungguhan dan menyimpan penandaan pemba
   const emailOwner = await signUp(request, "Owner Honor");
   await setRole(emailOwner, "owner");
 
+  // Kop rekap gaji dibaca halaman dari tabel `bimbel_profile`; diisi lebih dulu
+  // lewat API karena layarnya sendiri menyegarkan data dari server.
+  const simpanProfil = await request.put("/api/pengaturan/profil", {
+    headers,
+    data: profilKop,
+  });
+  expect(simpanProfil.status()).toBe(200);
+
   await page.goto("/sign-in");
   await page.getByLabel("Email").fill(emailOwner);
   await page.getByLabel("Password").fill(sandi);
@@ -437,6 +456,19 @@ test("halaman rekap honor memakai jurnal sungguhan dan menyimpan penandaan pemba
     page.getByRole("heading", { name: "Rekap Gaji Bulanan" }),
   ).toBeVisible();
 
+  // Kop bimbel ada di halaman ini karena tombol "Unduh PDF" mencetak halaman
+  // yang sedang tampil; identitasnya sama dengan berkas Excel dan slip gurunya.
+  const kop = page.getByText(profilKop.nama, { exact: true });
+  await expect(kop).toBeVisible();
+  await expect(page.getByText(kontakKop, { exact: true })).toBeVisible();
+  await expect(
+    page.getByText(`Periode ${labelPeriode(bulan)}`, { exact: true }),
+  ).toBeVisible();
+  // Dan tidak berada di bagian yang disembunyikan saat mencetak.
+  expect(
+    await kop.evaluate((el) => el.closest(".print\\:hidden") === null),
+  ).toBe(true);
+
   // 1,5 jam × Rp50.000 dari jurnal guru ini, bukan angka contoh.
   const baris = barisGuru(page, guruId);
   await expect(baris.getByText("1 jurnal")).toBeVisible();
@@ -447,14 +479,14 @@ test("halaman rekap honor memakai jurnal sungguhan dan menyimpan penandaan pemba
   );
 
   await baris.getByRole("button", { name: "Tandai sudah dibayar" }).click();
-  await expect(
-    page.getByText(/ditandai sudah dibayar/).first(),
-  ).toBeVisible();
+  await expect(page.getByText(/ditandai sudah dibayar/).first()).toBeVisible();
 
   // Setelah dimuat ulang statusnya tetap ada — tandanya tersimpan di database,
   // bukan cuma di layar.
   await page.reload();
-  await expect(barisGuru(page, guruId).getByText("Sudah dibayar")).toBeVisible();
+  await expect(
+    barisGuru(page, guruId).getByText("Sudah dibayar"),
+  ).toBeVisible();
 
   const db = await pool();
   let statusTersimpan: string | undefined;
@@ -475,7 +507,9 @@ test("halaman rekap honor memakai jurnal sungguhan dan menyimpan penandaan pemba
 
   // Riwayat gaji meringkas periode yang sama.
   await page.goto(`/app/gaji/riwayat?tahun=${bulan.slice(0, 4)}`);
-  await expect(page.getByRole("heading", { name: "Riwayat Gaji" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Riwayat Gaji" }),
+  ).toBeVisible();
   await expect(page.getByText(labelPeriode(bulan)).first()).toBeVisible();
 
   // Dikembalikan ke belum dibayar supaya pemeriksaan lain tidak ikut terbawa.
@@ -483,7 +517,9 @@ test("halaman rekap honor memakai jurnal sungguhan dan menyimpan penandaan pemba
   await barisGuru(page, guruId)
     .getByRole("button", { name: "Batalkan pembayaran" })
     .click();
-  await expect(barisGuru(page, guruId).getByText("Belum dibayar")).toBeVisible();
+  await expect(
+    barisGuru(page, guruId).getByText("Belum dibayar"),
+  ).toBeVisible();
 });
 
 /**

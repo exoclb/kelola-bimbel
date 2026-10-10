@@ -12,6 +12,16 @@ const origin = "http://localhost:3101";
 const headers = { Origin: origin };
 const sandi = "Tagihan-portal-test-123!";
 
+// Identitas bimbel untuk kop bukti tagihan yang dicetak dari portal.
+const profilKop = {
+  nama: "Bimbel Bukti Tagihan",
+  alamat: "Jl. Bukti 9",
+  telepon: "081200000009",
+  email: "bukti-tagihan@bimbel.test",
+  logo: null,
+};
+const kontakKop = "Jl. Bukti 9 · 081200000009 · bukti-tagihan@bimbel.test";
+
 async function pool() {
   return new Pool({
     connectionString: process.env.STARTER_TEST_DATABASE_URL,
@@ -127,6 +137,14 @@ test("layar Tagihan portal menampilkan ringkasan dan tiga status pembayaran", as
   await setRole(emailOwner, "owner");
   await masuk(request, emailOwner);
 
+  // Kop bagian yang dicetak dibaca dari tabel `bimbel_profile`, jadi diisi
+  // lebih dulu lewat API supaya yang diperiksa identitas tersimpan.
+  const simpanProfil = await request.put("/api/pengaturan/profil", {
+    headers,
+    data: profilKop,
+  });
+  expect(simpanProfil.status()).toBe(200);
+
   const murid = await request.post("/api/murid", {
     headers,
     data: { nama: "Anak Tagihan Portal", tanggalLahir: "2016-01-20" },
@@ -177,6 +195,18 @@ test("layar Tagihan portal menampilkan ringkasan dan tiga status pembayaran", as
   await expect(
     ringkasan.getByRole("heading", { name: /Anak Tagihan Portal/ }),
   ).toBeVisible();
+
+  // Kop bimbel ada di dalam bagian yang dicetak tombol "Cetak / simpan PDF",
+  // jadi lembar hasil cetaknya memuat identitas yang sama dengan berkas bukti
+  // tagihan yang diunduh dari portal.
+  await expect(
+    ringkasan.getByText(profilKop.nama, { exact: true }),
+  ).toBeVisible();
+  await expect(ringkasan.getByText(kontakKop, { exact: true })).toBeVisible();
+  await expect(
+    ringkasan.getByText("Bukti tagihan SPP", { exact: true }),
+  ).toBeVisible();
+
   await expect(ringkasan.getByText("Total tagihan")).toBeVisible();
   await expect(
     ringkasan.getByText(`Rp${(nominal * 3).toLocaleString("id-ID")}`),

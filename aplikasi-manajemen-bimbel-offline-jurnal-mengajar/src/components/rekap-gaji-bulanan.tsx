@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DaftarGajiGuru } from "@/components/daftar-gaji-guru";
+import { KopDokumen } from "@/components/kop-dokumen";
 import { PesanGalat } from "@/components/status-antarmuka";
 import { TombolUnduhLaporan } from "@/components/tombol-unduh-laporan";
 import { formatJam } from "@/lib/jurnal";
@@ -54,8 +55,7 @@ export function RekapGajiBulanan({
   async function ubahStatus(guruId: string, dibayar: boolean) {
     if (tersimpan) return;
     const nama =
-      rekap.daftar.find((baris) => baris.guruId === guruId)?.guruNama ??
-      "Guru";
+      rekap.daftar.find((baris) => baris.guruId === guruId)?.guruNama ?? "Guru";
     setTersimpan(guruId);
     setPesan("");
     setGalat("");
@@ -143,6 +143,21 @@ export function RekapGajiBulanan({
             Riwayat gaji
           </Link>
         </Button>
+      </div>
+
+      {/* Kop bimbel ikut tampil karena tombol "Unduh PDF" membuka dialog cetak
+          browser atas halaman ini: lembar hasil cetaknya memuat identitas yang
+          sama dengan berkas Excel dan slip gurunya. */}
+      <div className="mt-6">
+        <KopDokumen
+          judul="Rekap Gaji Bulanan"
+          kanan={
+            <span className="text-muted-foreground">
+              Periode {periodeTampil}
+            </span>
+          }
+          profil={profil}
+        />
       </div>
 
       <div className="mt-6">
