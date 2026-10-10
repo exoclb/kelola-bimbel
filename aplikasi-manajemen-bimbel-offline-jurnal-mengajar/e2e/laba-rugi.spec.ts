@@ -45,10 +45,28 @@ function rupiah(nilai: number) {
   return `Rp${nilai.toLocaleString("id-ID")}`;
 }
 
+/** "2026-10" → "2026-09" (atau bulan lain sesuai geserannya). */
+function geser(periode: string, bulan: number) {
+  const [tahun, urutanBulan] = periode.split("-").map(Number);
+  const hasil = new Date(tahun, urutanBulan - 1 + bulan, 1);
+  return `${hasil.getFullYear()}-${String(hasil.getMonth() + 1).padStart(2, "0")}`;
+}
+
+/** "2026-10" → "Oktober 2026", sama dengan `formatPeriode` di aplikasi. */
+function labelPeriode(periode: string) {
+  return new Intl.DateTimeFormat("id-ID", {
+    month: "long",
+    year: "numeric",
+  }).format(
+    new Date(Number(periode.slice(0, 4)), Number(periode.slice(5, 7)) - 1, 1),
+  );
+}
+
 /**
  * Laporan arus kas & laba rugi: satu periode hanya menjumlahkan pemasukan SPP
  * yang lunas, honor guru, dan pengeluaran operasional pada periode itu, lalu
- * menampilkan selisihnya sebagai laba (atau rugi) bersih.
+ * menampilkan selisihnya sebagai laba (atau rugi) bersih. Periodenya dibaca
+ * halaman dari alamatnya, jadi tautannya bisa disalin dan dibuka lagi.
  */
 test("laporan laba rugi menjumlahkan periode yang dipilih saja", async ({
   page,
@@ -117,6 +135,10 @@ test("laporan laba rugi menjumlahkan periode yang dipilih saja", async ({
 
   await page.getByLabel("Bulan", { exact: true }).selectOption(String(bulan));
   await page.getByLabel("Tahun", { exact: true }).selectOption(String(tahun));
+  await page.getByRole("button", { name: "Tampilkan", exact: true }).click();
+  await expect(page).toHaveURL(
+    `/app/laba-rugi?bulan=${bulan}&tahun=${tahun}`,
+  );
 
   // Pemasukan hanya dari tagihan lunas periode itu, operasional dari catatan
   // periode itu, dan tidak ada honor guru karena jurnalnya bukan bulan itu.
@@ -127,4 +149,32 @@ test("laporan laba rugi menjumlahkan periode yang dipilih saja", async ({
     page.getByText(rupiah(pemasukan - operasional)).first(),
   ).toBeVisible();
   await expect(page.getByText("Laba bersih").first()).toBeVisible();
+
+  // Tautan geser memindahkan periodenya lewat alamat, dan judul rinciannya
+  // ikut berpindah ke bulan sebelum periode uji ini.
+  await page.getByRole("link", { name: "Bulan sebelumnya" }).click();
+  await expect(page).toHaveURL(
+    `/app/laba-rugi?periode=${geser(periode, -1)}`,
+  );
+  await expect(
+    page.getByText(`Rincian ${labelPeriode(geser(periode, -1))}`, {
+      exact: true,
+    }),
+  ).toBeVisible();
+
+  // Biaya kosong ditulis "Rp0", bukan "Rp-0" dari angka nol yang dinegatifkan.
+  await expect(page.getByText("Rp-0", { exact: true })).toHaveCount(0);
+
+  // Alamat yang bisa disalin tetap membuka periode yang sama.
+  await page.goto(`/app/laba-rugi?periode=${periode}`);
+  await expect(
+    page.getByText(`Rincian ${labelPeriode(periode)}`, { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText(rupiah(pemasukan)).first()).toBeVisible();
+
+  await page.getByRole("link", { name: "Kembali ke bulan berjalan" }).click();
+  await expect(page).toHaveURL(/\/app\/laba-rugi$/);
+  await expect(
+    page.getByRole("link", { name: "Kembali ke bulan berjalan" }),
+  ).toHaveCount(0);
 });
