@@ -11,6 +11,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { KopDokumen } from "@/components/kop-dokumen";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { TombolUnduhLaporan } from "@/components/tombol-unduh-laporan";
@@ -219,7 +220,22 @@ export function ArusKas({
         {formatPeriode(periodeAkhir)}.
       </p>
 
-      <Card className="mt-6">
+      {/* Kop bimbel dipakai layar dan cetakannya sama: dokumen yang dicetak
+          dari dialog cetak memuat identitas yang sama dengan berkas Excel. */}
+      <div className="mt-6">
+        <KopDokumen
+          judul="Laporan Arus Kas"
+          kanan={
+            <span className="text-muted-foreground">
+              Periode {formatPeriode(daftar[0].periode)} –{" "}
+              {formatPeriode(periodeAkhir)}
+            </span>
+          }
+          profil={profil}
+        />
+      </div>
+
+      <Card className="mt-6 print:hidden">
         <CardHeader>
           <CardTitle>Pilih periode</CardTitle>
           <CardDescription>
@@ -460,7 +476,7 @@ export function ArusKas({
         />
       </div>
 
-      <div className="mt-6 flex flex-wrap items-center gap-2">
+      <div className="mt-6 flex flex-wrap items-center gap-2 print:hidden">
         <Button asChild variant="outline" size="aksi">
           <Link href="/app/laba-rugi">
             Laporan laba rugi

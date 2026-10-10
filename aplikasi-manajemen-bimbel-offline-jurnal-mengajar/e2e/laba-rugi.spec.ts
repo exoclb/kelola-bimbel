@@ -172,6 +172,31 @@ test("laporan laba rugi menjumlahkan periode yang dipilih saja", async ({
   ).toBeVisible();
   await expect(page.getByText(rupiah(pemasukan)).first()).toBeVisible();
 
+  // Kop bimbel tampil di layar, jadi cetakan PDF-nya beridentitas sama dengan
+  // berkas Excel yang diunduh.
+  await expect(page.getByText("Laporan Laba Rugi", { exact: true })).toHaveCount(
+    2,
+  );
+  await expect(
+    page.getByText(`Periode ${labelPeriode(periode)}`, { exact: true }),
+  ).toBeVisible();
+
+  // Saat dicetak, yang ikut hanya kop dan angkanya: pemilih periode, tombol
+  // unduh, dan tautan keluar disembunyikan.
+  await page.emulateMedia({ media: "print" });
+  await expect(page.getByText("Pilih periode", { exact: true })).toBeHidden();
+  await expect(
+    page.getByRole("button", { name: "Unduh PDF", exact: true }),
+  ).toBeHidden();
+  await expect(
+    page.getByText(`Rincian ${labelPeriode(periode)}`, { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(`Periode ${labelPeriode(periode)}`, { exact: true }),
+  ).toBeVisible();
+  await page.emulateMedia({ media: "screen" });
+  await expect(page.getByText("Pilih periode", { exact: true })).toBeVisible();
+
   await page.getByRole("link", { name: "Kembali ke bulan berjalan" }).click();
   await expect(page).toHaveURL(/\/app\/laba-rugi$/);
   await expect(

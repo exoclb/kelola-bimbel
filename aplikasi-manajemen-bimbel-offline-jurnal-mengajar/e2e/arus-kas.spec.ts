@@ -114,6 +114,26 @@ test("halaman arus kas bisa dibuka per periode dan mengunduh laporannya", async 
   // Tidak ada angka mentah di layar: semuanya lewat format rupiah.
   await expect(page.getByText("321000", { exact: true })).toHaveCount(0);
 
+  // Kop bimbel tampil di layar dengan rentang periode yang sedang dibuka, jadi
+  // cetakan PDF-nya beridentitas sama dengan berkas Excel yang diunduh.
+  await expect(
+    page.getByText("Periode Februari 2097 – Mei 2097", { exact: true }),
+  ).toBeVisible();
+
+  // Saat dicetak, yang ikut hanya kop dan angkanya: pemilih periode, tombol
+  // unduh, dan tautan keluar disembunyikan.
+  await page.emulateMedia({ media: "print" });
+  await expect(page.getByText("Pilih periode", { exact: true })).toBeHidden();
+  await expect(
+    page.getByRole("button", { name: "Unduh Excel", exact: true }),
+  ).toBeHidden();
+  await expect(page.getByText("Rekap arus kas bulanan (rupiah)")).toBeVisible();
+  await expect(
+    page.getByText("Periode Februari 2097 – Mei 2097", { exact: true }),
+  ).toBeVisible();
+  await page.emulateMedia({ media: "screen" });
+  await expect(page.getByText("Pilih periode", { exact: true })).toBeVisible();
+
   // Tombol geser mengubah bulan terakhir satu per satu; jendela empat bulan
   // ikut bergeser sehingga bulan terlama keluar dari tren.
   await expect(
