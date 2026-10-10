@@ -22,12 +22,12 @@ persiapan ujian — dengan jadwal maupun guru pengampu yang berbeda.
 
 ## Alur di aplikasi
 
-| Lokasi            | Yang bisa dilakukan                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/app/kelas`      | Panel "Murid di kelas ini": pilih murid lalu "Masukkan ke kelas"; tombol "Keluarkan" per murid untuk kelas itu saja. Pilihan muridnya hanya berisi murid **aktif** yang belum ada di kelas itu; kalau penempatan tetap ditolak (murid nonaktif atau sudah terdaftar), alasannya muncul sebagai kotak peringatan **di dalam panel kelas yang bersangkutan**, bukan di kepala halaman.                                                  |
-| `/app/murid`      | Saringan "Status murid" (semua / hanya aktif / hanya tidak aktif) di samping pencarian, ringkasan "N dari M murid cocok …", dan tiap kartu punya tautan "Detail murid". Murid nonaktif ditandai pil "Tidak aktif".                                                                                                                                                                                                                    |
-| `/app/murid/<id>` | Daftar **kelas yang sedang diikuti** (dengan tombol "Keluarkan dari kelas ini"), pilihan **"Tambah ke kelas lain"** (kelas yang belum aktif), dan **riwayat kelas** yang sudah selesai. Tombol **"Ubah data murid"** di bawah rangkuman identitasnya membuka formulir yang sama dengan halaman daftar (nama, tanggal lahir, orang tua, dan status aktif), lalu kepala halaman, pil status, dan baris kontaknya ikut berubah.          |
-| `/app/penempatan` | Daftar penempatan **dikelompokkan per kelas**: tiap kelas punya kepala (nama kelas, cabang, guru, jumlah murid) berisi daftar muridnya, termasuk baris berstatus `selesai` sebagai riwayat ("Pernah diikuti sejak …"). Ringkasan "N penempatan · M aktif · K murid aktif di lebih dari satu kelas", saringan status, dan pencarian nama murid/kelas/cabang/guru tetap di atas daftar; kelas yang tidak punya baris cocok ikut hilang. |
+| Lokasi            | Yang bisa dilakukan                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/app/kelas`      | Panel "Murid di kelas ini": pilih murid lalu "Masukkan ke kelas"; tombol "Keluarkan" per murid untuk kelas itu saja. Pilihan muridnya hanya berisi murid **aktif** yang belum ada di kelas itu; kalau penempatan tetap ditolak (murid nonaktif atau sudah terdaftar), alasannya muncul sebagai kotak peringatan **di dalam panel kelas yang bersangkutan**, bukan di kepala halaman.                                                                                                 |
+| `/app/murid`      | Saringan **status** (semua / hanya aktif / hanya tidak aktif), **cabang**, dan **kelas** di samping pencarian, ringkasan "N dari M murid cocok …", dan tiap kartu punya tautan "Detail murid". Pilihan cabang/kelasnya hanya yang masih berisi murid aktif (kelas yang seluruh penempatannya sudah `selesai` tidak ditawarkan), memilih cabang mempersempit pilihan kelasnya, dan tiap kartu menyebut kelas + cabang yang sedang diikuti. Murid nonaktif ditandai pil "Tidak aktif". |
+| `/app/murid/<id>` | Daftar **kelas yang sedang diikuti** (dengan tombol "Keluarkan dari kelas ini"), pilihan **"Tambah ke kelas lain"** (kelas yang belum aktif), dan **riwayat kelas** yang sudah selesai. Tombol **"Ubah data murid"** di bawah rangkuman identitasnya membuka formulir yang sama dengan halaman daftar (nama, tanggal lahir, orang tua, dan status aktif), lalu kepala halaman, pil status, dan baris kontaknya ikut berubah.                                                         |
+| `/app/penempatan` | Daftar penempatan **dikelompokkan per kelas**: tiap kelas punya kepala (nama kelas, cabang, guru, jumlah murid) berisi daftar muridnya, termasuk baris berstatus `selesai` sebagai riwayat ("Pernah diikuti sejak …"). Ringkasan "N penempatan · M aktif · K murid aktif di lebih dari satu kelas", saringan status, dan pencarian nama murid/kelas/cabang/guru tetap di atas daftar; kelas yang tidak punya baris cocok ikut hilang.                                                |
 
 ## API
 
@@ -69,9 +69,10 @@ CREATE UNIQUE INDEX "student_enrollments_student_kelas_aktif_idx"
 Tidak ada baris yang diubah, jadi riwayat penempatan lama tetap apa adanya.
 Migrasi berjalan lewat target `migrator` image produksi sebelum aplikasi start
 (lihat `docs/deployment.md`); uji perilakunya ada di
-`e2e/penempatan.spec.ts` (aturan API) dan `e2e/panel-penempatan.spec.ts` (panel
-"Murid di kelas ini" di `/app/kelas`, yang masih data tiruan), dan dijalankan
-lebih dulu di database uji.
+`e2e/penempatan.spec.ts` (aturan API), `e2e/panel-penempatan.spec.ts` (panel
+"Murid di kelas ini" di `/app/kelas`, yang masih data tiruan), dan
+`e2e/murid-daftar.spec.ts` (penyaring cabang/kelas halaman daftar murid, yang
+juga masih data tiruan), dan dijalankan lebih dulu di database uji.
 
 ## Yang masih data tiruan
 

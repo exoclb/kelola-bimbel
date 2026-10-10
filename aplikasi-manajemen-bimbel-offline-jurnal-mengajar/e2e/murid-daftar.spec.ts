@@ -80,7 +80,9 @@ test("daftar murid menyajikan data tiruan dengan pencarian, saringan status, dan
   await page.getByLabel("Cari murid").fill("tidak-ada");
   await expect(page.getByText("Tidak ada murid yang cocok")).toBeVisible();
   await expect(
-    page.getByText("Coba kata kunci lain, atau ubah saringan statusnya."),
+    page.getByText(
+      "Coba kata kunci lain, atau ubah saringan status, cabang, dan kelasnya.",
+    ),
   ).toBeVisible();
 
   // Barisnya membuka halaman detail murid yang bersangkutan.
@@ -131,6 +133,104 @@ test("formulir tambah murid menambahkan anak baru ke daftar menurut nama", async
   await expect(
     page.getByText(/murid baru belum tersimpan di database/),
   ).toBeVisible();
+});
+
+/**
+ * Penyaring cabang dan kelas daftar murid berdiri di atas penempatan murid
+ * (`src/lib/mock-penempatan.ts`) yang dipetakan ke cabang kelasnya. Berkas ini
+ * mengunci artinya: hanya penempatan berstatus aktif yang dihitung, kelas yang
+ * seluruh penempatannya sudah selesai tidak ditawarkan, dan memilih cabang
+ * mempersempit pilihan kelasnya.
+ */
+test("daftar murid bisa disaring per cabang dan kelas yang sedang diikuti", async ({
+  page,
+  request,
+}) => {
+  const email = await daftar(request, "Guru Saring Murid");
+  await masukLayar(page, email);
+  await page.goto("/app/murid");
+
+  const baris = page.getByRole("link", { name: "Detail murid" });
+  await expect(baris).toHaveCount(8);
+
+  // Kelas & cabang tiap anak tampil, jadi hasil penyaringan bisa dicocokkan.
+  await expect(
+    page.getByText("Matematika SD Kelas 4 · Cabang Pusat"),
+  ).toHaveCount(3);
+  await expect(page.getByText("IPA SD Kelas 6 · Cabang Utara")).toHaveCount(3);
+
+  // Pilihannya hanya cabang/kelas yang berisi murid aktif: Calistung TK tidak
+  // ditawarkan karena seluruh penempatannya sudah berstatus selesai.
+  await expect(page.getByLabel("Cabang").locator("option")).toHaveText([
+    "Semua cabang",
+    "Cabang Pusat",
+    "Cabang Utara",
+  ]);
+  await expect(
+    page.getByLabel("Kelas").locator("option", { hasText: "Calistung TK" }),
+  ).toHaveCount(0);
+
+  // Satu cabang: hanya anak yang masih aktif di kelas cabang itu.
+  await page.getByLabel("Cabang").selectOption("Cabang Utara");
+  await expect(baris).toHaveCount(3);
+  await expect(page.getByText("Aisyah Putri")).toBeVisible();
+  await expect(page.getByText("Citra Ayu Lestari")).toBeVisible();
+  await expect(page.getByText("Hana Salsabila")).toBeVisible();
+  await expect(page.getByText("Bima Saputra")).toHaveCount(0);
+  await expect(
+    page.getByText("3 dari 8 murid cocok di Cabang Utara."),
+  ).toBeVisible();
+  // Pilihan kelasnya menyempit mengikuti cabang yang dipilih.
+  await expect(page.getByLabel("Kelas").locator("option")).toHaveText([
+    "Semua kelas",
+    "IPA SD Kelas 6",
+  ]);
+
+  // Satu kelas: Aisyah punya kelas di dua cabang, jadi cabangnya tetap dipilih
+  // dan kelas dari cabang lain tidak bisa dipakai bersamanya.
+  await page.getByLabel("Cabang").selectOption("Cabang Pusat");
+  await expect(baris).toHaveCount(5);
+  await expect(
+    page.getByText("5 dari 8 murid cocok di Cabang Pusat."),
+  ).toBeVisible();
+  await page.getByLabel("Kelas").selectOption("kls-2");
+  await expect(baris).toHaveCount(3);
+  await expect(page.getByText("Bima Saputra")).toBeVisible();
+  await expect(page.getByText("Eka Lestari")).toBeVisible();
+  await expect(page.getByText("Gita Permata")).toBeVisible();
+  await expect(
+    page.getByText(
+      "3 dari 8 murid cocok di Cabang Pusat lewat kelas Bahasa Inggris SMP Kelas 7.",
+    ),
+  ).toBeVisible();
+
+  // Kata kunci dan cabang/kelas dipakai bersamaan, bukan saling menimpa.
+  await page.getByLabel("Cari murid").fill("Eka");
+  await expect(baris).toHaveCount(1);
+  await expect(
+    page.getByText(
+      "1 dari 8 murid cocok dengan “Eka” di Cabang Pusat lewat kelas Bahasa Inggris SMP Kelas 7.",
+    ),
+  ).toBeVisible();
+
+  // Satu tombol mengembalikan seluruh saringan ke keadaan awal.
+  await page.getByRole("button", { name: "Hapus saringan" }).click();
+  await expect(baris).toHaveCount(8);
+  await expect(page.getByLabel("Cari murid")).toHaveValue("");
+  await expect(page.getByLabel("Cabang")).toHaveValue("");
+  await expect(page.getByLabel("Kelas")).toHaveValue("");
+
+  // Ketiga pilihan saringannya tetap terpakai di ponsel sempit.
+  await page.setViewportSize({ width: 360, height: 740 });
+  await page.getByLabel("Cabang").selectOption("Cabang Utara");
+  await expect(baris).toHaveCount(3);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth + 1,
+      ),
+    )
+    .toBe(true);
 });
 
 /**
