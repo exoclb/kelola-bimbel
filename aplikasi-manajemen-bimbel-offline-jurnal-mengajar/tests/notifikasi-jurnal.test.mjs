@@ -203,3 +203,58 @@ test("mematikan jenis jurnal_baru menahan kabar tanpa menahan jurnalnya", async 
 
   await bersihkan();
 });
+
+/**
+ * Menyalakan kembali jenis yang pernah dimatikan mengembalikan kabarnya. Jurnal
+ * yang masuk selagi jenisnya mati tidak dikabarkan menyusul — jurnal itu sudah
+ * ada, dan penjaganya memang hanya mengabarkan jurnal yang baru pertama masuk —
+ * sedangkan jurnal berikutnya dikabari lagi tepat satu baris.
+ */
+test("menyalakan kembali jenis jurnal_baru mengabari peristiwa berikutnya", async () => {
+  await bersihkan();
+  const pemilik = await buatPemilik("Pemilik Jurnal Menyala Lagi");
+  const guru = await buatGuru("Guru Jurnal Menyala Lagi");
+  const kelasDitahan = await buatKelas({
+    guruId: guru.id,
+    label: "Kelas Jurnal Menyala Lagi Ditahan",
+  });
+  const kelasLanjut = await buatKelas({
+    guruId: guru.id,
+    label: "Kelas Jurnal Menyala Lagi Lanjut",
+  });
+
+  await aturPreferensi(pemilik.id, "jurnal_baru", false);
+  await picuJurnal({ guruId: guru.id, jadwalId: kelasDitahan.jadwal.id });
+  assert.equal(
+    await jumlahNotifikasiPesan(pemilik.id, "jurnal_baru", kelasDitahan.nama),
+    0,
+    "tidak ada kabar selama jenisnya mati",
+  );
+
+  await aturPreferensi(pemilik.id, "jurnal_baru", true);
+  // Kiriman ulang jurnal yang sudah ada bukan peristiwa baru, jadi kabar yang
+  // tertahan tadi tidak menyusul.
+  const ulang = await picuJurnal({
+    guruId: guru.id,
+    jadwalId: kelasDitahan.jadwal.id,
+  });
+  assert.equal(ulang.status, "tersimpan");
+  assert.equal(
+    await jumlahNotifikasiPesan(pemilik.id, "jurnal_baru", kelasDitahan.nama),
+    0,
+    "peristiwa yang sudah lewat tidak dikabarkan menyusul",
+  );
+
+  const berikutnya = await picuJurnal({
+    guruId: guru.id,
+    jadwalId: kelasLanjut.jadwal.id,
+  });
+  assert.equal(berikutnya.status, "tersimpan");
+  assert.equal(
+    await jumlahNotifikasiPesan(pemilik.id, "jurnal_baru", kelasLanjut.nama),
+    1,
+    "jurnal berikutnya dikabari lagi",
+  );
+
+  await bersihkan();
+});

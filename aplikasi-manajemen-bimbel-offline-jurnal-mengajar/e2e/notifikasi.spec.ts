@@ -362,6 +362,136 @@ test("jurnal baru hanya memberi tahu pemilik yang masih mengaktifkannya", async 
 });
 
 /**
+ * Preferensi bukan sekali pakai: pemilik yang mematikan "Jurnal masuk" dari
+ * halaman pengaturannya sendiri tidak dikabari selama saklarnya mati, dan
+ * begitu saklarnya dinyalakan lagi dari halaman yang sama, jurnal berikutnya
+ * sampai seperti semula. Peristiwa yang terjadi selagi saklarnya mati tidak
+ * dikabarkan menyusul: jurnal itu sudah ada, dan jurnal yang sama memang hanya
+ * memicu kabar saat pertama kali masuk.
+ */
+test("preferensi yang dinyalakan kembali menerima kabar berikutnya", async ({
+  page,
+  request,
+}) => {
+  const emailPemilik = await daftar(request, "Pemilik Saklar Notifikasi");
+  const emailGuru = await daftar(request, "Guru Saklar Notifikasi");
+  const kelasDitahan = `Kelas Saklar Ditahan ${randomUUID().slice(0, 6)}`;
+  const kelasLanjut = `Kelas Saklar Lanjut ${randomUUID().slice(0, 6)}`;
+
+  await setRole(emailPemilik, "owner");
+  const guruId = await idAkun(emailGuru);
+
+  await masuk(request, emailPemilik);
+  await siapkanCabang("Cabang Notifikasi Saklar");
+  const buatJadwal = async (
+    namaKelas: string,
+    jamMulai: string,
+    jamSelesai: string,
+  ) => {
+    const jawaban = await request.post("/api/kelas", {
+      headers,
+      data: {
+        namaKelas,
+        cabang: "Cabang Notifikasi Saklar",
+        guruId,
+        // Dua kelas satu guru tidak boleh beririsan jamnya, jadi tiap kelas
+        // dapat sesinya sendiri di hari yang sama.
+        jadwal: [{ hari: hariIni().nama, jamMulai, jamSelesai }],
+      },
+    });
+    expect(jawaban.status()).toBe(201);
+    return (await jawaban.json()).data.jadwal[0].id as string;
+  };
+  const jadwalDitahan = await buatJadwal(kelasDitahan, "08:00", "09:30");
+  const jadwalLanjut = await buatJadwal(kelasLanjut, "10:00", "11:30");
+
+  // Saklarnya dimatikan dari halaman pengaturannya sendiri: jalur yang dipakai
+  // pemilik sungguhan, bukan baris basis data yang ditulis dari tes.
+  await page.goto("/sign-in");
+  await page.getByLabel("Email", { exact: true }).fill(emailPemilik);
+  await page.getByLabel("Password", { exact: true }).fill(sandi);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.waitForURL((url) => !url.pathname.startsWith("/sign-in"));
+  await page.goto("/app/pengaturan/notifikasi");
+  const saklar = page.getByRole("checkbox", { name: "Jurnal masuk" });
+  await expect(saklar).toBeChecked();
+  await saklar.uncheck();
+  // Pesan konfirmasinya muncul setelah server menjawab, jadi keadaannya sudah
+  // tersimpan saat baris berikutnya dijalankan.
+  await expect(
+    page.getByText('Pemberitahuan "Jurnal masuk" dimatikan.'),
+  ).toBeVisible();
+
+  // Jurnal pertama masuk selagi saklarnya mati: jurnalnya tetap tersimpan,
+  // tetapi pemilik ini tidak menerima kabar apa pun.
+  const kirim = (jadwalId: string) =>
+    request.post("/api/jurnal", {
+      headers,
+      data: {
+        jadwalId,
+        materi: "Materi saklar notifikasi",
+        catatan: "",
+        kehadiran: [],
+      },
+    });
+  await masuk(request, emailGuru);
+  expect((await kirim(jadwalDitahan)).status()).toBe(200);
+
+  /** Antrean pemilik ini: kabar jurnalnya, dan seluruh isi antreannya. */
+  const antreJurnal = async () => {
+    await masuk(request, emailPemilik);
+    const jawaban = await request.get("/api/notifikasi", { headers });
+    expect(jawaban.status()).toBe(200);
+    const isi = await jawaban.json();
+    const semua = isi.data as { tipe: string; pesan: string }[];
+    return {
+      semua,
+      pesan: semua
+        .filter((baris) => baris.tipe === "jurnal_baru")
+        .map((baris) => baris.pesan),
+    };
+  };
+
+  const dimatikan = await antreJurnal();
+  expect(dimatikan.pesan).toEqual([]);
+  expect(dimatikan.semua).toEqual([]);
+
+  // Saklarnya dinyalakan lagi dari halaman pengaturan yang sama.
+  await page.goto("/app/pengaturan/notifikasi");
+  await expect(
+    page.getByRole("checkbox", { name: "Jurnal masuk" }),
+  ).not.toBeChecked();
+  await page.getByRole("checkbox", { name: "Jurnal masuk" }).check();
+  await expect(
+    page.getByText('Pemberitahuan "Jurnal masuk" dinyalakan.'),
+  ).toBeVisible();
+
+  // Peristiwa yang sudah lewat tidak dikabarkan menyusul: jurnal yang tadi
+  // tertahan tetap satu-satunya jurnal untuk jadwal itu, jadi mengirimnya ulang
+  // pun tidak menambah kabar.
+  await masuk(request, emailGuru);
+  expect((await kirim(jadwalDitahan)).status()).toBe(200);
+  expect((await antreJurnal()).pesan).toEqual([]);
+
+  // Jurnal berikutnya sampai lagi — sekali, dan menyebut kelas yang baru.
+  await masuk(request, emailGuru);
+  expect((await kirim(jadwalLanjut)).status()).toBe(200);
+  const menyala = await antreJurnal();
+  expect(menyala.pesan).toHaveLength(1);
+  expect(menyala.pesan[0]).toContain(kelasLanjut);
+  expect(menyala.pesan[0]).not.toContain(kelasDitahan);
+  expect(menyala.semua).toHaveLength(1);
+
+  // Dan kabar itu benar-benar tampil di layar notifikasi pemiliknya.
+  await page.goto("/app/notifikasi");
+  await expect(
+    page.getByRole("heading", { name: "Notifikasi", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText(menyala.pesan[0], { exact: true })).toBeVisible();
+  await expect(page.getByText("1 belum dibaca").first()).toBeVisible();
+});
+
+/**
  * Notifikasi internal "gaji dibayar": guru diberi tahu sekali saat rekornya
  * ditandai dibayar, tidak berulang saat ditandai ulang, dan tidak dikirim ke
  * guru yang mematikan jenis itu.

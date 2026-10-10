@@ -269,7 +269,8 @@ export type UjiPreferensi = {
 };
 
 // Preferensi diuji per akun dan per jenis: mematikan satu jenis tidak menahan
-// jenis lain, dan bawaan jenis dipakai selama akun belum mengubahnya.
+// jenis lain, bawaan jenis dipakai selama akun belum mengubahnya, dan jenis yang
+// dinyalakan kembali mengabari peristiwa berikutnya.
 export const UJI_PREFERENSI: UjiPreferensi[] = [
   {
     id: "jurnal-baru-dimatikan",
@@ -281,13 +282,22 @@ export const UJI_PREFERENSI: UjiPreferensi[] = [
     tes: "e2e/notifikasi.spec.ts · jurnal baru hanya memberi tahu pemilik yang masih mengaktifkannya",
   },
   {
+    id: "jurnal-baru-dinyalakan-kembali",
+    jenis: "jurnal_baru",
+    keadaan:
+      "Pemilik mematikan jenis ini dari halaman Preferensi Notifikasi, satu jurnal masuk, lalu saklarnya dinyalakan lagi dari halaman yang sama.",
+    hasil:
+      "Selama saklarnya mati tidak ada kabar sama sekali; setelah dinyalakan, jurnal berikutnya dikabari lagi tepat satu. Jurnal yang terjadi selagi mati tidak dikabarkan menyusul, karena jurnal yang sama hanya memicu kabar saat pertama kali masuk.",
+    tes: "tests/notifikasi-jurnal.test.mjs · menyalakan kembali jenis jurnal_baru mengabari peristiwa berikutnya · e2e/notifikasi.spec.ts · preferensi yang dinyalakan kembali menerima kabar berikutnya",
+  },
+  {
     id: "rekap-honor-dimatikan",
     jenis: "rekap_honor",
     keadaan:
       "Guru mematikan jenis ini, lalu rekapitulasi honornya dicatat untuk satu periode.",
     hasil:
       "Pemberitahuan rekapnya 0, tetapi jenis gaji_dibayar untuk periode yang sama tetap sampai karena preferensinya per jenis. Penerima yang ditahan juga tidak dihitung sebagai baris yang dibuat.",
-    tes: "tests/notifikasi-gaji.test.mjs · guru yang mematikan rekap_honor tidak dikirimi · tests/notifikasi-service.test.mjs · buatNotifikasi menghormati preferensi akun yang mematikan jenisnya · e2e/notifikasi.spec.ts · rekap honor memberi tahu gurunya sekali per periode",
+    tes: "tests/notifikasi-gaji.test.mjs · guru yang mematikan rekap_honor tidak dikirimi · tests/notifikasi-service.test.mjs · buatNotifikasi menghormati preferensi akun yang mematikan jenisnya · tests/notifikasi-service.test.mjs · kunci peristiwa baru terpakai setelah preferensinya dinyalakan · e2e/notifikasi.spec.ts · rekap honor memberi tahu gurunya sekali per periode",
   },
   {
     id: "gaji-dibayar-dimatikan",

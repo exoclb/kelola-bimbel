@@ -194,6 +194,45 @@ test("buatNotifikasi menghormati preferensi akun yang mematikan jenisnya", async
 });
 
 /**
+ * Penerima yang ditahan tidak memakai kunci peristiwanya: barisnya memang tidak
+ * pernah ditulis, jadi peristiwa yang dipicu ulang setelah preferensinya
+ * menyala tetap sampai — tepat satu baris. Ini yang membuat pemberitahuan tidak
+ * hilang hanya karena jenisnya baru dinyalakan setelah peristiwanya terjadi,
+ * mis. laporan bulanan yang halamannya boleh dihitung berkali-kali.
+ */
+test("kunci peristiwa baru terpakai setelah preferensinya dinyalakan", async () => {
+  await bersihkan();
+  const guru = await buatGuru("Guru Preferensi Menyala");
+  const kunci = `honor:${guru.id}:2097-07`;
+  const pesan = "Rekap honor Juli 2097 sudah tersedia.";
+
+  await aturPreferensi(guru.id, "rekap_honor", false);
+  assert.equal(
+    await buatNotifikasi("rekap_honor", pesan, [guru.id], kunci),
+    0,
+    "tidak ada baris selama preferensinya mati",
+  );
+  assert.equal(
+    await jumlahNotifikasiBerKunci(guru.id, "rekap_honor", kunci),
+    0,
+  );
+
+  await aturPreferensi(guru.id, "rekap_honor", true);
+  assert.equal(
+    await buatNotifikasi("rekap_honor", pesan, [guru.id], kunci),
+    1,
+    "peristiwa yang sama terkirim setelah dinyalakan",
+  );
+  assert.equal(
+    await buatNotifikasi("rekap_honor", pesan, [guru.id], kunci),
+    0,
+    "dan tetap sekali saja",
+  );
+
+  await bersihkan();
+});
+
+/**
  * Akun yang hilang di antara penghitungan penerima dan penulisan baris tidak
  * boleh menggagalkan penulisannya: daftar penerima dihitung dari akun yang bisa
  * dihapus kapan saja (`penerimaPemilik`), dan pelanggaran kunci asing di situ
