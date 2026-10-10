@@ -5,7 +5,9 @@ import { expect, test, type APIRequestContext } from "@playwright/test";
 // Layar Tagihan Portal Wali: ringkasan satu anak dan penanda status bayar
 // (Lunas / Belum bayar / Terlambat). Berkas ini menyiapkan datanya lewat API
 // owner (murid, tagihan), menautkannya ke akun wali, lalu memeriksa apa yang
-// benar-benar tampil di portal.
+// benar-benar tampil di portal — termasuk nominal tiap tagihan sebagai rupiah
+// berpemisah ribuan, pembagian sudah/belum dibayar, dan tampilan anak yang
+// belum punya tagihan.
 const origin = "http://localhost:3101";
 const headers = { Origin: origin };
 const sandi = "Tagihan-portal-test-123!";
@@ -73,6 +75,25 @@ async function tandaiLunas(muridId: string, periode: string) {
     const { rowCount } = await db.query(
       "UPDATE student_invoices SET status = 'lunas', tanggal_bayar = current_date WHERE student_id = $1 AND periode_tahun = $2 AND periode_bulan = $3",
       [muridId, Number(tahun), Number(bulan)],
+    );
+    expect(rowCount).toBe(1);
+  } finally {
+    await db.end();
+  }
+}
+
+/** Tandai satu tagihan lunas dengan tanggal bayar pilihan, langsung di basis data. */
+async function tandaiLunasPada(
+  muridId: string,
+  periode: string,
+  tanggalBayar: string,
+) {
+  const [tahun, bulan] = periode.split("-");
+  const db = await pool();
+  try {
+    const { rowCount } = await db.query(
+      "UPDATE student_invoices SET status = 'lunas', tanggal_bayar = $4::date WHERE student_id = $1 AND periode_tahun = $2 AND periode_bulan = $3",
+      [muridId, Number(tahun), Number(bulan), tanggalBayar],
     );
     expect(rowCount).toBe(1);
   } finally {
@@ -330,3 +351,201 @@ test("endpoint daftar tagihan per anak hanya melayani wali yang tertaut", async 
     ).status(),
   ).toBe(404);
 });
+
+test("tiap tagihan tampil sebagai rupiah dengan rincian bayar dan totalnya", async ({
+  page,
+  request,
+}) => {
+  // Nominalnya sengaja besar dan berbeda-beda supaya pemisah ribuan serta
+  // pembagian sudah/belum dibayar benar-benar teruji, bukan cuma kebetulan
+  // angka bulat. Satu tagihan lunas, satu terlambat, satu masih berjalan.
+  const nominalBerjalan = 1_250_000;
+  const nominalTerlambat = 99000;
+  const nominalLunas = 275000;
+  const periodeBerjalan = periodeMundur(0);
+  const periodeTerlambat = periodeMundur(1);
+  const periodeLunas = periodeMundur(2);
+
+  const emailOwner = await signUp(
+    request,
+    "Owner Tagihan Rupiah",
+    "owner-tagihan-rupiah",
+  );
+  await setRole(emailOwner, "owner");
+  await masuk(request, emailOwner);
+
+  const buatMurid = async (nama: string) => {
+    const murid = await request.post("/api/murid", {
+      headers,
+      data: { nama, tanggalLahir: "2016-03-15" },
+    });
+    expect(murid.status()).toBe(201);
+    return (await murid.json()).data.id as string;
+  };
+  const muridIsi = await buatMurid("Anak Tagihan Rupiah");
+  const muridKosong = await buatMurid("Anak Tagihan Kosong");
+
+  const tagihan = [
+    { periode: periodeBerjalan, nominal: nominalBerjalan },
+    { periode: periodeTerlambat, nominal: nominalTerlambat },
+    { periode: periodeLunas, nominal: nominalLunas },
+  ];
+  for (const baris of tagihan) {
+    const dibuat = await request.post("/api/tagihan", {
+      headers,
+      data: { ...baris, muridIds: [muridIsi] },
+    });
+    expect(dibuat.status()).toBe(201);
+  }
+  // Tanggal bayarnya ditetapkan lewat basis data supaya teks "Dibayar …" bisa
+  // dipastikan tanpa ikut bergantung zona waktu wadah basis data.
+  const tanggalBayar = `${periodeLunas}-12`;
+  await tandaiLunasPada(muridIsi, periodeLunas, tanggalBayar);
+
+  const emailWali = await signUp(
+    request,
+    "Wali Tagihan Rupiah",
+    "wali-tagihan-rupiah",
+  );
+  await setRole(emailWali, "orang-tua");
+  const waliId = await idAkun(emailWali);
+  await masuk(request, emailOwner);
+  for (const muridId of [muridIsi, muridKosong]) {
+    const tautan = await request.post(`/api/wali/${waliId}/murid`, {
+      headers,
+      data: { muridId },
+    });
+    expect(tautan.status()).toBe(201);
+  }
+
+  await page.goto("/sign-in");
+  await page.getByLabel("Email", { exact: true }).fill(emailWali);
+  await page.getByLabel("Password", { exact: true }).fill(sandi);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page).toHaveURL(/\/portal$/);
+  await page.goto(`/portal/tagihan?anak=${muridIsi}`);
+
+  // Ringkasan memisahkan total, sudah dibayar, dan belum dibayar — semuanya
+  // dalam rupiah dengan pemisah ribuan.
+  const bukti = page.locator("#bukti-tagihan-anak");
+  const ringkasan = bukti.getByRole("region", { name: "Anak Tagihan Rupiah" });
+  await expect(
+    ringkasan.getByText("Rp1.624.000", { exact: true }),
+  ).toBeVisible();
+  await expect(ringkasan.getByText("Rp275.000", { exact: true })).toBeVisible();
+  await expect(
+    ringkasan.getByText("Rp1.349.000", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    ringkasan.getByText("3 tagihan · 1 lunas · 2 belum lunas · 1 terlambat", {
+      exact: true,
+    }),
+  ).toBeVisible();
+
+  // Tiap tagihan punya kartunya sendiri dengan judul per periode, nominalnya
+  // sendiri, dan keadaan bayarnya sendiri.
+  const kartuBerjalan = page.getByRole("region", {
+    name: `SPP ${labelPeriode(periodeBerjalan)}`,
+  });
+  await expect(kartuBerjalan.getByText("Rp1.250.000")).toBeVisible();
+  await expect(
+    kartuBerjalan.getByText("Belum bayar", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    kartuBerjalan.getByText(`Jatuh tempo ${akhirBulan(periodeBerjalan)}`),
+  ).toBeVisible();
+
+  const kartuTerlambat = page.getByRole("region", {
+    name: `SPP ${labelPeriode(periodeTerlambat)}`,
+  });
+  await expect(kartuTerlambat.getByText("Rp99.000")).toBeVisible();
+  await expect(
+    kartuTerlambat.getByText("Terlambat", { exact: true }),
+  ).toBeVisible();
+  // Jatuh temponya akhir bulan periode, jadi jaraknya ke hari ini sama dengan
+  // tanggal hari ini.
+  await expect(
+    kartuTerlambat.getByText(
+      `Jatuh tempo ${akhirBulan(periodeTerlambat)} · terlambat ${new Date().getDate()} hari`,
+    ),
+  ).toBeVisible();
+
+  const kartuLunas = page.getByRole("region", {
+    name: `SPP ${labelPeriode(periodeLunas)}`,
+  });
+  await expect(kartuLunas.getByText("Rp275.000")).toBeVisible();
+  await expect(kartuLunas.getByText("Lunas", { exact: true })).toBeVisible();
+  await expect(
+    kartuLunas.getByText(`Dibayar ${tanggalPanjang(tanggalBayar)}`),
+  ).toBeVisible();
+
+  // Anak tanpa tagihan tidak menampilkan angka samar maupun tombol ekspor.
+  await page
+    .getByRole("radiogroup", { name: "Pilih anak" })
+    .getByRole("radio", { name: /Anak Tagihan Kosong/ })
+    .click();
+  await expect(page).toHaveURL(new RegExp(`anak=${muridKosong}`));
+  await expect(
+    page.getByText("Belum ada tagihan", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Tagihan SPP yang diterbitkan bimbel akan muncul di sini.", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Belum ada tagihan yang tercatat untuk anak ini.", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  // Total, sudah dibayar, dan belum dibayar semuanya nol.
+  await expect(page.getByText("Rp0", { exact: true })).toHaveCount(3);
+  await expect(bukti.getByRole("listitem")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Cetak / simpan PDF" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: "Unduh bukti tagihan" }),
+  ).toHaveCount(0);
+
+  // Kembali ke anak berisi: daftar dan tombol ekspornya muncul lagi.
+  await page
+    .getByRole("radiogroup", { name: "Pilih anak" })
+    .getByRole("radio", { name: /Anak Tagihan Rupiah/ })
+    .click();
+  await expect(page).toHaveURL(new RegExp(`anak=${muridIsi}`));
+  await expect(
+    page.getByText("Rp1.250.000", { exact: true }).first(),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Cetak / simpan PDF" }),
+  ).toBeVisible();
+});
+
+/** Nama periode yang dipakai judul kartu tagihan, mis. "Oktober 2026". */
+function labelPeriode(periode: string) {
+  const [tahun, bulan] = periode.split("-").map(Number);
+  return new Intl.DateTimeFormat("id-ID", {
+    month: "long",
+    year: "numeric",
+  }).format(new Date(tahun, bulan - 1, 1));
+}
+
+/** Tanggal `YYYY-MM-DD` sebagai tanggal panjang, mis. "12 Oktober 2026". */
+function tanggalPanjang(tanggal: string) {
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date(`${tanggal}T00:00:00`));
+}
+
+/** Hari terakhir bulan periode (`YYYY-MM`) sebagai tanggal panjang. */
+function akhirBulan(periode: string) {
+  const [tahun, bulan] = periode.split("-").map(Number);
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date(tahun, bulan, 0));
+}
