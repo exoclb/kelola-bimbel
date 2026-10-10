@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { FormUbahMurid } from "@/components/form-ubah-murid";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { PesanKosong } from "@/components/status-antarmuka";
@@ -24,7 +25,7 @@ import type { Penempatan } from "@/lib/mock-penempatan";
 import { formatTanggalLengkap, hitungUsia, tanggalISO } from "@/lib/tanggal";
 
 type DetailMuridProps = {
-  murid: Murid;
+  muridAwal: Murid;
   daftarKelas: Kelas[];
   penempatanAwal: Penempatan[];
 };
@@ -101,13 +102,16 @@ function KartuKelas({
  * Detail murid beserta kelas yang sedang dan pernah diikutinya. Sejak aturan
  * multi-kelas, murid boleh aktif di beberapa kelas sekaligus: dari halaman ini
  * kelas tambahan bisa langsung ditambahkan, dan keluar dari satu kelas tidak
- * mengganggu kelas lainnya. Datanya masih tiruan dan hanya berlaku di layar.
+ * mengganggu kelas lainnya. Identitas anaknya (nama, tanggal lahir, orang tua,
+ * status aktif) juga bisa diperbaiki lewat formulir yang sama dengan halaman
+ * daftar. Datanya masih tiruan dan hanya berlaku di layar.
  */
 export function DetailMurid({
-  murid,
+  muridAwal,
   daftarKelas,
   penempatanAwal,
 }: DetailMuridProps) {
+  const [murid, setMurid] = useState(muridAwal);
   const [penempatan, setPenempatan] = useState(penempatanAwal);
   /**
    * Cermin penempatan yang diperbarui seketika, supaya dua klik pada render
@@ -262,6 +266,15 @@ export function DetailMurid({
               <ArrowRight aria-hidden="true" />
             </Link>
           </Button>
+          <FormUbahMurid
+            murid={murid}
+            onUbah={(baru) => {
+              setMurid(baru);
+              tampilkanPesan(
+                `Data ${baru.nama} diperbarui. Perubahannya berlaku di layar ini.`,
+              );
+            }}
+          />
         </div>
       </Card>
 
@@ -360,8 +373,8 @@ export function DetailMurid({
       )}
 
       <p className="mt-6 text-xs leading-5 text-muted-foreground">
-        Catatan: penempatan di halaman ini masih data tiruan — berlaku di layar
-        sampai penyimpanannya tersambung ke database.
+        Catatan: data murid dan penempatan di halaman ini masih data tiruan —
+        berlaku di layar sampai penyimpanannya tersambung ke database.
       </p>
     </div>
   );

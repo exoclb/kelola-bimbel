@@ -21,7 +21,7 @@ export default async function DetailMuridPage({
 
   return (
     <DetailMurid
-      murid={murid}
+      muridAwal={murid}
       daftarKelas={getDaftarKelas()}
       penempatanAwal={getPenempatanAwal()}
     />

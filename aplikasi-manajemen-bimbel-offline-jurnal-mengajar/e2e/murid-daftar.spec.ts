@@ -132,3 +132,90 @@ test("formulir tambah murid menambahkan anak baru ke daftar menurut nama", async
     page.getByText(/murid baru belum tersimpan di database/),
   ).toBeVisible();
 });
+
+/**
+ * Perbaikan data murid terjadi di halaman detail dan memakai formulir yang
+ * sama dengan formulir tambah (`FormMurid`): isiannya terisi data anaknya
+ * lebih dulu, tanggal lahir di masa depan ditolak, dan status aktifnya bisa
+ * diubah karena daftar harian hanya menampilkan anak yang masih belajar.
+ */
+test("formulir ubah murid memperbaiki identitas dan status aktif di halaman detail", async ({
+  page,
+  request,
+}) => {
+  const email = await daftar(request, "Guru Ubah Murid");
+  await masukLayar(page, email);
+  await page.goto("/app/murid/mrd-1");
+
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Aisyah Putri" }),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Ubah data murid" }).click();
+  await expect(
+    page.getByText(
+      "Perbaiki nama, tanggal lahir, orang tua, atau status anaknya; perubahannya berlaku di layar ini.",
+    ),
+  ).toBeVisible();
+  // Isian datang sudah terisi, jadi orang tua tidak perlu mengetik ulang.
+  await expect(page.getByLabel("Nama murid")).toHaveValue("Aisyah Putri");
+  await expect(page.getByLabel("Tanggal lahir")).toHaveValue("2016-03-14");
+  await expect(page.getByLabel("Nama orang tua (opsional)")).toHaveValue(
+    "Bapak Hendra",
+  );
+  await expect(page.getByLabel("Status murid")).toHaveValue("aktif");
+  await expect(
+    page.getByText("Belum ada perubahan dari data yang dimuat."),
+  ).toBeVisible();
+
+  // Nama wajib: permintaan simpan yang gagal menahan formulirnya tetap terbuka.
+  await page.getByLabel("Nama murid").fill("");
+  await expect(
+    page.getByText("Ada perubahan yang belum disimpan."),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Simpan perubahan" }).click();
+  await expect(page.getByText("Nama murid wajib diisi.")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Simpan perubahan" }),
+  ).toBeVisible();
+
+  await page.getByLabel("Nama murid").fill("Aisyah Putri Ramadhani");
+  await page.getByLabel("Kontak orang tua (opsional)").fill("0812-3456-7899");
+  await page.getByLabel("Status murid").selectOption("nonaktif");
+  await page.getByRole("button", { name: "Simpan perubahan" }).click();
+
+  await expect(
+    page.getByText(
+      "Data Aisyah Putri Ramadhani diperbarui. Perubahannya berlaku di layar ini.",
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Aisyah Putri Ramadhani" }),
+  ).toBeVisible();
+  await expect(page.getByText("Tidak aktif", { exact: true })).toBeVisible();
+  await expect(page.getByText("0812-3456-7899")).toBeVisible();
+  // Formulirnya menutup lagi, dan halamannya tetap jujur soal data tiruan.
+  await expect(
+    page.getByRole("button", { name: "Ubah data murid" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      /data murid dan penempatan di halaman ini masih data tiruan/,
+    ),
+  ).toBeVisible();
+
+  // Formulirnya tetap terpakai di ponsel sempit (satu kolom, tanpa geser ke samping).
+  await page.setViewportSize({ width: 360, height: 740 });
+  await page.getByRole("button", { name: "Ubah data murid" }).click();
+  await expect(page.getByLabel("Nama murid")).toHaveValue(
+    "Aisyah Putri Ramadhani",
+  );
+  await expect(page.getByLabel("Status murid")).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth + 1,
+      ),
+    )
+    .toBe(true);
+});
