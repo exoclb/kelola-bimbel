@@ -20,6 +20,7 @@ import type {
   ListGuruInput,
   ProfilBimbelInput,
   TambahGuruInput,
+  UbahDataAkunInput,
 } from "@/validators/pengaturan";
 
 /** Profil bimbel seperti yang dikirim ke klien. */
@@ -404,6 +405,32 @@ export async function ubahStatusGuru(
       banReason: statusAktif ? null : "Dinonaktifkan owner bimbel",
     })
     .where(eq(user.id, id))
+    .returning(fieldsAkun);
+
+  if (!baris) return { status: "tidak_ada" };
+  return { status: "tersimpan", akun: keAkun(baris) };
+}
+
+/** Satu akun seperti jawaban `PATCH /api/pengaturan/akun`. */
+export type HasilUbahDataAkun =
+  { status: "tersimpan"; akun: AkunTersimpan } | { status: "tidak_ada" };
+
+/**
+ * Mengubah data akun sendiri — untuk sekarang namanya — dan mengembalikan
+ * barisnya yang terbaru. Yang tersentuh hanya akun `userId` yang dikirim
+ * pemanggil, dan pemanggilnya mengambil id itu dari sesi, bukan dari badan
+ * permintaan, jadi akun lain tidak bisa ikut berubah. Email tidak diubah di
+ * sini karena dia identitas masuk yang perubahannya menuntut verifikasi
+ * alamat baru, sedangkan aplikasi ini belum punya penyedia email.
+ */
+export async function ubahDataAkun(
+  userId: string,
+  { nama }: UbahDataAkunInput,
+): Promise<HasilUbahDataAkun> {
+  const [baris] = await db
+    .update(user)
+    .set({ name: nama })
+    .where(eq(user.id, userId))
     .returning(fieldsAkun);
 
   if (!baris) return { status: "tidak_ada" };

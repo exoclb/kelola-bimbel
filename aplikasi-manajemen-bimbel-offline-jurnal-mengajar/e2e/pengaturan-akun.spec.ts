@@ -91,6 +91,23 @@ async function preferensiTersimpan(email: string) {
   }
 }
 
+/** Nama yang tersimpan di kolom `user.name` untuk satu email. */
+async function namaTersimpan(email: string) {
+  const db = new Pool({
+    connectionString: process.env.STARTER_TEST_DATABASE_URL,
+    max: 1,
+  });
+  try {
+    const { rows } = await db.query<{ name: string }>(
+      'SELECT name FROM "user" WHERE email = $1',
+      [email],
+    );
+    return rows[0]?.name ?? null;
+  } finally {
+    await db.end();
+  }
+}
+
 test("guru membuka Akun Saya dari halaman pengaturan dan melihat datanya sendiri", async ({
   page,
 }) => {
@@ -184,4 +201,72 @@ test("wali tidak bisa membuka akun pengguna staf", async ({ page }) => {
   await page.goto("/app/pengaturan/akun");
   await expect(page).toHaveURL(/\/portal$/);
   await expect(page.getByRole("heading", { name: "Akun Saya" })).toHaveCount(0);
+});
+
+test("guru mengganti namanya sendiri dan melihat konfirmasi tersimpan", async ({
+  page,
+}) => {
+  const email = await daftarAkun("Guru Ubah Nama");
+  await masukHalaman(page, email);
+  await page.goto("/app/pengaturan/akun");
+
+  // Emailnya hanya ditampilkan: yang bisa diketik cuma namanya.
+  const isianEmail = page.getByLabel("Email", { exact: true });
+  await expect(isianEmail).toHaveValue(email);
+  await expect(isianEmail).not.toBeEditable();
+
+  // Selama namanya belum berubah, tidak ada yang perlu dikirim ke server.
+  const simpan = page.getByRole("button", { name: "Simpan nama" });
+  await expect(simpan).toBeDisabled();
+
+  // Nama yang terlalu pendek ditolak di layar, sebelum menyentuh server.
+  await page.getByLabel("Nama", { exact: true }).fill("A");
+  await simpan.click();
+  await expect(
+    page.getByText("Nama wajib diisi, minimal 2 huruf."),
+  ).toBeVisible();
+
+  await page.getByLabel("Nama", { exact: true }).fill("Guru Nama Baru");
+  await simpan.click();
+
+  // Yang tampil setelahnya adalah konfirmasi tersimpan, bukan lagi formnya.
+  await expect(page.getByText("Data akun tersimpan")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Ubah lagi" })).toBeVisible();
+
+  // Perubahannya benar-benar sampai ke kolom `user.name`, bukan cuma di layar.
+  await expect.poll(() => namaTersimpan(email)).toBe("Guru Nama Baru");
+
+  // Halamannya disegarkan, jadi identitas di atas form ikut nama yang baru.
+  await expect(page.getByText("Guru Nama Baru").first()).toBeVisible();
+
+  // Di halaman pengaturan, ringkasan kartu "Akun Saya" juga sudah nama baru.
+  await page.goto("/app/pengaturan");
+  await expect(page.getByText("Guru Nama Baru · Guru")).toBeVisible();
+});
+
+test("endpoint data akun hanya menyentuh akun yang sedang masuk", async ({
+  page,
+  request: klienTamu,
+}) => {
+  const pengubah = await daftarAkun("Guru Endpoint Akun");
+  const tetangga = await daftarAkun("Guru Tetangga Akun");
+
+  // Tanpa sesi, tidak ada nama siapa pun yang bisa diubah.
+  const tamu = await klienTamu.patch("/api/pengaturan/akun", {
+    headers,
+    data: { nama: "Nama Tanpa Sesi" },
+  });
+  expect(tamu.status()).toBe(401);
+
+  await masukHalaman(page, pengubah);
+
+  // Badan permintaan tidak bisa menyebut akun lain: id-nya diambil dari sesi,
+  // jadi kunci asing seperti `userId` ditolak sebelum apa pun berubah.
+  const curang = await page.request.patch("/api/pengaturan/akun", {
+    headers,
+    data: { nama: "Nama Curang", userId: "akun-lain" },
+  });
+  expect(curang.status()).toBe(422);
+  expect(await namaTersimpan(pengubah)).toBe("Guru Endpoint Akun");
+  expect(await namaTersimpan(tetangga)).toBe("Guru Tetangga Akun");
 });

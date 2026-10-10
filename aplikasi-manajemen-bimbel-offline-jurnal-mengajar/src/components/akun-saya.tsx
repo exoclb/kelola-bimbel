@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, BellRing, ShieldCheck, UserRound } from "lucide-react";
+import { ArrowRight, BellRing, UserRound } from "lucide-react";
+import { FormUbahAkun } from "@/components/form-ubah-akun";
 import { PenandaPengguna } from "@/components/penanda-pengguna";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { JenisNotifikasi } from "@/lib/notifikasi";
-import { labelPeran, type PeranPengguna } from "@/lib/peran";
+import type { PeranPengguna } from "@/lib/peran";
 
 /** Satu baris preferensi notifikasi akun ini (bentuk dari layanan pengaturan). */
 export type RingkasPreferensi = {
@@ -28,10 +29,11 @@ type AkunSayaProps = {
 };
 
 /**
- * Layar Akun Saya: identitas akun yang sedang masuk beserta ringkasan pilihan
- * pemberitahuannya, dengan tautan ke halaman pengaturannya. Semuanya dibaca
- * dari sesi dan tabel `notification_preferences` — tidak ada perubahan yang
- * dikirim dari sini.
+ * Layar Akun Saya: identitas akun yang sedang masuk, formulir penggantian
+ * namanya, dan ringkasan pilihan pemberitahuannya dengan tautan ke halaman
+ * pengaturannya. Identitas dan pilihannya dibaca dari sesi serta tabel
+ * `notification_preferences`; yang dikirim dari sini hanya nama lewat
+ * `PATCH /api/pengaturan/akun`.
  */
 export function AkunSaya({ nama, email, peran, preferensi }: AkunSayaProps) {
   const jumlahAktif = preferensi.filter((item) => item.aktif).length;
@@ -66,28 +68,10 @@ export function AkunSaya({ nama, email, peran, preferensi }: AkunSayaProps) {
               peran={peran}
               emailDiPonsel
             />
-            <dl className="grid gap-3 rounded-xl bg-muted px-4 py-4 text-sm sm:grid-cols-2">
-              <div>
-                <dt className="text-muted-foreground">Nama</dt>
-                <dd className="font-medium">{nama}</dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">Email</dt>
-                <dd className="font-medium break-all">{email}</dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">Peran</dt>
-                <dd className="flex items-center gap-2 font-medium">
-                  <ShieldCheck
-                    aria-hidden="true"
-                    className="size-4 text-primary"
-                  />
-                  {labelPeran(peran)}
-                </dd>
-              </div>
-            </dl>
           </CardContent>
         </Card>
+
+        <FormUbahAkun namaAwal={nama} email={email} peran={peran} />
 
         <Card>
           <CardHeader>

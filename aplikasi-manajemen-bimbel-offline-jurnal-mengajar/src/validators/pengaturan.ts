@@ -117,6 +117,18 @@ export type UbahStatusGuruInput = z.infer<typeof ubahStatusGuruSchema>;
 // Id akun dibuat Better Auth (string acak, bukan UUID).
 export const guruIdSchema = z.string().trim().min(1).max(64);
 
+// Data akun sendiri yang boleh diubah pemiliknya. Batas namanya sama dengan
+// saat mendaftar dan menambah guru, jadi nama yang lolos di sini berbentuk
+// sama dengan nama yang sudah ada. Email sengaja tidak ada di sini: dia
+// identitas masuk yang perubahannya menuntut verifikasi alamat baru.
+export const ubahDataAkunSchema = z
+  .object({
+    nama: z.string().trim().min(2).max(120),
+  })
+  .strict();
+
+export type UbahDataAkunInput = z.infer<typeof ubahDataAkunSchema>;
+
 export const ubahPreferensiNotifikasiSchema = z
   .object({
     jenis: z.enum(DAFTAR_JENIS_NOTIFIKASI),

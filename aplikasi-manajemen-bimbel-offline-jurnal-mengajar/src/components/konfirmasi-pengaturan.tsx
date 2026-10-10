@@ -25,9 +25,10 @@ type KonfirmasiPengaturanProps = {
 };
 
 /**
- * Kartu konfirmasi setelah pengaturan "disimpan": menunjukkan apa yang tercatat
- * sekarang dan mengingatkan bahwa perubahannya belum dikirim ke server selama
- * halamannya masih memakai data tiruan.
+ * Kartu konfirmasi setelah pengaturan disimpan: menunjukkan apa yang tercatat
+ * sekarang, dengan `catatan` yang menjelaskan ke mana perubahannya berlaku.
+ * Fokusnya pindah ke kartu ini supaya pembaca layar ikut tahu bahwa formnya
+ * sudah tergantikan.
  */
 export function KonfirmasiPengaturan({
   judul,
