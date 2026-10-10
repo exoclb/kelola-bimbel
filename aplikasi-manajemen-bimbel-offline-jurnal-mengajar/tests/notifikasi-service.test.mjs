@@ -1,75 +1,27 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { existsSync, statSync } from "node:fs";
-import { registerHooks } from "node:module";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
-import { Pool } from "pg";
-
-// Alias "@/..." milik tsconfig diterjemahkan supaya layanan (yang mengimpor
-// `@/db` dan `@/db/schema`) bisa dipakai langsung dari tes ini. Node
-// menjalankan TypeScript dengan menghapus tipe, dan `npm test` mengaktifkan
-// kondisi `react-server` sehingga modul ber-"server-only" boleh diimpor.
-const src = resolve(dirname(fileURLToPath(import.meta.url)), "../src");
-const AKHIRAN = [".ts", ".tsx", "/index.ts"];
-
-registerHooks({
-  resolve(spesifier, konteks, lanjut) {
-    let dasar;
-    if (spesifier.startsWith("@/")) dasar = resolve(src, spesifier.slice(2));
-    else if (
-      spesifier.startsWith(".") &&
-      konteks.parentURL?.startsWith("file:")
-    )
-      dasar = resolve(dirname(fileURLToPath(konteks.parentURL)), spesifier);
-    if (dasar)
-      for (const akhiran of AKHIRAN) {
-        const berkas = dasar + akhiran;
-        if (existsSync(berkas) && statSync(berkas).isFile())
-          return lanjut(pathToFileURL(berkas).href, konteks);
-      }
-    return lanjut(spesifier, konteks);
-  },
-});
-
-const {
+import {
+  aturPreferensi,
   beritahuLaporanBulanan,
+  bersihkan,
+  buatAdmin,
+  buatAkun,
+  buatGuru,
   buatNotifikasi,
+  buatPemilik,
+  buatWali,
+  db,
+  jumlahNotifikasi,
+  jumlahNotifikasiBerKunci,
   kunciLaporanBulanan,
   penerimaPemilik,
-} = await import("../src/services/notifikasi.service.ts");
-const { db } = await import("../src/db/index.ts");
+  pesanNotifikasi,
+} from "./harness/notifikasi.mjs";
 
-const PENANDA = "notifikasi-service-uji";
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  max: 1,
-  connectionTimeoutMillis: 5000,
-});
-
-/** Hapus akun uji berkas ini (notifikasi ikut terhapus lewat `on delete`). */
-async function bersihkan() {
-  await pool.query('DELETE FROM "user" WHERE email LIKE $1', [`${PENANDA}%`]);
-}
-
-async function buatAkun(nama, role = "guru") {
-  const id = randomUUID();
-  await pool.query(
-    'INSERT INTO "user" (id, name, email, role) VALUES ($1, $2, $3, $4)',
-    [id, nama, `${PENANDA}-${id}@example.test`, role],
-  );
-  return id;
-}
-
-/** Jumlah baris satu jenis notifikasi milik satu akun. */
-async function jumlahNotifikasi(userId, tipe) {
-  const { rows } = await pool.query(
-    "SELECT count(*)::int AS jumlah FROM notifications WHERE user_id = $1 AND tipe = $2",
-    [userId, tipe],
-  );
-  return rows[0].jumlah;
-}
+// Tes layanan notifikasi: siapa yang menerima, kapan sebuah peristiwa dihitung
+// sekali, dan bagaimana transaksi pemanggilnya diperlakukan. Akun dan
+// pembersihannya dipinjam dari `tests/harness/notifikasi.mjs`.
 
 /**
  * Pemberitahuan operasional ditujukan ke akun pemilik/admin saja, termasuk akun
@@ -78,17 +30,20 @@ async function jumlahNotifikasi(userId, tipe) {
  */
 test("penerimaPemilik hanya mengembalikan akun owner/admin", async () => {
   await bersihkan();
-  const owner = await buatAkun("Owner Penerima", "owner");
-  const admin = await buatAkun("Admin Penerima", "admin");
-  const keduanya = await buatAkun("Owner Admin Penerima", "owner,admin");
-  const guru = await buatAkun("Guru Penerima");
-  const wali = await buatAkun("Wali Penerima", "orang-tua");
+  const owner = await buatPemilik("Owner Penerima");
+  const admin = await buatAdmin("Admin Penerima");
+  const keduanya = await buatAkun({
+    label: "Owner Admin Penerima",
+    role: "owner,admin",
+  });
+  const guru = await buatGuru("Guru Penerima");
+  const wali = await buatWali("Wali Penerima");
 
   const penerima = await penerimaPemilik();
-  for (const id of [owner, admin, keduanya])
-    assert.ok(penerima.includes(id), `${id} seharusnya menerima`);
-  assert.ok(!penerima.includes(guru));
-  assert.ok(!penerima.includes(wali));
+  for (const akun of [owner, admin, keduanya])
+    assert.ok(penerima.includes(akun.id), `${akun.nama} seharusnya menerima`);
+  assert.ok(!penerima.includes(guru.id));
+  assert.ok(!penerima.includes(wali.id));
   assert.equal(
     new Set(penerima).size,
     penerima.length,
@@ -116,50 +71,59 @@ test("kunciLaporanBulanan satu per periode", () => {
  * jadi pemilik yang belum menyalakannya tidak dikirimi; yang menyalakan
  * menerima satu baris berisi ringkasan angkanya, dan perhitungan ulang periode
  * yang sama tidak menambah baris kedua.
+ *
+ * Barisnya dihitung lewat kunci per periode, bukan jumlah per jenis: jenis ini
+ * disiarkan ke seluruh pemilik bimbel di basis data uji, jadi jenis yang sama
+ * juga memuat periode milik berkas tes lain yang berjalan bersamaan.
  */
 test("beritahuLaporanBulanan sekali per periode dan hanya untuk yang menyalakannya", async () => {
   await bersihkan();
-  const pemilik = await buatAkun("Pemilik Laporan", "owner");
-  const pemilikBisu = await buatAkun("Pemilik Bisu Laporan", "owner");
+  const pemilik = await buatPemilik("Pemilik Laporan");
+  const pemilikBisu = await buatPemilik("Pemilik Bisu Laporan");
   const angka = {
     pemasukan: 5_000_000,
     pengeluaran: 2_150_000,
     laba: 2_850_000,
   };
+  const juli = (userId) =>
+    jumlahNotifikasiBerKunci(
+      userId,
+      "laporan_bulanan",
+      "laporan_bulanan:2097-07",
+    );
 
+  await beritahuLaporanBulanan("2097-07", angka);
+  assert.equal(await juli(pemilik.id), 0, "bawaan jenis ini mati");
+
+  await aturPreferensi(pemilik.id, "laporan_bulanan", true);
+  await aturPreferensi(pemilikBisu.id, "laporan_bulanan", false);
+
+  await beritahuLaporanBulanan("2097-07", angka);
+  assert.equal(await juli(pemilik.id), 1);
+  assert.equal(await juli(pemilikBisu.id), 0);
+
+  await beritahuLaporanBulanan("2097-07", angka);
   assert.equal(
-    await beritahuLaporanBulanan("2097-07", angka),
-    0,
-    "bawaan jenis ini mati, jadi belum ada penerima",
-  );
-  assert.equal(await jumlahNotifikasi(pemilik, "laporan_bulanan"), 0);
-
-  await pool.query(
-    "INSERT INTO notification_preferences (user_id, jenis_notifikasi, aktif) VALUES ($1, $2, true), ($3, $4, false)",
-    [pemilik, "laporan_bulanan", pemilikBisu, "laporan_bulanan"],
-  );
-
-  // Jumlahnya bergantung pada pemilik lain di basis data uji, jadi yang
-  // dipastikan di sini adalah akun uji ini menerima tepat satu baris.
-  assert.ok(await beritahuLaporanBulanan("2097-07", angka));
-  assert.equal(
-    await beritahuLaporanBulanan("2097-07", angka),
-    0,
+    await juli(pemilik.id),
+    1,
     "periode yang sama tidak memberitahu dua kali",
   );
-  assert.equal(await jumlahNotifikasi(pemilik, "laporan_bulanan"), 1);
-  assert.equal(await jumlahNotifikasi(pemilikBisu, "laporan_bulanan"), 0);
 
-  const { rows } = await pool.query(
-    "SELECT pesan FROM notifications WHERE user_id = $1 AND tipe = 'laporan_bulanan'",
-    [pemilik],
-  );
-  assert.match(rows[0].pesan, /Laporan bulan Juli 2097/);
-  assert.match(rows[0].pesan, /Rp5\.000\.000/);
+  const [pesan] = await pesanNotifikasi(pemilik.id, "laporan_bulanan");
+  assert.match(pesan, /Laporan bulan Juli 2097/);
+  assert.match(pesan, /Rp5\.000\.000/);
 
   // Periode berikutnya adalah peristiwa baru.
-  assert.ok(await beritahuLaporanBulanan("2097-08", angka));
-  assert.equal(await jumlahNotifikasi(pemilik, "laporan_bulanan"), 2);
+  await beritahuLaporanBulanan("2097-08", angka);
+  assert.equal(await juli(pemilik.id), 1);
+  assert.equal(
+    await jumlahNotifikasiBerKunci(
+      pemilik.id,
+      "laporan_bulanan",
+      "laporan_bulanan:2097-08",
+    ),
+    1,
+  );
 
   await bersihkan();
 });
@@ -171,15 +135,15 @@ test("beritahuLaporanBulanan sekali per periode dan hanya untuk yang menyalakann
  */
 test("buatNotifikasi menulis satu baris per peristiwa walau diulang", async () => {
   await bersihkan();
-  const guru = await buatAkun("Guru Kunci");
-  const owner = await buatAkun("Owner Kunci");
-  const kunci = `gaji:${guru}:2097-05`;
+  const guru = await buatGuru("Guru Kunci");
+  const owner = await buatPemilik("Owner Kunci");
+  const kunci = `gaji:${guru.id}:2097-05`;
   const pesan = "Honor periode Mei 2097 sudah dibayar.";
 
   const pertama = await buatNotifikasi(
     "gaji_dibayar",
     pesan,
-    [guru, owner, guru],
+    [guru.id, owner.id, guru.id],
     kunci,
   );
   assert.equal(pertama, 2, "satu baris per penerima unik");
@@ -187,21 +151,21 @@ test("buatNotifikasi menulis satu baris per peristiwa walau diulang", async () =
   const ulang = await buatNotifikasi(
     "gaji_dibayar",
     pesan,
-    [guru, owner],
+    [guru.id, owner.id],
     kunci,
   );
   assert.equal(ulang, 0, "peristiwa yang sama tidak menambah baris");
-  assert.equal(await jumlahNotifikasi(guru, "gaji_dibayar"), 1);
-  assert.equal(await jumlahNotifikasi(owner, "gaji_dibayar"), 1);
+  assert.equal(await jumlahNotifikasi(guru.id, "gaji_dibayar"), 1);
+  assert.equal(await jumlahNotifikasi(owner.id, "gaji_dibayar"), 1);
 
   const peristiwaLain = await buatNotifikasi(
     "gaji_dibayar",
     "Honor periode Juni 2097 sudah dibayar.",
-    [guru],
-    `gaji:${guru}:2097-06`,
+    [guru.id],
+    `gaji:${guru.id}:2097-06`,
   );
   assert.equal(peristiwaLain, 1, "kunci berbeda adalah peristiwa berbeda");
-  assert.equal(await jumlahNotifikasi(guru, "gaji_dibayar"), 2);
+  assert.equal(await jumlahNotifikasi(guru.id, "gaji_dibayar"), 2);
 
   await bersihkan();
 });
@@ -212,22 +176,43 @@ test("buatNotifikasi menulis satu baris per peristiwa walau diulang", async () =
  */
 test("buatNotifikasi menghormati preferensi akun yang mematikan jenisnya", async () => {
   await bersihkan();
-  const guru = await buatAkun("Guru Preferensi");
-  const owner = await buatAkun("Owner Preferensi");
-  await pool.query(
-    "INSERT INTO notification_preferences (user_id, jenis_notifikasi, aktif) VALUES ($1, $2, false)",
-    [owner, "rekap_honor"],
-  );
+  const guru = await buatGuru("Guru Preferensi");
+  const owner = await buatPemilik("Owner Preferensi");
+  await aturPreferensi(owner.id, "rekap_honor", false);
 
   const dibuat = await buatNotifikasi(
     "rekap_honor",
     "Rekap honor Mei 2097 sudah tersedia.",
-    [guru, owner],
-    `honor:${guru}:2097-05`,
+    [guru.id, owner.id],
+    `honor:${guru.id}:2097-05`,
   );
   assert.equal(dibuat, 1);
-  assert.equal(await jumlahNotifikasi(guru, "rekap_honor"), 1);
-  assert.equal(await jumlahNotifikasi(owner, "rekap_honor"), 0);
+  assert.equal(await jumlahNotifikasi(guru.id, "rekap_honor"), 1);
+  assert.equal(await jumlahNotifikasi(owner.id, "rekap_honor"), 0);
+
+  await bersihkan();
+});
+
+/**
+ * Akun yang hilang di antara penghitungan penerima dan penulisan baris tidak
+ * boleh menggagalkan penulisannya: daftar penerima dihitung dari akun yang bisa
+ * dihapus kapan saja (`penerimaPemilik`), dan pelanggaran kunci asing di situ
+ * membatalkan transaksi pemanggilnya — mis. simpan jurnal yang sedang dikirim
+ * guru. Penerima yang sudah tidak ada cukup dilewati.
+ */
+test("buatNotifikasi melewati penerima yang akunnya sudah tidak ada", async () => {
+  await bersihkan();
+  const guru = await buatGuru("Guru Penerima Hilang");
+  const akunHilang = randomUUID();
+
+  const dibuat = await buatNotifikasi(
+    "rekap_honor",
+    "Rekap honor Mei 2097 sudah tersedia.",
+    [guru.id, akunHilang],
+    `honor:${guru.id}:2097-05`,
+  );
+  assert.equal(dibuat, 1, "hanya penerima yang masih ada yang ditulis");
+  assert.equal(await jumlahNotifikasi(guru.id, "rekap_honor"), 1);
 
   await bersihkan();
 });
@@ -239,23 +224,29 @@ test("buatNotifikasi menghormati preferensi akun yang mematikan jenisnya", async
  */
 test("buatNotifikasi mengikuti transaksi pemanggilnya", async () => {
   await bersihkan();
-  const guru = await buatAkun("Guru Transaksi");
+  const guru = await buatGuru("Guru Transaksi");
   const kunci = `jurnal:${randomUUID()}`;
 
   await assert.rejects(
     db.transaction(async (tx) => {
-      await buatNotifikasi("jurnal_baru", "Jurnal masuk.", [guru], kunci, tx);
+      await buatNotifikasi(
+        "jurnal_baru",
+        "Jurnal masuk.",
+        [guru.id],
+        kunci,
+        tx,
+      );
       throw new Error("transaksi dibatalkan");
     }),
     /transaksi dibatalkan/,
   );
-  assert.equal(await jumlahNotifikasi(guru, "jurnal_baru"), 0);
+  assert.equal(await jumlahNotifikasi(guru.id, "jurnal_baru"), 0);
 
   await db.transaction(async (tx) => {
-    await buatNotifikasi("jurnal_baru", "Jurnal masuk.", [guru], kunci, tx);
-    await buatNotifikasi("jurnal_baru", "Jurnal masuk.", [guru], kunci, tx);
+    await buatNotifikasi("jurnal_baru", "Jurnal masuk.", [guru.id], kunci, tx);
+    await buatNotifikasi("jurnal_baru", "Jurnal masuk.", [guru.id], kunci, tx);
   });
-  assert.equal(await jumlahNotifikasi(guru, "jurnal_baru"), 1);
+  assert.equal(await jumlahNotifikasi(guru.id, "jurnal_baru"), 1);
 
   await bersihkan();
 });

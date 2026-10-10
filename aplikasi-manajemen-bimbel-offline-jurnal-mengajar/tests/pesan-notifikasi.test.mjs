@@ -1,33 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, statSync } from "node:fs";
-import { registerHooks } from "node:module";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
-
-// Modul ini mengimpor `@/lib/gaji`, jadi alias tsconfig-nya diterjemahkan
-// lebih dulu supaya tes bisa memuat TypeScript apa adanya.
-const src = resolve(dirname(fileURLToPath(import.meta.url)), "../src");
-const AKHIRAN = [".ts", ".tsx", "/index.ts"];
-
-registerHooks({
-  resolve(spesifier, konteks, lanjut) {
-    let dasar;
-    if (spesifier.startsWith("@/")) dasar = resolve(src, spesifier.slice(2));
-    else if (
-      spesifier.startsWith(".") &&
-      konteks.parentURL?.startsWith("file:")
-    )
-      dasar = resolve(dirname(fileURLToPath(konteks.parentURL)), spesifier);
-    if (dasar)
-      for (const akhiran of AKHIRAN) {
-        const berkas = dasar + akhiran;
-        if (existsSync(berkas) && statSync(berkas).isFile())
-          return lanjut(pathToFileURL(berkas).href, konteks);
-      }
-    return lanjut(spesifier, konteks);
-  },
-});
+// Alias `@/...` dan impor tanpa akhiran diterjemahkan oleh harness ini.
+import "./harness/alias.mjs";
 
 const { pesanGajiDibayar, pesanLaporanBulanan, pesanRekapHonor } =
   await import("../src/lib/pesan-notifikasi.ts");

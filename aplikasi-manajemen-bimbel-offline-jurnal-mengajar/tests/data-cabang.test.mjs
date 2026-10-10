@@ -1,27 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
-import { registerHooks } from "node:module";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
-
-// Alias "@/..." milik tsconfig diterjemahkan supaya modul data contoh bisa
-// diimpor langsung dari berkas tes ini (Node menjalankan TypeScript dengan
-// menghapus tipe).
-const src = resolve(dirname(fileURLToPath(import.meta.url)), "../src");
-const AKHIRAN = ["", ".ts", ".tsx", "/index.ts"];
-
-registerHooks({
-  resolve(spesifier, konteks, lanjut) {
-    if (spesifier.startsWith("@/")) {
-      const dasar = resolve(src, spesifier.slice(2));
-      for (const akhiran of AKHIRAN)
-        if (existsSync(dasar + akhiran))
-          return lanjut(pathToFileURL(dasar + akhiran).href, konteks);
-    }
-    return lanjut(spesifier, konteks);
-  },
-});
+// Alias `@/...` dan impor tanpa akhiran diterjemahkan oleh harness ini.
+import "./harness/alias.mjs";
 
 const { getDaftarCabang } = await import("../src/lib/mock-cabang.ts");
 const { getDaftarKelas } = await import("../src/lib/mock-kelas.ts");
