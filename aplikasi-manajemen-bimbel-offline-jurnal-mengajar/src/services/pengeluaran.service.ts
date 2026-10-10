@@ -2,8 +2,12 @@ import "server-only";
 import { asc, desc, eq, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { expenseCategories, expenses } from "@/db/schema";
-import { pelanggaranUnik } from "@/lib/db-error";
-import type { KategoriPengeluaran, Pengeluaran } from "@/lib/pengeluaran";
+import { kodeError, pelanggaranUnik } from "@/lib/db-error";
+import type {
+  KategoriPengeluaran,
+  KategoriTerpakai,
+  Pengeluaran,
+} from "@/lib/pengeluaran";
 import type {
   BuatKategoriPengeluaranInput,
   BuatPengeluaranInput,
@@ -96,6 +100,86 @@ export async function tambahKategoriPengeluaran({
   } catch (error) {
     if (pelanggaranUnik(error))
       return { ok: false, pesan: `Kategori "${rapi}" sudah ada.` };
+    throw error;
+  }
+}
+
+/**
+ * Kategori beserta pemakaiannya (jumlah catatan dan total nominal), diurutkan
+ * nama. Kategori yang belum dipakai tetap muncul dengan angka 0 lewat join kiri,
+ * jadi halaman kelola kategori tidak pernah menyembunyikan kategori kosong.
+ */
+export async function ringkasanKategoriPengeluaran(): Promise<
+  KategoriTerpakai[]
+> {
+  const baris = await db
+    .select({
+      id: expenseCategories.id,
+      nama: expenseCategories.nama,
+      jumlah: sql<number>`count(${expenses.id})::int`,
+      total: sql<number>`coalesce(sum(${expenses.nominal}), 0)::float8`,
+    })
+    .from(expenseCategories)
+    .leftJoin(expenses, eq(expenses.kategoriId, expenseCategories.id))
+    .groupBy(expenseCategories.id, expenseCategories.nama)
+    .orderBy(asc(expenseCategories.nama));
+
+  return baris.map((kategori) => ({
+    id: kategori.id,
+    nama: kategori.nama,
+    jumlah: Number(kategori.jumlah),
+    total: Number(kategori.total),
+  }));
+}
+
+/**
+ * Mengganti nama kategori. `null` kalau id-nya tidak ada; nama yang sudah dipakai
+ * kategori lain dikembalikan sebagai pesan (409 di endpoint) supaya pengguna
+ * tahu apa yang salah, bukan galat kunci unik dari basis data.
+ */
+export async function ubahKategoriPengeluaran(
+  id: string,
+  { nama }: BuatKategoriPengeluaranInput,
+): Promise<HasilTambahKategori | null> {
+  const rapi = nama.trim();
+  try {
+    const baris = await db
+      .update(expenseCategories)
+      .set({ nama: rapi })
+      .where(eq(expenseCategories.id, id))
+      .returning({ id: expenseCategories.id, nama: expenseCategories.nama });
+    if (baris.length === 0) return null;
+    return { ok: true, kategori: baris[0] };
+  } catch (error) {
+    if (pelanggaranUnik(error))
+      return { ok: false, pesan: `Kategori "${rapi}" sudah ada.` };
+    throw error;
+  }
+}
+
+/** Hasil penghapusan kategori: alasan kegagalannya dibedakan pemanggil. */
+export type HasilHapusKategori =
+  | { ok: true }
+  | { ok: false; alasan: "tidak_ada" | "dipakai" };
+
+/**
+ * Menghapus kategori. Kategori yang masih dipakai pengeluaran tidak jadi
+ * dihapus: kunci asingnya `restrict` (kode 23503), jadi riwayat pengeluaran
+ * selalu punya kategorinya. Hanya id yang tidak ada yang dijawab "tidak_ada".
+ */
+export async function hapusKategoriPengeluaran(
+  id: string,
+): Promise<HasilHapusKategori> {
+  try {
+    const dihapus = await db
+      .delete(expenseCategories)
+      .where(eq(expenseCategories.id, id))
+      .returning({ id: expenseCategories.id });
+    return dihapus.length > 0
+      ? { ok: true }
+      : { ok: false, alasan: "tidak_ada" };
+  } catch (error) {
+    if (kodeError(error) === "23503") return { ok: false, alasan: "dipakai" };
     throw error;
   }
 }

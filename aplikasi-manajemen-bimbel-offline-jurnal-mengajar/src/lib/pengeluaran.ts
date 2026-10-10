@@ -16,6 +16,16 @@ export type KategoriPengeluaran = {
   nama: string;
 };
 
+/**
+ * Kategori beserta pemakaiannya: berapa catatan pengeluaran yang menunjuknya
+ * dan berapa total nominalnya. Dipakai halaman kelola kategori supaya keputusan
+ * menghapus sebuah kategori berangkat dari angka, bukan tebakan.
+ */
+export type KategoriTerpakai = KategoriPengeluaran & {
+  jumlah: number;
+  total: number;
+};
+
 /** Satu baris pengeluaran: bentuk kolomnya mengikuti tabel `expenses`. */
 export type Pengeluaran = {
   id: string;

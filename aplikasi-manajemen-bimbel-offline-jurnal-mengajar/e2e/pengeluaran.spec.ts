@@ -192,3 +192,116 @@ test("guru tidak boleh membaca atau mencatat biaya operasional", async ({
     ).status(),
   ).toBe(403);
 });
+
+/**
+ * Kategori dikelola dari layarnya sendiri: tambah, ganti nama, dan hapus.
+ * Kategori yang masih dipakai pengeluaran tidak dihapus (409 dari server),
+ * jadi riwayat pengeluarannya tidak pernah kehilangan kategorinya.
+ */
+test("halaman kelola kategori menambah, mengganti nama, dan menghapus kategori", async ({
+  page,
+  request,
+}) => {
+  const email = await daftar(request, "Owner Kategori Pengeluaran");
+  await setRole(email, "owner");
+  await masuk(request, email);
+
+  // Kategori pertama disiapkan lewat API supaya id-nya bisa dipakai mencatat
+  // pengeluaran; sisanya dikerjakan dari layar.
+  const nama = `Operasional Uji ${randomUUID().slice(0, 8)}`;
+  const dibuat = await request.post("/api/pengeluaran/kategori", {
+    headers,
+    data: { nama },
+  });
+  expect(dibuat.status()).toBe(201);
+  const kategoriId = (await dibuat.json()).data.id as string;
+
+  await page.goto("/sign-in");
+  await page.getByLabel("Email", { exact: true }).fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(sandi);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page).toHaveURL(/\/app\/pemantauan$/);
+
+  // Halaman pengeluaran punya jalan ke kelola kategori.
+  await page.goto("/app/pengeluaran");
+  await page.getByRole("link", { name: "Kelola kategori" }).click();
+  await expect(page).toHaveURL(/\/app\/pengeluaran\/kategori$/);
+  await expect(
+    page.getByRole("heading", { name: "Kategori Pengeluaran", exact: true }),
+  ).toBeVisible();
+
+  const baris = page.locator("li").filter({ hasText: nama });
+  await expect(baris).toHaveCount(1);
+  await expect(baris.getByText("Belum dipakai")).toBeVisible();
+
+  // Nama kembar ditolak server (409) dan pesannya tampil di formulir.
+  await page.getByLabel("Nama kategori").fill(nama);
+  await page.getByRole("button", { name: "Tambah kategori" }).click();
+  await expect(page.getByText(`Kategori "${nama}" sudah ada.`)).toBeVisible();
+
+  // Kategori kedua ditambah dari layar.
+  const namaKedua = `Cadangan Uji ${randomUUID().slice(0, 8)}`;
+  await page.getByLabel("Nama kategori").fill(namaKedua);
+  await page.getByRole("button", { name: "Tambah kategori" }).click();
+  await expect(
+    page.getByText(`Kategori "${namaKedua}" ditambahkan.`),
+  ).toBeVisible();
+  await expect(page.locator("li").filter({ hasText: namaKedua })).toHaveCount(
+    1,
+  );
+
+  // Ganti nama kategori pertama dari barisnya.
+  const namaBaru = `Operasional Baru ${randomUUID().slice(0, 8)}`;
+  await baris.getByRole("button", { name: "Ubah nama" }).click();
+  await baris.getByLabel("Nama kategori").fill(namaBaru);
+  await baris.getByRole("button", { name: "Simpan nama" }).click();
+  await expect(
+    page.getByText(`Kategori "${nama}" sekarang bernama "${namaBaru}".`),
+  ).toBeVisible();
+
+  // Kategori yang masih dipakai pengeluaran menampilkan pemakaiannya dan
+  // menolak dihapus; setelah pengeluarannya dihapus, kategorinya bisa hilang.
+  const dipakai = await request.post("/api/pengeluaran", {
+    headers,
+    data: {
+      kategoriId,
+      nominal: 45000,
+      tanggal: "2097-07-07",
+      catatan: "Uji kelola kategori",
+    },
+  });
+  expect(dipakai.status()).toBe(201);
+  const pengeluaranId = (await dipakai.json()).data.id as string;
+
+  await page.reload();
+  const barisBaru = page.locator("li").filter({ hasText: namaBaru });
+  await expect(barisBaru.getByText("1 catatan · Rp45.000")).toBeVisible();
+  await barisBaru.getByRole("button", { name: "Hapus" }).click();
+  await expect(
+    barisBaru.getByText(`Hapus kategori ${namaBaru}?`),
+  ).toBeVisible();
+  await barisBaru.getByRole("button", { name: "Ya, hapus" }).click();
+  await expect(
+    barisBaru.getByText(/masih dipakai pengeluaran/),
+  ).toBeVisible();
+  await expect(page.locator("li").filter({ hasText: namaBaru })).toHaveCount(1);
+
+  expect(
+    (
+      await request.delete(`/api/pengeluaran/${pengeluaranId}`, { headers })
+    ).status(),
+  ).toBe(200);
+
+  await page.reload();
+  await barisBaru.getByRole("button", { name: "Hapus" }).click();
+  await barisBaru.getByRole("button", { name: "Ya, hapus" }).click();
+  await expect(page.getByText(`Kategori "${namaBaru}" dihapus.`)).toBeVisible();
+  await expect(page.locator("li").filter({ hasText: namaBaru })).toHaveCount(0);
+
+  // Kategori kedua dibersihkan juga supaya daftar kategori tidak menumpuk.
+  const barisKedua = page.locator("li").filter({ hasText: namaKedua });
+  await barisKedua.getByRole("button", { name: "Hapus" }).click();
+  await barisKedua.getByRole("button", { name: "Ya, hapus" }).click();
+  await expect(page.getByText(`Kategori "${namaKedua}" dihapus.`)).toBeVisible();
+  await expect(page.locator("li").filter({ hasText: namaKedua })).toHaveCount(0);
+});

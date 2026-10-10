@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CalendarDays, PencilLine, Receipt, Trash2 } from "lucide-react";
+import { CalendarDays, PencilLine, Receipt, Tags, Trash2 } from "lucide-react";
 import { FormTambahPengeluaran } from "@/components/form-tambah-pengeluaran";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -210,7 +211,19 @@ export function DaftarPengeluaran({
           : `Belum ada pengeluaran yang tercatat pada ${periodeTampil}.`}
       </p>
 
-      <div className="mt-6">
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <Button asChild variant="outline" size="aksi">
+          <Link href="/app/pengeluaran/kategori">
+            <Tags aria-hidden="true" />
+            Kelola kategori
+          </Link>
+        </Button>
+        <Button asChild variant="ghost" size="aksi">
+          <Link href="/app/arus-kas">Arus kas</Link>
+        </Button>
+      </div>
+
+      <div className="mt-4">
         <FormTambahPengeluaran
           kategori={kategori}
           onKategoriBaru={(kategoriBaru) =>

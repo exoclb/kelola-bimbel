@@ -54,6 +54,11 @@ export const pengeluaranIdSchema = z
   .string()
   .uuid("Id pengeluaran harus UUID yang sah.");
 
+/** Id kategori dipakai route `PATCH`/`DELETE /api/pengeluaran/kategori/:id`. */
+export const kategoriPengeluaranIdSchema = z
+  .string()
+  .uuid("Id kategori harus UUID yang sah.");
+
 // Nama kategori dijaga unik di level basis data (indeks unik), jadi nama yang
 // sudah ada dijawab 409 oleh endpoint-nya.
 export const buatKategoriPengeluaranSchema = z
