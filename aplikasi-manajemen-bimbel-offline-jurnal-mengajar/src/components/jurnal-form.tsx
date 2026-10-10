@@ -22,10 +22,12 @@ import {
 import { PemilihJadwal } from "@/components/pemilih-jadwal";
 import { PemilihMateri } from "@/components/pemilih-materi";
 import {
+  catatanDariPresensi,
   formatJam,
   hitungJamMengajar,
   type Jadwal,
   type JurnalInput,
+  type StatusPresensiMurid,
 } from "@/lib/jurnal";
 import { pesanGalatApi } from "@/lib/pesan-api";
 
@@ -36,8 +38,9 @@ export type JurnalTersimpanHari = {
   /** Topik bebas setelah pemisah materi. */
   topik: string;
   catatan: string;
-  hadir: Record<string, boolean>;
-  keterangan: Record<string, string>;
+  /** Status presensi per id murid dan alasan bebasnya. */
+  presensi: Record<string, StatusPresensiMurid>;
+  alasan: Record<string, string>;
 };
 
 type JurnalFormProps = {
@@ -58,8 +61,10 @@ export function JurnalForm({
 }: JurnalFormProps) {
   const router = useRouter();
   const [jadwalId, setJadwalId] = useState("");
-  const [kehadiran, setKehadiran] = useState<Record<string, boolean>>({});
-  const [keterangan, setKeterangan] = useState<Record<string, string>>({});
+  const [presensi, setPresensi] = useState<Record<string, StatusPresensiMurid>>(
+    {},
+  );
+  const [alasan, setAlasan] = useState<Record<string, string>>({});
   const [materi, setMateri] = useState("");
   const [topik, setTopik] = useState("");
   const [catatan, setCatatan] = useState("");
@@ -86,26 +91,26 @@ export function JurnalForm({
     setErrorMateri("");
     // Sesi yang jurnalnya sudah diisi hari ini dimuat apa adanya: guru
     // mengoreksi catatan yang sama, bukan menimpanya dengan isian kosong.
-    setKehadiran(
+    setPresensi(
       Object.fromEntries(
         item.murid.map((murid) => [
           murid.id,
-          tersimpan ? (tersimpan.hadir[murid.id] ?? false) : true,
+          tersimpan ? (tersimpan.presensi[murid.id] ?? "alpa") : "hadir",
         ]),
       ),
     );
-    setKeterangan(tersimpan?.keterangan ?? {});
+    setAlasan(tersimpan?.alasan ?? {});
     setMateri(tersimpan?.materi ?? "");
     setTopik(tersimpan?.topik ?? "");
     setCatatan(tersimpan?.catatan ?? "");
   }
 
-  function ubahKehadiran(muridId: string, hadir: boolean) {
-    setKehadiran((sebelumnya) => ({ ...sebelumnya, [muridId]: hadir }));
+  function ubahStatus(muridId: string, status: StatusPresensiMurid) {
+    setPresensi((sebelumnya) => ({ ...sebelumnya, [muridId]: status }));
   }
 
-  function ubahKeterangan(muridId: string, nilai: string) {
-    setKeterangan((sebelumnya) => ({ ...sebelumnya, [muridId]: nilai }));
+  function ubahAlasan(muridId: string, nilai: string) {
+    setAlasan((sebelumnya) => ({ ...sebelumnya, [muridId]: nilai }));
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -122,15 +127,21 @@ export function JurnalForm({
     if (masalahJadwal || masalahMateri || !jadwalTerpilih) return;
 
     const materiLengkap = topik.trim() ? `${materi} — ${topik.trim()}` : materi;
+    // Kehadiran dikirim dalam bentuk yang dipakai tabelnya: `hadir` + catatan
+    // berisi alasan (lihat `catatanDariPresensi`).
+    const kehadiran = jadwalTerpilih.murid.map((murid) => {
+      const status = presensi[murid.id] ?? "hadir";
+      return {
+        muridId: murid.id,
+        hadir: status === "hadir",
+        catatan: catatanDariPresensi(status, alasan[murid.id] ?? ""),
+      };
+    });
     const jurnal: JurnalInput = {
       jadwalId: jadwalTerpilih.id,
       materi: materiLengkap,
       catatan: catatan.trim(),
-      kehadiran: jadwalTerpilih.murid.map((murid) => ({
-        muridId: murid.id,
-        hadir: kehadiran[murid.id] ?? false,
-        catatan: (keterangan[murid.id] ?? "").trim(),
-      })),
+      kehadiran,
     };
 
     setPending(true);
@@ -168,8 +179,11 @@ export function JurnalForm({
         }).format(new Date()),
         murid: jadwalTerpilih.murid.map((murid) => ({
           nama: murid.nama,
-          hadir: kehadiran[murid.id] ?? false,
-          keterangan: (keterangan[murid.id] ?? "").trim(),
+          hadir: (presensi[murid.id] ?? "hadir") === "hadir",
+          keterangan: catatanDariPresensi(
+            presensi[murid.id] ?? "hadir",
+            alasan[murid.id] ?? "",
+          ),
         })),
       });
       // Halaman disegarkan supaya sesi yang baru dikirim ikut terbaca sebagai
@@ -184,8 +198,8 @@ export function JurnalForm({
 
   function isiJurnalLain() {
     setJadwalId("");
-    setKehadiran({});
-    setKeterangan({});
+    setPresensi({});
+    setAlasan({});
     setMateri("");
     setTopik("");
     setCatatan("");
@@ -260,10 +274,10 @@ export function JurnalForm({
               {jadwalTerpilih ? (
                 <DaftarKehadiran
                   murid={jadwalTerpilih.murid}
-                  kehadiran={kehadiran}
-                  keterangan={keterangan}
-                  onHadir={ubahKehadiran}
-                  onKeterangan={ubahKeterangan}
+                  presensi={presensi}
+                  catatan={alasan}
+                  onStatus={ubahStatus}
+                  onCatatan={ubahAlasan}
                   disabled={pending}
                 />
               ) : (

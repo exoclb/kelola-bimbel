@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { JurnalForm, type JurnalTersimpanHari } from "@/components/jurnal-form";
-import { pisahMateri } from "@/lib/jurnal";
+import {
+  pisahMateri,
+  presensiDariCatatan,
+  type StatusPresensiMurid,
+} from "@/lib/jurnal";
 import { requireSession } from "@/lib/session";
 import { formatTanggalLengkap, namaHari, tanggalISO } from "@/lib/tanggal";
 import { listJurnalGuruTanggal } from "@/services/jurnal.service";
@@ -31,23 +35,26 @@ export default async function JurnalPage() {
 
   // Jurnal yang sudah diisi hari ini ikut dimuat: guru melihat kembali isi
   // sebelumnya, dan tahu kiriman ulang memperbarui catatan itu — bukan
-  // menambah catatan kedua untuk sesi yang sama.
+  // menambah catatan kedua untuk sesi yang sama. Status presensinya dibaca
+  // kembali dari pasangan `hadir` + `catatan` lewat `presensiDariCatatan`,
+  // jadi alasan yang tersimpan muncul lagi sebagai pilihan yang sama.
   const sudahDiisi: Record<string, JurnalTersimpanHari> = {};
   for (const jurnal of await listJurnalGuruTanggal(user.id, tanggal)) {
     if (!jurnal.scheduleId) continue;
     const { pilihan, topik } = pisahMateri(jurnal.materi);
+    const presensi: Record<string, StatusPresensiMurid> = {};
+    const alasan: Record<string, string> = {};
+    for (const baris of jurnal.kehadiran) {
+      const hasil = presensiDariCatatan(baris.hadir, baris.catatan);
+      presensi[baris.muridId] = hasil.status;
+      if (hasil.catatan) alasan[baris.muridId] = hasil.catatan;
+    }
     sudahDiisi[jurnal.scheduleId] = {
       materi: pilihan,
       topik,
       catatan: jurnal.catatan,
-      hadir: Object.fromEntries(
-        jurnal.kehadiran.map((baris) => [baris.muridId, baris.hadir]),
-      ),
-      keterangan: Object.fromEntries(
-        jurnal.kehadiran
-          .filter((baris) => baris.catatan)
-          .map((baris) => [baris.muridId, baris.catatan]),
-      ),
+      presensi,
+      alasan,
     };
   }
 

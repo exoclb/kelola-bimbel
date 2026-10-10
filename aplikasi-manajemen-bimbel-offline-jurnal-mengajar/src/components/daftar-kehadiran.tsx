@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCheck } from "lucide-react";
-import { PilPortal } from "@/components/pil-portal";
+import { PresensiMurid } from "@/components/presensi-murid";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,34 +11,51 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import type { MuridKelas } from "@/lib/jurnal";
+import {
+  ALASAN_TIDAK_HADIR,
+  labelPresensiMurid,
+  type MuridKelas,
+  type StatusPresensiMurid,
+} from "@/lib/jurnal";
 
 type DaftarKehadiranProps = {
   murid: MuridKelas[];
-  kehadiran: Record<string, boolean>;
-  keterangan: Record<string, string>;
-  onHadir: (muridId: string, hadir: boolean) => void;
-  onKeterangan: (muridId: string, nilai: string) => void;
+  presensi: Record<string, StatusPresensiMurid>;
+  catatan: Record<string, string>;
+  onStatus: (muridId: string, status: StatusPresensiMurid) => void;
+  onCatatan: (muridId: string, nilai: string) => void;
   disabled?: boolean;
 };
 
 /**
- * Kehadiran murid dengan pilihan cepat: semua murid dianggap hadir sejak awal,
- * guru hanya menghilangkan centang murid yang tidak masuk lalu menulis alasannya.
+ * Kehadiran satu kelas: setiap murid dianggap hadir sejak awal, guru hanya
+ * mengubah status murid yang tidak hadir lalu menulis alasannya. Rinciannya
+ * ada di komponen `PresensiMurid`, satu baris per murid.
  */
 export function DaftarKehadiran({
   murid,
-  kehadiran,
-  keterangan,
-  onHadir,
-  onKeterangan,
+  presensi,
+  catatan,
+  onStatus,
+  onCatatan,
   disabled = false,
 }: DaftarKehadiranProps) {
-  const jumlahHadir = murid.filter((anak) => kehadiran[anak.id]).length;
-  const semuaHadir = jumlahHadir === murid.length;
+  const statusDari = (muridId: string): StatusPresensiMurid =>
+    presensi[muridId] ?? "hadir";
+  const jumlahHadir = murid.filter(
+    (anak) => statusDari(anak.id) === "hadir",
+  ).length;
+  const jumlahTidakHadir = murid.length - jumlahHadir;
+  const rincianAlasan = ALASAN_TIDAK_HADIR.map((alasan) => ({
+    alasan,
+    jumlah: murid.filter((anak) => statusDari(anak.id) === alasan).length,
+  }))
+    .filter((baris) => baris.jumlah > 0)
+    .map(
+      (baris) =>
+        `${baris.jumlah} ${labelPresensiMurid(baris.alasan).toLowerCase()}`,
+    )
+    .join(", ");
 
   return (
     <Card>
@@ -46,18 +63,18 @@ export function DaftarKehadiran({
         <CardTitle>Kehadiran murid</CardTitle>
         <CardDescription>
           {jumlahHadir} dari {murid.length} murid hadir
-          {murid.length - jumlahHadir > 0
-            ? ` · ${murid.length - jumlahHadir} tidak hadir`
+          {jumlahTidakHadir > 0
+            ? ` · ${jumlahTidakHadir} tidak hadir (${rincianAlasan})`
             : " · semua hadir"}
-          . Hilangkan centang kalau ada yang tidak masuk.
+          . Pilih status tiap murid; kolom alasan muncul kalau tidak hadir.
         </CardDescription>
         <CardAction>
           <Button
             type="button"
             variant="outline"
             size="aksi"
-            disabled={disabled || semuaHadir}
-            onClick={() => murid.forEach((anak) => onHadir(anak.id, true))}
+            disabled={disabled || jumlahTidakHadir === 0}
+            onClick={() => murid.forEach((anak) => onStatus(anak.id, "hadir"))}
           >
             <CheckCheck aria-hidden="true" />
             Semua hadir
@@ -66,61 +83,17 @@ export function DaftarKehadiran({
       </CardHeader>
       <CardContent>
         <ul className="divide-y">
-          {murid.map((anak) => {
-            const hadir = kehadiran[anak.id] ?? false;
-            return (
-              <li
-                key={anak.id}
-                className="flex flex-col gap-3 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="flex min-h-12 items-center gap-3">
-                  <Checkbox
-                    className="size-6 shrink-0"
-                    id={`hadir-${anak.id}`}
-                    checked={hadir}
-                    disabled={disabled}
-                    onCheckedChange={(nilai) =>
-                      onHadir(anak.id, nilai === true)
-                    }
-                  />
-                  <Label
-                    htmlFor={`hadir-${anak.id}`}
-                    className="flex min-h-12 flex-1 cursor-pointer items-center font-normal"
-                  >
-                    {anak.nama}
-                  </Label>
-                </div>
-                {hadir ? (
-                  <PilPortal className="border-primary/30 bg-primary/10 text-primary">
-                    Hadir
-                  </PilPortal>
-                ) : (
-                  <div className="space-y-2 pl-7 sm:w-64 sm:pl-0">
-                    <PilPortal className="border-destructive/30 bg-destructive/10 text-destructive">
-                      Tidak hadir
-                    </PilPortal>
-                    <Label
-                      htmlFor={`keterangan-${anak.id}`}
-                      className="sr-only"
-                    >
-                      Keterangan {anak.nama}
-                    </Label>
-                    <Input
-                      className="h-[var(--target-sentuh-portal)] md:text-base"
-                      id={`keterangan-${anak.id}`}
-                      value={keterangan[anak.id] ?? ""}
-                      maxLength={200}
-                      disabled={disabled}
-                      placeholder="Keterangan (opsional)"
-                      onChange={(event) =>
-                        onKeterangan(anak.id, event.target.value)
-                      }
-                    />
-                  </div>
-                )}
-              </li>
-            );
-          })}
+          {murid.map((anak) => (
+            <PresensiMurid
+              key={anak.id}
+              murid={anak}
+              status={statusDari(anak.id)}
+              catatan={catatan[anak.id] ?? ""}
+              onStatus={onStatus}
+              onCatatan={onCatatan}
+              disabled={disabled}
+            />
+          ))}
         </ul>
       </CardContent>
     </Card>

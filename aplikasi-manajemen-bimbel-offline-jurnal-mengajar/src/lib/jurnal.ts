@@ -27,6 +27,72 @@ export type KehadiranMurid = {
   catatan: string;
 };
 
+/** Status kehadiran yang bisa dipilih guru untuk satu murid. */
+export const STATUS_PRESENSI_MURID = [
+  "hadir",
+  "sakit",
+  "izin",
+  "alpa",
+] as const;
+
+export type StatusPresensiMurid = (typeof STATUS_PRESENSI_MURID)[number];
+
+/** Alasan yang tersedia saat murid tidak hadir. */
+export const ALASAN_TIDAK_HADIR = ["sakit", "izin", "alpa"] as const;
+
+const LABEL_PRESENSI_MURID: Record<StatusPresensiMurid, string> = {
+  hadir: "Hadir",
+  sakit: "Sakit",
+  izin: "Izin",
+  alpa: "Alpa",
+};
+
+/** "hadir" → "Hadir", "izin" → "Izin". */
+export function labelPresensiMurid(status: StatusPresensiMurid) {
+  return LABEL_PRESENSI_MURID[status];
+}
+
+// Tabel `journal_attendances` masih menyimpan kehadiran sebagai `hadir` +
+// `catatan` (batas 200 huruf), jadi alasan dititipkan di `catatan` dengan
+// alasannya sebagai kata pertama — bentuk yang sama dengan yang dibaca Portal
+// Wali saat menampilkan pertemuan yang tidak dihadiri. Dua fungsi di bawah
+// adalah satu-satunya tempat bentuk itu diterjemahkan bolak-balik: kalau kelak
+// tabelnya punya kolom status sendiri, cukup keduanya yang berubah.
+
+/** Status + catatan bebas → nilai `catatan` yang dikirim ke `/api/jurnal`. */
+export function catatanDariPresensi(
+  status: StatusPresensiMurid,
+  catatan: string,
+) {
+  if (status === "hadir") return "";
+  const alasan = labelPresensiMurid(status);
+  const tambahan = catatan.trim();
+  return (tambahan ? `${alasan} — ${tambahan}` : alasan).slice(0, 200);
+}
+
+/**
+ * Baris `journal_attendances` → status yang bisa ditampilkan di formulir.
+ * Catatan yang tidak diawali alasan yang dikenal dibaca sebagai alpa dengan
+ * catatan apa adanya, jadi tulisan lama tetap tampil apa yang ditulis guru.
+ */
+export function presensiDariCatatan(hadir: boolean, catatan: string) {
+  const isi = catatan.trim();
+  if (hadir) return { status: "hadir" as StatusPresensiMurid, catatan: "" };
+
+  for (const alasan of ALASAN_TIDAK_HADIR) {
+    const label = labelPresensiMurid(alasan);
+    if (!isi.toLowerCase().startsWith(label.toLowerCase())) continue;
+    // "Sakit — demam" → "demam"; "Sakit" → "" (tanpa alasan tambahan).
+    const sisa = isi
+      .slice(label.length)
+      .replace(/^\s*[—–-]+\s*/, "")
+      .trim();
+    return { status: alasan as StatusPresensiMurid, catatan: sisa };
+  }
+
+  return { status: "alpa" as StatusPresensiMurid, catatan: isi };
+}
+
 /** Isi `POST /api/jurnal`. Kelas, tanggal, dan jam mengajar diisi server dari jadwal. */
 export type JurnalInput = {
   jadwalId: string;

@@ -165,19 +165,24 @@ test("guru mengisi jurnal dari jadwalnya hari ini dan kirim ulang memperbarui ca
 
   await kartuJadwal.check();
 
-  // Daftar kehadiran hanya memuat murid kelas ini.
-  const kehadiranMurid = page.getByRole("checkbox", {
-    name: "Rani Halaman Jurnal",
-    exact: true,
+  // Tiap murid punya tombol statusnya sendiri; bawaannya hadir.
+  const presensiMurid = page.getByRole("group", {
+    name: "Kehadiran Rani Halaman Jurnal",
   });
-  await expect(kehadiranMurid).toBeChecked();
   await expect(
-    page.getByRole("checkbox", { name: "Sari Luar Kelas", exact: true }),
+    presensiMurid.getByRole("button", { name: "Hadir", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  // Murid di kelas lain tidak ikut muncul di daftar kehadiran.
+  await expect(
+    page.getByRole("group", { name: "Kehadiran Sari Luar Kelas" }),
   ).toHaveCount(0);
 
-  // Satu murid tidak masuk, alasannya ikut tercatat.
-  await kehadiranMurid.uncheck();
-  await page.getByLabel("Keterangan Rani Halaman Jurnal").fill("Sakit");
+  // Satu murid tidak masuk: statusnya dipilih, lalu alasannya ditulis.
+  await presensiMurid
+    .getByRole("button", { name: "Sakit", exact: true })
+    .click();
+  await page.getByLabel("Alasan Rani Halaman Jurnal").fill("demam");
+  await expect(page.getByText("Tercatat: Sakit — demam")).toBeVisible();
 
   await page.getByRole("button", { name: "Latihan soal", exact: true }).click();
   await page.getByLabel("Topik spesifik (opsional)").fill("pecahan campuran");
@@ -185,6 +190,10 @@ test("guru mengisi jurnal dari jadwalnya hari ini dan kirim ulang memperbarui ca
   await page.getByRole("button", { name: "Kirim Jurnal" }).click();
 
   await expect(page.getByText("Jurnal terkirim ke owner")).toBeVisible();
+  // Konfirmasinya menyebut alasan yang tersimpan, bukan hanya "tidak hadir".
+  await expect(
+    page.getByText("Rani Halaman Jurnal (Sakit — demam)"),
+  ).toBeVisible();
 
   // Yang tersimpan adalah jurnal sungguhan, bukan tampilan contoh.
   const [tersimpan] = await denganDb(async (db) => {
@@ -212,7 +221,7 @@ test("guru mengisi jurnal dari jadwalnya hari ini dan kirim ulang memperbarui ca
   expect(kehadiran).toHaveLength(1);
   expect(kehadiran[0].nama).toBe("Rani Halaman Jurnal");
   expect(kehadiran[0].hadir).toBe(false);
-  expect(kehadiran[0].catatan).toBe("Sakit");
+  expect(kehadiran[0].catatan).toBe("Sakit — demam");
 
   // Owner dapat satu pemberitahuan jurnal baru.
   const jumlahNotifikasi = () =>
@@ -234,9 +243,14 @@ test("guru mengisi jurnal dari jadwalnya hari ini dan kirim ulang memperbarui ca
   ).toBeVisible();
   await expect(
     page.getByRole("checkbox", { name: "Rani Halaman Jurnal", exact: true }),
-  ).not.toBeChecked();
-  await expect(page.getByLabel("Keterangan Rani Halaman Jurnal")).toHaveValue(
-    "Sakit",
+  ).toHaveCount(0);
+  await expect(
+    page
+      .getByRole("group", { name: "Kehadiran Rani Halaman Jurnal" })
+      .getByRole("button", { name: "Sakit", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByLabel("Alasan Rani Halaman Jurnal")).toHaveValue(
+    "demam",
   );
   await expect(
     page.getByRole("button", { name: "Latihan soal", exact: true }),

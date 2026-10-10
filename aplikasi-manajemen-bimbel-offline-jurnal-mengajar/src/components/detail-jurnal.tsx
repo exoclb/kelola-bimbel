@@ -26,7 +26,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { DaftarKehadiran } from "@/components/daftar-kehadiran";
 import { LabelStatusJurnal } from "@/components/label-status-jurnal";
 import { PemilihMateri } from "@/components/pemilih-materi";
-import { formatJam, pisahMateri } from "@/lib/jurnal";
+import {
+  catatanDariPresensi,
+  formatJam,
+  pisahMateri,
+  presensiDariCatatan,
+  type StatusPresensiMurid,
+} from "@/lib/jurnal";
 import {
   koreksiJurnalStub,
   type JurnalRiwayat,
@@ -53,11 +59,23 @@ export function DetailJurnal({ jurnal }: DetailJurnalProps) {
   const [pilihan, setPilihan] = useState(materiAwal.pilihan);
   const [topik, setTopik] = useState(materiAwal.topik);
   const [catatan, setCatatan] = useState(jurnal.catatan);
-  const [kehadiran, setKehadiran] = useState<Record<string, boolean>>(
-    Object.fromEntries(jurnal.murid.map((anak) => [anak.id, anak.hadir])),
+  const [kehadiran, setKehadiran] = useState<
+    Record<string, StatusPresensiMurid>
+  >(
+    Object.fromEntries(
+      jurnal.murid.map((anak) => [
+        anak.id,
+        presensiDariCatatan(anak.hadir, anak.keterangan).status,
+      ]),
+    ),
   );
   const [keterangan, setKeterangan] = useState<Record<string, string>>(
-    Object.fromEntries(jurnal.murid.map((anak) => [anak.id, anak.keterangan])),
+    Object.fromEntries(
+      jurnal.murid.map((anak) => [
+        anak.id,
+        presensiDariCatatan(anak.hadir, anak.keterangan).catatan,
+      ]),
+    ),
   );
 
   const materiBaru = pilihan
@@ -80,10 +98,20 @@ export function DetailJurnal({ jurnal }: DetailJurnalProps) {
     setTopik(awal.topik);
     setCatatan(data.catatan);
     setKehadiran(
-      Object.fromEntries(data.murid.map((anak) => [anak.id, anak.hadir])),
+      Object.fromEntries(
+        data.murid.map((anak) => [
+          anak.id,
+          presensiDariCatatan(anak.hadir, anak.keterangan).status,
+        ]),
+      ),
     );
     setKeterangan(
-      Object.fromEntries(data.murid.map((anak) => [anak.id, anak.keterangan])),
+      Object.fromEntries(
+        data.murid.map((anak) => [
+          anak.id,
+          presensiDariCatatan(anak.hadir, anak.keterangan).catatan,
+        ]),
+      ),
     );
     setMode("lihat");
     setError("");
@@ -93,11 +121,14 @@ export function DetailJurnal({ jurnal }: DetailJurnalProps) {
     event.preventDefault();
     if (pending || !materiValid) return;
 
-    const muridBaru: MuridJurnal[] = data.murid.map((anak) => ({
-      ...anak,
-      hadir: kehadiran[anak.id] ?? anak.hadir,
-      keterangan: (keterangan[anak.id] ?? "").trim(),
-    }));
+    const muridBaru: MuridJurnal[] = data.murid.map((anak) => {
+      const status = kehadiran[anak.id] ?? "hadir";
+      return {
+        ...anak,
+        hadir: status === "hadir",
+        keterangan: catatanDariPresensi(status, keterangan[anak.id] ?? ""),
+      };
+    });
 
     setPending(true);
     setError("");
@@ -234,7 +265,7 @@ export function DetailJurnal({ jurnal }: DetailJurnalProps) {
                     <span className="text-sm text-muted-foreground">
                       {anak.hadir
                         ? "Hadir"
-                        : `Tidak hadir${anak.keterangan ? ` — ${anak.keterangan}` : ""}`}
+                        : `Tidak hadir${anak.keterangan ? ` (${anak.keterangan})` : ""}`}
                     </span>
                   </li>
                 ))}
@@ -276,15 +307,15 @@ export function DetailJurnal({ jurnal }: DetailJurnalProps) {
 
             <DaftarKehadiran
               murid={data.murid}
-              kehadiran={kehadiran}
-              keterangan={keterangan}
-              onHadir={(muridId, hadir) =>
+              presensi={kehadiran}
+              catatan={keterangan}
+              onStatus={(muridId, status) =>
                 setKehadiran((sebelumnya) => ({
                   ...sebelumnya,
-                  [muridId]: hadir,
+                  [muridId]: status,
                 }))
               }
-              onKeterangan={(muridId, nilai) =>
+              onCatatan={(muridId, nilai) =>
                 setKeterangan((sebelumnya) => ({
                   ...sebelumnya,
                   [muridId]: nilai,

@@ -118,7 +118,7 @@ export function KonfirmasiJurnal({
                   {tidakHadir.map((anak) => (
                     <li key={anak.nama}>
                       {anak.nama}
-                      {anak.keterangan ? ` — ${anak.keterangan}` : ""}
+                      {anak.keterangan ? ` (${anak.keterangan})` : ""}
                     </li>
                   ))}
                 </ul>
