@@ -305,3 +305,114 @@ test("halaman kelola kategori menambah, mengganti nama, dan menghapus kategori",
   await expect(page.getByText(`Kategori "${namaKedua}" dihapus.`)).toBeVisible();
   await expect(page.locator("li").filter({ hasText: namaKedua })).toHaveCount(0);
 });
+
+/** Tanggal lokal `YYYY-MM-DD`, sama dengan `tanggalISO` di aplikasi. */
+function tanggalISO(tanggal: Date) {
+  return new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(tanggal);
+}
+
+/**
+ * Formulir catat dan formulir sunting memakai aturan isian yang sama
+ * (`validasiIsianPengeluaran`): nominal harus angka lebih dari nol, kategori
+ * wajib dipilih, dan tanggalnya tidak boleh melewati hari ini. Tanggal masa
+ * depan yang ditolak saat mencatat juga ditolak saat menyunting, dan formulir
+ * suntingnya benar-benar sebuah form — Enter di kolom nominal menyimpannya.
+ */
+test("formulir catat dan sunting pengeluaran memakai aturan isian yang sama", async ({
+  page,
+  request,
+}) => {
+  const email = await daftar(request, "Owner Form Pengeluaran");
+  await setRole(email, "owner");
+  await masuk(request, email);
+
+  const namaKategori = `Form Uji ${randomUUID().slice(0, 8)}`;
+  const kategori = await request.post("/api/pengeluaran/kategori", {
+    headers,
+    data: { nama: namaKategori },
+  });
+  expect(kategori.status()).toBe(201);
+  const kategoriId = (await kategori.json()).data.id as string;
+
+  await page.goto("/sign-in");
+  await page.getByLabel("Email", { exact: true }).fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(sandi);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page).toHaveURL(/\/app\/pemantauan$/);
+
+  const hariIni = tanggalISO(new Date());
+  const besok = tanggalISO(new Date(Date.now() + 86_400_000));
+
+  await page.goto("/app/pengeluaran");
+  await page.getByRole("button", { name: "Tambah pengeluaran" }).click();
+
+  // Tanggal masa depan dan nominal nol ditolak, masing-masing di kolomnya.
+  await page.getByLabel("Nominal (rupiah)").fill("250000");
+  await page.locator("#tanggal-baru").fill(besok);
+  await page.getByRole("button", { name: "Simpan pengeluaran" }).click();
+  await expect(
+    page.getByText("Tanggal tidak boleh melewati hari ini."),
+  ).toBeVisible();
+  await page.getByLabel("Nominal (rupiah)").fill("0");
+  await page.getByRole("button", { name: "Simpan pengeluaran" }).click();
+  await expect(
+    page.getByText("Nominal harus angka lebih dari nol."),
+  ).toBeVisible();
+
+  // Setelah dibetulkan, pengeluarannya tercatat dengan kategori uji ini.
+  await page.getByLabel("Nominal (rupiah)").fill("250000");
+  await page.locator("#kategori-baru").selectOption({ label: namaKategori });
+  await page.locator("#tanggal-baru").fill(hariIni);
+  await page.getByRole("button", { name: "Simpan pengeluaran" }).click();
+  await expect(page.getByText("Pengeluaran tercatat")).toBeVisible();
+  await page.getByRole("button", { name: "Selesai" }).click();
+
+  // Sunting baris itu: tanggal masa depan ditolak aturan yang sama.
+  // Daftar per kategori memuat nama yang sama tapi tanpa tombol "Ubah".
+  const baris = page
+    .locator("ul li")
+    .filter({ hasText: namaKategori })
+    .filter({ has: page.getByRole("button", { name: "Ubah" }) });
+  await expect(baris).toHaveCount(1);
+  await baris.getByRole("button", { name: "Ubah" }).click();
+  await baris.getByLabel("Tanggal").fill(besok);
+  await baris.getByRole("button", { name: "Simpan perubahan" }).click();
+  await expect(
+    baris.getByText("Tanggal tidak boleh melewati hari ini."),
+  ).toBeVisible();
+  await expect(page.getByText(/diperbarui/)).toHaveCount(0);
+
+  // Nominalnya diubah dan disimpan dengan Enter, tanpa menyentuh tombolnya.
+  await baris.getByLabel("Nominal (rupiah)").fill("275000");
+  await baris.getByLabel("Tanggal").fill(hariIni);
+  await baris.getByLabel("Nominal (rupiah)").press("Enter");
+  await expect(page.getByText(/diperbarui\./)).toBeVisible();
+  await expect(
+    page
+      .locator("ul li")
+      .filter({ hasText: namaKategori })
+      .filter({ has: page.getByRole("button", { name: "Ubah" }) }),
+  ).toContainText("Rp275.000");
+
+  // Bersihkan baris uji ini supaya periode berjalan kembali seperti semula.
+  const tersimpan = await request.get("/api/pengeluaran", { headers });
+  const daftarSemua = (await tersimpan.json()).data as Pengeluaran[];
+  const dibuat = daftarSemua.find(
+    (item) => item.kategoriId === kategoriId && item.nominal === 275000,
+  );
+  expect(dibuat).toBeTruthy();
+  expect(
+    (await request.delete(`/api/pengeluaran/${dibuat!.id}`, { headers })).status(),
+  ).toBe(200);
+  expect(
+    (
+      await request.delete(`/api/pengeluaran/kategori/${kategoriId}`, {
+        headers,
+      })
+    ).status(),
+  ).toBe(200);
+});

@@ -16,10 +16,15 @@ import { formatPeriode, formatRupiah } from "@/lib/gaji";
 import {
   hitungTotalPengeluaran,
   pengeluaranPeriode,
+  susunPengeluaran,
   totalPerKategori,
+  validasiIsianPengeluaran,
+  type GalatPengeluaran,
+  type IsianPengeluaran,
   type KategoriPengeluaran,
   type Pengeluaran,
 } from "@/lib/pengeluaran";
+import { tanggalISO } from "@/lib/tanggal";
 
 /** Ambil pesan galat dari jawaban API; `cadangan` untuk galat jaringan. */
 async function pesanGalatApi(jawaban: Response, cadangan: string) {
@@ -38,12 +43,9 @@ type DaftarPengeluaranProps = {
   periode: string;
 };
 
-type Draf = {
-  nominal: string;
-  tanggal: string;
-  kategoriId: string;
-  catatan: string;
-};
+// Draf sunting memakai bentuk isian formulir yang sama dengan formulir catat,
+// jadi aturan isian dan penyusunan badan permintaannya juga sama.
+type Draf = IsianPengeluaran;
 
 const tanggalTampil = new Intl.DateTimeFormat("id-ID", {
   day: "numeric",
@@ -81,7 +83,9 @@ export function DaftarPengeluaran({
   const [ubahId, setUbahId] = useState<string | null>(null);
   const [hapusId, setHapusId] = useState<string | null>(null);
   const [draf, setDraf] = useState<Draf | null>(null);
-  const [galat, setGalat] = useState("");
+  // Galat per kolom formulir sunting, dan pesan umum untuk kegagalan API.
+  const [galat, setGalat] = useState<GalatPengeluaran>({});
+  const [galatUmum, setGalatUmum] = useState("");
   const [pesan, setPesan] = useState("");
   const [pending, setPending] = useState(false);
   // Saringan daftar: periode (YYYY-MM) dan kategori. Bawaannya periode yang
@@ -104,7 +108,8 @@ export function DaftarPengeluaran({
   function mulaiUbah(baris: Pengeluaran) {
     setUbahId(baris.id);
     setHapusId(null);
-    setGalat("");
+    setGalat({});
+    setGalatUmum("");
     setDraf({
       nominal: String(baris.nominal),
       tanggal: baris.tanggal,
@@ -117,22 +122,22 @@ export function DaftarPengeluaran({
     setUbahId(null);
     setHapusId(null);
     setDraf(null);
-    setGalat("");
+    setGalat({});
+    setGalatUmum("");
   }
 
+  /**
+   * Menyimpan perbaikan satu baris. Aturan isiannya sama dengan formulir catat
+   * (`validasiIsianPengeluaran`), jadi apa yang tidak boleh dicatat juga tidak
+   * bisa dijadikan hasil sunting.
+   */
   async function simpanUbah(baris: Pengeluaran) {
     if (!draf) return;
-    const nominal = Number(draf.nominal);
-    if (
-      draf.nominal.trim() === "" ||
-      !Number.isFinite(nominal) ||
-      nominal <= 0
-    ) {
-      setGalat("Nominal harus angka lebih dari nol.");
-      return;
-    }
-    if (!draf.tanggal) {
-      setGalat("Tanggal wajib diisi.");
+
+    const masalah = validasiIsianPengeluaran(draf, tanggalISO(new Date()));
+    if (Object.keys(masalah).length > 0) {
+      setGalat(masalah);
+      setGalatUmum("");
       return;
     }
 
@@ -141,21 +146,17 @@ export function DaftarPengeluaran({
       baris.kategoriNama;
 
     setPending(true);
-    setGalat("");
+    setGalat({});
+    setGalatUmum("");
     try {
       const jawaban = await fetch(`/api/pengeluaran/${baris.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          kategoriId: draf.kategoriId,
-          nominal: Math.round(nominal),
-          tanggal: draf.tanggal,
-          catatan: draf.catatan.trim(),
-        }),
+        body: JSON.stringify(susunPengeluaran(draf)),
       });
 
       if (!jawaban.ok) {
-        setGalat(
+        setGalatUmum(
           await pesanGalatApi(
             jawaban,
             "Perubahan belum bisa disimpan. Coba lagi sebentar lagi.",
@@ -168,7 +169,7 @@ export function DaftarPengeluaran({
       batal();
       router.refresh();
     } catch {
-      setGalat("Perubahan belum bisa disimpan. Coba lagi sebentar lagi.");
+      setGalatUmum("Perubahan belum bisa disimpan. Coba lagi sebentar lagi.");
     } finally {
       setPending(false);
     }
@@ -181,7 +182,7 @@ export function DaftarPengeluaran({
         method: "DELETE",
       });
       if (!jawaban.ok) {
-        setGalat(
+        setGalatUmum(
           await pesanGalatApi(
             jawaban,
             "Pengeluaran belum bisa dihapus. Coba lagi sebentar lagi.",
@@ -193,7 +194,7 @@ export function DaftarPengeluaran({
       batal();
       router.refresh();
     } catch {
-      setGalat("Pengeluaran belum bisa dihapus. Coba lagi sebentar lagi.");
+      setGalatUmum("Pengeluaran belum bisa dihapus. Coba lagi sebentar lagi.");
     } finally {
       setPending(false);
     }
@@ -313,9 +314,9 @@ export function DaftarPengeluaran({
       <p role="status" className="mt-4 text-sm text-muted-foreground">
         {pesan}
       </p>
-      {galat && !ubahId && (
+      {galatUmum && !ubahId && (
         <p role="alert" className="mt-2 text-sm text-destructive">
-          {galat}
+          {galatUmum}
         </p>
       )}
 
@@ -342,7 +343,14 @@ export function DaftarPengeluaran({
               <li key={baris.id}>
                 <Card className="gap-3 px-5 py-4">
                   {sedangUbah && draf ? (
-                    <div className="space-y-4">
+                    <form
+                      className="space-y-4"
+                      noValidate
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        void simpanUbah(baris);
+                      }}
+                    >
                       <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-2">
                           <Label htmlFor={`nominal-${baris.id}`}>
@@ -356,10 +364,25 @@ export function DaftarPengeluaran({
                             step={1000}
                             inputMode="numeric"
                             value={draf.nominal}
+                            aria-invalid={galat.nominal ? true : undefined}
+                            aria-describedby={
+                              galat.nominal
+                                ? `nominal-${baris.id}-error`
+                                : undefined
+                            }
                             onChange={(event) =>
                               setDraf({ ...draf, nominal: event.target.value })
                             }
                           />
+                          {galat.nominal && (
+                            <p
+                              id={`nominal-${baris.id}-error`}
+                              role="alert"
+                              className="text-sm text-destructive"
+                            >
+                              {galat.nominal}
+                            </p>
+                          )}
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor={`tanggal-${baris.id}`}>Tanggal</Label>
@@ -368,10 +391,25 @@ export function DaftarPengeluaran({
                             id={`tanggal-${baris.id}`}
                             type="date"
                             value={draf.tanggal}
+                            aria-invalid={galat.tanggal ? true : undefined}
+                            aria-describedby={
+                              galat.tanggal
+                                ? `tanggal-${baris.id}-error`
+                                : undefined
+                            }
                             onChange={(event) =>
                               setDraf({ ...draf, tanggal: event.target.value })
                             }
                           />
+                          {galat.tanggal && (
+                            <p
+                              id={`tanggal-${baris.id}-error`}
+                              role="alert"
+                              className="text-sm text-destructive"
+                            >
+                              {galat.tanggal}
+                            </p>
+                          )}
                         </div>
                       </div>
                       <div className="space-y-2">
@@ -380,6 +418,12 @@ export function DaftarPengeluaran({
                           className="h-[var(--target-sentuh-portal)] md:text-base"
                           id={`kategori-${baris.id}`}
                           value={draf.kategoriId}
+                          aria-invalid={galat.kategoriId ? true : undefined}
+                          aria-describedby={
+                            galat.kategoriId
+                              ? `kategori-${baris.id}-error`
+                              : undefined
+                          }
                           onChange={(event) =>
                             setDraf({
                               ...draf,
@@ -387,12 +431,24 @@ export function DaftarPengeluaran({
                             })
                           }
                         >
+                          {kategori.length === 0 && (
+                            <option value="">Belum ada kategori</option>
+                          )}
                           {kategori.map((item) => (
                             <option key={item.id} value={item.id}>
                               {item.nama}
                             </option>
                           ))}
                         </NativeSelect>
+                        {galat.kategoriId && (
+                          <p
+                            id={`kategori-${baris.id}-error`}
+                            role="alert"
+                            className="text-sm text-destructive"
+                          >
+                            {galat.kategoriId}
+                          </p>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor={`catatan-${baris.id}`}>Catatan</Label>
@@ -400,24 +456,35 @@ export function DaftarPengeluaran({
                           className="md:text-base"
                           id={`catatan-${baris.id}`}
                           rows={2}
+                          maxLength={500}
                           value={draf.catatan}
+                          aria-invalid={galat.catatan ? true : undefined}
+                          aria-describedby={
+                            galat.catatan
+                              ? `catatan-${baris.id}-error`
+                              : undefined
+                          }
                           onChange={(event) =>
                             setDraf({ ...draf, catatan: event.target.value })
                           }
                         />
+                        {galat.catatan && (
+                          <p
+                            id={`catatan-${baris.id}-error`}
+                            role="alert"
+                            className="text-sm text-destructive"
+                          >
+                            {galat.catatan}
+                          </p>
+                        )}
                       </div>
-                      {galat && (
+                      {galatUmum && (
                         <p role="alert" className="text-sm text-destructive">
-                          {galat}
+                          {galatUmum}
                         </p>
                       )}
                       <div className="flex flex-wrap items-center gap-2">
-                        <Button
-                          type="button"
-                          size="aksi"
-                          disabled={pending}
-                          onClick={() => simpanUbah(baris)}
-                        >
+                        <Button type="submit" size="aksi" disabled={pending}>
                           Simpan perubahan
                         </Button>
                         <Button
@@ -430,7 +497,7 @@ export function DaftarPengeluaran({
                           Batal
                         </Button>
                       </div>
-                    </div>
+                    </form>
                   ) : (
                     <>
                       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -491,6 +558,14 @@ export function DaftarPengeluaran({
                               Batal
                             </Button>
                           </div>
+                          {galatUmum && (
+                            <p
+                              role="alert"
+                              className="text-sm text-destructive"
+                            >
+                              {galatUmum}
+                            </p>
+                          )}
                         </div>
                       ) : (
                         <div className="flex flex-wrap items-center gap-2">
@@ -510,7 +585,8 @@ export function DaftarPengeluaran({
                             onClick={() => {
                               setHapusId(baris.id);
                               setUbahId(null);
-                              setGalat("");
+                              setGalat({});
+                              setGalatUmum("");
                             }}
                           >
                             <Trash2 aria-hidden="true" />

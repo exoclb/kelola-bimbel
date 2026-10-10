@@ -16,7 +16,14 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { formatRupiah } from "@/lib/gaji";
-import type { KategoriPengeluaran, Pengeluaran } from "@/lib/pengeluaran";
+import {
+  susunPengeluaran,
+  validasiIsianPengeluaran,
+  type GalatPengeluaran,
+  type IsianPengeluaran,
+  type KategoriPengeluaran,
+  type Pengeluaran,
+} from "@/lib/pengeluaran";
 import { tanggalISO } from "@/lib/tanggal";
 
 /** Ambil pesan galat dari jawaban API; `cadangan` untuk galat jaringan. */
@@ -36,16 +43,16 @@ type FormTambahPengeluaranProps = {
   onTersimpan: (baris: Pengeluaran) => void;
 };
 
-type Galat = {
-  nominal?: string;
-  tanggal?: string;
-};
+type Galat = GalatPengeluaran;
 
 /**
  * Formulir tambah pengeluaran operasional: nominal, tanggal, kategori, dan
- * catatan. Datanya dikirim ke `POST /api/pengeluaran`, lalu daftar di server
- * disegarkan. Sesudah tersimpan muncul kartu konfirmasi berisi nilainya, supaya
- * owner bisa memastikan catatannya benar sebelum menambah yang lain.
+ * catatan. Aturan isiannya dipakai bersama formulir sunting di daftar
+ * pengeluaran (`validasiIsianPengeluaran` di `src/lib/pengeluaran.ts`), jadi
+ * apa yang boleh dicatat sama dengan apa yang boleh disunting. Datanya dikirim
+ * ke `POST /api/pengeluaran`, lalu daftar di server disegarkan. Sesudah
+ * tersimpan muncul kartu konfirmasi berisi nilainya, supaya owner bisa memastikan
+ * catatannya benar sebelum menambah yang lain.
  *
  * Kategori juga dikelola dari sini (`POST /api/pengeluaran/kategori`) karena
  * tabel kategorinya bisa saja masih kosong; tanpa kategori, pengeluaran tidak
@@ -77,17 +84,13 @@ export function FormTambahPengeluaran({
   async function simpan(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const angka = Number(nominal);
-    const masalah: Galat = {};
-    if (nominal.trim() === "" || !Number.isFinite(angka) || angka <= 0) {
-      masalah.nominal = "Nominal harus angka lebih dari nol.";
-    }
-    if (!tanggal) masalah.tanggal = "Tanggal wajib diisi.";
-    if (tanggal > tanggalISO(new Date())) {
-      masalah.tanggal = "Tanggal tidak boleh melewati hari ini.";
-    }
-    if (!kategoriId) masalah.tanggal = masalah.tanggal ?? "Pilih kategori.";
-
+    const isian: IsianPengeluaran = {
+      kategoriId,
+      nominal,
+      tanggal,
+      catatan,
+    };
+    const masalah = validasiIsianPengeluaran(isian, tanggalISO(new Date()));
     if (Object.keys(masalah).length > 0) {
       setGalat(masalah);
       return;
@@ -99,12 +102,7 @@ export function FormTambahPengeluaran({
       const jawaban = await fetch("/api/pengeluaran", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          kategoriId,
-          nominal: Math.round(angka),
-          tanggal,
-          catatan: catatan.trim(),
-        }),
+        body: JSON.stringify(susunPengeluaran(isian)),
       });
 
       if (!jawaban.ok) {
@@ -331,6 +329,10 @@ export function FormTambahPengeluaran({
                 className="h-[var(--target-sentuh-portal)] flex-1 md:text-base"
                 id="kategori-baru"
                 value={kategoriId}
+                aria-invalid={galat.kategoriId ? true : undefined}
+                aria-describedby={
+                  galat.kategoriId ? "kategori-baru-error" : undefined
+                }
                 onChange={(event) => setKategoriId(event.target.value)}
               >
                 {kategori.length === 0 && (
@@ -355,6 +357,15 @@ export function FormTambahPengeluaran({
                 Kategori baru
               </Button>
             </div>
+            {galat.kategoriId && (
+              <p
+                id="kategori-baru-error"
+                role="alert"
+                className="text-sm text-destructive"
+              >
+                {galat.kategoriId}
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="catatan-baru">Catatan</Label>
@@ -362,6 +373,7 @@ export function FormTambahPengeluaran({
               className="md:text-base"
               id="catatan-baru"
               rows={2}
+              maxLength={500}
               value={catatan}
               onChange={(event) => setCatatan(event.target.value)}
             />
