@@ -2,7 +2,8 @@
 
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
-import { CalendarDays, History, LoaderCircle, Send } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { CalendarDays, History, Info, LoaderCircle, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,15 +21,29 @@ import {
 } from "@/components/konfirmasi-jurnal";
 import { PemilihJadwal } from "@/components/pemilih-jadwal";
 import { PemilihMateri } from "@/components/pemilih-materi";
-import { formatJam, hitungJamMengajar } from "@/lib/jurnal";
 import {
-  kirimJurnalStub,
+  formatJam,
+  hitungJamMengajar,
   type Jadwal,
   type JurnalInput,
-} from "@/lib/mock-jurnal";
+} from "@/lib/jurnal";
+import { pesanGalatApi } from "@/lib/pesan-api";
+
+/** Isi jurnal hari ini yang sudah tersimpan untuk satu sesi mengajar. */
+export type JurnalTersimpanHari = {
+  /** Pilihan cepat materi yang sudah tercatat. */
+  materi: string;
+  /** Topik bebas setelah pemisah materi. */
+  topik: string;
+  catatan: string;
+  hadir: Record<string, boolean>;
+  keterangan: Record<string, string>;
+};
 
 type JurnalFormProps = {
   jadwal: Jadwal[];
+  /** Jurnal yang sudah diisi hari ini, dikunci per id jadwal. */
+  sudahDiisi?: Record<string, JurnalTersimpanHari>;
   hari: string;
   namaGuru: string;
   tanggalTampil: string;
@@ -36,10 +51,12 @@ type JurnalFormProps = {
 
 export function JurnalForm({
   jadwal,
+  sudahDiisi = {},
   hari,
   namaGuru,
   tanggalTampil,
 }: JurnalFormProps) {
+  const router = useRouter();
   const [jadwalId, setJadwalId] = useState("");
   const [kehadiran, setKehadiran] = useState<Record<string, boolean>>({});
   const [keterangan, setKeterangan] = useState<Record<string, string>>({});
@@ -63,12 +80,24 @@ export function JurnalForm({
   const siapKirim = bagianKurang.length === 0;
 
   function pilihJadwal(item: Jadwal) {
+    const tersimpan = sudahDiisi[item.id];
     setJadwalId(item.id);
     setErrorJadwal("");
+    setErrorMateri("");
+    // Sesi yang jurnalnya sudah diisi hari ini dimuat apa adanya: guru
+    // mengoreksi catatan yang sama, bukan menimpanya dengan isian kosong.
     setKehadiran(
-      Object.fromEntries(item.murid.map((murid) => [murid.id, true])),
+      Object.fromEntries(
+        item.murid.map((murid) => [
+          murid.id,
+          tersimpan ? (tersimpan.hadir[murid.id] ?? false) : true,
+        ]),
+      ),
     );
-    setKeterangan({});
+    setKeterangan(tersimpan?.keterangan ?? {});
+    setMateri(tersimpan?.materi ?? "");
+    setTopik(tersimpan?.topik ?? "");
+    setCatatan(tersimpan?.catatan ?? "");
   }
 
   function ubahKehadiran(muridId: string, hadir: boolean) {
@@ -106,7 +135,21 @@ export function JurnalForm({
 
     setPending(true);
     try {
-      await kirimJurnalStub(jurnal);
+      const jawaban = await fetch("/api/jurnal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(jurnal),
+      });
+      if (!jawaban.ok) {
+        setError(
+          await pesanGalatApi(
+            jawaban,
+            "Jurnal gagal dikirim. Coba lagi sebentar lagi.",
+          ),
+        );
+        return;
+      }
+
       setTerkirim({
         namaKelas: jadwalTerpilih.namaKelas,
         cabang: jadwalTerpilih.cabang,
@@ -129,6 +172,9 @@ export function JurnalForm({
           keterangan: (keterangan[murid.id] ?? "").trim(),
         })),
       });
+      // Halaman disegarkan supaya sesi yang baru dikirim ikut terbaca sebagai
+      // jurnal tersimpan kalau guru mau mengisinya lagi hari ini.
+      router.refresh();
     } catch {
       setError("Jurnal gagal dikirim. Coba lagi sebentar lagi.");
     } finally {
@@ -191,6 +237,23 @@ export function JurnalForm({
             disabled={pending}
             error={errorJadwal}
           />
+
+          {sudahDiisi[jadwalId] && (
+            <p
+              role="status"
+              className="flex items-start gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm leading-6"
+            >
+              <Info
+                className="mt-0.5 size-4 shrink-0 text-primary"
+                aria-hidden="true"
+              />
+              <span>
+                Jurnal sesi ini sudah diisi hari ini, jadi isi sebelumnya dimuat
+                ulang di bawah. Kirim ulang memperbarui catatan yang sama —
+                jumlahnya tetap satu.
+              </span>
+            </p>
+          )}
 
           {jadwal.length > 0 && (
             <>
@@ -280,7 +343,11 @@ export function JurnalForm({
                   ) : (
                     <Send aria-hidden="true" />
                   )}
-                  {pending ? "Mengirim…" : "Kirim Jurnal"}
+                  {pending
+                    ? "Mengirim…"
+                    : sudahDiisi[jadwalId]
+                      ? "Perbarui Jurnal"
+                      : "Kirim Jurnal"}
                 </Button>
               </div>
 

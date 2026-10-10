@@ -303,6 +303,80 @@ export async function listJurnalGuru(guruId: string, filter: ListJurnalInput) {
   };
 }
 
+export type JurnalHarianGuru = {
+  id: string;
+  scheduleId: string | null;
+  materi: string;
+  catatan: string;
+  jamMengajar: number;
+  status: "terkirim" | "direview";
+  kehadiran: { muridId: string; hadir: boolean; catatan: string }[];
+};
+
+const fieldsHarian = {
+  id: teachingJournals.id,
+  scheduleId: teachingJournals.scheduleId,
+  materi: teachingJournals.materi,
+  catatan: teachingJournals.catatan,
+  jamMengajar: teachingJournals.jamMengajar,
+  status: teachingJournals.status,
+};
+
+/**
+ * Jurnal milik satu guru pada satu tanggal, lengkap dengan kehadirannya.
+ *
+ * Formulir jurnal memakainya supaya sesi yang jurnalnya sudah diisi hari ini
+ * tampil apa adanya: guru melihat isi sebelumnya, dan tahu kiriman ulang
+ * memperbarui catatan itu — bukan membuat catatan kedua.
+ */
+export async function listJurnalGuruTanggal(
+  guruId: string,
+  tanggal: string,
+): Promise<JurnalHarianGuru[]> {
+  const daftar = await db
+    .select({
+      ...fieldsHarian,
+      muridId: journalAttendances.studentId,
+      hadir: journalAttendances.hadir,
+      catatanMurid: journalAttendances.catatan,
+    })
+    .from(teachingJournals)
+    .leftJoin(
+      journalAttendances,
+      eq(journalAttendances.journalId, teachingJournals.id),
+    )
+    .where(
+      and(
+        eq(teachingJournals.guruId, guruId),
+        eq(teachingJournals.tanggal, tanggal),
+      ),
+    )
+    .orderBy(asc(teachingJournals.id), asc(journalAttendances.studentId));
+
+  // Kehadiran datang sebagai baris terpisah dari join-nya, jadi dikelompokkan
+  // kembali per jurnal di sini.
+  const perJurnal = new Map<string, JurnalHarianGuru>();
+  for (const baris of daftar) {
+    const jurnal = perJurnal.get(baris.id) ?? {
+      id: baris.id,
+      scheduleId: baris.scheduleId,
+      materi: baris.materi,
+      catatan: baris.catatan,
+      jamMengajar: baris.jamMengajar,
+      status: baris.status,
+      kehadiran: [],
+    };
+    if (baris.muridId)
+      jurnal.kehadiran.push({
+        muridId: baris.muridId,
+        hadir: baris.hadir ?? false,
+        catatan: baris.catatanMurid ?? "",
+      });
+    perJurnal.set(baris.id, jurnal);
+  }
+  return [...perJurnal.values()];
+}
+
 const fieldsDetail = {
   id: teachingJournals.id,
   guruId: teachingJournals.guruId,

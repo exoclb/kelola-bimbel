@@ -1,41 +1,12 @@
-// Data contoh sementara untuk halaman Jurnal Ngajar.
+// Data contoh sementara untuk halaman riwayat jurnal dan detail jurnal.
 //
-// Backend belum ada di fase ini, jadi halaman memakai jadwal & murid tiruan.
-// Saat task backend selesai, ganti pemanggilan fungsi di sini dengan service
-// (`src/services/jurnal.service.ts`) dan API route (`/api/jurnal`) — bentuk
-// `JurnalInput` di bawah sudah mengikuti tabel teaching_journals &
-// journal_attendances di PRD, jadi kontraknya tidak perlu berubah.
+// Formulir jurnal sudah memakai jadwal sungguhan dari tabel `schedules` dan
+// menyimpan lewat `POST /api/jurnal`. Sisa di berkas ini hanya riwayat lama:
+// `/app/jurnal/riwayat` dan `/app/jurnal/riwayat/[id]` masih membacanya sampai
+// riwayat itu pindah ke `src/services/jurnal.service.ts`.
 
+import type { KehadiranMurid, MuridKelas } from "@/lib/jurnal";
 import { tanggalISO } from "@/lib/tanggal";
-
-export type MuridKelas = {
-  id: string;
-  nama: string;
-};
-
-export type Jadwal = {
-  id: string;
-  kelasId: string;
-  namaKelas: string;
-  cabang: string;
-  jamMulai: string;
-  jamSelesai: string;
-  murid: MuridKelas[];
-};
-
-export type KehadiranMurid = {
-  muridId: string;
-  hadir: boolean;
-  catatan: string;
-};
-
-/** Isi `POST /api/jurnal`. Kelas, tanggal, dan jam mengajar diisi server dari jadwal. */
-export type JurnalInput = {
-  jadwalId: string;
-  materi: string;
-  catatan: string;
-  kehadiran: KehadiranMurid[];
-};
 
 const MURID_SD4: MuridKelas[] = [
   { id: "mrd-1", nama: "Aisyah Putri" },
@@ -63,81 +34,6 @@ const MURID_SMP8: MuridKelas[] = [
   { id: "mrd-14", nama: "Nadia Rahma" },
   { id: "mrd-15", nama: "Oskar Pratama" },
 ];
-
-type JadwalMingguan = Omit<Jadwal, "id"> & { id: string; hari: string[] };
-
-const JADWAL_MINGGUAN: JadwalMingguan[] = [
-  {
-    id: "jdw-1",
-    kelasId: "kls-1",
-    namaKelas: "Matematika SD Kelas 4",
-    cabang: "Cabang Pusat",
-    hari: ["Senin", "Rabu", "Sabtu"],
-    jamMulai: "07:00",
-    jamSelesai: "08:30",
-    murid: MURID_SD4,
-  },
-  {
-    id: "jdw-2",
-    kelasId: "kls-2",
-    namaKelas: "Bahasa Inggris SMP Kelas 7",
-    cabang: "Cabang Pusat",
-    // Akhir pekan ikut ada kelasnya supaya halaman jurnal tetap bisa dicoba
-    // kapan pun, tidak hanya Senin–Sabtu.
-    hari: ["Selasa", "Kamis", "Sabtu", "Minggu"],
-    jamMulai: "09:00",
-    jamSelesai: "10:00",
-    murid: MURID_SMP7,
-  },
-  {
-    id: "jdw-3",
-    kelasId: "kls-3",
-    namaKelas: "IPA SD Kelas 6",
-    cabang: "Cabang Utara",
-    hari: ["Senin", "Rabu", "Jumat"],
-    jamMulai: "10:30",
-    jamSelesai: "12:00",
-    murid: MURID_SD6,
-  },
-  {
-    id: "jdw-4",
-    kelasId: "kls-4",
-    namaKelas: "Matematika SMP Kelas 8",
-    cabang: "Cabang Utara",
-    hari: ["Selasa", "Kamis", "Sabtu", "Minggu"],
-    jamMulai: "13:00",
-    jamSelesai: "14:30",
-    murid: MURID_SMP8,
-  },
-  {
-    id: "jdw-5",
-    kelasId: "kls-5",
-    namaKelas: "Calistung TK",
-    cabang: "Cabang Pusat",
-    hari: ["Senin", "Jumat"],
-    jamMulai: "15:00",
-    jamSelesai: "16:00",
-    murid: MURID_SMP7.slice(0, 2),
-  },
-];
-
-/**
- * Jadwal yang harus diisi guru pada satu hari. Di backend nanti fungsi ini
- * menjadi query ke tabel `schedules` yang difilter `hari` + `guru_id`.
- */
-export function getJadwalHariIni(hari: string): Jadwal[] {
-  return JADWAL_MINGGUAN.filter((item) => item.hari.includes(hari))
-    .map((item) => ({
-      id: item.id,
-      kelasId: item.kelasId,
-      namaKelas: item.namaKelas,
-      cabang: item.cabang,
-      jamMulai: item.jamMulai,
-      jamSelesai: item.jamSelesai,
-      murid: item.murid,
-    }))
-    .sort((a, b) => a.jamMulai.localeCompare(b.jamMulai));
-}
 
 export type MuridJurnal = {
   id: string;
@@ -314,16 +210,6 @@ export function getJurnalById(id: string): JurnalRiwayat | null {
   return getRiwayatJurnal().find((jurnal) => jurnal.id === id) ?? null;
 }
 
-/** Memisahkan materi tersimpan menjadi pilihan cepat + topik bebas. */
-export function pisahMateri(materi: string) {
-  const pemisah = " — ";
-  const posisi = materi.indexOf(pemisah);
-  const pilihan = posisi === -1 ? materi : materi.slice(0, posisi);
-  const topik = posisi === -1 ? "" : materi.slice(posisi + pemisah.length);
-  const dikenal = (PILIHAN_MATERI as readonly string[]).includes(pilihan);
-  return dikenal ? { pilihan, topik } : { pilihan: "", topik: materi };
-}
-
 /** Pengganti sementara `PATCH /api/jurnal/[id]` untuk koreksi jurnal. */
 export async function koreksiJurnalStub(koreksi: KoreksiJurnal) {
   const { promise, resolve } = Promise.withResolvers<void>();
@@ -332,29 +218,5 @@ export async function koreksiJurnalStub(koreksi: KoreksiJurnal) {
   return {
     ok: true as const,
     jumlahHadir: koreksi.kehadiran.filter((baris) => baris.hadir).length,
-  };
-}
-
-/** Pilihan cepat materi supaya guru tidak perlu menulis panjang. */
-export const PILIHAN_MATERI = [
-  "Materi baru",
-  "Lanjutan materi",
-  "Latihan soal",
-  "Pembahasan PR",
-  "Kuis / evaluasi",
-  "Ulangan",
-] as const;
-
-/**
- * Pengganti sementara `POST /api/jurnal`. Mengembalikan hasil yang sama
- * seperti API supaya halaman tidak perlu banyak berubah saat backend siap.
- */
-export async function kirimJurnalStub(jurnal: JurnalInput) {
-  const { promise, resolve } = Promise.withResolvers<void>();
-  setTimeout(resolve, 500);
-  await promise;
-  return {
-    ok: true as const,
-    jumlahHadir: jurnal.kehadiran.filter((baris) => baris.hadir).length,
   };
 }

@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PILIHAN_MATERI } from "@/lib/mock-jurnal";
+import { PILIHAN_MATERI } from "@/lib/jurnal";
 
 type PemilihMateriProps = {
   nilai: string;
