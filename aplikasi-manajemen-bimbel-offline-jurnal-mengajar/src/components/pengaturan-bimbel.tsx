@@ -7,6 +7,7 @@ import {
   FileDown,
   ServerCog,
   ShieldCheck,
+  UserRound,
   Users,
   Wallet,
 } from "lucide-react";
@@ -18,11 +19,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  getDaftarGuru,
-  getPreferensiNotifikasi,
-} from "@/lib/mock-pengaturan";
-import { labelPeran } from "@/lib/peran";
+import { getDaftarGuru } from "@/lib/mock-pengaturan";
+import { labelPeran, type PeranPengguna } from "@/lib/peran";
 import { getDaftarWali, ringkasPenautan } from "@/lib/mock-wali";
 import {
   KASUS_VERIFIKASI,
@@ -30,7 +28,10 @@ import {
 } from "@/lib/mock-verifikasi-notifikasi";
 import { ambilStatusBackup } from "@/services/backup.service";
 import { aturanGajiBerlaku } from "@/services/gaji.service";
-import { ambilProfilBimbel } from "@/services/pengaturan.service";
+import {
+  ambilPreferensiNotifikasi,
+  ambilProfilBimbel,
+} from "@/services/pengaturan.service";
 import { formatRupiah } from "@/lib/gaji";
 import { formatTanggalLengkap, tanggalISO } from "@/lib/tanggal";
 
@@ -47,15 +48,20 @@ function umurBackupSingkat(waktu: Date, sekarang = new Date()) {
 type PengaturanBimbelProps = {
   /** Guru hanya melihat bagian yang memang boleh dibukanya. */
   bolehKelola: boolean;
+  /** Akun yang sedang masuk: dipakai kartu "Akun Saya" dan preferensinya. */
+  akun: { id: string; nama: string; email: string; peran: PeranPengguna };
 };
 
 /**
  * Halaman utama Pengaturan Bimbel: ringkasan tiap bagian plus menu ke
- * halamannya. Profil bimbel dan tarif honor dibaca dari basis data (tabel
- * `bimbel_profile` & `salary_settings`); bagian lain masih data tiruan (lihat
- * src/lib/mock-pengaturan.ts).
+ * halamannya. Profil bimbel, tarif honor, dan preferensi notifikasi dibaca dari
+ * basis data (`bimbel_profile`, `salary_settings`, `notification_preferences`);
+ * daftar akun guru masih data tiruan (lihat src/lib/mock-pengaturan.ts).
  */
-export async function PengaturanBimbel({ bolehKelola }: PengaturanBimbelProps) {
+export async function PengaturanBimbel({
+  bolehKelola,
+  akun,
+}: PengaturanBimbelProps) {
   const profil = await ambilProfilBimbel();
   // Kartu backup hanya untuk owner/admin, jadi statusnya pun hanya diambil
   // kalau akunnya memang boleh melihatnya.
@@ -66,7 +72,9 @@ export async function PengaturanBimbel({ bolehKelola }: PengaturanBimbelProps) {
     ? await aturanGajiBerlaku(tanggalISO(new Date()))
     : null;
   const guru = getDaftarGuru();
-  const preferensi = getPreferensiNotifikasi();
+  // Ringkasan preferensi dibaca dari tabel `notification_preferences`, jadi
+  // angkanya ikut berubah begitu saklarnya diubah di halaman pengaturannya.
+  const preferensi = await ambilPreferensiNotifikasi(akun.id);
 
   const ringkas = ringkasVerifikasi(KASUS_VERIFIKASI);
   const guruAktif = guru.filter((akun) => akun.statusAktif).length;
@@ -162,6 +170,15 @@ export async function PengaturanBimbel({ bolehKelola }: PengaturanBimbelProps) {
   const bagian = [
     ...(bolehKelola ? [...bagianPemilik, ...bagianBackup] : []),
     {
+      href: "/app/pengaturan/akun",
+      ikon: UserRound,
+      judul: "Akun Saya",
+      ringkasan: `${akun.nama} · ${labelPeran(akun.peran)}`,
+      keterangan:
+        "Identitas akun yang sedang masuk dan ringkasan pemberitahuan yang kamu terima.",
+      tombol: "Buka akun saya",
+    },
+    {
       href: "/app/pengaturan/notifikasi",
       ikon: BellRing,
       judul: "Preferensi Notifikasi",
@@ -180,7 +197,7 @@ export async function PengaturanBimbel({ bolehKelola }: PengaturanBimbelProps) {
       <p className="mt-3 text-base leading-7 text-muted-foreground">
         {bolehKelola
           ? "Atur identitas bimbel, aturan gaji, akun guru, dan pemberitahuan dari satu tempat."
-          : "Atur pemberitahuan apa saja yang ingin kamu terima dari satu tempat."}
+          : "Lihat akun yang sedang masuk dan atur pemberitahuan apa saja yang ingin kamu terima dari satu tempat."}
       </p>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2">

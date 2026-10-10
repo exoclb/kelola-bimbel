@@ -3,14 +3,17 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { PreferensiNotifikasi } from "@/components/preferensi-notifikasi";
 import { Button } from "@/components/ui/button";
-import { JENIS_NOTIFIKASI } from "@/lib/notifikasi";
 import { requireSession } from "@/lib/session";
+import { ambilPreferensiNotifikasi } from "@/services/pengaturan.service";
 
 export const metadata: Metadata = { title: "Preferensi Notifikasi" };
 
 export default async function PreferensiNotifikasiPage() {
   // Pemberitahuan ini milik akun sendiri, jadi guru maupun owner boleh mengatur.
-  await requireSession();
+  const session = await requireSession();
+  // Keadaan tersimpan akun ini; jenis yang belum pernah diubah mengikuti
+  // bawaannya (perhitungan yang sama dipakai `GET /api/pengaturan/notifikasi`).
+  const preferensi = await ambilPreferensiNotifikasi(session.user.id);
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -28,16 +31,7 @@ export default async function PreferensiNotifikasiPage() {
         Preferensi Notifikasi
       </h1>
 
-      <PreferensiNotifikasi
-        // Bawaannya sama dengan yang dipakai API: baris preferensi baru ada
-        // setelah akun mengubahnya sendiri.
-        daftarAwal={JENIS_NOTIFIKASI.map((item) => ({
-          jenis: item.jenis,
-          judul: item.judul,
-          keterangan: item.keterangan,
-          aktif: item.bawaanAktif,
-        }))}
-      />
+      <PreferensiNotifikasi daftarAwal={preferensi} />
     </div>
   );
 }
