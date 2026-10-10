@@ -22,11 +22,19 @@ import { PesanKosong } from "@/components/status-antarmuka";
 import type { Kelas } from "@/lib/mock-kelas";
 import type { Murid } from "@/lib/mock-murid";
 import type { Penempatan } from "@/lib/mock-penempatan";
+import {
+  kelasBelumDiikuti,
+  periksaPenempatan,
+  penghalangCabang,
+} from "@/lib/penempatan-kelas";
 import { formatTanggalLengkap, hitungUsia, tanggalISO } from "@/lib/tanggal";
+import type { Cabang } from "@/services/cabang.service";
 
 type DetailMuridProps = {
   muridAwal: Murid;
   daftarKelas: Kelas[];
+  /** Semua cabang dari layanan cabang, urut nama. */
+  daftarCabang: Cabang[];
   penempatanAwal: Penempatan[];
 };
 
@@ -104,11 +112,17 @@ function KartuKelas({
  * kelas tambahan bisa langsung ditambahkan, dan keluar dari satu kelas tidak
  * mengganggu kelas lainnya. Identitas anaknya (nama, tanggal lahir, orang tua,
  * status aktif) juga bisa diperbaiki lewat formulir yang sama dengan halaman
- * daftar. Datanya masih tiruan dan hanya berlaku di layar.
+ * daftar.
+ *
+ * Penempatan barunya diperiksa dulu (`src/lib/penempatan-kelas.ts`): anak yang
+ * sudah tidak aktif, kelas di cabang nonaktif, dan kelas yang cabangnya belum
+ * terdaftar ditolak dengan alasannya di layar, bukan diam-diam tersimpan.
+ * Datanya masih tiruan dan hanya berlaku di layar.
  */
 export function DetailMurid({
   muridAwal,
   daftarKelas,
+  daftarCabang,
   penempatanAwal,
 }: DetailMuridProps) {
   const [murid, setMurid] = useState(muridAwal);
@@ -156,27 +170,41 @@ export function DetailMurid({
 
   // Kelas yang belum aktif untuk murid ini; kelas yang pernah diikuti tetap
   // boleh dipilih lagi, sedangkan kelas yang sedang aktif tidak ditawarkan.
-  const kelasAktifIds = new Set(kelasAktif.map((item) => item.kelasId));
-  const kelasDitawarkan = daftarKelas.filter(
-    (kelas) => !kelasAktifIds.has(kelas.id),
+  const kelasDitawarkan = kelasBelumDiikuti({
+    muridId: murid.id,
+    daftarKelas,
+    penempatan,
+  });
+  // Kelas di cabang nonaktif (atau yang cabangnya belum terdaftar) tetap
+  // ditampilkan supaya alasannya bisa dibaca, tetapi penempatannya ditolak saat
+  // disimpan — sama seperti pemindahan kelas yang tidak menawarkan cabang
+  // nonaktif.
+  const kelasPerluCabang = kelasDitawarkan.filter(
+    (kelas) => penghalangCabang(kelas, daftarCabang) !== null,
   );
-  const pilihan = kelasBaru || kelasDitawarkan[0]?.id || "";
+  const kelasSiapDipakai = kelasDitawarkan.filter(
+    (kelas) => penghalangCabang(kelas, daftarCabang) === null,
+  );
 
-  function tambahKeKelas() {
-    if (!pilihan) return;
-    const kelas = daftarKelas.find((item) => item.id === pilihan);
-    if (!kelas) return;
-
-    const sudahAda = penempatanTerkini.current.find(
-      (item) =>
-        item.muridId === murid.id &&
-        item.kelasId === kelas.id &&
-        item.status === "aktif",
-    );
-    if (sudahAda) {
-      tampilkanGalat(`${murid.nama} sudah terdaftar di kelas ini.`);
+  function tambahKeKelas(kelasTerpilih: string) {
+    const hasil = periksaPenempatan({
+      murid,
+      kelasId: kelasTerpilih,
+      daftarKelas,
+      daftarCabang,
+      // Cermin penempatan yang diperbarui seketika, supaya dua klik pada render
+      // yang sama tetap ditolak sebagai penempatan dobel, bukan diam-diam
+      // menambah kelas lain.
+      penempatan: penempatanTerkini.current,
+      periksaCabang: true,
+    });
+    if (!hasil.boleh) {
+      tampilkanGalat(hasil.pesan);
       return;
     }
+
+    const kelas = daftarKelas.find((item) => item.id === kelasTerpilih);
+    if (!kelas) return;
 
     simpanPenempatan([
       ...penempatanTerkini.current,
@@ -327,26 +355,60 @@ export function DetailMurid({
             Murid ini sudah aktif di semua kelas.
           </p>
         ) : (
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="kelas-baru">Kelas</Label>
-              <NativeSelect
-                id="kelas-baru"
-                value={pilihan}
-                onChange={(event) => setKelasBaru(event.target.value)}
+          <>
+            {kelasPerluCabang.length > 0 && (
+              <p className="rounded-lg border border-dashed px-3 py-2 text-sm leading-6 text-muted-foreground">
+                {kelasPerluCabang.length} kelas belum bisa dipakai karena
+                cabangnya nonaktif atau belum terdaftar; pilih salah satunya
+                untuk melihat alasannya.
+              </p>
+            )}
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="kelas-baru">Kelas</Label>
+                <NativeSelect
+                  id="kelas-baru"
+                  value={kelasBaru}
+                  onChange={(event) => setKelasBaru(event.target.value)}
+                >
+                  <option value="">Pilih kelas…</option>
+                  {kelasDitawarkan.map((kelas) => {
+                    const penghalang = penghalangCabang(kelas, daftarCabang);
+                    const tanda =
+                      penghalang?.alasan === "cabang_nonaktif"
+                        ? " (cabang nonaktif)"
+                        : penghalang
+                          ? " (cabang belum terdaftar)"
+                          : "";
+                    return (
+                      <option key={kelas.id} value={kelas.id}>
+                        {kelas.namaKelas} · {kelas.cabang}
+                        {tanda}
+                      </option>
+                    );
+                  })}
+                </NativeSelect>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                // Tanpa pilihan yang sah tombolnya mati: satu pilihan menyimpan
+                // satu kelas, dan setelah tersimpan pilihannya dikosongkan lagi
+                // supaya klik beruntun tidak menambah kelas lain.
+                disabled={!kelasBaru}
+                onClick={() => tambahKeKelas(kelasBaru)}
               >
-                {kelasDitawarkan.map((kelas) => (
-                  <option key={kelas.id} value={kelas.id}>
-                    {kelas.namaKelas} · {kelas.cabang}
-                  </option>
-                ))}
-              </NativeSelect>
+                <UserPlus aria-hidden="true" />
+                Masukkan ke kelas
+              </Button>
             </div>
-            <Button type="button" size="sm" onClick={tambahKeKelas}>
-              <UserPlus aria-hidden="true" />
-              Masukkan ke kelas
-            </Button>
-          </div>
+            {kelasSiapDipakai.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                Semua kelas yang tersisa berada di cabang nonaktif atau belum
+                terdaftar.
+              </p>
+            )}
+          </>
         )}
       </Card>
 

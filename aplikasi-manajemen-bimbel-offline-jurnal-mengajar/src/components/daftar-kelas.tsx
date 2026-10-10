@@ -27,6 +27,7 @@ import type { Cabang } from "@/services/cabang.service";
 import type { JadwalKelas, Kelas } from "@/lib/mock-kelas";
 import type { Murid } from "@/lib/mock-murid";
 import type { Penempatan } from "@/lib/mock-penempatan";
+import { periksaPenempatan } from "@/lib/penempatan-kelas";
 import { tanggalISO, urutkanJadwal } from "@/lib/tanggal";
 
 type DaftarKelasProps = {
@@ -230,27 +231,25 @@ export function DaftarKelas({
 
   function tempatkanMurid(kelasId: string, muridId: string) {
     // Sejak aturan multi-kelas, murid boleh aktif di beberapa kelas; yang
-    // ditolak hanya penempatan kedua di kelas yang sama.
+    // ditolak hanya penempatan kedua di kelas yang sama. Aturannya dipakai
+    // bersama halaman detail murid lewat `src/lib/penempatan-kelas.ts`, jadi
+    // pesan penolakannya sama di kedua layar. Cabang tidak diperiksa di sini:
+    // panel ini membuka kelas yang sudah dipilih, dan kelasnya tetap berjalan
+    // sampai muridnya keluar, termasuk saat cabangnya dinonaktifkan.
     const murid = daftarMurid.find((anak) => anak.id === muridId);
-    if (murid && !murid.statusAktif) {
-      tampilkanGalat(
-        `${murid.nama} sudah tidak aktif, jadi belum bisa ditempatkan. Aktifkan dulu di halaman Murid.`,
-        kelasId,
-      );
-      return;
-    }
-
-    const sudahAda = penempatanTerkini.current.find(
-      (baris) =>
-        baris.muridId === muridId &&
-        baris.kelasId === kelasId &&
-        baris.status === "aktif",
-    );
-    if (sudahAda) {
-      tampilkanGalat(
-        `${namaMurid(muridId)} sudah terdaftar di kelas ini.`,
-        kelasId,
-      );
+    const hasil = periksaPenempatan({
+      murid: murid ?? {
+        id: muridId,
+        nama: namaMurid(muridId),
+        statusAktif: true,
+      },
+      kelasId,
+      daftarKelas: daftar,
+      daftarCabang,
+      penempatan: penempatanTerkini.current,
+    });
+    if (!hasil.boleh) {
+      tampilkanGalat(hasil.pesan, kelasId);
       return;
     }
 
