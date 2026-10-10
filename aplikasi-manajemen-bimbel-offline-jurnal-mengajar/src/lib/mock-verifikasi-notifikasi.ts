@@ -5,7 +5,8 @@
 // hasil pemeriksaan, jadi daftar dan angkanya ditulis tetap di sini. Yang
 // diperiksa bukan karangan — setiap perilaku di bawah sudah dikunci tes
 // (`e2e/notifikasi.spec.ts`, `tests/notifikasi-service.test.mjs`,
-// `tests/notifikasi-gaji.test.mjs`, `tests/pesan-notifikasi.test.mjs`), dan
+// `tests/notifikasi-gaji.test.mjs`, `tests/notifikasi-tagihan.test.mjs`,
+// `tests/pesan-notifikasi.test.mjs`), dan
 // sumber pemicunya ikut ditulis supaya bisa ditelusuri.
 //
 // Dua temuan yang sengaja ditampilkan apa adanya: jenis `kelas_kosong` sudah
@@ -49,10 +50,11 @@ export const KASUS_VERIFIKASI: KasusVerifikasi[] = [
     keterangan:
       "Setiap peristiwa pemicu hanya boleh menghasilkan satu baris pemberitahuan, walau aksinya diulang atau dua permintaan datang bersamaan.",
     status: "lulus",
-    jenis: ["rekap_honor", "laporan_bulanan"],
-    kunci: "rekap_honor:<guruId>:<periode>",
+    jenis: ["rekap_honor", "tagihan_terbit", "laporan_bulanan"],
+    kunci: "rekap_honor:<guruId>:<periode> · tagihan:<idTagihan>",
     bukti: [
       "Rekap honor satu periode dibuat dua kali: tetap 1 notifikasi untuk gurunya.",
+      "Tagihan SPP satu periode diterbitkan dua kali: tetap 1 notifikasi untuk walinya.",
       "Laporan bulanan satu periode dibuka ulang: tetap 1 notifikasi untuk pemilik.",
       "Indeks unik notifications_user_tipe_kunci_idx menolak baris kembar (galat 23505).",
     ],
@@ -67,11 +69,12 @@ export const KASUS_VERIFIKASI: KasusVerifikasi[] = [
     keterangan:
       "Akun yang mematikan satu jenis di Preferensi Notifikasi tidak dikirimi jenis itu; akun yang belum pernah mengubah pengaturannya mengikuti bawaan jenis tersebut.",
     status: "lulus",
-    jenis: ["jurnal_baru", "gaji_dibayar", "laporan_bulanan"],
+    jenis: ["jurnal_baru", "gaji_dibayar", "laporan_bulanan", "tagihan_terbit"],
     kunci: null,
     bukti: [
       "Pemilik yang mematikan jenis jurnal_baru: 0 pemberitahuan walau jurnal tetap tersimpan.",
       "Guru yang mematikan jenis gaji_dibayar: 0 pemberitahuan walau rekornya ditandai sudah dibayar.",
+      "Wali yang mematikan jenis tagihan_terbit: 0 pemberitahuan walau tagihan anaknya terbit; walinya yang belum mengubah pengaturan tetap menerima.",
       "Jenis laporan_bulanan bawaannya mati, jadi pemilik hanya dikirimi setelah menyalakannya sendiri.",
     ],
     hasil:
@@ -102,16 +105,17 @@ export const KASUS_VERIFIKASI: KasusVerifikasi[] = [
     keterangan:
       "Menyimpan ulang jurnal yang sama dan menandai ulang gaji yang sudah dibayar bukan peristiwa baru, jadi antrean pemberitahuan tidak bertambah.",
     status: "lulus",
-    jenis: ["jurnal_baru", "gaji_dibayar"],
-    kunci: "gaji_dibayar:<guruId>:<periode>",
+    jenis: ["jurnal_baru", "gaji_dibayar", "tagihan_lunas"],
+    kunci: "gaji_dibayar:<guruId>:<periode> · tagihan:<idTagihan>:lunas",
     bukti: [
       "Jurnal yang sama dikirim ulang: tetap 1 pemberitahuan jenis jurnal_baru.",
       "Status bayar ditandai ulang: tetap 1 pemberitahuan jenis gaji_dibayar.",
+      "Tagihan ditandai lunas dua kali: tetap 1 pemberitahuan jenis tagihan_lunas.",
       "Koreksi jurnal yang benar-benar berubah tidak mengabari lagi; yang dikabarkan hanya jurnal pertama.",
     ],
     hasil: "Hanya perubahan yang sungguh terjadi yang dikabarkan ke penerimanya.",
     sumber:
-      "src/services/jurnal.service.ts · simpanJurnal · src/services/gaji.service.ts · tandaiPembayaranGaji",
+      "src/services/jurnal.service.ts · simpanJurnal · src/services/gaji.service.ts · tandaiPembayaranGaji · src/services/tagihan.service.ts · updateTagihan",
   },
   {
     id: "jenis-tanpa-pemicu",
@@ -210,6 +214,33 @@ export const PERISTIWA_UJI: HasilUjiPeristiwa[] = [
     ],
   },
   {
+    id: "tagihan-spp-terbit",
+    peristiwa: "Tagihan SPP satu murid untuk satu periode benar-benar terbit",
+    jenis: "tagihan_terbit",
+    penerima: "Semua akun wali yang tertaut ke murid itu",
+    kunci: "tagihan:<idTagihan>",
+    penjaga:
+      "Kunci per tagihan, ditopang indeks unik. Tagihan yang sudah ada dilewati indeks (murid + periode), jadi tidak dikabarkan lagi.",
+    pemicu: "src/services/tagihan.service.ts · createTagihan",
+    tes: [
+      "tests/notifikasi-tagihan.test.mjs · tagihan terbit mengabari wali muridnya sekali",
+      "tests/notifikasi-tagihan.test.mjs · semua wali satu murid dikabari tagihan terbitnya",
+    ],
+  },
+  {
+    id: "tagihan-spp-lunas",
+    peristiwa: "Status tagihan SPP satu murid berubah menjadi lunas",
+    jenis: "tagihan_lunas",
+    penerima: "Semua akun wali yang tertaut ke murid itu",
+    kunci: "tagihan:<idTagihan>:lunas",
+    penjaga:
+      "Kunci per tagihan yang terpisah dari kunci penerbitannya; hanya dikirim saat statusnya benar-benar lunas.",
+    pemicu: "src/services/tagihan.service.ts · updateTagihan",
+    tes: [
+      "tests/notifikasi-tagihan.test.mjs · tagihan lunas mengabari wali sekali saja",
+    ],
+  },
+  {
     id: "laporan-bulanan-selesai",
     peristiwa: "Angka laporan bulanan satu periode selesai dihitung",
     jenis: "laporan_bulanan",
@@ -265,6 +296,24 @@ export const UJI_PREFERENSI: UjiPreferensi[] = [
     hasil:
       "Guru itu tidak menerima pemberitahuannya, sementara guru lain yang tidak mengubah pengaturannya menerima tepat satu — walau pembayarannya ditandai dua kali.",
     tes: "e2e/notifikasi.spec.ts · gaji dibayar memberi tahu gurunya sekali saja",
+  },
+  {
+    id: "tagihan-terbit-tanpa-hubungan",
+    jenis: "tagihan_terbit",
+    keadaan:
+      "Tagihan diterbitkan oleh pemilik untuk murid yang belum punya akun wali, lalu untuk murid yang walinya mematikan jenis ini.",
+    hasil:
+      "Pemilik dan admin yang menerbitkannya tidak ikut dikirimi — penerimanya hanya wali murid. Murid tanpa wali tetap terbit tagihannya tanpa pemberitahuan, dan wali yang mematikannya menerima 0.",
+    tes: "tests/notifikasi-tagihan.test.mjs · murid tanpa wali tetap diterbitkan tanpa pemberitahuan · tests/notifikasi-tagihan.test.mjs · pemilik dan admin tidak dikirimi pemberitahuan tagihan",
+  },
+  {
+    id: "tagihan-lunas-dimatikan",
+    jenis: "tagihan_lunas",
+    keadaan:
+      "Wali mematikan jenis ini, lalu tagihan anaknya ditandai lunas oleh pemilik.",
+    hasil:
+      "Wali itu tidak menerima pemberitahuannya, sementara wali lain yang tidak mengubah pengaturannya menerima tepat satu — walau pelunasannya ditandai dua kali.",
+    tes: "tests/notifikasi-tagihan.test.mjs · wali yang mematikan kabar tagihan tidak dikirimi",
   },
   {
     id: "laporan-bulanan-mati-bawaan",

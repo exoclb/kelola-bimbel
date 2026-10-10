@@ -39,6 +39,20 @@ export const JENIS_NOTIFIKASI = [
     bawaanAktif: true,
   },
   {
+    jenis: "tagihan_terbit",
+    judul: "Tagihan SPP terbit",
+    keterangan:
+      "Dikirim ke wali saat tagihan SPP bulanan anaknya diterbitkan, lengkap dengan periode dan nominalnya. Menerbitkan ulang periode yang sama tidak mengirim pemberitahuan kedua.",
+    bawaanAktif: true,
+  },
+  {
+    jenis: "tagihan_lunas",
+    judul: "Tagihan SPP lunas",
+    keterangan:
+      "Dikirim ke wali begitu pemilik bimbel menandai tagihan anaknya sudah dibayar. Menandai ulang tagihan yang sama tidak mengirim pemberitahuan baru.",
+    bawaanAktif: true,
+  },
+  {
     jenis: "laporan_bulanan",
     judul: "Laporan bulanan",
     keterangan:

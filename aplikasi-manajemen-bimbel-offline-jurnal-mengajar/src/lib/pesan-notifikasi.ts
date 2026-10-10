@@ -31,6 +31,34 @@ export function pesanGajiDibayar(periode: string, totalGaji: number) {
   return `Gaji ${formatPeriode(periode)} sebesar ${formatRupiah(totalGaji)} sudah dibayar.`;
 }
 
+/**
+ * Pesan untuk wali saat tagihan SPP anaknya diterbitkan, mis. "Tagihan SPP
+ * Ani periode Juli 2097 sebesar Rp250.000 sudah terbit. Rinciannya bisa dibuka
+ * di Portal Wali pada bagian Tagihan." Nama anak selalu disebut karena satu
+ * akun wali bisa menautkan lebih dari satu anak.
+ */
+export function pesanTagihanTerbit(
+  muridNama: string,
+  periode: string,
+  nominal: number,
+) {
+  return `Tagihan SPP ${muridNama} periode ${formatPeriode(periode)} sebesar ${formatRupiah(nominal)} sudah terbit. Rinciannya bisa dibuka di Portal Wali pada bagian Tagihan.`;
+}
+
+/**
+ * Pesan untuk wali saat pembayaran tagihan anaknya ditandai lunas, mis.
+ * "Pembayaran tagihan SPP Ani periode Juli 2097 sebesar Rp250.000 sudah
+ * diterima." Periodenya ikut disebut supaya wali dengan lebih dari satu
+ * tunggakan tahu tagihan mana yang sudah lunas.
+ */
+export function pesanTagihanLunas(
+  muridNama: string,
+  periode: string,
+  nominal: number,
+) {
+  return `Pembayaran tagihan SPP ${muridNama} periode ${formatPeriode(periode)} sebesar ${formatRupiah(nominal)} sudah diterima. Bukti pembayarannya bisa dilihat di Portal Wali pada bagian Tagihan.`;
+}
+
 /** Angka ringkas laporan bulanan satu periode, dalam rupiah. */
 export type AngkaLaporanBulanan = {
   /** Pemasukan periode, yaitu SPP yang sudah lunas. */

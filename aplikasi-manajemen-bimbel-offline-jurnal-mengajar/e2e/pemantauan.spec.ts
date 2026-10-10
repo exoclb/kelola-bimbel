@@ -607,6 +607,8 @@ test("preferensi notifikasi tersimpan per akun", async ({ request }) => {
     "kelas_kosong",
     "gaji_dibayar",
     "rekap_honor",
+    "tagihan_terbit",
+    "tagihan_lunas",
     "laporan_bulanan",
   ]);
 

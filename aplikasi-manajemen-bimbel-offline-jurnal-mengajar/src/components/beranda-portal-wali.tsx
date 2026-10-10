@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { PilPortal } from "@/components/pil-portal";
 import { KartuPortal } from "@/components/kartu-portal";
 import { PemberitahuanAnakNonaktif } from "@/components/pemberitahuan-anak-nonaktif";
+import { KotakNotifikasiPortal } from "@/components/kotak-notifikasi-portal";
 import { PemilihAnak } from "@/components/pemilih-anak";
 import { LayarPortal } from "@/components/layar-portal";
 import { PenandaStatus } from "@/components/penanda-status";
@@ -22,6 +23,7 @@ import { LencanaBaru } from "@/components/lencana-baru";
 import type { ProfilDokumen } from "@/lib/dokumen-html";
 import { formatRupiah } from "@/lib/gaji";
 import type { AnakPortal, StatusJejakPortal } from "@/lib/portal-wali";
+import type { NotifikasiTersimpan } from "@/services/notifikasi.service";
 import { periodeDariTagihan, type Tagihan } from "@/lib/tagihan";
 import {
   formatPeriodeTagihan,
@@ -47,6 +49,13 @@ type BerandaPortalWaliProps = {
   statusAwal: StatusJejakPortal;
   /** Tagihan seluruh anak yang tertaut ke wali ini, dari tabel `student_invoices`. */
   tagihan: Tagihan[];
+  /**
+   * Pemberitahuan milik akun wali ini, terbaru lebih dulu. Kabar tagihan SPP
+   * anak datang lewat sini (lihat `tagihan.service`).
+   */
+  notifikasi: NotifikasiTersimpan[];
+  /** Jumlah pemberitahuan akun ini yang belum dibaca. */
+  belumDibaca: number;
 };
 
 const nilaiTampil = new Intl.NumberFormat("id-ID", {
@@ -71,6 +80,8 @@ export function BerandaPortalWali({
   muridIdAwal,
   statusAwal,
   tagihan,
+  notifikasi,
+  belumDibaca,
 }: BerandaPortalWaliProps) {
   const [muridId, setMuridId] = useState(
     muridIdAwal || (anak[0]?.muridId ?? ""),
@@ -206,6 +217,11 @@ export function BerandaPortalWali({
           <PemberitahuanAnakNonaktif nama={dipilih.nama} />
         </div>
       )}
+
+      <KotakNotifikasiPortal
+        notifikasi={notifikasi}
+        belumDibaca={belumDibaca}
+      />
 
       <KartuPortal
         className="mt-4"

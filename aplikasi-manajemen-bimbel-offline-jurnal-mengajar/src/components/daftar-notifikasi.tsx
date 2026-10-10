@@ -13,6 +13,11 @@ import { formatTanggalLengkap } from "@/lib/tanggal";
 type DaftarNotifikasiProps = {
   notifikasi: NotifikasiTersimpan[];
   belumDibaca: number;
+  /**
+   * Teks keadaan kosong. Bawaannya menyebut layar preferensi staf, yang tidak
+   * dijangkau wali; layar portal mengoper versi yang cocok untuknya.
+   */
+  catatanKosong?: React.ReactNode;
 };
 
 const jamKirim = new Intl.DateTimeFormat("id-ID", {
@@ -27,6 +32,7 @@ const jamKirim = new Intl.DateTimeFormat("id-ID", {
 export function DaftarNotifikasi({
   notifikasi,
   belumDibaca,
+  catatanKosong = "Kabar seperti jurnal yang baru dikirim guru, tagihan yang terbit, atau pengingat dari bimbel muncul di sini. Jenis kabar yang ingin diterima bisa diatur di Pengaturan · Preferensi Notifikasi.",
 }: DaftarNotifikasiProps) {
   const belumDibacaIds = notifikasi
     .filter((baris) => !baris.sudahDibaca)
@@ -55,9 +61,7 @@ export function DaftarNotifikasi({
       <CardContent className="space-y-3">
         {notifikasi.length === 0 ? (
           <p className="text-sm leading-6 text-muted-foreground">
-            Kabar seperti jurnal yang baru dikirim guru, tagihan yang terbit,
-            atau pengingat dari bimbel muncul di sini. Jenis kabar yang ingin
-            diterima bisa diatur di Pengaturan · Preferensi Notifikasi.
+            {catatanKosong}
           </p>
         ) : (
           <ul className="space-y-2">

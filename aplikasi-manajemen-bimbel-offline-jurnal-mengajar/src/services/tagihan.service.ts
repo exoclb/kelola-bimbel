@@ -8,8 +8,10 @@ import {
   students,
   waliMurid,
 } from "@/db/schema";
+import { pesanTagihanLunas, pesanTagihanTerbit } from "@/lib/pesan-notifikasi";
 import type { RekapTagihanPeriode, Tagihan } from "@/lib/tagihan";
 import { tanggalISO } from "@/lib/tanggal";
+import { buatNotifikasi } from "@/services/notifikasi.service";
 import type {
   CreateTagihanInput,
   ListTagihanInput,
@@ -204,6 +206,56 @@ export async function rekapPemasukanPeriode(): Promise<RekapTagihanPeriode[]> {
   return [...peta.values()].sort((a, b) => b.periode.localeCompare(a.periode));
 }
 
+/**
+ * Akun wali yang tertaut ke tiap murid, dari tabel `wali_murid`. Satu anak
+ * boleh punya lebih dari satu wali (mis. ayah dan ibu), jadi hasilnya daftar
+ * per murid; murid tanpa wali tidak muncul di peta sama sekali dan
+ * pemanggilnya melewatinya tanpa bercabang.
+ */
+async function waliPerMurid(muridIds: string[]) {
+  const unik = [...new Set(muridIds)];
+  const peta = new Map<string, string[]>();
+  if (unik.length === 0) return peta;
+
+  const baris = await db
+    .select({ muridId: waliMurid.muridId, waliId: waliMurid.waliId })
+    .from(waliMurid)
+    .where(inArray(waliMurid.muridId, unik));
+
+  for (const catatan of baris) {
+    const daftar = peta.get(catatan.muridId) ?? [];
+    daftar.push(catatan.waliId);
+    peta.set(catatan.muridId, daftar);
+  }
+  return peta;
+}
+
+/**
+ * Pemberitahuan tagihan SPP untuk satu murid: wali yang tertaut ke anak itu
+ * yang dikabari, bukan pemilik/admin — merekalah yang menerbitkan dan menandai
+ * pembayarannya. Tiap tagihan punya kuncinya sendiri, jadi aksi yang diulang
+ * tidak menambah baris kedua; `buatNotifikasi` yang menyaring preferensi tiap
+ * akun dan melewati akun yang sudah hilang. Mengembalikan jumlah baris yang
+ * benar-benar dibuat.
+ */
+async function beritahuWaliMurid(
+  jenis: "tagihan_terbit" | "tagihan_lunas",
+  murid: { id: string; nama: string },
+  periode: string,
+  nominal: number,
+  kunci: string,
+  waliPerAnak: Map<string, string[]>,
+): Promise<number> {
+  const kandidat = waliPerAnak.get(murid.id) ?? [];
+  if (kandidat.length === 0) return 0;
+
+  const pesan =
+    jenis === "tagihan_terbit"
+      ? pesanTagihanTerbit(murid.nama, periode, nominal)
+      : pesanTagihanLunas(murid.nama, periode, nominal);
+  return buatNotifikasi(jenis, pesan, kandidat, kunci);
+}
+
 /** Id murid yang sudah punya tagihan di periode itu, untuk menandai pilihan. */
 export async function daftarMuridSudahDitagih({ periode }: ListTagihanInput) {
   const { periodeTahun, periodeBulan } = pecahPeriode(periode);
@@ -225,6 +277,11 @@ export type HasilBuatTagihan = { dibuat: number; dilewati: string[] };
  * Membuat tagihan sekaligus untuk banyak murid. Penjagaan ganda ada di indeks
  * unik (murid + periode), bukan di sini, supaya kiriman bersamaan dari dua
  * perangkat tetap menghasilkan satu tagihan saja per murid.
+ *
+ * Tagihan yang benar-benar baru terbit juga mengabari wali muridnya
+ * (`tagihan_terbit`). Kuncinya memakai id tagihannya sendiri
+ * (`tagihan:<idTagihan>`), jadi baris yang sudah ada — dan karenanya dilewati
+ * `onConflictDoNothing` — tidak pernah dikabarkan.
  */
 export async function createTagihan({
   periode,
@@ -250,7 +307,10 @@ export async function createTagihan({
         studentInvoices.periodeTahun,
       ],
     })
-    .returning({ muridId: studentInvoices.studentId });
+    .returning({
+      id: studentInvoices.id,
+      muridId: studentInvoices.studentId,
+    });
 
   const dibuatIds = new Set(dibuat.map((catatan) => catatan.muridId));
   const dilewatiIds = muridIds.filter((muridId) => !dibuatIds.has(muridId));
@@ -264,6 +324,32 @@ export async function createTagihan({
           .where(inArray(students.id, dilewatiIds));
   const petaNama = new Map(nama.map((murid) => [murid.id, murid.nama]));
 
+  // Kabar ke wali dikirim untuk tiap tagihan yang benar-benar terbit. Nama
+  // anaknya dibaca sekali untuk semua penerima, dan wali per anaknya diambil
+  // sekali untuk seluruh batch.
+  if (dibuat.length > 0) {
+    const periode = `${periodeTahun}-${String(periodeBulan).padStart(2, "0")}`;
+    const namaAnak = await db
+      .select({ id: students.id, nama: students.nama })
+      .from(students)
+      .where(inArray(students.id, [...new Set(dibuat.map((b) => b.muridId))]));
+    const petaAnak = new Map(namaAnak.map((murid) => [murid.id, murid]));
+    const wali = await waliPerMurid(dibuat.map((catatan) => catatan.muridId));
+
+    for (const tagihan of dibuat) {
+      const murid = petaAnak.get(tagihan.muridId);
+      if (!murid) continue;
+      await beritahuWaliMurid(
+        "tagihan_terbit",
+        murid,
+        periode,
+        nominal,
+        `tagihan:${tagihan.id}`,
+        wali,
+      );
+    }
+  }
+
   return {
     dibuat: dibuat.length,
     dilewati: dilewatiIds.map((muridId) => petaNama.get(muridId) ?? muridId),
@@ -273,6 +359,11 @@ export async function createTagihan({
 /**
  * Menandai satu tagihan lunas (dengan tanggal bayar) atau mengembalikannya ke
  * belum lunas. Mengembalikan `null` kalau id tagihannya tidak ada.
+ *
+ * Begitu statusnya lunas, wali muridnya dikabari (`tagihan_lunas`) dengan kunci
+ * `tagihan:<idTagihan>:lunas` — terpisah dari kabar penerbitannya
+ * (`tagihan:<idTagihan>`), jadi menandai lunas berulang tidak menambah baris
+ * kedua. Pengembalian ke belum lunas tidak mengabari apa pun.
  */
 export async function updateTagihan(
   id: string,
@@ -299,5 +390,18 @@ export async function updateTagihan(
   if (diubah.length === 0) return null;
 
   const [tagihan] = await ambilTagihan(eq(studentInvoices.id, id));
-  return tagihan ?? null;
+  if (!tagihan) return null;
+
+  if (tagihan.status === "lunas") {
+    await beritahuWaliMurid(
+      "tagihan_lunas",
+      { id: tagihan.muridId, nama: tagihan.muridNama },
+      `${tagihan.periodeTahun}-${String(tagihan.periodeBulan).padStart(2, "0")}`,
+      tagihan.nominal,
+      `tagihan:${tagihan.id}:lunas`,
+      await waliPerMurid([tagihan.muridId]),
+    );
+  }
+
+  return tagihan;
 }

@@ -131,7 +131,7 @@ test("guru membuka Akun Saya dari halaman pengaturan dan melihat datanya sendiri
 
   // Ringkasannya keadaan yang tersimpan: akun baru belum mengubah apa pun,
   // jadi yang tampil adalah bawaan tiap jenis — "Laporan bulanan" mati.
-  await expect(page.getByText("4 dari 5 pemberitahuan menyala.")).toBeVisible();
+  await expect(page.getByText("6 dari 7 pemberitahuan menyala.")).toBeVisible();
   await expect(page.getByText("Laporan bulanan")).toBeVisible();
 
   // Tautan ke halaman pengaturannya masih ada, jadi alurnya tidak terputus.
@@ -154,19 +154,19 @@ test("saklar preferensi notifikasi tersimpan ke server untuk akun itu sendiri", 
 
   // Daftarnya lengkap — satu saklar per jenis yang dikenal aplikasi — dan tiap
   // baris menuliskan keadaannya sebagai kata, bukan hanya lewat centang.
-  await expect(page.getByRole("checkbox")).toHaveCount(5);
+  await expect(page.getByRole("checkbox")).toHaveCount(7);
   await expect(page.getByText("Nonaktif", { exact: true })).toHaveCount(1);
-  await expect(page.getByText("Aktif", { exact: true })).toHaveCount(4);
+  await expect(page.getByText("Aktif", { exact: true })).toHaveCount(6);
 
   await bulanan.check();
   await expect(
     page.getByText('Pemberitahuan "Laporan bulanan" dinyalakan.'),
   ).toBeVisible();
   await expect(bulanan).toBeChecked();
-  await expect(page.getByText("Aktif", { exact: true })).toHaveCount(5);
+  await expect(page.getByText("Aktif", { exact: true })).toHaveCount(7);
   await expect(page.getByText("Nonaktif", { exact: true })).toHaveCount(0);
   await expect(
-    page.getByText("5 dari 5 jenis pemberitahuan aktif."),
+    page.getByText("7 dari 7 jenis pemberitahuan aktif."),
   ).toBeVisible();
 
   // Perubahannya benar-benar sampai ke basis data — bukan hanya berubah di
@@ -181,12 +181,12 @@ test("saklar preferensi notifikasi tersimpan ke server untuk akun itu sendiri", 
     page.getByRole("checkbox", { name: "Laporan bulanan" }),
   ).toBeChecked();
   await expect(
-    page.getByText("5 dari 5 jenis pemberitahuan aktif."),
+    page.getByText("7 dari 7 jenis pemberitahuan aktif."),
   ).toBeVisible();
 
   // Ringkasan di halaman pengaturan ikut membaca basis data yang sama.
   await page.goto("/app/pengaturan");
-  await expect(page.getByText("5 dari 5 pemberitahuan menyala")).toBeVisible();
+  await expect(page.getByText("7 dari 7 pemberitahuan menyala")).toBeVisible();
 });
 
 test("preferensi satu akun tidak mengubah preferensi akun lain", async ({
@@ -291,9 +291,9 @@ test("halaman preferensi menjelaskan tiap jenis pemberitahuan secara operasional
   await masukHalaman(page, email);
   await page.goto("/app/pengaturan/notifikasi");
 
-  // Kelima jenis katalognya tampil lengkap, masing-masing dengan teks bantuan
+  // Ketujuh jenis katalognya tampil lengkap, masing-masing dengan teks bantuan
   // yang menjelaskan kapan pemberitahuannya muncul dan apa tindak lanjutnya.
-  await expect(page.getByRole("checkbox")).toHaveCount(5);
+  await expect(page.getByRole("checkbox")).toHaveCount(7);
   await expect(
     page.getByText(
       /Memperbaiki jurnal yang sama tidak memicu pemberitahuan kedua/,
@@ -324,7 +324,7 @@ test("pilihan notifikasi bertahan setelah keluar dan masuk lagi", async ({
   await masukHalaman(page, email);
   await page.goto("/app/pengaturan/notifikasi");
 
-  // Dari bawaan (4 aktif) dinyalakan satu lagi.
+  // Dari bawaan (6 aktif) dinyalakan satu lagi.
   await page.getByRole("checkbox", { name: "Laporan bulanan" }).check();
   await expect(
     page.getByText('Pemberitahuan "Laporan bulanan" dinyalakan.'),
@@ -348,7 +348,7 @@ test("pilihan notifikasi bertahan setelah keluar dan masuk lagi", async ({
       halamanBaru.getByRole("checkbox", { name: "Laporan bulanan" }),
     ).toBeChecked();
     await expect(
-      halamanBaru.getByText("5 dari 5 jenis pemberitahuan aktif."),
+      halamanBaru.getByText("7 dari 7 jenis pemberitahuan aktif."),
     ).toBeVisible();
   } finally {
     await konteksBaru.close();
