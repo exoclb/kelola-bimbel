@@ -376,7 +376,7 @@ export const UJI_TANDAI_DIBACA: UjiTandaiDibaca[] = [
     langkah: "ids: [<id akun lain>]",
     hasil:
       "0 baris berubah; pemberitahuan akun lain tetap utuh miliknya.",
-    tes: "tests/notifikasi-tandai-dibaca.test.mjs · penandaan baca tidak menyentuh baris akun lain · e2e/notifikasi.spec.ts · daftar dan tandai baca notifikasi terbatas pada akun sendiri · penandaan baca akun lain tidak mengubah notifikasi milik sendiri",
+    tes: "tests/notifikasi-tandai-dibaca.test.mjs · penandaan baca tidak menyentuh baris akun lain · e2e/notifikasi.spec.ts · daftar dan tandai baca notifikasi terbatas pada akun sendiri · e2e/notifikasi.spec.ts · penandaan baca akun lain tidak mengubah notifikasi milik sendiri",
   },
   {
     id: "semua",
