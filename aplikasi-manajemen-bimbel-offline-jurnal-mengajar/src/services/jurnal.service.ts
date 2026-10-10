@@ -16,6 +16,7 @@ import { tanggalISO } from "@/lib/tanggal";
 import {
   penerimaNotifikasi,
   penerimaPemilik,
+  penerimaYangMasihAda,
 } from "@/services/notifikasi.service";
 import type {
   KoreksiJurnalInput,
@@ -197,13 +198,19 @@ export async function simpanJurnal(
     }
 
     if (penerima.length > 0) {
-      await tx.insert(notifications).values(
-        penerima.map((userId) => ({
-          userId,
-          tipe: "jurnal_baru",
-          pesan: `Jurnal ${jadwal.namaKelas} sudah dikirim ${guru?.nama ?? "guru"} · ${formatJam(jadwal.jamMengajar)}`,
-        })),
-      );
+      // Akun yang hilang setelah penghitungan di atas disaring lagi di dalam
+      // transaksi: notifikasi untuk akun yang sudah tidak ada menggagalkan
+      // seluruh simpan jurnal, bukan cuma baris notifikasinya.
+      const penerimaTersisa = await penerimaYangMasihAda(penerima, tx);
+      if (penerimaTersisa.length > 0) {
+        await tx.insert(notifications).values(
+          penerimaTersisa.map((userId) => ({
+            userId,
+            tipe: "jurnal_baru",
+            pesan: `Jurnal ${jadwal.namaKelas} sudah dikirim ${guru?.nama ?? "guru"} · ${formatJam(jadwal.jamMengajar)}`,
+          })),
+        );
+      }
     }
 
     const kehadiran = await tx

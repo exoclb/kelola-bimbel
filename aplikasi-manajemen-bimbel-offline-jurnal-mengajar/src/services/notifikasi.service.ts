@@ -87,6 +87,26 @@ export async function penerimaPemilik(
 }
 
 /**
+ * Menyaring penerima yang akunnya masih ada. Daftar penerima dihitung dari
+ * akun yang bisa berubah kapan saja — mis. seluruh pemilik bimbel — jadi akun
+ * yang dihapus bersamaan bisa lolos ke sini, dan menulis notifikasi untuknya
+ * menggagalkan seluruh transaksi pemanggil dengan pelanggaran kunci asing.
+ */
+export async function penerimaYangMasihAda(
+  kandidatIds: string[],
+  eksekutor: EksekutorNotifikasi = db,
+): Promise<string[]> {
+  const kandidat = [...new Set(kandidatIds)];
+  if (kandidat.length === 0) return [];
+
+  const baris = await eksekutor
+    .select({ id: user.id })
+    .from(user)
+    .where(inArray(user.id, kandidat));
+  return baris.map((akun) => akun.id);
+}
+
+/**
  * Kunci anti-duplikasi notifikasi laporan bulanan: satu periode hanya boleh
  * memberitahu akun yang sama sekali, walau laporannya dibuka berulang kali.
  */
@@ -126,7 +146,8 @@ async function tulisNotifikasi(
   kunci: string | null,
   eksekutor: EksekutorNotifikasi,
 ): Promise<number> {
-  const penerima = await penerimaNotifikasi(jenis, kandidatIds, eksekutor);
+  const cocok = await penerimaNotifikasi(jenis, kandidatIds, eksekutor);
+  const penerima = await penerimaYangMasihAda(cocok, eksekutor);
   if (penerima.length === 0) return 0;
 
   const baris = penerima.map((userId) => ({
