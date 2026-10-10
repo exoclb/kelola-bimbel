@@ -110,6 +110,13 @@ export function DaftarGajiGuru({
                     Slip gaji
                   </Link>
                 </Button>
+                <Button asChild variant="ghost" size="aksi">
+                  <Link
+                    href={`/app/gaji/guru/${baris.guruId}?tahun=${periode.slice(0, 4)}`}
+                  >
+                    Riwayat per periode
+                  </Link>
+                </Button>
                 {sudahDibayar ? (
                   <Button
                     type="button"

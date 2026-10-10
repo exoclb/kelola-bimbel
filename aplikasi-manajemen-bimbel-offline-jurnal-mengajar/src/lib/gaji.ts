@@ -48,6 +48,22 @@ export type RingkasanGajiBulanan = {
   jumlahDibayar: number;
 };
 
+/**
+ * Rekap satu guru pada satu periode untuk halaman riwayat per guru: berapa
+ * jurnal, berapa jam, tarif yang berlaku saat itu, dan status pembayarannya.
+ * Rincian tiap jurnalnya tidak ikut karena halaman ini membandingkan
+ * bulan-bulan, bukan pertemuan.
+ */
+export type RingkasanGajiGuruPeriode = {
+  periode: string;
+  jumlahJurnal: number;
+  totalJam: number;
+  tarifPerJam: number;
+  totalGaji: number;
+  statusPembayaran: StatusPembayaran;
+  tanggalDibayar: string | null;
+};
+
 /** "1200000" → "Rp1.200.000". */
 export function formatRupiah(nilai: number) {
   return `Rp${nilai.toLocaleString("id-ID", { maximumFractionDigits: 0 })}`;

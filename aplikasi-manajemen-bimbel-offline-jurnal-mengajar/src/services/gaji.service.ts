@@ -15,6 +15,7 @@ import type {
   BarisRekapGaji,
   RekapGaji as RekapGajiBulanan,
   RingkasanGajiBulanan,
+  RingkasanGajiGuruPeriode,
   RincianJam,
 } from "@/lib/gaji";
 import { pesanGajiDibayar, pesanRekapHonor } from "@/lib/pesan-notifikasi";
@@ -492,6 +493,115 @@ export async function riwayatGajiAny(
       ),
       jumlahDibayar: dibayarPerPeriode.get(baris.periode) ?? 0,
     })),
+    tahunTersedia: tahunBaris.map((baris) => baris.tahun),
+  };
+}
+
+export type RiwayatGajiGuru = {
+  guru: { id: string; nama: string; email: string };
+  daftar: RingkasanGajiGuruPeriode[];
+  tahunTersedia: number[];
+};
+
+/**
+ * Riwayat honor satu guru per periode dalam satu tahun: tiap bulan yang punya
+ * jurnalnya, berapa jam mengajar, tarif yang berlaku saat itu, dan status
+ * pembayarannya. Bulan-bulan lama memakai tarif yang berlaku bulan itu juga
+ * (bukan tarif terkini), sama seperti `riwayatGajiAny` dan `rekapGajiGuru`, jadi
+ * angkanya cocok dengan rekap bulan yang dipakai owner menandai pembayaran.
+ * Mengembalikan `null` kalau akunnya tidak ada; pemanggil yang menentukan siapa
+ * yang boleh membukanya (owner lewat izin `gaji: read-any`, guru lewat sesi).
+ */
+export async function riwayatGajiAnyGuru(
+  guruId: string,
+  tahun: number,
+): Promise<RiwayatGajiGuru | null> {
+  const [guru] = await db
+    .select({ id: user.id, nama: user.name, email: user.email })
+    .from(user)
+    .where(eq(user.id, guruId))
+    .limit(1);
+  if (!guru) return null;
+
+  const awal = `${tahun}-01-01`;
+  const akhir = `${tahun}-12-31`;
+
+  const [agregat, tarif, pembayaran, tahunBaris] = await Promise.all([
+    db
+      .select({
+        periode:
+          sql<string>`to_char(${teachingJournals.tanggal}, 'YYYY-MM')`.as(
+            "periode",
+          ),
+        jumlahJurnal: sql<number>`count(*)::int`.as("jumlah_jurnal"),
+        totalJam:
+          sql<number>`coalesce(sum(${teachingJournals.jamMengajar}), 0)::float8`.as(
+            "total_jam",
+          ),
+      })
+      .from(teachingJournals)
+      .where(
+        and(
+          eq(teachingJournals.guruId, guruId),
+          gte(teachingJournals.tanggal, awal),
+          lte(teachingJournals.tanggal, akhir),
+        ),
+      )
+      .groupBy(sql`to_char(${teachingJournals.tanggal}, 'YYYY-MM')`)
+      .orderBy(desc(sql`to_char(${teachingJournals.tanggal}, 'YYYY-MM')`)),
+    db
+      .select({
+        berlakuSejak: salarySettings.berlakuSejak,
+        tarifPerJam: salarySettings.tarifPerJam,
+      })
+      .from(salarySettings)
+      .orderBy(desc(salarySettings.berlakuSejak)),
+    db
+      .select({
+        periode: salaryRecaps.periodeBulan,
+        statusPembayaran: salaryRecaps.statusPembayaran,
+        tanggalDibayar: salaryRecaps.tanggalDibayar,
+      })
+      .from(salaryRecaps)
+      .where(
+        and(
+          eq(salaryRecaps.guruId, guruId),
+          // Kolomnya teks `YYYY-MM`, jadi batas tahun cukup dibandingkan sebagai
+          // teks dan bulan-bulan di luar tahun itu tidak ikut terbawa.
+          gte(salaryRecaps.periodeBulan, `${tahun}-01`),
+          lte(salaryRecaps.periodeBulan, `${tahun}-12`),
+        ),
+      ),
+    db
+      .select({
+        tahun:
+          sql<number>`distinct extract(year from ${teachingJournals.tanggal})::int`.as(
+            "tahun",
+          ),
+      })
+      .from(teachingJournals)
+      .where(eq(teachingJournals.guruId, guruId))
+      // SELECT DISTINCT menuntut ORDER BY memakai ekspresi yang sama persis.
+      .orderBy(desc(sql`extract(year from ${teachingJournals.tanggal})::int`)),
+  ]);
+
+  const catatan = new Map(pembayaran.map((baris) => [baris.periode, baris]));
+
+  return {
+    guru,
+    daftar: agregat.map((baris) => {
+      const tarifPerJam = tarifPadaAkhirPeriode(tarif, baris.periode);
+      const bayar = catatan.get(baris.periode);
+      return {
+        periode: baris.periode,
+        jumlahJurnal: baris.jumlahJurnal,
+        totalJam: baris.totalJam,
+        tarifPerJam,
+        totalGaji: hitungGaji(baris.totalJam, tarifPerJam),
+        statusPembayaran: bayar?.statusPembayaran ?? "belum_dibayar",
+        tanggalDibayar: bayar?.tanggalDibayar ?? null,
+      };
+    }),
     tahunTersedia: tahunBaris.map((baris) => baris.tahun),
   };
 }

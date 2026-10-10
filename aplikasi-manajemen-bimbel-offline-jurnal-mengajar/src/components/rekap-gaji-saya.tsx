@@ -1,4 +1,5 @@
-import { CalendarRange, Receipt, Wallet } from "lucide-react";
+import Link from "next/link";
+import { CalendarRange, History, Receipt, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -98,6 +99,12 @@ export function RekapGajiSaya({
             <Button type="submit" size="aksi">
               <Receipt aria-hidden="true" />
               Tampilkan
+            </Button>
+            <Button asChild variant="ghost" size="aksi">
+              <Link href={`/app/gaji/guru/${baris.guruId}?tahun=${periode.slice(0, 4)}`}>
+                <History aria-hidden="true" />
+                Riwayat bulan saya
+              </Link>
             </Button>
           </form>
         </CardContent>

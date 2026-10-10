@@ -509,3 +509,99 @@ test("halaman gaji guru menampilkan rekap jurnalnya sendiri", async ({
   // 2 jam × Rp50.000 dari jurnalnya sendiri.
   await expect(page.getByText("Rp100.000").first()).toBeVisible();
 });
+
+/**
+ * Riwayat gaji per guru: satu halaman untuk membandingkan periode-periode
+ * seorang guru. Angkanya datang dari jurnal yang sama dengan rekap bulanan,
+ * dan status pembayarannya ikut catatan di `salary_recaps`.
+ */
+test("halaman riwayat gaji per guru menampilkan periode dan status pembayarannya", async ({
+  page,
+  request,
+}) => {
+  const emailOwner = await signUp(request, "Owner Riwayat Guru");
+  await setRole(emailOwner, "owner");
+  await masuk(request, emailOwner);
+
+  await page.goto("/sign-in");
+  await page.getByLabel("Email").fill(emailOwner);
+  await page.getByLabel("Password").fill(sandi);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/app\/pemantauan$/);
+
+  // Tautannya dibuka dari baris guru di rekap, dan membawa tahun periode yang
+  // sedang dilihat sehingga saringannya tidak jatuh ke tahun lain.
+  await page.goto(`/app/gaji?periode=${bulan}`);
+  await barisGuru(page, guruId)
+    .getByRole("link", { name: "Riwayat per periode" })
+    .click();
+  await expect(page).toHaveURL(
+    `/app/gaji/guru/${guruId}?tahun=${bulan.slice(0, 4)}`,
+  );
+  await expect(
+    page.getByRole("heading", { name: "Rekap gaji Guru Gaji" }),
+  ).toBeVisible();
+
+  // 1,5 jam × Rp50.000 dari jurnal bulan ini, sama dengan rekap bulanan.
+  const baris = page.locator("li").filter({ hasText: labelPeriode(bulan) });
+  await expect(baris).toContainText("1 jurnal");
+  await expect(baris).toContainText("1,5 jam mengajar");
+  await expect(baris).toContainText("Rp50.000/jam");
+  await expect(baris).toContainText("Rp75.000");
+  await expect(baris).toContainText("Belum dibayar");
+  await expect(
+    baris.getByRole("link", { name: "Slip gaji bulan itu" }),
+  ).toHaveAttribute("href", `/app/gaji/slip/${guruId}?periode=${bulan}`);
+
+  // Status pembayaran di barisnya dibaca dari `salary_recaps`, bukan angka
+  // tetap: setelah ditandai, halaman yang dimuat ulang menyebutnya.
+  const tandai = await request.patch("/api/admin/gaji", {
+    headers: { ...headers, "Content-Type": "application/json" },
+    data: { guruId, periode: bulan, dibayar: true },
+  });
+  expect(tandai.status()).toBe(200);
+  await page.reload();
+  await expect(baris).toContainText("Sudah dibayar");
+
+  // Dikembalikan ke belum dibayar supaya pemeriksaan lain tidak ikut terbawa.
+  const batal = await request.patch("/api/admin/gaji", {
+    headers: { ...headers, "Content-Type": "application/json" },
+    data: { guruId, periode: bulan, dibayar: false },
+  });
+  expect(batal.status()).toBe(200);
+});
+
+/**
+ * Guru punya riwayat gajinya sendiri, tetapi tidak boleh membuka riwayat guru
+ * lain — jalur itu milik owner (`gaji: read-any`).
+ */
+test("guru hanya membuka riwayat gajinya sendiri", async ({ page }) => {
+  await setRole(emailGuruLain, "user");
+  await page.goto("/sign-in");
+  await page.getByLabel("Email").fill(emailGuruLain);
+  await page.getByLabel("Password").fill(sandi);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/app\/jurnal$/);
+
+  await page.goto(`/app/gaji/saya?periode=${bulan}`);
+  await page.getByRole("link", { name: "Riwayat bulan saya" }).click();
+  await expect(page).toHaveURL(
+    `/app/gaji/guru/${guruLainId}?tahun=${bulan.slice(0, 4)}`,
+  );
+  await expect(
+    page.getByRole("heading", { name: "Rekap gaji Guru Gaji Lain" }),
+  ).toBeVisible();
+
+  // 2 jam × Rp50.000 dari jurnalnya sendiri, dan tautannya mengarah ke rekap
+  // gajinya (halaman slip tetap milik owner).
+  const baris = page.locator("li").filter({ hasText: labelPeriode(bulan) });
+  await expect(baris).toContainText("2 jam mengajar");
+  await expect(baris).toContainText("Rp100.000");
+  await expect(
+    baris.getByRole("link", { name: "Rekap bulan itu" }),
+  ).toHaveAttribute("href", `/app/gaji/saya?periode=${bulan}`);
+
+  // Riwayat guru lain tidak terbuka: jalur owner dijawab 404.
+  await page.goto(`/app/gaji/guru/${guruId}`);
+  await expect(page.getByText(/This page isn.t here/)).toBeVisible();
+});
