@@ -124,6 +124,7 @@ export default async function VerifikasiNotifikasiPage() {
         sungguhannya dijalankan tes di <code>e2e/notifikasi.spec.ts</code>,{" "}
         <code>tests/notifikasi-service.test.mjs</code>,{" "}
         <code>tests/notifikasi-tandai-dibaca.test.mjs</code>,{" "}
+        <code>tests/notifikasi-anti-duplikat.test.mjs</code>,{" "}
         <code>tests/notifikasi-gaji.test.mjs</code>, dan{" "}
         <code>tests/pesan-notifikasi.test.mjs</code>.
       </p>

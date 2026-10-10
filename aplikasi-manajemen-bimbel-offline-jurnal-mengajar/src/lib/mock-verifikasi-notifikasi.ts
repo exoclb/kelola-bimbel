@@ -5,7 +5,8 @@
 // hasil pemeriksaan, jadi daftar dan angkanya ditulis tetap di sini. Yang
 // diperiksa bukan karangan — setiap perilaku di bawah sudah dikunci tes
 // (`e2e/notifikasi.spec.ts`, `tests/notifikasi-service.test.mjs`,
-// `tests/notifikasi-tandai-dibaca.test.mjs`, `tests/notifikasi-gaji.test.mjs`,
+// `tests/notifikasi-tandai-dibaca.test.mjs`,
+// `tests/notifikasi-anti-duplikat.test.mjs`, `tests/notifikasi-gaji.test.mjs`,
 // `tests/notifikasi-tagihan.test.mjs`, `tests/pesan-notifikasi.test.mjs`), dan
 // sumber pemicunya ikut ditulis supaya bisa ditelusuri.
 //
@@ -56,6 +57,7 @@ export const KASUS_VERIFIKASI: KasusVerifikasi[] = [
       "Rekap honor satu periode dibuat dua kali: tetap 1 notifikasi untuk gurunya.",
       "Tagihan SPP satu periode diterbitkan dua kali: tetap 1 notifikasi untuk walinya.",
       "Laporan bulanan satu periode dibuka ulang: tetap 1 notifikasi untuk pemilik.",
+      "Peristiwa yang sama dikirim dua permintaan serentak: tetap 1 notifikasi untuk penerimanya.",
       "Indeks unik notifications_user_tipe_kunci_idx menolak baris kembar (galat 23505).",
     ],
     hasil:
@@ -197,6 +199,7 @@ export const PERISTIWA_UJI: HasilUjiPeristiwa[] = [
     tes: [
       "tests/notifikasi-gaji.test.mjs · rekap honor periodik hanya memberi tahu sekali per periode",
       "tests/notifikasi-gaji.test.mjs · guru yang mematikan rekap_honor tidak dikirimi",
+      "tests/notifikasi-anti-duplikat.test.mjs · rekap honor yang dipicu bersamaan mengabari sekali per jenis",
       "e2e/notifikasi.spec.ts · rekap honor memberi tahu gurunya sekali per periode",
     ],
   },
@@ -211,6 +214,7 @@ export const PERISTIWA_UJI: HasilUjiPeristiwa[] = [
     pemicu: "src/services/gaji.service.ts · tandaiPembayaranGaji",
     tes: [
       "tests/notifikasi-gaji.test.mjs · tandai dibayar menambah notifikasi gaji sekali saja",
+      "tests/notifikasi-anti-duplikat.test.mjs · rekap honor yang dipicu bersamaan mengabari sekali per jenis",
       "e2e/notifikasi.spec.ts · gaji dibayar memberi tahu gurunya sekali saja",
     ],
   },
@@ -226,6 +230,7 @@ export const PERISTIWA_UJI: HasilUjiPeristiwa[] = [
     tes: [
       "tests/notifikasi-tagihan.test.mjs · tagihan terbit mengabari wali muridnya sekali",
       "tests/notifikasi-tagihan.test.mjs · semua wali satu murid dikabari tagihan terbitnya",
+      "tests/notifikasi-anti-duplikat.test.mjs · tagihan yang diterbitkan bersamaan tetap satu tagihan dan satu kabar",
     ],
   },
   {
@@ -239,6 +244,7 @@ export const PERISTIWA_UJI: HasilUjiPeristiwa[] = [
     pemicu: "src/services/tagihan.service.ts · updateTagihan",
     tes: [
       "tests/notifikasi-tagihan.test.mjs · tagihan lunas mengabari wali sekali saja",
+      "tests/notifikasi-anti-duplikat.test.mjs · tagihan yang ditandai lunas bersamaan mengabari sekali",
     ],
   },
   {
@@ -252,6 +258,7 @@ export const PERISTIWA_UJI: HasilUjiPeristiwa[] = [
       "src/services/notifikasi.service.ts · beritahuLaporanBulanan · dipanggil halaman /app/laba-rugi",
     tes: [
       "tests/notifikasi-service.test.mjs · beritahuLaporanBulanan sekali per periode dan hanya untuk yang menyalakannya",
+      "tests/notifikasi-anti-duplikat.test.mjs · laporan bulanan yang dihitung ulang bersamaan tetap satu kabar",
       "e2e/notifikasi.spec.ts · laporan bulanan memberitahu pemilik yang menyalakannya sekali per periode",
     ],
   },
