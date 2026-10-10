@@ -197,6 +197,7 @@ export const PERISTIWA_UJI: HasilUjiPeristiwa[] = [
     tes: [
       "tests/notifikasi-gaji.test.mjs · rekap honor periodik hanya memberi tahu sekali per periode",
       "tests/notifikasi-gaji.test.mjs · guru yang mematikan rekap_honor tidak dikirimi",
+      "e2e/notifikasi.spec.ts · rekap honor memberi tahu gurunya sekali per periode",
     ],
   },
   {
@@ -286,7 +287,7 @@ export const UJI_PREFERENSI: UjiPreferensi[] = [
       "Guru mematikan jenis ini, lalu rekapitulasi honornya dicatat untuk satu periode.",
     hasil:
       "Pemberitahuan rekapnya 0, tetapi jenis gaji_dibayar untuk periode yang sama tetap sampai karena preferensinya per jenis. Penerima yang ditahan juga tidak dihitung sebagai baris yang dibuat.",
-    tes: "tests/notifikasi-gaji.test.mjs · guru yang mematikan rekap_honor tidak dikirimi · tests/notifikasi-service.test.mjs · buatNotifikasi menghormati preferensi akun yang mematikan jenisnya",
+    tes: "tests/notifikasi-gaji.test.mjs · guru yang mematikan rekap_honor tidak dikirimi · tests/notifikasi-service.test.mjs · buatNotifikasi menghormati preferensi akun yang mematikan jenisnya · e2e/notifikasi.spec.ts · rekap honor memberi tahu gurunya sekali per periode",
   },
   {
     id: "gaji-dibayar-dimatikan",

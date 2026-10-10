@@ -421,6 +421,135 @@ test("gaji dibayar memberi tahu gurunya sekali saja", async ({ request }) => {
 });
 
 /**
+ * Notifikasi rekap honor: begitu owner mencatat rekap gaji satu periode, guru
+ * yang jam mengajarnya masuk rekap itu menerima pemberitahuannya — sekali per
+ * periode, walau rekapnya dicatat ulang, dan angkanya sama dengan rekap yang
+ * tersimpan. Guru yang mematikan jenisnya tidak dikirimi, dan pesannya benar-
+ * benar terbaca di layar notifikasi gurunya, bukan hanya di API.
+ */
+test("rekap honor memberi tahu gurunya sekali per periode", async ({
+  page,
+  request,
+}) => {
+  const emailPemilik = await daftar(request, "Pemilik Notifikasi Honor");
+  const emailGuru = await daftar(request, "Guru Notifikasi Honor");
+  const emailGuruSepi = await daftar(request, "Guru Sepi Notifikasi Honor");
+  await setRole(emailPemilik, "owner");
+  const guruId = await idAkun(emailGuru);
+  const guruSepiId = await idAkun(emailGuruSepi);
+
+  // Periode jauh di depan supaya rekap berkas uji lain tidak ikut terbaca, dan
+  // tarifnya sendiri supaya angka honornya pasti. Jam mengajarnya dari satu
+  // jurnal yang tercatat di bulan itu.
+  const periode = "2098-05";
+  const tarifPerJam = 60000;
+  const totalJam = 1.5;
+  const db = new Pool({
+    connectionString: process.env.STARTER_TEST_DATABASE_URL,
+    max: 1,
+  });
+  try {
+    await db.query(
+      `INSERT INTO salary_settings (tarif_per_jam, skema, berlaku_sejak)
+       VALUES ($1, 'per jam', $2)
+       ON CONFLICT (berlaku_sejak) DO UPDATE SET tarif_per_jam = $1`,
+      [tarifPerJam, "2098-01-01"],
+    );
+    // Kelas menunjuk nama cabang yang harus terdaftar lebih dulu.
+    await db.query(
+      `INSERT INTO cabang (nama, alamat, kontak, status_aktif)
+       VALUES ($1, $2, $3, true)
+       ON CONFLICT (lower(btrim(nama))) DO NOTHING`,
+      ["Cabang Notifikasi Honor", "Jl. Uji e2e No. 4", "0800-0004"],
+    );
+    const kelasId = randomUUID();
+    await db.query(
+      "INSERT INTO classes (id, nama_kelas, cabang, guru_id) VALUES ($1, $2, $3, $4)",
+      [
+        kelasId,
+        `Kelas Notifikasi Honor ${randomUUID().slice(0, 6)}`,
+        "Cabang Notifikasi Honor",
+        guruId,
+      ],
+    );
+    await db.query(
+      `INSERT INTO teaching_journals
+         (guru_id, class_id, tanggal, materi, jam_mengajar, status)
+       VALUES ($1, $2, $3, $4, $5, 'terkirim')`,
+      [guruId, kelasId, `${periode}-10`, "Materi honor", totalJam],
+    );
+    // Guru kedua mematikan jenis rekap honor untuk dirinya sendiri.
+    await db.query(
+      "INSERT INTO notification_preferences (user_id, jenis_notifikasi, aktif) VALUES ($1, $2, $3)",
+      [guruSepiId, "rekap_honor", false],
+    );
+  } finally {
+    await db.end();
+  }
+
+  await masuk(request, emailPemilik);
+  // Menandai pembayaran sekaligus mencatat rekapnya; `dibayar: false` berarti
+  // "belum dibayar", jadi yang diperiksa murni pemicu rekapnya.
+  const tandai = (guru: string) =>
+    request.patch("/api/admin/gaji", {
+      headers,
+      data: { guruId: guru, periode, dibayar: false },
+    });
+
+  const pertama = await tandai(guruId);
+  expect(pertama.status()).toBe(200);
+  const rekap = (await pertama.json()).data as {
+    totalJam: number;
+    tarifPerJam: number;
+    totalGaji: number;
+  };
+  expect(rekap.totalJam).toBe(totalJam);
+  expect(rekap.tarifPerJam).toBe(tarifPerJam);
+  expect(rekap.totalGaji).toBe(totalJam * tarifPerJam);
+
+  // Mencatat ulang bulan yang sama bukan peristiwa baru, dan guru yang
+  // mematikan jenisnya tetap boleh punya rekap (rekornya tersimpan).
+  expect((await tandai(guruId)).status()).toBe(200);
+  expect((await tandai(guruSepiId)).status()).toBe(200);
+
+  const pesanRekap = async (email: string) => {
+    await masuk(request, email);
+    const jawaban = await request.get("/api/notifikasi", { headers });
+    expect(jawaban.status()).toBe(200);
+    return (
+      (await jawaban.json()).data as { tipe: string; pesan: string }[]
+    ).filter((baris) => baris.tipe === "rekap_honor");
+  };
+
+  const pesan = await pesanRekap(emailGuru);
+  expect(pesan).toHaveLength(1);
+  // Pesannya memuat periode, total, dan jam yang sama dengan rekap tersimpan.
+  expect(pesan[0].pesan).toBe(
+    `Rekap honor periode ${formatBulan(periode)} sudah tersedia. ` +
+      `Total ${rupiah(rekap.totalGaji)} dari ${totalJam.toLocaleString(
+        "id-ID",
+        { maximumFractionDigits: 2 },
+      )} jam mengajar.`,
+  );
+
+  expect(await pesanRekap(emailGuruSepi)).toHaveLength(0);
+
+  // Dan pesannya benar-benar tampil di layar notifikasi gurunya.
+  await page.goto("/sign-in");
+  await page.getByLabel("Email", { exact: true }).fill(emailGuru);
+  await page.getByLabel("Password", { exact: true }).fill(sandi);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.waitForURL((url) => !url.pathname.startsWith("/sign-in"));
+  await page.goto("/app/notifikasi");
+  await expect(
+    page.getByRole("heading", { name: "Notifikasi", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText(pesan[0].pesan, { exact: true })).toBeVisible();
+  // Akun guru ini baru, jadi rekap itulah satu-satunya kabar yang menunggu.
+  await expect(page.getByText("1 belum dibaca").first()).toBeVisible();
+});
+
+/**
  * Notifikasi laporan bulanan: begitu halaman laporan laba rugi menghitung angka
  * bulan berjalan, pemilik yang menyalakan jenis ini menerima ringkasannya —
  * sekali per periode, walau halamannya dibuka berulang kali. Pemilik yang
