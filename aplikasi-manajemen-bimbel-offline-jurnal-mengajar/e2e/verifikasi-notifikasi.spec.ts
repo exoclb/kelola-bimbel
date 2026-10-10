@@ -98,6 +98,16 @@ test("owner membuka ringkasan verifikasi notifikasi dari kartu pengaturan", asyn
       "tests/notifikasi-gaji.test.mjs · tandai dibayar menambah notifikasi gaji sekali saja",
     ),
   ).toBeVisible();
+
+  // Dua tabel uji berikutnya: preferensi per jenis dan batas penandaan baca.
+  await expect(page.getByText("Preferensi per jenis")).toBeVisible();
+  await expect(page.getByText("Penandaan baca lewat")).toBeVisible();
+  await expect(page.getByText("ids: [<id akun lain>]")).toBeVisible();
+  await expect(
+    page.getByText(
+      "Dijawab 422 sebelum menyentuh basis data, bukan menandai semua baris.",
+    ),
+  ).toBeVisible();
 });
 
 test("guru tidak menemukan halaman verifikasi notifikasi", async ({

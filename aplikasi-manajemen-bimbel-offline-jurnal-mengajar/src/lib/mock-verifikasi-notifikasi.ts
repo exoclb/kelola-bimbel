@@ -54,7 +54,7 @@ export const KASUS_VERIFIKASI: KasusVerifikasi[] = [
     bukti: [
       "Rekap honor satu periode dibuat dua kali: tetap 1 notifikasi untuk gurunya.",
       "Laporan bulanan satu periode dibuka ulang: tetap 1 notifikasi untuk pemilik.",
-      "Indeks unik `notifications_user_tipe_kunci_idx` menolak baris kembar (galat 23505).",
+      "Indeks unik notifications_user_tipe_kunci_idx menolak baris kembar (galat 23505).",
     ],
     hasil:
       "Peristiwa yang sama tidak pernah menambah pemberitahuan kedua, dijaga database dan bukan hanya pemeriksaan di aplikasi.",
@@ -70,9 +70,9 @@ export const KASUS_VERIFIKASI: KasusVerifikasi[] = [
     jenis: ["jurnal_baru", "gaji_dibayar", "laporan_bulanan"],
     kunci: null,
     bukti: [
-      "Pemilik yang mematikan `jurnal_baru`: 0 pemberitahuan walau jurnal tetap tersimpan.",
-      "Guru yang mematikan `gaji_dibayar`: 0 pemberitahuan walau rekornya ditandai sudah dibayar.",
-      "`laporan_bulanan` bawaannya mati, jadi pemilik hanya dikirimi setelah menyalakannya sendiri.",
+      "Pemilik yang mematikan jenis jurnal_baru: 0 pemberitahuan walau jurnal tetap tersimpan.",
+      "Guru yang mematikan jenis gaji_dibayar: 0 pemberitahuan walau rekornya ditandai sudah dibayar.",
+      "Jenis laporan_bulanan bawaannya mati, jadi pemilik hanya dikirimi setelah menyalakannya sendiri.",
     ],
     hasil:
       "Pemberitahuan baru sampai ke akun yang jenisnya menyala — bawaan jenis dipakai selama pengaturannya belum diubah.",
@@ -105,8 +105,8 @@ export const KASUS_VERIFIKASI: KasusVerifikasi[] = [
     jenis: ["jurnal_baru", "gaji_dibayar"],
     kunci: "gaji_dibayar:<guruId>:<periode>",
     bukti: [
-      "Jurnal yang sama dikirim ulang: tetap 1 pemberitahuan `jurnal_baru`.",
-      "Status bayar ditandai ulang: tetap 1 pemberitahuan `gaji_dibayar`.",
+      "Jurnal yang sama dikirim ulang: tetap 1 pemberitahuan jenis jurnal_baru.",
+      "Status bayar ditandai ulang: tetap 1 pemberitahuan jenis gaji_dibayar.",
       "Koreksi jurnal yang benar-benar berubah tidak mengabari lagi; yang dikabarkan hanya jurnal pertama.",
     ],
     hasil: "Hanya perubahan yang sungguh terjadi yang dikabarkan ke penerimanya.",
@@ -117,12 +117,12 @@ export const KASUS_VERIFIKASI: KasusVerifikasi[] = [
     id: "jenis-tanpa-pemicu",
     judul: "Jenis notifikasi yang belum punya pemicu",
     keterangan:
-      "Jenis `kelas_kosong` sudah muncul di daftar Preferensi Notifikasi, tetapi belum ada satu pun bagian aplikasi yang mengirimkannya.",
+      "Jenis kelas_kosong sudah muncul di daftar Preferensi Notifikasi, tetapi belum ada satu pun bagian aplikasi yang mengirimkannya.",
     status: "perlu-ditinjau",
     jenis: ["kelas_kosong"],
     kunci: null,
     bukti: [
-      "Pencarian pemicu `kelas_kosong` di `src/` hanya menemukan katalog jenisnya.",
+      "Pencarian pemicu kelas_kosong di src/ hanya menemukan katalog jenisnya.",
       "Akun bisa menyalakan jenis ini, tetapi tidak akan pernah menerima pemberitahuannya.",
     ],
     hasil:
@@ -222,6 +222,108 @@ export const PERISTIWA_UJI: HasilUjiPeristiwa[] = [
       "tests/notifikasi-service.test.mjs · beritahuLaporanBulanan sekali per periode dan hanya untuk yang menyalakannya",
       "e2e/notifikasi.spec.ts · laporan bulanan memberitahu pemilik yang menyalakannya sekali per periode",
     ],
+  },
+];
+
+export type UjiPreferensi = {
+  id: string;
+  jenis: JenisNotifikasi;
+  /** Keadaan pengaturan yang diuji. */
+  keadaan: string;
+  /** Akibatnya pada pemberitahuan yang sampai. */
+  hasil: string;
+  /** Nama tes yang mengunci perilaku ini. */
+  tes: string;
+};
+
+// Preferensi diuji per akun dan per jenis: mematikan satu jenis tidak menahan
+// jenis lain, dan bawaan jenis dipakai selama akun belum mengubahnya.
+export const UJI_PREFERENSI: UjiPreferensi[] = [
+  {
+    id: "jurnal-baru-dimatikan",
+    jenis: "jurnal_baru",
+    keadaan:
+      "Pemilik mematikan jenis ini, lalu gurunya tetap mengirim jurnal mengajar.",
+    hasil:
+      "Pemilik itu tidak dikirimi pemberitahuan walau jurnalnya tersimpan, sedangkan pemilik lain yang masih menyalakannya tetap diberi tahu.",
+    tes: "e2e/notifikasi.spec.ts · jurnal baru hanya memberi tahu pemilik yang masih mengaktifkannya",
+  },
+  {
+    id: "rekap-honor-dimatikan",
+    jenis: "rekap_honor",
+    keadaan:
+      "Guru mematikan jenis ini, lalu rekapitulasi honornya dicatat untuk satu periode.",
+    hasil:
+      "Pemberitahuan rekapnya 0, tetapi jenis gaji_dibayar untuk periode yang sama tetap sampai karena preferensinya per jenis. Penerima yang ditahan juga tidak dihitung sebagai baris yang dibuat.",
+    tes: "tests/notifikasi-gaji.test.mjs · guru yang mematikan rekap_honor tidak dikirimi · tests/notifikasi-service.test.mjs · buatNotifikasi menghormati preferensi akun yang mematikan jenisnya",
+  },
+  {
+    id: "gaji-dibayar-dimatikan",
+    jenis: "gaji_dibayar",
+    keadaan:
+      "Guru mematikan jenis ini, lalu rekornya ditandai sudah dibayar oleh pemilik.",
+    hasil:
+      "Guru itu tidak menerima pemberitahuannya, sementara guru lain yang tidak mengubah pengaturannya menerima tepat satu — walau pembayarannya ditandai dua kali.",
+    tes: "e2e/notifikasi.spec.ts · gaji dibayar memberi tahu gurunya sekali saja",
+  },
+  {
+    id: "laporan-bulanan-mati-bawaan",
+    jenis: "laporan_bulanan",
+    keadaan:
+      "Jenis ini bawaannya mati; pemilik yang membiarkan pengaturannya dibandingkan yang menyalakannya.",
+    hasil:
+      "Hanya pemilik yang menyalakannya yang menerima laporan, sekali per periode walau halamannya dibuka berulang kali.",
+    tes: "tests/notifikasi-service.test.mjs · beritahuLaporanBulanan sekali per periode dan hanya untuk yang menyalakannya · e2e/notifikasi.spec.ts · laporan bulanan memberitahu pemilik yang menyalakannya sekali per periode",
+  },
+];
+
+export type UjiTandaiDibaca = {
+  id: string;
+  /** Permintaan yang dikirim ke `PATCH /api/notifikasi`. */
+  langkah: string;
+  /** Yang benar-benar berubah di baris notifikasi. */
+  hasil: string;
+  /** Nama tes yang mengunci perilaku ini. */
+  tes: string;
+};
+
+// Penandaan baca diuji sampai batas kepemilikan barisnya: penyaring akun
+// dipakai satu perintah SQL yang sama dengan pembacaannya.
+export const UJI_TANDAI_DIBACA: UjiTandaiDibaca[] = [
+  {
+    id: "satu-id",
+    langkah: "ids: [<id milik sendiri>]",
+    hasil:
+      "1 baris berubah dan hitungan belum dibaca akun itu turun jadi 0.",
+    tes: "e2e/notifikasi.spec.ts · daftar dan tandai baca notifikasi terbatas pada akun sendiri",
+  },
+  {
+    id: "dibalik",
+    langkah: "ids: [<id sudah dibaca>], dibaca: false",
+    hasil:
+      "1 baris berubah kembali menjadi belum dibaca — penandaan bisa dibalik.",
+    tes: "e2e/notifikasi.spec.ts · daftar dan tandai baca notifikasi terbatas pada akun sendiri",
+  },
+  {
+    id: "id-akun-lain",
+    langkah: "ids: [<id akun lain>]",
+    hasil:
+      "0 baris berubah; pemberitahuan akun lain tetap utuh miliknya.",
+    tes: "e2e/notifikasi.spec.ts · daftar dan tandai baca notifikasi terbatas pada akun sendiri · penandaan baca akun lain tidak mengubah notifikasi milik sendiri",
+  },
+  {
+    id: "semua",
+    langkah: "semua: true",
+    hasil:
+      "Hanya baris milik akun yang sedang masuk yang berubah; akun lain tetap melihat 1 belum dibaca.",
+    tes: "e2e/notifikasi.spec.ts · penandaan baca akun lain tidak mengubah notifikasi milik sendiri",
+  },
+  {
+    id: "badan-kosong",
+    langkah: "ids: []",
+    hasil:
+      "Dijawab 422 sebelum menyentuh basis data, bukan menandai semua baris.",
+    tes: "e2e/notifikasi.spec.ts · daftar dan tandai baca notifikasi terbatas pada akun sendiri",
   },
 ];
 

@@ -8,11 +8,14 @@ import {
 } from "lucide-react";
 import { DaftarVerifikasiNotifikasi } from "@/components/daftar-verifikasi-notifikasi";
 import { HasilUjiPerPeristiwa } from "@/components/hasil-uji-per-peristiwa";
+import { UjiPreferensiDanTandaiDibaca } from "@/components/uji-preferensi-dan-tandai-dibaca";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
   KASUS_VERIFIKASI,
   PERISTIWA_UJI,
+  UJI_PREFERENSI,
+  UJI_TANDAI_DIBACA,
   ringkasVerifikasi,
 } from "@/lib/mock-verifikasi-notifikasi";
 import { requirePermission } from "@/lib/session";
@@ -93,6 +96,13 @@ export default async function VerifikasiNotifikasiPage() {
 
       <div className="mt-6">
         <HasilUjiPerPeristiwa peristiwa={PERISTIWA_UJI} />
+      </div>
+
+      <div className="mt-6">
+        <UjiPreferensiDanTandaiDibaca
+          preferensi={UJI_PREFERENSI}
+          tandaiDibaca={UJI_TANDAI_DIBACA}
+        />
       </div>
 
       <h2 className="mt-10 text-lg font-semibold tracking-tight">
