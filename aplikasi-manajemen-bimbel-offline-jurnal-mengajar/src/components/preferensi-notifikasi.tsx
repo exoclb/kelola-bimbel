@@ -33,9 +33,11 @@ type PreferensiNotifikasiProps = {
 };
 
 /**
- * Preferensi notifikasi per akun: nyalakan atau matikan tiap jenis
- * pemberitahuan. Jenis pemberitahuannya diambil dari daftar baku di
- * `src/lib/notifikasi.ts`, jadi nilainya sama dengan yang dipakai API.
+ * Preferensi notifikasi per akun: daftar semua jenis pemberitahuan yang dikenal
+ * aplikasi beserta saklar Aktif/Nonaktif-nya. Jenisnya diambil dari daftar baku
+ * di `src/lib/notifikasi.ts` lewat halaman (server component-nya memanggil
+ * `ambilPreferensiNotifikasi`), jadi barisnya tidak pernah berbeda dari yang
+ * dipakai API.
  *
  * Perubahan dikirim ke `PATCH /api/pengaturan/notifikasi`; jawabannya adalah
  * daftar terbaru, jadi yang ditampilkan selalu keadaan yang benar-benar
@@ -102,9 +104,9 @@ export function PreferensiNotifikasi({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Preferensi Notifikasi</CardTitle>
+        <CardTitle>Daftar jenis pemberitahuan</CardTitle>
         <CardDescription>
-          {jumlahAktif} dari {daftar.length} pemberitahuan menyala.
+          {jumlahAktif} dari {daftar.length} jenis pemberitahuan aktif.
           Notifikasinya muncul di panel pemberitahuan aplikasi.
         </CardDescription>
       </CardHeader>
@@ -122,12 +124,26 @@ export function PreferensiNotifikasi({
                 onCheckedChange={(nilai) => ubah(item, nilai === true)}
               />
               <div className="space-y-1">
-                <Label
-                  htmlFor={`notif-${item.jenis}`}
-                  className="cursor-pointer font-medium"
-                >
-                  {item.judul}
-                </Label>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Label
+                    htmlFor={`notif-${item.jenis}`}
+                    className="cursor-pointer font-medium"
+                  >
+                    {item.judul}
+                  </Label>
+                  {/* Keadaan tiap jenis ditulis juga sebagai kata, bukan hanya
+                      dari centang saklarnya: yang membaca layar atau tidak
+                      melihat warnanya tetap tahu mana yang aktif. */}
+                  <span
+                    className={
+                      item.aktif
+                        ? "bg-primary/10 text-primary rounded-full border border-primary/30 px-2 py-0.5 text-xs font-medium"
+                        : "bg-muted text-muted-foreground rounded-full border px-2 py-0.5 text-xs font-medium"
+                    }
+                  >
+                    {item.aktif ? "Aktif" : "Nonaktif"}
+                  </span>
+                </div>
                 <p className="text-sm leading-6 text-muted-foreground">
                   {item.keterangan}
                 </p>

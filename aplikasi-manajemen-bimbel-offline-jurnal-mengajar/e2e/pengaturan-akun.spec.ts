@@ -152,11 +152,22 @@ test("saklar preferensi notifikasi tersimpan ke server untuk akun itu sendiri", 
   const bulanan = page.getByRole("checkbox", { name: "Laporan bulanan" });
   await expect(bulanan).not.toBeChecked();
 
+  // Daftarnya lengkap — satu saklar per jenis yang dikenal aplikasi — dan tiap
+  // baris menuliskan keadaannya sebagai kata, bukan hanya lewat centang.
+  await expect(page.getByRole("checkbox")).toHaveCount(5);
+  await expect(page.getByText("Nonaktif", { exact: true })).toHaveCount(1);
+  await expect(page.getByText("Aktif", { exact: true })).toHaveCount(4);
+
   await bulanan.check();
   await expect(
     page.getByText('Pemberitahuan "Laporan bulanan" dinyalakan.'),
   ).toBeVisible();
   await expect(bulanan).toBeChecked();
+  await expect(page.getByText("Aktif", { exact: true })).toHaveCount(5);
+  await expect(page.getByText("Nonaktif", { exact: true })).toHaveCount(0);
+  await expect(
+    page.getByText("5 dari 5 jenis pemberitahuan aktif."),
+  ).toBeVisible();
 
   // Perubahannya benar-benar sampai ke basis data — bukan hanya berubah di
   // layar seperti versi tiruan dulu.
@@ -169,7 +180,9 @@ test("saklar preferensi notifikasi tersimpan ke server untuk akun itu sendiri", 
   await expect(
     page.getByRole("checkbox", { name: "Laporan bulanan" }),
   ).toBeChecked();
-  await expect(page.getByText("5 dari 5 pemberitahuan menyala.")).toBeVisible();
+  await expect(
+    page.getByText("5 dari 5 jenis pemberitahuan aktif."),
+  ).toBeVisible();
 
   // Ringkasan di halaman pengaturan ikut membaca basis data yang sama.
   await page.goto("/app/pengaturan");
