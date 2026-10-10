@@ -1455,3 +1455,273 @@ test("saklar status cabang tidak terkirim dobel", async ({ page }) => {
     await db.end();
   }
 });
+
+/**
+ * Form ubah cabang memvalidasi isiannya di tampilan sebelum mengirim, dan
+ * pilihan "Status" di dalam formulirnya juga menyimpan ke basis data — bukan
+ * hanya saklar cepat di barisnya. Hasilnya dilaporkan di kepala daftar.
+ */
+test("form ubah cabang memvalidasi isian lalu menyimpan termasuk statusnya", async ({
+  page,
+}) => {
+  await jadikanOwner();
+  const penanda = randomUUID().slice(0, 8);
+  const nama = `Cabang Ubah Isian ${penanda}`;
+  await siapkanCabang(nama, true);
+
+  const db = await pool();
+  try {
+    const { rows } = await db.query<{ id: string }>(
+      "SELECT id FROM cabang WHERE nama = $1",
+      [nama],
+    );
+    const id = rows[0].id;
+
+    await masukPeramban(page);
+    await page.goto("/app/cabang");
+    const kartu = page.locator("li").filter({
+      has: page.getByRole("button", { name: new RegExp(`cabang ${nama}$`) }),
+    });
+    await kartu.getByRole("button", { name: "Ubah", exact: true }).click();
+    const formulir = page
+      .locator("li")
+      .filter({ has: page.locator(`#nama-${id}`) });
+
+    // 1) Ketiga isian dikosongkan: tiga pesan sekaligus, tidak ada yang dikirim.
+    await page.locator(`#nama-${id}`).fill("");
+    await page.locator(`#kontak-${id}`).fill("");
+    await page.locator(`#alamat-${id}`).fill("");
+    await page.getByRole("button", { name: "Simpan perubahan" }).click();
+    await expect(formulir.getByText("Nama cabang wajib diisi.")).toBeVisible();
+    await expect(formulir.getByText("Kontak wajib diisi.")).toBeVisible();
+    await expect(formulir.getByText("Alamat wajib diisi.")).toBeVisible();
+    const belumTersimpan = await db.query<{ kontak: string }>(
+      "SELECT kontak FROM cabang WHERE id = $1",
+      [id],
+    );
+    expect(belumTersimpan.rows[0].kontak).toBe("0800-0000");
+
+    // 2) Isian sah dengan status diubah dari formulirnya: tersimpan di basis
+    //    data dan barisnya menampilkan pil "Nonaktif".
+    await page.locator(`#nama-${id}`).fill(nama);
+    await page.locator(`#kontak-${id}`).fill("0800-6666");
+    await page.locator(`#alamat-${id}`).fill("Jl. Ubah Isian No. 9");
+    await page.locator(`#status-${id}`).selectOption("nonaktif");
+    await page.getByRole("button", { name: "Simpan perubahan" }).click();
+
+    await expect(page.getByText(`Cabang ${nama} diperbarui.`)).toBeVisible();
+    await expect(page.getByText("Nama cabang wajib diisi.")).toHaveCount(0);
+    await expect(kartu.getByText("Nonaktif", { exact: true })).toBeVisible();
+    const tersimpan = await db.query<{
+      alamat: string;
+      kontak: string;
+      status_aktif: boolean;
+    }>("SELECT alamat, kontak, status_aktif FROM cabang WHERE id = $1", [id]);
+    expect(tersimpan.rows[0]).toEqual({
+      alamat: "Jl. Ubah Isian No. 9",
+      kontak: "0800-6666",
+      status_aktif: false,
+    });
+  } finally {
+    await db.query("DELETE FROM cabang WHERE nama = $1", [nama]);
+    await db.end();
+  }
+});
+
+/**
+ * Saklar status di baris cabang melaporkan hasilnya di kepala daftar, jadi
+ * pengguna tahu perubahan mana yang baru saja tersimpan — dan pesan lama tidak
+ * menumpuk dengan yang baru.
+ */
+test("saklar status cabang melaporkan hasilnya di layar", async ({ page }) => {
+  await jadikanOwner();
+  const penanda = randomUUID().slice(0, 8);
+  const nama = `Cabang Pesan ${penanda}`;
+  await siapkanCabang(nama, true);
+
+  const db = await pool();
+  try {
+    await masukPeramban(page);
+    await page.goto("/app/cabang");
+    const kartu = page.locator("li").filter({
+      has: page.getByRole("button", { name: new RegExp(`cabang ${nama}$`) }),
+    });
+
+    await kartu
+      .getByRole("button", { name: `Nonaktifkan cabang ${nama}` })
+      .click();
+    await expect(page.getByText(`Cabang ${nama} dinonaktifkan.`)).toBeVisible();
+
+    await kartu
+      .getByRole("button", { name: `Aktifkan cabang ${nama}` })
+      .click();
+    await expect(page.getByText(`Cabang ${nama} diaktifkan.`)).toBeVisible();
+    await expect(page.getByText(`Cabang ${nama} dinonaktifkan.`)).toHaveCount(
+      0,
+    );
+
+    const { rows } = await db.query<{ status_aktif: boolean }>(
+      "SELECT status_aktif FROM cabang WHERE nama = $1",
+      [nama],
+    );
+    expect(rows[0].status_aktif).toBe(true);
+  } finally {
+    await db.query("DELETE FROM cabang WHERE nama = $1", [nama]);
+    await db.end();
+  }
+});
+
+/**
+ * Cabang yang belum punya kelas ditandai "Belum ada kelas" di barisnya maupun
+ * di panel detailnya, bukan sebagai angka nol yang ambigu.
+ */
+test("cabang tanpa kelas ditandai di baris dan panel detail", async ({
+  page,
+}) => {
+  await jadikanOwner();
+  const penanda = randomUUID().slice(0, 8);
+  const nama = `Cabang Kosong ${penanda}`;
+  await siapkanCabang(nama, true);
+
+  const db = await pool();
+  try {
+    const { rows } = await db.query<{ id: string }>(
+      "SELECT id FROM cabang WHERE nama = $1",
+      [nama],
+    );
+    const id = rows[0].id;
+
+    await masukPeramban(page);
+    await page.goto("/app/cabang");
+    const kartu = page.locator("li").filter({
+      has: page.getByRole("button", { name: `Detail cabang ${nama}` }),
+    });
+    await expect(kartu.getByText("Belum ada kelas")).toBeVisible();
+
+    const panel = page.locator(`#detail-${id}`);
+    await kartu.getByRole("button", { name: `Detail cabang ${nama}` }).click();
+    await expect(panel.getByText(`Detail cabang ${nama}`)).toBeVisible();
+    await expect(panel.getByText("Belum ada kelas")).toBeVisible();
+    await expect(panel.getByText("Jl. Uji e2e No. 1")).toBeVisible();
+    await expect(panel.getByText("0800-0000")).toBeVisible();
+  } finally {
+    await db.query("DELETE FROM cabang WHERE nama = $1", [nama]);
+    await db.end();
+  }
+});
+
+/**
+ * Kegagalan API cabang tidak boleh tampil sebagai keheningan: pesan dari server
+ * dipakai kalau ada, pesan cadangan kalau jawabannya bukan JSON atau koneksinya
+ * putus, dan tidak satu pun percobaan gagal itu mengubah basis data — pesan
+ * berhasil pun tidak muncul. Panel detailnya juga menjelaskan saat datanya
+ * gagal dimuat, sementara permintaan yang lambat menampilkan status memuat.
+ */
+test("kegagalan API cabang ditampilkan sebagai galat, bukan panel kosong", async ({
+  page,
+}) => {
+  await jadikanOwner();
+  const penanda = randomUUID().slice(0, 8);
+  const nama = `Cabang Galat ${penanda}`;
+  await siapkanCabang(nama, true);
+
+  const db = await pool();
+  try {
+    const { rows } = await db.query<{ id: string }>(
+      "SELECT id FROM cabang WHERE nama = $1",
+      [nama],
+    );
+    const id = rows[0].id;
+
+    await masukPeramban(page);
+    await page.goto("/app/cabang");
+    const kartu = page.locator("li").filter({
+      has: page.getByRole("button", { name: new RegExp(`cabang ${nama}$`) }),
+    });
+    // Announcer route Next.js juga berperan "alert", jadi dipersempit ke
+    // paragraf galat milik halaman ini.
+    const galat = page.locator('p[role="alert"]');
+    const cadangan = `Status cabang ${nama} belum bisa diubah. Coba lagi sebentar lagi.`;
+
+    // 1) Jawaban gagal berisi pesan dari server: pesannya tampil apa adanya.
+    await page.route("**/api/cabang/*", async (route) => {
+      if (route.request().method() !== "PATCH") return route.fallback();
+      return route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: { message: "Layanan cabang sedang tidak tersedia." },
+        }),
+      });
+    });
+    await kartu
+      .getByRole("button", { name: `Nonaktifkan cabang ${nama}` })
+      .click();
+    await expect(galat).toHaveText("Layanan cabang sedang tidak tersedia.");
+
+    // 2) Jawaban gagal yang bukan JSON: pesan cadangan.
+    await page.unroute("**/api/cabang/*");
+    await page.route("**/api/cabang/*", async (route) => {
+      if (route.request().method() !== "PATCH") return route.fallback();
+      return route.fulfill({ status: 500, body: "bukan json" });
+    });
+    await kartu
+      .getByRole("button", { name: `Nonaktifkan cabang ${nama}` })
+      .click();
+    await expect(galat).toHaveText(cadangan);
+
+    // 3) Permintaan yang gagal sebelum sampai server (koneksi putus).
+    await page.unroute("**/api/cabang/*");
+    await page.route("**/api/cabang/*", (route) => route.abort());
+    await kartu
+      .getByRole("button", { name: `Nonaktifkan cabang ${nama}` })
+      .click();
+    await expect(galat).toHaveText(cadangan);
+
+    const tetap = await db.query<{ status_aktif: boolean }>(
+      "SELECT status_aktif FROM cabang WHERE nama = $1",
+      [nama],
+    );
+    expect(tetap.rows[0].status_aktif).toBe(true);
+    await expect(page.getByText(`Cabang ${nama} dinonaktifkan.`)).toHaveCount(
+      0,
+    );
+
+    // 4) Detail yang gagal dibaca: panelnya menjelaskan, bukan kosong.
+    await page.unroute("**/api/cabang/*");
+    await page.route("**/api/cabang/*", async (route) => {
+      if (route.request().method() !== "GET") return route.fallback();
+      return route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: { message: "Detail cabang tidak bisa dibaca." },
+        }),
+      });
+    });
+    const panel = page.locator(`#detail-${id}`);
+    await kartu.getByRole("button", { name: `Detail cabang ${nama}` }).click();
+    await expect(panel.getByRole("alert")).toHaveText(
+      "Detail cabang tidak bisa dibaca.",
+    );
+
+    // 5) Detail yang lambat: status memuat tampil selama menunggu, lalu isinya
+    //    benar-benar muncul.
+    await page.unroute("**/api/cabang/*");
+    await page.route("**/api/cabang/*", async (route) => {
+      if (route.request().method() !== "GET") return route.fallback();
+      await delay(400);
+      return route.continue();
+    });
+    // Klik pertama menutup panel gagal tadi, klik kedua membukanya lagi.
+    await kartu.getByRole("button", { name: `Detail cabang ${nama}` }).click();
+    await kartu.getByRole("button", { name: `Detail cabang ${nama}` }).click();
+    await expect(panel.getByText("Memuat detail cabang…")).toBeVisible();
+    await expect(panel.getByText("Jl. Uji e2e No. 1")).toBeVisible();
+    await expect(panel.getByText("0800-0000")).toBeVisible();
+  } finally {
+    await page.unroute("**/api/cabang/*");
+    await db.query("DELETE FROM cabang WHERE nama = $1", [nama]);
+    await db.end();
+  }
+});
