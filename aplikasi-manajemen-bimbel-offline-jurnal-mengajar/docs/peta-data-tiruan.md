@@ -167,9 +167,16 @@ sesudah perubahan, dan aturan `@typescript-eslint/no-unused-vars` aktif
   `ambilPreferensiNotifikasi(userId)` di server component-nya dan mengirim tiap
   saklar ke `PATCH /api/pengaturan/notifikasi` ("belum dikirim ke server" sudah
   tidak berlaku), sedangkan kartu ringkasan di `/app/pengaturan` membaca tabel
-  yang sama; halaman baru `/app/pengaturan/akun` ("Akun Saya") menampilkan
+  yang sama; halaman baru `/app/pengaturan/akun` (“Akun Saya”) menampilkan
   identitas akun yang sedang masuk beserta ringkasan pemberitahuannya, dan
-  berkas ini sekarang hanya berisi daftar akun guru.
+  berkas ini sekarang hanya berisi daftar akun guru. Karena simpanannya baris
+  tabel, pilihannya bertahan tanpa bantuan peramban: setelah halaman dimuat
+  ulang maupun setelah keluar lalu masuk lagi dari peramban bersih, saklarnya
+  tetap seperti terakhir diubah (dulu cuma bertahan selama halaman belum
+  dimuat ulang) — dikunci `e2e/pengaturan-akun.spec.ts`. Isian nama akun di
+  halaman itu juga sudah tersimpan ke kolom `user.name` lewat
+  `PATCH /api/pengaturan/akun`, dan tiap jenis pemberitahuan punya teks bantuan
+  operasional di `src/lib/notifikasi.ts`.
 - Aturan "tarif mana yang berlaku pada tanggal ini" dikumpulkan jadi satu
   fungsi murni `aturanTarifBerlaku` di `src/lib/gaji.ts`, dipakai layar
   pengaturan (menandai baris yang berlaku) sekaligus `tarifPadaAkhirPeriode`

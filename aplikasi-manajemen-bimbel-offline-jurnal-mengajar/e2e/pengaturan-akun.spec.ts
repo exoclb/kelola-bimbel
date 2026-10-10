@@ -315,3 +315,42 @@ test("halaman preferensi menjelaskan tiap jenis pemberitahuan secara operasional
     page.getByText(/Pengirimnya belum ada di aplikasi ini/),
   ).toBeVisible();
 });
+
+test("pilihan notifikasi bertahan setelah keluar dan masuk lagi", async ({
+  page,
+  browser,
+}) => {
+  const email = await daftarAkun("Guru Preferensi Bertahan");
+  await masukHalaman(page, email);
+  await page.goto("/app/pengaturan/notifikasi");
+
+  // Dari bawaan (4 aktif) dinyalakan satu lagi.
+  await page.getByRole("checkbox", { name: "Laporan bulanan" }).check();
+  await expect(
+    page.getByText('Pemberitahuan "Laporan bulanan" dinyalakan.'),
+  ).toBeVisible();
+
+  // Dimuat ulang di halaman yang sama: pilihannya tidak hilang.
+  await page.reload();
+  await expect(
+    page.getByRole("checkbox", { name: "Laporan bulanan" }),
+  ).toBeChecked();
+
+  // Lalu dari peramban yang benar-benar bersih — tanpa kue, tanpa penyimpanan
+  // peramban sama sekali. Kalau pilihannya cuma diingat halaman, di sini dia
+  // akan kembali ke bawaan; yang menyimpannya baris tabel, jadi tetap terbaca.
+  const konteksBaru = await browser.newContext();
+  try {
+    const halamanBaru = await konteksBaru.newPage();
+    await masukHalaman(halamanBaru, email);
+    await halamanBaru.goto("/app/pengaturan/notifikasi");
+    await expect(
+      halamanBaru.getByRole("checkbox", { name: "Laporan bulanan" }),
+    ).toBeChecked();
+    await expect(
+      halamanBaru.getByText("5 dari 5 jenis pemberitahuan aktif."),
+    ).toBeVisible();
+  } finally {
+    await konteksBaru.close();
+  }
+});
