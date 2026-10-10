@@ -2,14 +2,30 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { ArrowRight, TrendingDown, TrendingUp } from "lucide-react";
+import {
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
+import { TombolUnduhLaporan } from "@/components/tombol-unduh-laporan";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { cn } from "cn";
 import { formatPeriode, formatRupiah } from "@/lib/gaji";
+import type { ProfilDokumen } from "@/lib/dokumen-html";
 import {
   geserPeriode,
-  periodeTagihan,
   rekapTagihanKosong,
   type RekapTagihanPeriode,
 } from "@/lib/tagihan";
@@ -33,7 +49,19 @@ type ArusKasProps = {
   rekapPemasukan: RekapTagihanPeriode[];
   /** Total honor guru per periode (`YYYY-MM`) dari jurnal & pengaturan gaji. */
   rekapHonor: { periode: string; total: number }[];
+  /** Bulan terakhir tren, dari alamat halaman; bawaannya bulan berjalan. */
+  periodeAkhir: string;
+  /** Bulan berjalan, untuk tombol kembali dan penyaring tahun. */
+  periodeBerjalan: string;
+  /** Tahun yang boleh dipilih pemilih periode (berisi tahun berjalan). */
+  tahunTersedia: number[];
+  /** Identitas bimbel untuk kop unduhan, dibaca halaman dari `bimbel_profile`. */
+  profil: ProfilDokumen;
 };
+
+const NAMA_BULAN = new Intl.DateTimeFormat("id-ID", { month: "long" });
+const bulanTampil = (bulan: number) =>
+  NAMA_BULAN.format(new Date(2026, bulan - 1, 1));
 
 /**
  * Arus kas bimbel: tren bulanan pemasukan SPP, pengeluaran (honor guru +
@@ -44,6 +72,10 @@ export function ArusKas({
   rekapPengeluaran,
   rekapPemasukan,
   rekapHonor,
+  periodeAkhir,
+  periodeBerjalan,
+  tahunTersedia,
+  profil,
 }: ArusKasProps) {
   const totalHonor = useMemo(
     () =>
@@ -65,12 +97,12 @@ export function ArusKas({
     [rekapPemasukan],
   );
 
-  const periodeBerjalan = periodeTagihan(new Date());
+  const [tahunTerpilih, bulanTerpilih] = periodeAkhir.split("-").map(Number);
 
   // Urut dari bulan terlama ke terbaru supaya trennya terbaca kiri ke kanan.
   const daftar = useMemo<BarisArusKas[]>(() => {
     const bulan = Array.from({ length: JUMLAH_BULAN }, (_, urutan) =>
-      geserPeriode(periodeBerjalan, urutan - (JUMLAH_BULAN - 1)),
+      geserPeriode(periodeAkhir, urutan - (JUMLAH_BULAN - 1)),
     );
     return bulan.map((periode) => {
       const rekap =
@@ -86,7 +118,7 @@ export function ArusKas({
         laba: rekap.nominalLunas - honor - operasional,
       };
     });
-  }, [pemasukanPeriode, totalHonor, totalOperasional, periodeBerjalan]);
+  }, [pemasukanPeriode, totalHonor, totalOperasional, periodeAkhir]);
 
   const maksimum = Math.max(
     1,
@@ -109,8 +141,82 @@ export function ArusKas({
       </h1>
       <p className="mt-3 text-base leading-7 text-muted-foreground">
         Pergerakan pemasukan SPP, pengeluaran (honor guru + operasional), dan
-        laba bersih {JUMLAH_BULAN} bulan terakhir.
+        laba bersih {JUMLAH_BULAN} bulan terakhir sampai{" "}
+        {formatPeriode(periodeAkhir)}.
       </p>
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Pilih periode</CardTitle>
+          <CardDescription>
+            Tren selalu {JUMLAH_BULAN} bulan dan berakhir di bulan yang dipilih,
+            jadi bulan-bulan sebelumnya bisa dibandingkan tanpa mengubah data.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form method="get" className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="bulan">Bulan terakhir</Label>
+              <NativeSelect
+                className="h-[var(--target-sentuh-portal)] md:text-base"
+                id="bulan"
+                name="bulan"
+                defaultValue={bulanTerpilih}
+              >
+                {Array.from({ length: 12 }, (_, urutan) => urutan + 1).map(
+                  (nilai) => (
+                    <option key={nilai} value={nilai}>
+                      {bulanTampil(nilai)}
+                    </option>
+                  ),
+                )}
+              </NativeSelect>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tahun">Tahun</Label>
+              <NativeSelect
+                className="h-[var(--target-sentuh-portal)] md:text-base"
+                id="tahun"
+                name="tahun"
+                defaultValue={tahunTerpilih}
+              >
+                {tahunTersedia.map((nilai) => (
+                  <option key={nilai} value={nilai}>
+                    {nilai}
+                  </option>
+                ))}
+              </NativeSelect>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
+              <Button type="submit" size="aksi">
+                <Filter aria-hidden="true" />
+                Tampilkan
+              </Button>
+              <Button asChild variant="outline" size="aksi">
+                <Link
+                  href={`/app/arus-kas?periode=${geserPeriode(periodeAkhir, -1)}`}
+                >
+                  <ChevronLeft aria-hidden="true" />
+                  Bulan sebelumnya
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="aksi">
+                <Link
+                  href={`/app/arus-kas?periode=${geserPeriode(periodeAkhir, 1)}`}
+                >
+                  Bulan berikutnya
+                  <ChevronRight aria-hidden="true" />
+                </Link>
+              </Button>
+              {periodeAkhir !== periodeBerjalan && (
+                <Button asChild variant="ghost" size="aksi">
+                  <Link href="/app/arus-kas">Kembali ke bulan berjalan</Link>
+                </Button>
+              )}
+            </div>
+          </form>
+        </CardContent>
+      </Card>
 
       <Card className="mt-6">
         <CardHeader>
@@ -215,6 +321,40 @@ export function ArusKas({
         </CardContent>
       </Card>
 
+      <div className="mt-6">
+        <TombolUnduhLaporan
+          judul="Arus Kas"
+          periode={`${formatPeriode(daftar[0].periode)} – ${formatPeriode(periodeAkhir)}`}
+          profil={profil}
+          kolom={[
+            "Periode",
+            "Pemasukan SPP (Rp)",
+            "Honor Guru (Rp)",
+            "Operasional (Rp)",
+            "Pengeluaran (Rp)",
+            "Laba Bersih (Rp)",
+          ]}
+          baris={[
+            ...daftar.map((baris) => [
+              formatPeriode(baris.periode),
+              baris.pemasukan,
+              baris.honor,
+              baris.operasional,
+              baris.pengeluaran,
+              baris.laba,
+            ]),
+            [
+              `Total ${JUMLAH_BULAN} bulan`,
+              total.pemasukan,
+              daftar.reduce((jumlah, baris) => jumlah + baris.honor, 0),
+              daftar.reduce((jumlah, baris) => jumlah + baris.operasional, 0),
+              total.pengeluaran,
+              total.laba,
+            ],
+          ]}
+        />
+      </div>
+
       <div className="mt-6 flex flex-wrap items-center gap-2">
         <Button asChild variant="outline" size="aksi">
           <Link href="/app/laba-rugi">
@@ -228,8 +368,9 @@ export function ArusKas({
       </div>
 
       <p className="mt-6 text-xs leading-5 text-muted-foreground">
-        Catatan: pemasukan SPP, honor guru, dan pengeluaran operasional sudah
-        dibaca dari database. Unduhan laporan menyusul.
+        Catatan: pemasukan SPP, honor guru, dan pengeluaran operasional dibaca
+        dari database; unduhan laporan memuat angka bulan-bulan di tren ini,
+        persis seperti di layar.
       </p>
     </div>
   );
