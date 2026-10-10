@@ -1,14 +1,20 @@
 "use client";
 
 import {
-  useEffect,
   useId,
   useRef,
   useState,
   type ChangeEvent,
   type FormEvent,
 } from "react";
-import { AlertTriangle, ImagePlus, Save, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  AlertTriangle,
+  ImagePlus,
+  LoaderCircle,
+  Save,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,9 +26,17 @@ import {
 import { KonfirmasiPengaturan } from "@/components/konfirmasi-pengaturan";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PesanGalat } from "@/components/status-antarmuka";
 import type { ProfilDokumen } from "@/lib/dokumen-html";
+import { pesanGalatApi } from "@/lib/pesan-api";
 
+// Sama dengan batas di `profilBimbelSchema` (server) dan kolom `logo` di tabel
+// `bimbel_profile`: berkas sampai 1 MB, disimpan sebagai data URL.
 const MAX_LOGO_BYTE = 1_000_000;
+const JENIS_LOGO = ["image/png", "image/jpeg", "image/webp"];
+const PESAN_JENIS_LOGO = "Logo harus berupa berkas gambar PNG, JPG, atau WebP.";
+const PESAN_UKURAN_LOGO =
+  "Ukuran logo terlalu besar. Pakai gambar di bawah 1 MB.";
 
 type FormProfilBimbelProps = {
   /** Identitas bimbel dari tabel `bimbel_profile`, hasil `ambilProfilBimbel()`. */
@@ -31,68 +45,120 @@ type FormProfilBimbelProps = {
 
 type Masalah = { field: string; pesan: string };
 
+/** Profil seperti yang dikembalikan `PUT /api/pengaturan/profil`. */
+type ProfilTersimpan = {
+  nama: string;
+  alamat: string;
+  telepon: string;
+  email: string;
+  logo: string | null;
+};
+
+/** Membaca berkas logo jadi data URL supaya bisa ikut disimpan ke basis data. */
+function bacaDataUrl(berkas: File) {
+  return new Promise<string>((selesai, gagal) => {
+    const pembaca = new FileReader();
+    pembaca.onload = () => selesai(String(pembaca.result));
+    pembaca.onerror = () => gagal(new Error("gagal membaca berkas"));
+    pembaca.readAsDataURL(berkas);
+  });
+}
+
 /**
- * Formulir profil bimbel: nama, alamat, kontak, dan logo. Logonya masih
- * pratinjau di layar (belum diunggah ke server) — lihat catatan di berkas
- * src/lib/mock-pengaturan.ts.
+ * Formulir profil bimbel: nama, alamat, kontak, dan logo. Logonya diunggah
+ * sebagai data URL dan ikut tersimpan di kolom `logo` tabel `bimbel_profile` —
+ * bukan di penyimpanan berkas — supaya ikut tersalin saat backup dan tetap
+ * tampil di kop laporan walau aplikasinya jalan di jaringan lokal. Menyimpannya
+ * lewat `PUT /api/pengaturan/profil` lalu halamannya disegarkan, jadi kop di
+ * laporan dan slip memakai isi tabel, bukan salinan sementara di peramban.
  */
 export function FormProfilBimbel({ profilAwal }: FormProfilBimbelProps) {
   const idForm = useId();
+  const router = useRouter();
+  const logoAwal = profilAwal.logo?.trim() ? profilAwal.logo : null;
   const [nama, setNama] = useState(profilAwal.nama);
   const [alamat, setAlamat] = useState(profilAwal.alamat);
   const [telepon, setTelepon] = useState(profilAwal.telepon);
   const [email, setEmail] = useState(profilAwal.email);
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  // `null` berarti tidak ada logo; menghapus logo mengirim `null` ke server.
+  const [logo, setLogo] = useState<string | null>(logoAwal);
+  // Dasar tombol "Kembalikan seperti semula": identitas yang sedang tersimpan
+  // di server. Setelah simpan berhasil nilainya ikut diperbarui, jadi tombolnya
+  // tidak pernah menarik isian kembali ke identitas yang sudah lama.
+  const [dasar, setDasar] = useState<ProfilTersimpan>({
+    nama: profilAwal.nama,
+    alamat: profilAwal.alamat,
+    telepon: profilAwal.telepon,
+    email: profilAwal.email,
+    logo: logoAwal,
+  });
   const [masalah, setMasalah] = useState<Masalah[]>([]);
-  const [tersimpan, setTersimpan] = useState<ProfilDokumen | null>(null);
+  const [tersimpan, setTersimpan] = useState<ProfilTersimpan | null>(null);
+  const [sedangMenyimpan, setSedangMenyimpan] = useState(false);
+  const [galat, setGalat] = useState("");
   const berkas = useRef<HTMLInputElement>(null);
 
-  // Pratinjau memakai URL objek; yang lama dilepas supaya tidak menumpuk.
-  useEffect(() => {
-    return () => {
-      if (logoUrl) URL.revokeObjectURL(logoUrl);
-    };
-  }, [logoUrl]);
-
-  function pilihLogo(event: ChangeEvent<HTMLInputElement>) {
+  async function pilihLogo(event: ChangeEvent<HTMLInputElement>) {
     const berkasDipilih = event.target.files?.[0];
     if (!berkasDipilih) return;
 
-    if (!berkasDipilih.type.startsWith("image/")) {
-      setMasalah([
-        {
-          field: "logo",
-          pesan: "Logo harus berupa berkas gambar (PNG atau JPG).",
-        },
-      ]);
+    // Pemeriksaannya sengaja sama ketat dengan validasi server: yang ditolak di
+    // sini tidak perlu dikirim ke sana lebih dulu.
+    if (!JENIS_LOGO.includes(berkasDipilih.type)) {
+      setMasalah([{ field: "logo", pesan: PESAN_JENIS_LOGO }]);
       event.target.value = "";
       return;
     }
     if (berkasDipilih.size > MAX_LOGO_BYTE) {
-      setMasalah([
-        {
-          field: "logo",
-          pesan: "Ukuran logo terlalu besar. Pakai gambar di bawah 1 MB.",
-        },
-      ]);
+      setMasalah([{ field: "logo", pesan: PESAN_UKURAN_LOGO }]);
       event.target.value = "";
       return;
     }
 
-    setMasalah([]);
-    setTersimpan(null);
-    if (logoUrl) URL.revokeObjectURL(logoUrl);
-    setLogoUrl(URL.createObjectURL(berkasDipilih));
+    try {
+      const dataUrl = await bacaDataUrl(berkasDipilih);
+      setMasalah([]);
+      setGalat("");
+      setTersimpan(null);
+      // Memilih berkas lain berarti mengganti logo; yang lama langsung hilang
+      // dari pratinjau karena `logo` cuma menyimpan satu nilai.
+      setLogo(dataUrl);
+    } catch {
+      setMasalah([
+        {
+          field: "logo",
+          pesan: "Berkas logonya tidak bisa dibaca. Coba pilih ulang.",
+        },
+      ]);
+      event.target.value = "";
+    }
   }
 
   function hapusLogo() {
-    if (logoUrl) URL.revokeObjectURL(logoUrl);
-    setLogoUrl(null);
+    setLogo(null);
+    setMasalah((sebelumnya) =>
+      sebelumnya.filter((item) => item.field !== "logo"),
+    );
+    setGalat("");
+    setTersimpan(null);
     if (berkas.current) berkas.current.value = "";
   }
 
-  function simpan(event: FormEvent<HTMLFormElement>) {
+  function kembalikanSepertiSemula() {
+    setNama(dasar.nama);
+    setAlamat(dasar.alamat);
+    setTelepon(dasar.telepon);
+    setEmail(dasar.email);
+    setLogo(dasar.logo);
+    setMasalah([]);
+    setGalat("");
+    setTersimpan(null);
+    if (berkas.current) berkas.current.value = "";
+  }
+
+  async function simpan(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (sedangMenyimpan) return;
 
     // Semua isian yang belum lengkap ditampilkan sekaligus, supaya tidak perlu
     // memperbaiki satu per satu.
@@ -113,16 +179,54 @@ export function FormProfilBimbel({ profilAwal }: FormProfilBimbelProps) {
     if (ditemukan.length > 0) {
       setMasalah(ditemukan);
       setTersimpan(null);
+      setGalat("");
       return;
     }
 
     setMasalah([]);
-    setTersimpan({
-      nama: nama.trim(),
-      alamat: alamat.trim(),
-      telepon: telepon.trim(),
-      email: email.trim(),
-    });
+    setGalat("");
+    setSedangMenyimpan(true);
+    try {
+      const jawaban = await fetch("/api/pengaturan/profil", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nama: nama.trim(),
+          alamat: alamat.trim(),
+          telepon: telepon.trim(),
+          email: email.trim(),
+          logo,
+        }),
+      });
+
+      // Jawaban server yang menentukan: pesannya sudah berbahasa Indonesia.
+      if (!jawaban.ok) {
+        setGalat(
+          await pesanGalatApi(
+            jawaban,
+            "Profil belum bisa disimpan. Coba lagi sebentar lagi.",
+          ),
+        );
+        return;
+      }
+
+      const { data } = (await jawaban.json()) as { data: ProfilTersimpan };
+      setTersimpan(data);
+      // Isian disamakan dengan jawaban server (nilainya sudah dirapikan di
+      // sana) dan dijadikan dasar tombol "Kembalikan seperti semula".
+      setDasar(data);
+      setNama(data.nama);
+      setAlamat(data.alamat);
+      setTelepon(data.telepon);
+      setEmail(data.email);
+      setLogo(data.logo);
+      // Halamannya disegarkan supaya kop di pratinjau ikut isi tabel terbaru.
+      router.refresh();
+    } catch {
+      setGalat("Profil belum bisa disimpan. Periksa koneksi lalu coba lagi.");
+    } finally {
+      setSedangMenyimpan(false);
+    }
   }
 
   const inisial = nama.trim().charAt(0).toUpperCase() || "B";
@@ -141,10 +245,10 @@ export function FormProfilBimbel({ profilAwal }: FormProfilBimbelProps) {
           { label: "Email", nilai: tersimpan.email || "—" },
           {
             label: "Logo",
-            nilai: logoUrl ? "Logo baru dipakai" : "Belum ada logo",
+            nilai: tersimpan.logo ? "Logo terpasang" : "Tanpa logo",
           },
         ]}
-        catatan="Perubahannya belum dikirim ke server."
+        catatan="Perubahannya sudah tersimpan di server, jadi kop laporan, slip gaji, dan berkas yang diunduh langsung memakainya."
         onUbahLagi={() => setTersimpan(null)}
       />
     );
@@ -162,10 +266,10 @@ export function FormProfilBimbel({ profilAwal }: FormProfilBimbelProps) {
         <form onSubmit={simpan} className="space-y-5" noValidate>
           <div className="flex flex-wrap items-center gap-4">
             <span className="grid size-20 shrink-0 place-items-center overflow-hidden rounded-xl border bg-muted text-2xl font-semibold text-muted-foreground">
-              {logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element -- pratinjau berkas lokal, bukan gambar dari server.
+              {logo ? (
+                // eslint-disable-next-line @next/next/no-img-element -- logonya data URL dari berkas yang dipilih atau dari basis data, bukan aset statis aplikasi.
                 <img
-                  src={logoUrl}
+                  src={logo}
                   alt="Pratinjau logo bimbel"
                   className="size-full object-cover"
                 />
@@ -181,11 +285,12 @@ export function FormProfilBimbel({ profilAwal }: FormProfilBimbelProps) {
                   id={`${idForm}-logo`}
                   name="logo"
                   type="file"
-                  accept="image/png,image/jpeg"
+                  accept={JENIS_LOGO.join(",")}
+                  aria-invalid={salah("logo")}
                   className="block w-full max-w-64 text-sm file:mr-3 file:rounded-md file:border file:bg-background file:px-3 file:py-1.5 file:text-sm file:font-medium"
                   onChange={pilihLogo}
                 />
-                {logoUrl && (
+                {logo && (
                   <Button
                     type="button"
                     variant="outline"
@@ -198,7 +303,8 @@ export function FormProfilBimbel({ profilAwal }: FormProfilBimbelProps) {
                 )}
               </div>
               <p className="text-sm text-muted-foreground">
-                PNG atau JPG sampai 1 MB. Pratinjau muncul di sebelah kiri.
+                PNG, JPG, atau WebP sampai 1 MB. Pratinjau muncul di sebelah
+                kiri; pilih berkas lain untuk menggantinya.
               </p>
             </div>
           </div>
@@ -269,23 +375,22 @@ export function FormProfilBimbel({ profilAwal }: FormProfilBimbelProps) {
             </div>
           )}
 
+          {galat && <PesanGalat keterangan={galat} />}
+
           <div className="flex flex-wrap items-center gap-3">
-            <Button type="submit">
-              <Save aria-hidden="true" />
-              Simpan profil
+            <Button type="submit" disabled={sedangMenyimpan}>
+              {sedangMenyimpan ? (
+                <LoaderCircle aria-hidden="true" className="animate-spin" />
+              ) : (
+                <Save aria-hidden="true" />
+              )}
+              {sedangMenyimpan ? "Menyimpan…" : "Simpan profil"}
             </Button>
             <Button
               type="button"
               variant="outline"
-              onClick={() => {
-                setNama(profilAwal.nama);
-                setAlamat(profilAwal.alamat);
-                setTelepon(profilAwal.telepon);
-                setEmail(profilAwal.email);
-                setMasalah([]);
-                setTersimpan(null);
-                hapusLogo();
-              }}
+              onClick={kembalikanSepertiSemula}
+              disabled={sedangMenyimpan}
             >
               <ImagePlus aria-hidden="true" />
               Kembalikan seperti semula

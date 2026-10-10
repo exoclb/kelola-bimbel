@@ -7,13 +7,13 @@ import {
 } from "@playwright/test";
 import { Pool } from "pg";
 
-// Halaman Profil Bimbel masih berjalan di atas data tiruan: formulirnya memakai
-// identitas bimbel yang tersimpan, tetapi "Simpan profil" hanya menampilkan
-// kartu konfirmasi di layar — perubahannya belum dikirim ke server. Berkas ini
-// mengunci perilaku itu apa adanya supaya jelas di mana batas datanya: pengisian
-// dan pratinjau logo sepenuhnya di peramban, sedangkan menulis profil ke basis
-// data tetap lewat `PUT /api/pengaturan/profil` (diuji di
-// `e2e/profil-bimbel.spec.ts`).
+// Halaman Profil Bimbel sudah memakai basis data: formulirnya terisi identitas
+// yang tersimpan dan "Simpan profil" mengirim isian itu ke
+// `PUT /api/pengaturan/profil` sebelum halamannya disegarkan. Berkas ini
+// mengunci perilaku layarnya — apa yang terbaca pengguna sebelum dan sesudah
+// menyimpan, plus penjagaan berkas logo yang sepenuhnya di peramban — sedangkan
+// alur datanya (unggah, ganti, dan hapus logo sampai ikut tampil di kop) dikunci
+// oleh `e2e/profil-bimbel.spec.ts`.
 const origin = "http://localhost:3101";
 const headers = { Origin: origin };
 const sandi = "Profil-halaman-test-123!";
@@ -102,7 +102,7 @@ async function siapkanOwner(request: APIRequestContext, data: typeof awal) {
 
 const pratinjauLogo = "img[alt='Pratinjau logo bimbel']";
 
-test("halaman profil menampilkan identitas tersimpan dan simpan tiruannya", async ({
+test("halaman profil menampilkan identitas tersimpan dan menyimpannya", async ({
   page,
   request,
 }) => {
@@ -140,7 +140,8 @@ test("halaman profil menampilkan identitas tersimpan dan simpan tiruannya", asyn
     page.getByRole("button", { name: "Kembalikan seperti semula" }),
   ).toBeVisible();
 
-  // Menyimpan hanya memindahkan layar ke kartu konfirmasi.
+  // Menyimpan mengirim seluruh isian ke server lewat `PUT /api/pengaturan/profil`,
+  // lalu layar berganti ke kartu konfirmasi berisi jawaban server itu.
   await page.getByLabel("Nama bimbel").fill("Bimbel Cahaya Baru");
   await page.getByLabel("Telepon").fill("081299998888");
   await page.getByLabel("Alamat").fill("");
@@ -153,35 +154,45 @@ test("halaman profil menampilkan identitas tersimpan dan simpan tiruannya", asyn
   const ringkasan = konfirmasi.locator("dl");
   await expect(ringkasan.getByText("Bimbel Cahaya Baru")).toBeVisible();
   await expect(ringkasan.getByText("081299998888")).toBeVisible();
-  await expect(ringkasan.getByText("Belum ada logo")).toBeVisible();
+  await expect(ringkasan.getByText("Tanpa logo")).toBeVisible();
   await expect(
-    konfirmasi.getByText("Perubahannya belum dikirim ke server."),
+    konfirmasi.getByText(
+      "Perubahannya sudah tersimpan di server, jadi kop laporan, slip gaji, dan berkas yang diunduh langsung memakainya.",
+    ),
   ).toBeVisible();
 
-  // Justru itu intinya: server masih menyimpan identitas yang lama.
+  // Isian yang barusan diketik sudah ada di server, bukan cuma di layar.
   const dibaca = await page.request.get("/api/pengaturan/profil");
   expect(dibaca.status()).toBe(200);
   expect((await dibaca.json()).data).toMatchObject({
-    nama: awal.nama,
-    alamat: awal.alamat,
-    telepon: awal.telepon,
+    nama: "Bimbel Cahaya Baru",
+    alamat: "",
+    telepon: "081299998888",
+    email: awal.email,
+    logo: null,
   });
 
   // "Ubah lagi" mengembalikan formulir beserta isian yang tadi diketik, dan
-  // "Kembalikan seperti semula" memulihkan identitas tersimpan.
+  // "Kembalikan seperti semula" memulihkan identitas yang sedang tersimpan —
+  // termasuk yang baru saja disimpan, bukan yang lama.
   await konfirmasi.getByRole("button", { name: "Ubah lagi" }).click();
   await expect(page.getByLabel("Nama bimbel")).toHaveValue(
     "Bimbel Cahaya Baru",
   );
+  await expect(page.getByLabel("Alamat")).toHaveValue("");
   await page.getByRole("button", { name: "Kembalikan seperti semula" }).click();
-  await expect(page.getByLabel("Nama bimbel")).toHaveValue(awal.nama);
-  await expect(page.getByLabel("Alamat")).toHaveValue(awal.alamat);
-  await expect(page.getByLabel("Telepon")).toHaveValue(awal.telepon);
+  await expect(page.getByLabel("Nama bimbel")).toHaveValue(
+    "Bimbel Cahaya Baru",
+  );
+  await expect(page.getByLabel("Telepon")).toHaveValue("081299998888");
   await expect(page.getByLabel("Email bimbel")).toHaveValue(awal.email);
 
-  // Muat ulang pun tetap identitas tersimpan — tak ada yang bocor ke server.
+  // Muat ulang pun tetap identitas yang tersimpan di server.
   await page.reload();
-  await expect(page.getByLabel("Nama bimbel")).toHaveValue(awal.nama);
+  await expect(page.getByLabel("Nama bimbel")).toHaveValue(
+    "Bimbel Cahaya Baru",
+  );
+  await expect(page.getByLabel("Alamat")).toHaveValue("");
 });
 
 test("isian yang belum lengkap ditolak tanpa mengirim apa pun", async ({
@@ -192,7 +203,8 @@ test("isian yang belum lengkap ditolak tanpa mengirim apa pun", async ({
   await masukHalaman(page, email);
   await page.goto("/app/pengaturan/profil");
 
-  // Setelah masuk, tak satu pun permintaan pengubah boleh muncul dari layar ini.
+  // Setelah masuk, tak satu pun permintaan pengubah boleh muncul dari layar ini
+  // selama isiannya belum lengkap.
   const perubahan: string[] = [];
   page.on("request", (permintaan) => {
     if (["GET", "HEAD", "OPTIONS"].includes(permintaan.method())) return;
@@ -229,7 +241,7 @@ test("isian yang belum lengkap ditolak tanpa mengirim apa pun", async ({
   await expect(page.getByRole("status")).toHaveCount(0);
   expect(perubahan).toEqual([]);
 
-  // Isian yang dibetulkan menghapus peringatannya.
+  // Isian yang dibetulkan menghapus peringatannya dan menyimpan tepat sekali.
   await page.getByLabel("Nama bimbel").fill("Bimbel Cahaya Uji");
   await page.getByLabel("Email bimbel").fill("halo@cahaya.test");
   await page.getByRole("button", { name: "Simpan profil" }).click();
@@ -238,7 +250,7 @@ test("isian yang belum lengkap ditolak tanpa mengirim apa pun", async ({
       exact: true,
     }),
   ).toBeVisible();
-  expect(perubahan).toEqual([]);
+  expect(perubahan).toEqual([`PUT ${origin}/api/pengaturan/profil`]);
 });
 
 test("logo hanya menerima gambar sampai 1 MB", async ({ page, request }) => {
@@ -250,9 +262,25 @@ test("logo hanya menerima gambar sampai 1 MB", async ({ page, request }) => {
   const peringatan = page.locator("form").getByRole("alert");
   await tungguFormSiap(page);
 
-  // Pemilih berkasnya hanya menawarkan PNG/JPG, jadi berkas lain tidak pernah
+  // Pemilih berkasnya hanya menawarkan gambar, jadi berkas lain tidak pernah
   // sampai ke pemeriksaan di layar — penjagaan di kode hanya lapis kedua.
-  await expect(isianLogo).toHaveAttribute("accept", "image/png,image/jpeg");
+  await expect(isianLogo).toHaveAttribute(
+    "accept",
+    "image/png,image/jpeg,image/webp",
+  );
+
+  // Berkas yang bukan gambar ditolak sebelum dibaca.
+  await isianLogo.setInputFiles({
+    name: "catatan.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.from("bukan gambar"),
+  });
+  await expect(
+    peringatan.getByText(
+      "Logo harus berupa berkas gambar PNG, JPG, atau WebP.",
+    ),
+  ).toBeVisible();
+  await expect(page.locator(pratinjauLogo)).toHaveCount(0);
 
   // Gambar yang kelewat besar ditolak, dengan batas yang disebut jelas.
   await isianLogo.setInputFiles({
@@ -267,7 +295,8 @@ test("logo hanya menerima gambar sampai 1 MB", async ({ page, request }) => {
   ).toBeVisible();
   await expect(page.locator(pratinjauLogo)).toHaveCount(0);
 
-  // Gambar yang sah muncul sebagai pratinjau dan tercatat di konfirmasi.
+  // Gambar yang sah muncul sebagai pratinjau dan bisa dilepas lagi sebelum
+  // disimpan; yang tersimpan di server belum tersentuh.
   await isianLogo.setInputFiles({
     name: "logo.png",
     mimeType: "image/png",
@@ -276,19 +305,13 @@ test("logo hanya menerima gambar sampai 1 MB", async ({ page, request }) => {
   await expect(peringatan).toHaveCount(0);
   await expect(page.locator(pratinjauLogo)).toBeVisible();
   await expect(page.getByRole("button", { name: "Hapus logo" })).toBeVisible();
-  await page.getByRole("button", { name: "Simpan profil" }).click();
-  const konfirmasi = page.getByRole("status");
-  await expect(konfirmasi.getByText("Logo baru dipakai")).toBeVisible();
-
-  // Logo bisa dilepas lagi sebelum disimpan.
-  await konfirmasi.getByRole("button", { name: "Ubah lagi" }).click();
   await page.getByRole("button", { name: "Hapus logo" }).click();
   await expect(page.locator(pratinjauLogo)).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Hapus logo" })).toHaveCount(0);
-  await page.getByRole("button", { name: "Simpan profil" }).click();
-  await expect(
-    page.getByRole("status").getByText("Belum ada logo"),
-  ).toBeVisible();
+
+  const dibaca = await page.request.get("/api/pengaturan/profil");
+  expect(dibaca.status()).toBe(200);
+  expect((await dibaca.json()).data.logo).toBeNull();
 });
 
 test("guru tidak bisa membuka halaman profil bimbel", async ({

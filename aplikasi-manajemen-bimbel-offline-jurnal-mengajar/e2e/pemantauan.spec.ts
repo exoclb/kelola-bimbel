@@ -295,7 +295,7 @@ test("pengaturan menampilkan bagian sesuai izin akunnya", async ({ page }) => {
   await setRole("user");
 });
 
-test("menyimpan pengaturan minta lengkapi isian lalu menampilkan konfirmasi", async ({
+test("menyimpan pengaturan minta lengkapi isian lalu menyimpannya ke server", async ({
   page,
 }) => {
   await setRole("owner");
@@ -332,7 +332,7 @@ test("menyimpan pengaturan minta lengkapi isian lalu menampilkan konfirmasi", as
     .filter({ hasText: "Profil bimbel tersimpan" });
   await expect(konfirmasi).toContainText("Profil bimbel tersimpan");
   await expect(konfirmasi).toContainText("Bimbel Cerdas Nusantara");
-  await expect(konfirmasi).toContainText("belum dikirim ke server");
+  await expect(konfirmasi).toContainText("sudah tersimpan di server");
 
   // "Ubah lagi" mengembalikan formulirnya.
   await page.getByRole("button", { name: /Ubah lagi/ }).click();

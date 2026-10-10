@@ -1,14 +1,23 @@
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
-import { expect, test, type APIRequestContext } from "@playwright/test";
+import {
+  expect,
+  test,
+  type APIRequestContext,
+  type Page,
+} from "@playwright/test";
 import { Pool } from "pg";
 
 const origin = "http://localhost:3101";
 const headers = { Origin: origin };
 const sandi = "Profil-bimbel-test-123!";
-// PNG 1x1 transparan, bentuk data URL yang diterima layar logo.
+// Dua PNG 1x1 yang benar-benar bisa didekode peramban (piksel merah dan
+// biru), bentuk data URL yang diterima layar logo. Dipakai untuk memastikan
+// logo yang diunggah bukan cuma teks yang sah, tapi gambar yang tampil.
 const logoPng =
-  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8AARAAE/wH+3n0pAAAAAElFTkSuQmCC";
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC";
+const logoBiru =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGNgYPgPAAEDAQAIicLsAAAAAElFTkSuQmCC";
 
 async function daftar(client: APIRequestContext, nama: string) {
   const email = `profil-${randomUUID()}@example.com`;
@@ -51,6 +60,19 @@ type Profil = {
   email: string;
   logo: string | null;
 };
+
+/**
+ * Halaman profil dirender di server lebih dulu lalu dihidupkan React. Berkas
+ * yang dipilih sebelum itu tidak terbaca sebagai perubahan (React membandingkan
+ * nilainya), jadi tunggu sampai React benar-benar memegang formulirnya.
+ */
+async function tungguFormSiap(page: Page) {
+  await page.waitForFunction(() =>
+    Object.keys(document.querySelector("form") ?? {}).some((kunci) =>
+      kunci.startsWith("__reactFiber$"),
+    ),
+  );
+}
 
 /**
  * Profil bimbel disimpan sebagai satu baris: menyimpan berulang mengubah baris
@@ -125,6 +147,133 @@ test("simpan profil bimbel menimpa satu baris yang sama", async ({
   // Profil yang tersimpan tetap yang terakhir sah.
   const dibacaLagi = await request.get("/api/pengaturan/profil", { headers });
   expect((await dibacaLagi.json()).data.nama).toBe("Bimbel Uji Profil Dua");
+});
+
+/**
+ * Layar profil bimbel mengelola logonya: berkas yang dipilih dipratinjau,
+ * bisa diganti dengan berkas lain, bisa dihapus lagi, dan yang tersimpan di
+ * `bimbel_profile` selalu sama dengan yang terakhir disimpan — termasuk ikut
+ * muncul di kop dokumen.
+ */
+test("layar profil bimbel menyimpan, mengganti, dan menghapus logo", async ({
+  page,
+  request,
+}) => {
+  const email = await daftar(request, "Owner Logo Bimbel");
+  await setRole(email, "owner");
+  await masuk(request, email);
+
+  const simpan = (data: Record<string, unknown>) =>
+    request.put("/api/pengaturan/profil", { headers, data });
+  const baca = async () => {
+    const jawaban = await request.get("/api/pengaturan/profil", { headers });
+    expect(jawaban.status()).toBe(200);
+    return (await jawaban.json()).data as Profil;
+  };
+
+  // Mulai dari profil tanpa logo, supaya perubahan logonya yang diuji.
+  const awal = await simpan({
+    nama: "Bimbel Logo Uji",
+    alamat: "Jl. Logo 3",
+    telepon: "081299990000",
+    email: "logo@bimbel.test",
+    logo: null,
+  });
+  expect(awal.status()).toBe(200);
+
+  await page.goto("/sign-in");
+  await page.getByLabel("Email", { exact: true }).fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(sandi);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.waitForURL((url) => !url.pathname.startsWith("/sign-in"));
+  await page.goto("/app/pengaturan/profil");
+
+  const pratinjau = page.getByAltText("Pratinjau logo bimbel");
+  const unggah = page.getByLabel("Logo bimbel");
+  // Peringatan isian dicari di dalam formulirnya: Next.js punya elemen
+  // `role=alert` sendiri untuk pengumuman rute.
+  const masalah = page.locator("form").getByRole("alert");
+
+  // Belum ada logo: yang tampil monogram dari huruf pertama nama bimbel.
+  await expect(pratinjau).toHaveCount(0);
+  await tungguFormSiap(page);
+
+  // Berkas yang bukan gambar ditolak sebelum dibaca, dan pratinjaunya tetap.
+  await unggah.setInputFiles({
+    name: "catatan.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.from("bukan gambar"),
+  });
+  await expect(masalah).toContainText(
+    "Logo harus berupa berkas gambar PNG, JPG, atau WebP.",
+  );
+  await expect(pratinjau).toHaveCount(0);
+
+  // Berkas gambar yang kebesaran juga ditolak, sama seperti batas servernya.
+  await unggah.setInputFiles({
+    name: "besar.png",
+    mimeType: "image/png",
+    buffer: Buffer.alloc(1_100_000),
+  });
+  await expect(masalah).toContainText(
+    "Ukuran logo terlalu besar. Pakai gambar di bawah 1 MB.",
+  );
+  await expect(pratinjau).toHaveCount(0);
+
+  // Berkas gambar yang sah langsung dipratinjau dari isi berkasnya.
+  await unggah.setInputFiles({
+    name: "logo-pertama.png",
+    mimeType: "image/png",
+    buffer: Buffer.from(logoPng.split(",")[1], "base64"),
+  });
+  await expect(pratinjau).toHaveAttribute("src", logoPng);
+  await expect(masalah).toHaveCount(0);
+  // Pratinjaunya gambar sungguhan: peramban berhasil mendekodenya.
+  expect(
+    await pratinjau.evaluate(
+      (gambar) => (gambar as HTMLImageElement).naturalWidth,
+    ),
+  ).toBe(1);
+
+  await page.getByRole("button", { name: "Simpan profil" }).click();
+  await expect(page.getByText("Profil bimbel tersimpan")).toBeVisible();
+  await expect(page.getByText("Logo terpasang")).toBeVisible();
+  // Yang tersimpan di basis data itulah yang dipakaikan ke kop, bukan berkas
+  // mentah maupun `blob:` dari peramban.
+  expect((await baca()).logo).toBe(logoPng);
+
+  // Kop laporan ikut memakai logonya — layar laporan selalu menampilkan kop,
+  // jadi tidak bergantung pada data yang dibuat berkas uji lain.
+  await page.goto("/app/laba-rugi");
+  await expect(page.getByText("Bimbel Logo Uji").first()).toBeVisible();
+  await expect(page.locator(`img[src="${logoPng}"]`).first()).toBeVisible();
+
+  // Membuka lagi halamannya: logonya muncul dari profil yang tersimpan, jadi
+  // bisa diganti tanpa mengunggah ulang dari nol.
+  await page.goto("/app/pengaturan/profil");
+  await expect(pratinjau).toHaveAttribute("src", logoPng);
+  await tungguFormSiap(page);
+
+  await unggah.setInputFiles({
+    name: "logo-kedua.png",
+    mimeType: "image/png",
+    buffer: Buffer.from(logoBiru.split(",")[1], "base64"),
+  });
+  await expect(pratinjau).toHaveAttribute("src", logoBiru);
+  await page.getByRole("button", { name: "Simpan profil" }).click();
+  await expect(page.getByText("Profil bimbel tersimpan")).toBeVisible();
+  expect((await baca()).logo).toBe(logoBiru);
+
+  // Menghapus logo mengembalikan kop ke monogram dan mengosongkan kolomnya.
+  await page.getByRole("button", { name: "Ubah lagi" }).click();
+  await page.getByRole("button", { name: "Hapus logo" }).click();
+  await expect(pratinjau).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Hapus logo" })).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Simpan profil" }).click();
+  await expect(page.getByText("Profil bimbel tersimpan")).toBeVisible();
+  await expect(page.getByText("Tanpa logo")).toBeVisible();
+  expect((await baca()).logo).toBe(null);
 });
 
 /**
