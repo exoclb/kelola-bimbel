@@ -1,7 +1,8 @@
 "use client";
 
 import { useId, useState, type FormEvent } from "react";
-import { AlertTriangle, Save, Wallet } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { AlertTriangle, LoaderCircle, Save, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,40 +15,57 @@ import { KonfirmasiPengaturan } from "@/components/konfirmasi-pengaturan";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
-import { formatRupiah } from "@/lib/gaji";
-import type { AturanGaji } from "@/lib/mock-pengaturan";
+import { PesanGalat } from "@/components/status-antarmuka";
+import { aturanTarifBerlaku, formatRupiah, type AturanTarif } from "@/lib/gaji";
 import { formatTanggalLengkap, tanggalISO } from "@/lib/tanggal";
 
 const MAX_TARIF = 10_000_000;
 
+// Satu tanggal hanya boleh punya satu aturan (dijaga indeks unik
+// `salary_settings_berlaku_sejak_idx`), jadi pemeriksaan di layar dan jawaban
+// 409 server memakai kalimat yang sama.
+const PESAN_TANGGAL_TERPAKAI =
+  "Sudah ada tarif yang mulai berlaku pada tanggal itu. Pilih tanggal lain.";
+
 type Masalah = { field: string; pesan: string };
 
 type FormAturanGajiProps = {
-  riwayatAwal: AturanGaji[];
+  /**
+   * Riwayat tarif dari tabel `salary_settings` (hasil `ambilAturanGaji()`),
+   * yang terbaru lebih dulu.
+   */
+  riwayatAwal: AturanTarif[];
 };
 
 /**
  * Formulir aturan gaji: tarif per jam, skema, dan tanggal mulai berlakunya.
- * Tarifnya masih data tiruan (belum disimpan ke server) — lihat catatan di
- * src/lib/mock-pengaturan.ts.
+ * Simpannya lewat `POST /api/pengaturan/gaji` lalu halamannya disegarkan, jadi
+ * daftar riwayat dan penanda "Berlaku sekarang" di bawah sama dengan isi tabel
+ * `salary_settings` — bukan salinan sementara di peramban.
  */
 export function FormAturanGaji({ riwayatAwal }: FormAturanGajiProps) {
   const idForm = useId();
-  const [riwayat, setRiwayat] = useState<AturanGaji[]>(riwayatAwal);
+  const router = useRouter();
+  const [riwayat, setRiwayat] = useState<AturanTarif[]>(riwayatAwal);
   const [tarif, setTarif] = useState(String(riwayatAwal[0]?.tarifPerJam ?? ""));
   const [skema, setSkema] = useState(riwayatAwal[0]?.skema ?? "per jam");
   const [berlakuSejak, setBerlakuSejak] = useState(tanggalISO(new Date()));
   const [masalah, setMasalah] = useState<Masalah[]>([]);
-  const [tersimpan, setTersimpan] = useState<AturanGaji | null>(null);
+  const [tersimpan, setTersimpan] = useState<AturanTarif | null>(null);
+  const [sedangMenyimpan, setSedangMenyimpan] = useState(false);
+  const [galat, setGalat] = useState("");
 
   // Yang berlaku adalah tarif terbaru yang mulai berlaku paling lambat hari
   // ini; tarif bertanggal masa depan (termasuk yang baru saja diisi) belum
-  // dipakai menghitung gaji.
+  // dipakai menghitung gaji. Aturannya sama dengan resolver server
+  // (`aturanTarifBerlaku` dipakai `aturanGajiBerlaku` saat mengisi rekap),
+  // jadi daftar di layar tidak bisa berbeda dari angka rekapnya.
   const hariIni = tanggalISO(new Date());
-  const berlaku = riwayat.find((baris) => baris.berlakuSejak <= hariIni);
+  const berlaku = aturanTarifBerlaku(riwayat, hariIni);
 
-  function simpan(event: FormEvent<HTMLFormElement>) {
+  async function simpan(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (sedangMenyimpan) return;
 
     // Semua isian yang bermasalah ditampilkan sekaligus.
     const ditemukan: Masalah[] = [];
@@ -76,24 +94,52 @@ export function FormAturanGaji({ riwayatAwal }: FormAturanGajiProps) {
     else if (riwayat.some((baris) => baris.berlakuSejak === berlakuSejak))
       ditemukan.push({
         field: "berlakuSejak",
-        pesan:
-          "Sudah ada tarif yang mulai berlaku pada tanggal itu. Pilih tanggal lain.",
+        pesan: PESAN_TANGGAL_TERPAKAI,
       });
 
     if (ditemukan.length > 0) {
       setMasalah(ditemukan);
       setTersimpan(null);
+      setGalat("");
       return;
     }
 
-    const baru: AturanGaji = { tarifPerJam: angka, skema, berlakuSejak };
     setMasalah([]);
-    setTersimpan(baru);
-    setRiwayat((sebelumnya) =>
-      [...sebelumnya, baru].sort((a, b) =>
-        b.berlakuSejak.localeCompare(a.berlakuSejak),
-      ),
-    );
+    setGalat("");
+    setSedangMenyimpan(true);
+    try {
+      const jawaban = await fetch("/api/pengaturan/gaji", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tarifPerJam: angka, skema, berlakuSejak }),
+      });
+
+      // Pemeriksaan di atas bisa saja sudah basi (mis. owner lain baru
+      // menambah tarif bertanggal sama), jadi jawaban server yang menentukan.
+      if (jawaban.status === 409) {
+        setMasalah([
+          { field: "berlakuSejak", pesan: PESAN_TANGGAL_TERPAKAI },
+        ]);
+        return;
+      }
+      if (!jawaban.ok) throw new Error(String(jawaban.status));
+
+      const { data } = (await jawaban.json()) as { data: AturanTarif };
+      setRiwayat((sebelumnya) =>
+        [data, ...sebelumnya.filter((baris) => baris.id !== data.id)].sort(
+          (a, b) => b.berlakuSejak.localeCompare(a.berlakuSejak),
+        ),
+      );
+      setTersimpan(data);
+      // Halamannya disegarkan supaya kartu ringkasan dan rekap ikut angka baru.
+      router.refresh();
+    } catch {
+      setGalat(
+        "Tarif belum bisa disimpan. Periksa koneksi lalu coba lagi.",
+      );
+    } finally {
+      setSedangMenyimpan(false);
+    }
   }
 
   const salah = (field: string) =>
@@ -116,7 +162,7 @@ export function FormAturanGaji({ riwayatAwal }: FormAturanGajiProps) {
               nilai: formatTanggalLengkap(tersimpan.berlakuSejak),
             },
           ]}
-          catatan="Perubahannya belum dikirim ke server — halaman ini masih memakai data tiruan."
+          catatan="Perubahannya sudah tersimpan di server, jadi rekap gaji bulan setelah tanggal berlakunya memakai tarif ini."
           onUbahLagi={() => setTersimpan(null)}
         />
       ) : (
@@ -215,9 +261,20 @@ export function FormAturanGaji({ riwayatAwal }: FormAturanGajiProps) {
                 </div>
               )}
 
-              <Button type="submit" size="aksi" className="w-full sm:w-auto">
-                <Save aria-hidden="true" />
-                Simpan tarif
+              {galat && <PesanGalat keterangan={galat} />}
+
+              <Button
+                type="submit"
+                size="aksi"
+                className="w-full sm:w-auto"
+                disabled={sedangMenyimpan}
+              >
+                {sedangMenyimpan ? (
+                  <LoaderCircle aria-hidden="true" className="animate-spin" />
+                ) : (
+                  <Save aria-hidden="true" />
+                )}
+                {sedangMenyimpan ? "Menyimpan…" : "Simpan tarif"}
               </Button>
             </form>
           </CardContent>
@@ -242,7 +299,7 @@ export function FormAturanGaji({ riwayatAwal }: FormAturanGajiProps) {
             <ul className="space-y-2">
               {riwayat.map((baris) => (
                 <li
-                  key={`${baris.berlakuSejak}-${baris.tarifPerJam}`}
+                  key={baris.id}
                   className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/40 px-3 py-3"
                 >
                   <span className="text-sm">
@@ -254,7 +311,7 @@ export function FormAturanGaji({ riwayatAwal }: FormAturanGajiProps) {
                       {formatTanggalLengkap(baris.berlakuSejak)}
                     </span>
                   </span>
-                  {berlaku?.berlakuSejak === baris.berlakuSejak && (
+                  {berlaku?.id === baris.id && (
                     <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
                       Berlaku sekarang
                     </span>

@@ -3,13 +3,18 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { FormAturanGaji } from "@/components/form-aturan-gaji";
 import { Button } from "@/components/ui/button";
-import { getRiwayatTarif } from "@/lib/mock-pengaturan";
 import { requirePermission } from "@/lib/session";
+import { tanggalISO } from "@/lib/tanggal";
+import { ambilAturanGaji } from "@/services/pengaturan.service";
 
 export const metadata: Metadata = { title: "Aturan Gaji & Tarif" };
 
 export default async function AturanGajiPage() {
   await requirePermission({ pengaturan: ["read"] });
+
+  // Riwayat tarif dibaca dari tabel `salary_settings` supaya formulir dan
+  // daftarnya memakai angka yang sama dengan rekap gaji.
+  const { riwayat } = await ambilAturanGaji(tanggalISO(new Date()));
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -27,7 +32,7 @@ export default async function AturanGajiPage() {
         Aturan Gaji &amp; Tarif
       </h1>
 
-      <FormAturanGaji riwayatAwal={getRiwayatTarif()} />
+      <FormAturanGaji riwayatAwal={riwayat} />
     </div>
   );
 }

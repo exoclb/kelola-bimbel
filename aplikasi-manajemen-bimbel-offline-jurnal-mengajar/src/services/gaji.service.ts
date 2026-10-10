@@ -9,8 +9,9 @@ import {
   teachingJournals,
   user,
 } from "@/db/schema";
-import { hitungGaji } from "@/lib/gaji";
+import { aturanTarifBerlaku, hitungGaji } from "@/lib/gaji";
 import type {
+  AturanTarif,
   BarisRekapGaji,
   RekapGaji as RekapGajiBulanan,
   RingkasanGajiBulanan,
@@ -45,7 +46,9 @@ function rentangBulan(periode: string) {
  * yang `berlaku_sejak`-nya tidak melewati tanggal itu. Dipakai rekap gaji
  * (per bulan) dan halaman pengaturan (per tanggal).
  */
-export async function aturanGajiBerlaku(tanggal: string) {
+export async function aturanGajiBerlaku(
+  tanggal: string,
+): Promise<Omit<AturanTarif, "id"> | null> {
   const [baris] = await db
     .select({
       tarifPerJam: salarySettings.tarifPerJam,
@@ -76,9 +79,7 @@ function tarifPadaAkhirPeriode(
   periode: string,
 ) {
   const { akhir } = rentangBulan(periode);
-  return (
-    pengaturan.find((baris) => baris.berlakuSejak <= akhir)?.tarifPerJam ?? 0
-  );
+  return aturanTarifBerlaku(pengaturan, akhir)?.tarifPerJam ?? 0;
 }
 
 async function rincianPeriode(awal: string, akhir: string, guruId?: string) {

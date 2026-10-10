@@ -53,6 +53,28 @@ export function formatRupiah(nilai: number) {
   return `Rp${nilai.toLocaleString("id-ID", { maximumFractionDigits: 0 })}`;
 }
 
+/** Satu aturan tarif honor (tabel `salary_settings`). */
+export type AturanTarif = {
+  id: string;
+  tarifPerJam: number;
+  skema: string;
+  berlakuSejak: string;
+};
+
+/**
+ * Aturan tarif yang dipakai pada satu tanggal: baris terbaru yang
+ * `berlakuSejak`-nya tidak melewati tanggal itu. `pengaturan` harus urut dari
+ * yang paling baru, dan tanggal bertipe teks `YYYY-MM-DD` supaya bisa
+ * dibandingkan apa adanya. Dipakai server saat menghitung rekap (`aturanGajiBerlaku`)
+ * maupun layar pengaturan yang menandai tarif mana yang sedang berlaku.
+ */
+export function aturanTarifBerlaku<T extends { berlakuSejak: string }>(
+  pengaturan: T[],
+  tanggal: string,
+): T | null {
+  return pengaturan.find((baris) => baris.berlakuSejak <= tanggal) ?? null;
+}
+
 /** Gaji = total jam mengajar × tarif per jam. */
 export function hitungGaji(totalJam: number, tarifPerJam: number) {
   return Math.round(totalJam * tarifPerJam);

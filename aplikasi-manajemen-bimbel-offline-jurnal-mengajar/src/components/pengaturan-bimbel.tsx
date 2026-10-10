@@ -19,7 +19,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  getAturanGaji,
   getDaftarGuru,
   getPreferensiNotifikasi,
 } from "@/lib/mock-pengaturan";
@@ -30,9 +29,10 @@ import {
   ringkasVerifikasi,
 } from "@/lib/mock-verifikasi-notifikasi";
 import { ambilStatusBackup } from "@/services/backup.service";
+import { aturanGajiBerlaku } from "@/services/gaji.service";
 import { ambilProfilBimbel } from "@/services/pengaturan.service";
 import { formatRupiah } from "@/lib/gaji";
-import { formatTanggalLengkap } from "@/lib/tanggal";
+import { formatTanggalLengkap, tanggalISO } from "@/lib/tanggal";
 
 /** "hari ini" / "kemarin" / "N hari lalu" untuk ringkasan kartu backup. */
 function umurBackupSingkat(waktu: Date, sekarang = new Date()) {
@@ -51,15 +51,20 @@ type PengaturanBimbelProps = {
 
 /**
  * Halaman utama Pengaturan Bimbel: ringkasan tiap bagian plus menu ke
- * halamannya. Profil bimbel dibaca dari tabel `bimbel_profile`; bagian lain
- * masih data tiruan (lihat src/lib/mock-pengaturan.ts).
+ * halamannya. Profil bimbel dan tarif honor dibaca dari basis data (tabel
+ * `bimbel_profile` & `salary_settings`); bagian lain masih data tiruan (lihat
+ * src/lib/mock-pengaturan.ts).
  */
 export async function PengaturanBimbel({ bolehKelola }: PengaturanBimbelProps) {
   const profil = await ambilProfilBimbel();
   // Kartu backup hanya untuk owner/admin, jadi statusnya pun hanya diambil
   // kalau akunnya memang boleh melihatnya.
   const statusBackup = bolehKelola ? await ambilStatusBackup(1) : null;
-  const aturanGaji = getAturanGaji();
+  // Tarif yang berlaku dihitung dengan aturan yang sama seperti halaman Aturan
+  // Gaji, supaya ringkasan kartunya tidak pernah beda dari isi tabelnya.
+  const aturanGaji = bolehKelola
+    ? await aturanGajiBerlaku(tanggalISO(new Date()))
+    : null;
   const guru = getDaftarGuru();
   const preferensi = getPreferensiNotifikasi();
 

@@ -10,6 +10,7 @@ import {
   user,
 } from "@/db/schema";
 import { pelanggaranUnik } from "@/lib/db-error";
+import type { AturanTarif } from "@/lib/gaji";
 import { JENIS_NOTIFIKASI, type JenisNotifikasi } from "@/lib/notifikasi";
 import { peranDariRole, type PeranPengguna } from "@/lib/peran";
 import { aturanGajiBerlaku } from "@/services/gaji.service";
@@ -110,12 +111,7 @@ export async function simpanProfilBimbel(
 }
 
 /** Satu baris aturan gaji seperti yang dikirim ke klien. */
-export type AturanGajiTersimpan = {
-  id: string;
-  tarifPerJam: number;
-  skema: string;
-  berlakuSejak: string;
-};
+export type AturanGajiTersimpan = AturanTarif;
 
 export type DaftarAturanGaji = {
   /** Aturan yang berlaku pada tanggal yang ditanyakan, atau null kalau belum ada. */
