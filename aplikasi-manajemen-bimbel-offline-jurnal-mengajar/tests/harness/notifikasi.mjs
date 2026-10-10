@@ -78,6 +78,7 @@ export async function bersihkan() {
     `${PENANDA}-%`,
   ]);
   await pool.query("DELETE FROM cabang WHERE nama LIKE $1", [`${PENANDA}-%`]);
+  cabangUji = null;
 }
 
 // ---------------------------------------------------------------------------
@@ -150,6 +151,17 @@ export async function buatCabang({ label = "Cabang" } = {}) {
   return { id: nama, nama };
 }
 
+// Cabang bersama untuk semua kelas uji dalam satu tes. Banyak tes membangun
+// lebih dari satu kelas, dan tiap kelas cukup menunjuk cabang yang sama: tabel
+// `cabang` jadi tidak kebanjiran baris sesaat yang mengganggu tes lain yang
+// menghitung isinya (mis. tes data contoh cabang).
+let cabangUji = null;
+
+async function cabangBersama() {
+  cabangUji ??= await buatCabang({ label: "Cabang Proses" });
+  return cabangUji;
+}
+
 /** Satu jadwal mengajar; jam mengajar dihitung server dari selisihnya. */
 export async function buatJadwal({
   classId,
@@ -179,7 +191,7 @@ export async function buatKelas({
   jamSelesai = "10:30",
   denganJadwal = true,
 } = {}) {
-  const namaCabang = cabang ?? (await buatCabang()).nama;
+  const namaCabang = cabang ?? (await cabangBersama()).nama;
   const namaKelas = namaUji(label);
   const { rows } = await pool.query(
     "INSERT INTO classes (nama_kelas, cabang, guru_id) VALUES ($1, $2, $3) RETURNING id",
@@ -372,6 +384,21 @@ export async function jumlahNotifikasiBerKunci(userId, tipe, kunci) {
   const { rows } = await pool.query(
     "SELECT count(*)::int AS jumlah FROM notifications WHERE user_id = $1 AND tipe = $2 AND kunci = $3",
     [userId, tipe, kunci],
+  );
+  return rows[0].jumlah;
+}
+
+/**
+ * Jumlah baris satu jenis milik satu akun yang pesannya memuat teks tertentu.
+ * Peristiwa tanpa kunci (jurnal) dibedakan begini: jenisnya disiarkan ke
+ * seluruh pemilik di basis data uji, jadi berkas tes lain yang berjalan
+ * bersamaan juga menambah baris jenis yang sama. Nama kelas atau murid uji
+ * hanya dipakai proses ini, jadi tidak pernah tertukar.
+ */
+export async function jumlahNotifikasiPesan(userId, tipe, teks) {
+  const { rows } = await pool.query(
+    "SELECT count(*)::int AS jumlah FROM notifications WHERE user_id = $1 AND tipe = $2 AND pesan LIKE '%' || $3 || '%'",
+    [userId, tipe, teks],
   );
   return rows[0].jumlah;
 }

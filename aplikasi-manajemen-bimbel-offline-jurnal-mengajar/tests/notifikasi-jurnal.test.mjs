@@ -1,0 +1,205 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {
+  aturPreferensi,
+  bersihkan,
+  buatGuru,
+  buatKelas,
+  buatMurid,
+  buatPemilik,
+  daftarNotifikasi,
+  jumlahNotifikasi,
+  jumlahNotifikasiPesan,
+  picuJurnal,
+  pool,
+  tempatkanMurid,
+} from "./harness/notifikasi.mjs";
+
+// Satu peristiwa jurnal = satu notifikasi. Pemilik bimbel dikabari saat guru
+// pertama kali mengirim jurnal untuk satu jadwal pada satu tanggal; kiriman
+// ulang adalah peristiwa yang sama karena jurnalnya diperbarui, bukan
+// ditambahkan. Yang menerima hanya pemilik/admin yang menyalakan jenis
+// `jurnal_baru`, dan gurunya sendiri tidak ikut dikabari.
+//
+// Peristiwa jurnal sengaja tidak memakai kunci idempotensi (halaman verifikasi
+// menampilkannya sebagai "Tanpa kunci"): penjaganya pemeriksaan "jurnal ini
+// sudah ada?" di `simpanJurnal` sebelum baris notifikasinya ditulis. Kontrak
+// itu ikut dikunci di sini supaya perubahan diam-diam pada penjaganya ketahuan.
+//
+// Barisnya dihitung per nama kelas, bukan per jenis: jenis `jurnal_baru`
+// disiarkan ke seluruh pemilik bimbel, jadi berkas tes lain yang berjalan
+// bersamaan juga menambah baris jenis yang sama untuk akun uji ini.
+
+/** Baris jurnal guru untuk satu jadwal, langsung dari basis data. */
+async function jumlahJurnal(guruId, scheduleId) {
+  const { rows } = await pool.query(
+    "SELECT count(*)::int AS jumlah FROM teaching_journals WHERE guru_id = $1 AND schedule_id = $2",
+    [guruId, scheduleId],
+  );
+  return rows[0].jumlah;
+}
+
+test("jurnal tersimpan mengabari tiap pemilik sekali dan gurunya tidak", async () => {
+  await bersihkan();
+  const pemilik = await buatPemilik("Pemilik Jurnal");
+  const pemilikBisu = await buatPemilik("Pemilik Bisu Jurnal");
+  await aturPreferensi(pemilikBisu.id, "jurnal_baru", false);
+  const guru = await buatGuru("Guru Jurnal");
+  const kelas = await buatKelas({ guruId: guru.id, label: "Kelas Jurnal" });
+  const murid = await buatMurid({ label: "Murid Jurnal" });
+  await tempatkanMurid(murid.id, kelas.id);
+
+  const hasil = await picuJurnal({
+    guruId: guru.id,
+    jadwalId: kelas.jadwal.id,
+    kehadiran: [{ muridId: murid.id, hadir: true, catatan: "" }],
+  });
+  assert.equal(hasil.status, "tersimpan");
+
+  assert.equal(
+    await jumlahNotifikasiPesan(pemilik.id, "jurnal_baru", kelas.nama),
+    1,
+  );
+  assert.equal(
+    await jumlahNotifikasiPesan(pemilikBisu.id, "jurnal_baru", kelas.nama),
+    0,
+    "pemilik yang mematikan jenisnya tidak dikabari",
+  );
+  assert.equal(
+    await jumlahNotifikasi(guru.id, "jurnal_baru"),
+    0,
+    "guru yang mengirim jurnalnya tidak dikabari",
+  );
+
+  const [kabar] = (
+    await daftarNotifikasi(pemilik.id, { tipe: "jurnal_baru" })
+  ).filter((baris) => baris.pesan.includes(kelas.nama));
+  assert.match(kabar.pesan, new RegExp(kelas.nama));
+  assert.match(kabar.pesan, new RegExp(guru.nama));
+  assert.match(kabar.pesan, /1,5 jam/);
+  assert.equal(
+    kabar.kunci,
+    null,
+    "peristiwa jurnal dijaga pemeriksaan di simpanJurnal, bukan kunci",
+  );
+  assert.equal(kabar.sudah_dibaca, false);
+
+  await bersihkan();
+});
+
+test("kiriman ulang jurnal yang sama tidak menambah kabar", async () => {
+  await bersihkan();
+  const pemilik = await buatPemilik("Pemilik Jurnal Ulang");
+  const guru = await buatGuru("Guru Jurnal Ulang");
+  const kelas = await buatKelas({
+    guruId: guru.id,
+    label: "Kelas Jurnal Ulang",
+  });
+  const murid = await buatMurid({ label: "Murid Jurnal Ulang" });
+  await tempatkanMurid(murid.id, kelas.id);
+
+  const pertama = await picuJurnal({
+    guruId: guru.id,
+    jadwalId: kelas.jadwal.id,
+    kehadiran: [{ muridId: murid.id, hadir: true, catatan: "" }],
+  });
+  assert.equal(pertama.status, "tersimpan");
+  assert.equal(
+    await jumlahNotifikasiPesan(pemilik.id, "jurnal_baru", kelas.nama),
+    1,
+  );
+
+  // Guru memperbaiki isi jurnalnya di hari yang sama: baris jurnalnya
+  // diperbarui dan peristiwanya tetap yang tadi.
+  const ulang = await picuJurnal({
+    guruId: guru.id,
+    jadwalId: kelas.jadwal.id,
+    materi: "Latihan soal (diperbaiki)",
+    catatan: "Murid sudah paham.",
+    kehadiran: [{ muridId: murid.id, hadir: false, catatan: "Sakit" }],
+  });
+  assert.equal(ulang.status, "tersimpan");
+
+  assert.equal(await jumlahJurnal(guru.id, kelas.jadwal.id), 1);
+  assert.equal(
+    await jumlahNotifikasiPesan(pemilik.id, "jurnal_baru", kelas.nama),
+    1,
+    "kiriman ulang bukan peristiwa baru",
+  );
+
+  await bersihkan();
+});
+
+test("jurnal untuk jadwal lain adalah peristiwa baru", async () => {
+  await bersihkan();
+  const pemilik = await buatPemilik("Pemilik Jurnal Dua Kelas");
+  const guru = await buatGuru("Guru Jurnal Dua Kelas");
+  const kelasA = await buatKelas({
+    guruId: guru.id,
+    label: "Kelas Jurnal A",
+    jamMulai: "09:00",
+    jamSelesai: "10:30",
+  });
+  const kelasB = await buatKelas({
+    guruId: guru.id,
+    label: "Kelas Jurnal B",
+    jamMulai: "13:00",
+    jamSelesai: "14:00",
+  });
+
+  await picuJurnal({ guruId: guru.id, jadwalId: kelasA.jadwal.id });
+  await picuJurnal({ guruId: guru.id, jadwalId: kelasB.jadwal.id });
+
+  assert.equal(
+    await jumlahNotifikasiPesan(pemilik.id, "jurnal_baru", kelasA.nama),
+    1,
+    "tiap kelas adalah peristiwa sendiri",
+  );
+  assert.equal(
+    await jumlahNotifikasiPesan(pemilik.id, "jurnal_baru", kelasB.nama),
+    1,
+  );
+  const baris = await daftarNotifikasi(pemilik.id, { tipe: "jurnal_baru" });
+  const kabarA = baris.find((n) => n.pesan.includes(kelasA.nama));
+  const kabarB = baris.find((n) => n.pesan.includes(kelasB.nama));
+  assert.match(kabarA.pesan, /1,5 jam/);
+  assert.match(kabarB.pesan, /1 jam/);
+
+  await bersihkan();
+});
+
+test("mematikan jenis jurnal_baru menahan kabar tanpa menahan jurnalnya", async () => {
+  await bersihkan();
+  const pemilik = await buatPemilik("Pemilik Jurnal Mati");
+  const guru = await buatGuru("Guru Jurnal Mati");
+  const kelas = await buatKelas({
+    guruId: guru.id,
+    label: "Kelas Jurnal Mati",
+  });
+
+  await picuJurnal({ guruId: guru.id, jadwalId: kelas.jadwal.id });
+  assert.equal(
+    await jumlahNotifikasiPesan(pemilik.id, "jurnal_baru", kelas.nama),
+    1,
+  );
+
+  await aturPreferensi(pemilik.id, "jurnal_baru", false);
+  const kelasLain = await buatKelas({
+    guruId: guru.id,
+    label: "Kelas Jurnal Mati Berikutnya",
+  });
+  const hasil = await picuJurnal({
+    guruId: guru.id,
+    jadwalId: kelasLain.jadwal.id,
+  });
+
+  assert.equal(hasil.status, "tersimpan", "jurnalnya tetap tersimpan");
+  assert.equal(await jumlahJurnal(guru.id, kelasLain.jadwal.id), 1);
+  assert.equal(
+    await jumlahNotifikasiPesan(pemilik.id, "jurnal_baru", kelasLain.nama),
+    0,
+    "tidak ada kabar baru selama jenisnya mati",
+  );
+
+  await bersihkan();
+});

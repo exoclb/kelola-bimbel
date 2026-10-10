@@ -10,6 +10,7 @@ import {
   buatWali,
   daftarNotifikasi,
   jumlahNotifikasi,
+  jumlahNotifikasiPesan,
   kunciLaporanBulanan,
   penanda,
   periodeBulanIni,
@@ -84,10 +85,17 @@ test("fixture jurnal memicu satu notifikasi dan tunduk pada preferensi", async (
   });
   assert.equal(pertama.status, "tersimpan");
 
-  assert.equal(await jumlahNotifikasi(pemilik.id, "jurnal_baru"), 1);
+  // Dihitung per nama kelas, bukan per jenis: jenis `jurnal_baru` disiarkan ke
+  // seluruh pemilik di basis data uji, jadi berkas tes lain yang berjalan
+  // bersamaan bisa menambah baris jenis yang sama untuk akun uji ini.
+  assert.equal(
+    await jumlahNotifikasiPesan(pemilik.id, "jurnal_baru", kelas.nama),
+    1,
+  );
   const pesan = await pesanNotifikasi(pemilik.id, "jurnal_baru");
-  assert.match(pesan[0], new RegExp(kelas.nama));
-  assert.match(pesan[0], new RegExp(guru.nama));
+  const kabarKelas = pesan.filter((teks) => teks.includes(kelas.nama));
+  assert.equal(kabarKelas.length, 1);
+  assert.match(kabarKelas[0], new RegExp(guru.nama));
 
   // Kirim ulang jurnal yang sama: jurnalnya diperbarui, kabarnya tidak lagi.
   const ulang = await picuJurnal({
@@ -97,7 +105,10 @@ test("fixture jurnal memicu satu notifikasi dan tunduk pada preferensi", async (
     kehadiran: [{ muridId: murid.id, hadir: true, catatan: "" }],
   });
   assert.equal(ulang.status, "tersimpan");
-  assert.equal(await jumlahNotifikasi(pemilik.id, "jurnal_baru"), 1);
+  assert.equal(
+    await jumlahNotifikasiPesan(pemilik.id, "jurnal_baru", kelas.nama),
+    1,
+  );
 
   // Jenis yang dimatikan menahan kabar untuk jurnal berikutnya.
   await aturPreferensi(pemilik.id, "jurnal_baru", false);
@@ -110,7 +121,10 @@ test("fixture jurnal memicu satu notifikasi dan tunduk pada preferensi", async (
     jadwalId: kelasLain.jadwal.id,
   });
   assert.equal(lain.status, "tersimpan");
-  assert.equal(await jumlahNotifikasi(pemilik.id, "jurnal_baru"), 1);
+  assert.equal(
+    await jumlahNotifikasiPesan(pemilik.id, "jurnal_baru", kelasLain.nama),
+    0,
+  );
 
   await bersihkan();
 });
