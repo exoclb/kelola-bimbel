@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { formatPeriode, periodeBulan } from "@/lib/gaji";
 import { rekapGajiAnyGuru } from "@/services/gaji.service";
 import { requirePermission } from "@/lib/session";
-import { ambilProfilBimbel } from "@/services/pengaturan.service";
+import { ambilKopLaporan } from "@/services/kop-laporan.service";
 
 export const metadata: Metadata = { title: "Slip Gaji" };
 
@@ -49,7 +49,7 @@ export default async function SlipGajiPage({
       <SlipGaji
         baris={baris}
         periodeTampil={formatPeriode(periode)}
-        profil={await ambilProfilBimbel()}
+        profil={await ambilKopLaporan()}
       />
 
       <div className="mt-6">

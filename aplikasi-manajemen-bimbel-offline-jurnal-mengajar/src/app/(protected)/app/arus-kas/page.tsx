@@ -4,7 +4,7 @@ import { periodeBulan } from "@/lib/gaji";
 import { requirePermission } from "@/lib/session";
 import { rekapHonorBulanan } from "@/services/gaji.service";
 import { rekapPengeluaranBulanan } from "@/services/pengeluaran.service";
-import { ambilProfilBimbel } from "@/services/pengaturan.service";
+import { ambilKopLaporan } from "@/services/kop-laporan.service";
 import { rekapPemasukanPeriode } from "@/services/tagihan.service";
 
 export const metadata: Metadata = { title: "Arus Kas" };
@@ -23,7 +23,8 @@ function periodeDariAlamat(params: {
   bulan?: string;
   tahun?: string;
 }) {
-  if (params.periode && POLA_PERIODE.test(params.periode)) return params.periode;
+  if (params.periode && POLA_PERIODE.test(params.periode))
+    return params.periode;
   if (
     params.bulan &&
     params.tahun &&
@@ -59,7 +60,7 @@ export default async function ArusKasPage({
       rekapPengeluaranBulanan(),
       rekapPemasukanPeriode(),
       rekapHonorBulanan(),
-      ambilProfilBimbel(),
+      ambilKopLaporan(),
     ]);
 
   // Pilihan tahun dirakit dari periode yang benar-benar punya angka (tagihan,

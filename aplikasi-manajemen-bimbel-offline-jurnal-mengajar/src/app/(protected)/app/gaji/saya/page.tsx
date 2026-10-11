@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { RekapGajiSaya } from "@/components/rekap-gaji-saya";
 import { formatPeriode, periodeBulan } from "@/lib/gaji";
 import { rekapGajiGuru } from "@/services/gaji.service";
-import { ambilProfilBimbel } from "@/services/pengaturan.service";
+import { ambilKopLaporan } from "@/services/kop-laporan.service";
 import { requireSession } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Rekap Gaji Saya" };
@@ -23,11 +23,13 @@ export default async function RekapGajiSayaPage({
     : periodeBulan(new Date());
   // Rekapnya dihitung dari jurnal guru itu sendiri, jadi angkanya sama dengan
   // yang dipakai owner menandai pembayaran di halaman rekap gaji.
-  const baris = (await rekapGajiGuru(periode, {
-    id: user.id,
-    nama: user.name,
-    email: user.email,
-  })).guru;
+  const baris = (
+    await rekapGajiGuru(periode, {
+      id: user.id,
+      nama: user.name,
+      email: user.email,
+    })
+  ).guru;
 
   return (
     <RekapGajiSaya
@@ -35,7 +37,7 @@ export default async function RekapGajiSayaPage({
       periode={periode}
       periodeTampil={formatPeriode(periode)}
       namaBerkas={`slip-gaji-${periode}`}
-      profil={await ambilProfilBimbel()}
+      profil={await ambilKopLaporan()}
     />
   );
 }

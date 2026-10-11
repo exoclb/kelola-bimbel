@@ -2,7 +2,7 @@ import { ApiError, withApiPermission } from "@/lib/api";
 import { formatPeriode, periodeBulan } from "@/lib/gaji";
 import { namaBerkasSlip, slipGajiHtml } from "@/lib/slip-gaji-html";
 import { rekapGajiAnyGuru } from "@/services/gaji.service";
-import { ambilProfilBimbel } from "@/services/pengaturan.service";
+import { ambilKopLaporan } from "@/services/kop-laporan.service";
 import { slipGajiSchema } from "@/validators/gaji";
 
 export const runtime = "nodejs";
@@ -23,7 +23,7 @@ export function GET(request: Request) {
       slipGajiHtml({
         baris: rekap.guru,
         periodeTampil: formatPeriode(bulan),
-        profil: await ambilProfilBimbel(),
+        profil: await ambilKopLaporan(),
       }),
       {
         headers: {

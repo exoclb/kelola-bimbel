@@ -5,7 +5,7 @@ import { PenandaPengguna } from "@/components/penanda-pengguna";
 import { TemaPortal } from "@/components/tema-portal";
 import { peranDariRole } from "@/lib/peran";
 import { requirePermission } from "@/lib/session";
-import { ambilProfilBimbel } from "@/services/pengaturan.service";
+import { ambilKopLaporan } from "@/services/kop-laporan.service";
 
 export const runtime = "nodejs";
 
@@ -40,7 +40,7 @@ export default async function PortalLayout({
   // identitas bimbel diambil dari tabel `bimbel_profile` sebagai penanda
   // halaman.
   const peran = peranDariRole(user.role);
-  const profil = await ambilProfilBimbel();
+  const profil = await ambilKopLaporan();
 
   return (
     <>

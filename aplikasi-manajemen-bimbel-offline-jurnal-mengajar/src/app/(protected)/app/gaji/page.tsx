@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { RekapGajiBulanan } from "@/components/rekap-gaji-bulanan";
 import { formatPeriode, periodeBulan } from "@/lib/gaji";
 import { rekapGajiAnyBulanan } from "@/services/gaji.service";
-import { ambilProfilBimbel } from "@/services/pengaturan.service";
+import { ambilKopLaporan } from "@/services/kop-laporan.service";
 import { requirePermission } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Rekap Gaji Bulanan" };
@@ -23,7 +23,7 @@ export default async function RekapGajiPage({
     : periodeBulan(new Date());
   const [rekap, profil] = await Promise.all([
     rekapGajiAnyBulanan(periode),
-    ambilProfilBimbel(),
+    ambilKopLaporan(),
   ]);
 
   return (

@@ -3,7 +3,7 @@ import { lembarLaporanHtml, namaBerkasLembar } from "@/lib/dokumen-html";
 import { formatPeriode } from "@/lib/gaji";
 import { lembarLabaRugi } from "@/lib/laporan-bulanan";
 import { rekapLabaRugiPeriode } from "@/services/laba-rugi.service";
-import { ambilProfilBimbel } from "@/services/pengaturan.service";
+import { ambilKopLaporan } from "@/services/kop-laporan.service";
 import { listLabaRugiSchema } from "@/validators/laba-rugi";
 
 export const runtime = "nodejs";
@@ -32,7 +32,7 @@ export function GET(request: Request) {
     });
 
     return new Response(
-      lembarLaporanHtml({ ...lembar, profil: await ambilProfilBimbel() }),
+      lembarLaporanHtml({ ...lembar, profil: await ambilKopLaporan() }),
       {
         headers: {
           "Content-Type": "application/vnd.ms-excel; charset=utf-8",

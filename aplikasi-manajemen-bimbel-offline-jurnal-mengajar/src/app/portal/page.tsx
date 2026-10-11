@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { BerandaPortalWali } from "@/components/beranda-portal-wali";
 import { statusSemuaAnak } from "@/services/jejak-baca.service";
-import { ambilProfilBimbel } from "@/services/pengaturan.service";
+import { ambilKopLaporan } from "@/services/kop-laporan.service";
 import { listNotifikasi } from "@/services/notifikasi.service";
 import { muatIsiPortalWali } from "@/services/portal.service";
 import { requireSession } from "@/lib/session";
@@ -43,7 +43,7 @@ export default async function PortalWaliPage({
   return (
     <BerandaPortalWali
       anak={anak}
-      profil={await ambilProfilBimbel()}
+      profil={await ambilKopLaporan()}
       namaWali={session.user.name}
       muridIdAwal={params.anak?.trim() || undefined}
       statusAwal={statusAwal}

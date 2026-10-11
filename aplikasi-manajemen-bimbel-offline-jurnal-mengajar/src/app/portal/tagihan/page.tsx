@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { TagihanSppAnak } from "@/components/tagihan-spp-anak";
 import { statusSemuaAnak } from "@/services/jejak-baca.service";
-import { ambilProfilBimbel } from "@/services/pengaturan.service";
+import { ambilKopLaporan } from "@/services/kop-laporan.service";
 import { muatIsiPortalWali } from "@/services/portal.service";
 import { requireSession } from "@/lib/session";
 import { tanggalISO } from "@/lib/tanggal";
@@ -29,7 +29,7 @@ export default async function TagihanSppAnakPage({
       muridId={params.anak?.trim() ?? ""}
       statusAwal={await statusSemuaAnak(session.user.id, anak)}
       tagihan={tagihan}
-      profil={await ambilProfilBimbel()}
+      profil={await ambilKopLaporan()}
       tanggalServer={tanggalISO(new Date())}
     />
   );

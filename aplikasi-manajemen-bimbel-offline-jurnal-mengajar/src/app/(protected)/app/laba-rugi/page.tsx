@@ -7,7 +7,7 @@ import { rekapHonorBulanan } from "@/services/gaji.service";
 import { beritahuLaporanBulanan } from "@/services/notifikasi.service";
 import { rekapPengeluaranBulanan } from "@/services/pengeluaran.service";
 import { rekapPemasukanPeriode } from "@/services/tagihan.service";
-import { ambilProfilBimbel } from "@/services/pengaturan.service";
+import { ambilKopLaporan } from "@/services/kop-laporan.service";
 
 export const metadata: Metadata = { title: "Laporan Laba Rugi" };
 
@@ -79,7 +79,7 @@ export default async function LabaRugiPage({
     }),
   );
 
-  const profil = await ambilProfilBimbel();
+  const profil = await ambilKopLaporan();
 
   // Pilihan tahun dirakit dari periode yang benar-benar punya angka (tagihan,
   // honor, atau pengeluaran), ditambah tahun berjalan dan tahun yang sedang

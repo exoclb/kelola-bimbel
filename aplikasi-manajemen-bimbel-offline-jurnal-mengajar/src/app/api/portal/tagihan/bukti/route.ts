@@ -5,7 +5,7 @@ import {
 } from "@/lib/bukti-tagihan-html";
 import { periodeTagihan } from "@/lib/tagihan";
 import { muridTertaut } from "@/services/jejak-baca.service";
-import { ambilProfilBimbel } from "@/services/pengaturan.service";
+import { ambilKopLaporan } from "@/services/kop-laporan.service";
 import { listTagihanWali } from "@/services/tagihan.service";
 import { anakPortalSchema } from "@/validators/portal";
 
@@ -19,7 +19,7 @@ export const runtime = "nodejs";
 // tagihan juga 404 — tidak ada rincian yang bisa dibuktikan.
 //
 // Identitas bimbel diambil dari tabel `bimbel_profile` lewat
-// `ambilProfilBimbel()`, sumber yang sama dengan cangkang portal, supaya kop
+// `ambilKopLaporan()`, sumber yang sama dengan cangkang portal, supaya kop
 // dokumen tidak berbeda dari yang dilihat wali.
 export function GET(request: Request) {
   return withApiPermission(request, { portal: ["read"] }, async (session) => {
@@ -33,7 +33,7 @@ export function GET(request: Request) {
     if (daftar.length === 0)
       throw new ApiError(404, "NOT_FOUND", "Belum ada tagihan untuk anak ini.");
 
-    const profil = await ambilProfilBimbel();
+    const profil = await ambilKopLaporan();
     const periode = periodeTagihan(new Date());
     return new Response(
       buktiTagihanHtml({
