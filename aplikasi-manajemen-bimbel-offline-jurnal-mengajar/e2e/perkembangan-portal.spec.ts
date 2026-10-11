@@ -335,6 +335,63 @@ test("wali membaca catatan dan kehadiran anaknya tanpa alat penyuntingan", async
   ).toHaveCount(0);
   await expect(page.locator('a[href*="/app/"]')).toHaveCount(0);
 
+  // Kontrak API-nya, bukan hanya layarnya: ringkasan dihitung server (jumlah
+  // catatan, rata-rata satu angka di belakang koma, sesi hadir/tidak hadir),
+  // catatannya terbaru lebih dulu, dan anak yang belum punya catatan menerima
+  // daftar kosong dengan rata-rata `null` — bukan nol, yang terbaca seperti
+  // nilai sungguhan.
+  const apiIsi = await page.request.get(
+    `/api/portal/perkembangan?anak=${muridIsi}`,
+  );
+  expect(apiIsi.status()).toBe(200);
+  const progres = await apiIsi.json();
+  expect(progres.data).toHaveLength(CATATAN.length);
+  expect(progres.data[0].tanggal).toBe(CATATAN[0].tanggal);
+  expect(progres.kehadiran).toHaveLength(2);
+  expect(progres.meta).toMatchObject({
+    muridId: muridIsi,
+    jumlah: CATATAN.length,
+    rataRata: 78.6,
+    jumlahSesi: 2,
+    hadir: 1,
+    tidakHadir: 1,
+  });
+
+  const apiKosong = await page.request.get(
+    `/api/portal/perkembangan?anak=${muridKosong}`,
+  );
+  expect(apiKosong.status()).toBe(200);
+  expect(await apiKosong.json()).toMatchObject({
+    data: [],
+    kehadiran: [],
+    meta: {
+      muridId: muridKosong,
+      jumlah: 0,
+      rataRata: null,
+      jumlahSesi: 0,
+      hadir: 0,
+      tidakHadir: 0,
+    },
+  });
+
+  // `anak` wajib dan harus UUID yang sah, dan hanya kolom itu yang diterima.
+  for (const kueri of [
+    "",
+    "anak=bukan-uuid",
+    `anak=${muridKosong}&halaman=1`,
+  ]) {
+    const ditolak = await page.request.get(
+      `/api/portal/perkembangan${kueri ? `?${kueri}` : ""}`,
+    );
+    expect(ditolak.status(), `?${kueri}`).toBe(422);
+  }
+
+  // Anak yang tidak tertaut ke akun wali ini tidak membocorkan catatannya.
+  const asing = await page.request.get(
+    `/api/portal/perkembangan?anak=${randomUUID()}`,
+  );
+  expect(asing.status()).toBe(404);
+
   // Membuka layar ini menandai kedua bagiannya terbaca, jadi lencana "Baru" di
   // beranda portal tidak tertinggal.
   await expect(
