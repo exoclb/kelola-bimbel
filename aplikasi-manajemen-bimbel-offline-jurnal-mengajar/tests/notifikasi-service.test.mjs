@@ -12,6 +12,7 @@ import {
   buatPemilik,
   buatWali,
   catatNotifikasi,
+  daftarNotifikasi,
   db,
   jumlahNotifikasi,
   jumlahNotifikasiBerKunci,
@@ -413,6 +414,156 @@ test("buatNotifikasi menolak kunci peristiwa yang kosong", async () => {
     );
   }
   assert.equal(await jumlahNotifikasi(guru.id, "rekap_honor"), 0);
+
+  await bersihkan();
+});
+
+/**
+ * Identitas peristiwa adalah pasangan jenis + kunci, bukan kuncinya saja:
+ * indeks uniknya `(user_id, tipe, kunci)`. Dua jenis berbeda yang memakai kunci
+ * sama — mis. periode yang sama untuk `rekap_honor` dan `gaji_dibayar` — tetap
+ * dua kabar. Kalau yang dijaga hanya `kunci`, salah satu jenisnya akan
+ * tertelan diam-diam: gurunya menerima kabar rekapitulasi honornya tetapi tidak
+ * pernah tahu honornya sudah dibayar.
+ */
+test("kunci peristiwa yang sama untuk jenis berbeda tetap dua baris", async () => {
+  await bersihkan();
+  const guru = await buatGuru("Guru Kunci Lintas Jenis");
+  const kunci = `${guru.id}:2097-11`;
+
+  assert.equal(
+    await buatNotifikasi(
+      "rekap_honor",
+      "Rekap honor November 2097 sudah tersedia.",
+      [guru.id],
+      kunci,
+    ),
+    1,
+  );
+  assert.equal(
+    await buatNotifikasi(
+      "gaji_dibayar",
+      "Honor November 2097 sudah dibayar.",
+      [guru.id],
+      kunci,
+    ),
+    1,
+    "jenis lain dianggap peristiwa lain walau kuncinya sama",
+  );
+
+  assert.equal(
+    await jumlahNotifikasiBerKunci(guru.id, "rekap_honor", kunci),
+    1,
+  );
+  assert.equal(
+    await jumlahNotifikasiBerKunci(guru.id, "gaji_dibayar", kunci),
+    1,
+  );
+
+  await bersihkan();
+});
+
+/**
+ * Idempoten berarti sekali tulis, bukan "yang terakhir menang": peristiwa yang
+ * dipicu ulang dengan pesan berbeda tetap menyisakan pesan yang pertama, utuh
+ * dengan waktu dibuat dan status bacanya. Halaman notifikasi menampilkan isi
+ * barisnya apa adanya, jadi penimpaan akan membuat kabar lama berubah isi tanpa
+ * jejak — dan bisa berubah menjadi pesan yang tidak pernah dilihat penerimanya.
+ */
+test("peristiwa yang dipicu ulang tidak menimpa pesan yang sudah terkirim", async () => {
+  await bersihkan();
+  const guru = await buatGuru("Guru Pesan Pertama");
+  const kunci = `rekap_honor:${guru.id}:2097-12`;
+
+  assert.equal(
+    await buatNotifikasi(
+      "rekap_honor",
+      "Rekap honor Desember 2097 sudah tersedia.",
+      [guru.id],
+      kunci,
+    ),
+    1,
+  );
+  const [sebelum] = await daftarNotifikasi(guru.id, { tipe: "rekap_honor" });
+
+  assert.equal(
+    await buatNotifikasi(
+      "rekap_honor",
+      "Pesan koreksi yang tidak boleh menggantikan yang lama.",
+      [guru.id],
+      kunci,
+    ),
+    0,
+  );
+
+  const [sesudah] = await daftarNotifikasi(guru.id, { tipe: "rekap_honor" });
+  assert.deepEqual(sesudah, sebelum, "barisnya tidak tersentuh sama sekali");
+  assert.match(sesudah.pesan, /Rekap honor Desember 2097/);
+
+  await bersihkan();
+});
+
+/**
+ * Daftar kandidat penerima yang kosong bukan galat dan tidak menulis apa pun —
+ * dan, yang lebih penting, tidak memakai kunci peristiwanya. Pemicu yang dipanggil
+ * sebelum ada penerima yang berhak (mis. tagihan anak yang belum punya akun wali)
+ * tidak boleh menelan peristiwa itu, sehingga penerima yang datang belakangan
+ * tetap menerima kabarnya saat peristiwa yang sama dipicu ulang.
+ */
+test("kandidat penerima kosong tidak menulis apa pun dan tidak memakai kuncinya", async () => {
+  await bersihkan();
+  const guru = await buatGuru("Guru Tanpa Penerima");
+  const kunci = `rekap_honor:${guru.id}:2098-01`;
+  const pesan = "Rekap honor Januari 2098 sudah tersedia.";
+
+  assert.equal(await buatNotifikasi("rekap_honor", pesan, [], kunci), 0);
+  assert.equal(await jumlahNotifikasi(guru.id, "rekap_honor"), 0);
+
+  assert.equal(
+    await buatNotifikasi("rekap_honor", pesan, [guru.id], kunci),
+    1,
+    "kunci tidak terpakai selama tidak ada penerima",
+  );
+
+  await bersihkan();
+});
+
+/**
+ * `kunci` adalah `varchar(160)`, jadi kunci peristiwa harus muat di kolomnya:
+ * yang kepanjangan ditolak database (22001), bukan dipotong diam-diam. Kalau
+ * dipotong, dua peristiwa berbeda yang awalannya sama akan dianggap satu dan
+ * notifikasinya hilang — dan pemotongan itu justru terjadi di dalam transaksi
+ * pemanggilnya, jadi lebih baik gagal keras daripada tampak berhasil. Batasnya
+ * diuji tepat di lebar kolomnya supaya pemendekan kolom di kemudian hari
+ * terlihat di sini.
+ */
+test("kunci peristiwa yang lebih panjang dari kolomnya ditolak, bukan dipotong", async () => {
+  await bersihkan();
+  const guru = await buatGuru("Guru Kunci Panjang");
+
+  await assert.rejects(
+    () =>
+      buatNotifikasi(
+        "rekap_honor",
+        "Rekap honor 2098.",
+        [guru.id],
+        "k".repeat(161),
+      ),
+    (galat) => (galat.cause?.code ?? galat.code) === "22001",
+    "kunci 161 karakter ditolak database",
+  );
+  assert.equal(await jumlahNotifikasi(guru.id, "rekap_honor"), 0);
+
+  assert.equal(
+    await buatNotifikasi(
+      "rekap_honor",
+      "Rekap honor 2098.",
+      [guru.id],
+      "k".repeat(160),
+    ),
+    1,
+    "160 karakter masih muat",
+  );
 
   await bersihkan();
 });
