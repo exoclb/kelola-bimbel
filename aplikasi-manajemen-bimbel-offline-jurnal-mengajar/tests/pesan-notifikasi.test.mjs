@@ -3,8 +3,13 @@ import assert from "node:assert/strict";
 // Alias `@/...` dan impor tanpa akhiran diterjemahkan oleh harness ini.
 import "./harness/alias.mjs";
 
-const { pesanGajiDibayar, pesanLaporanBulanan, pesanRekapHonor } =
-  await import("../src/lib/pesan-notifikasi.ts");
+const {
+  pesanGajiDibayar,
+  pesanLaporanBulanan,
+  pesanRekapHonor,
+  pesanTagihanLunas,
+  pesanTagihanTerbit,
+} = await import("../src/lib/pesan-notifikasi.ts");
 
 // Pesan ini yang dibaca guru di kotak notifikasi, jadi periodenya wajib
 // disebut dan angkanya ditulis gaya Indonesia.
@@ -29,6 +34,35 @@ test("pesan gaji dibayar menyebut periode dan nominalnya", () => {
   assert.equal(
     pesanGajiDibayar("2026-09", 450_000),
     "Gaji September 2026 sebesar Rp450.000 sudah dibayar.",
+  );
+});
+
+// Dua pesan tagihan SPP ini yang dibaca wali di kotak notifikasi portalnya,
+// jadi nama anaknya wajib disebut — satu akun wali bisa menautkan lebih dari
+// satu anak — dan periodenya ikut ditulis supaya wali dengan beberapa tunggakan
+// tahu tagihan mana yang dimaksud.
+test("pesan tagihan terbit menyebut anak, periode, dan nominalnya", () => {
+  assert.equal(
+    pesanTagihanTerbit("Ani", "2026-07", 250_000),
+    "Tagihan SPP Ani periode Juli 2026 sebesar Rp250.000 sudah terbit. Rinciannya bisa dibuka di Portal Wali pada bagian Tagihan.",
+  );
+});
+
+test("pesan tagihan lunas menyebut anak, periode, dan nominalnya", () => {
+  assert.equal(
+    pesanTagihanLunas("Ani", "2026-07", 250_000),
+    "Pembayaran tagihan SPP Ani periode Juli 2026 sebesar Rp250.000 sudah diterima. Bukti pembayarannya bisa dilihat di Portal Wali pada bagian Tagihan.",
+  );
+});
+
+test("pesan tagihan menulis bulan satu digit tanpa nol di depan", () => {
+  assert.match(
+    pesanTagihanTerbit("Budi", "2097-09", 90_000),
+    /periode September 2097/,
+  );
+  assert.match(
+    pesanTagihanLunas("Budi", "2097-12", 90_000),
+    /periode Desember 2097/,
   );
 });
 

@@ -264,3 +264,87 @@ test("wali yang mematikan kabar tagihan tidak dikirimi", async () => {
 
   await bersihkan();
 });
+
+/**
+ * Sasaran kabarnya adalah wali anak yang ditagih, bukan wali mana pun yang
+ * punya akun: wali anak lain — termasuk wali yang tertaut hanya ke anak lain di
+ * bimbel yang sama — tidak ikut dikirimi.
+ */
+test("wali murid lain tidak dikabari tagihan yang bukan anaknya", async () => {
+  await bersihkan();
+  const ditagih = await buatMurid({ label: "Murid Ditagih Sasaran" });
+  const lain = await buatMurid({ label: "Murid Lain Sasaran" });
+  const waliDitagih = await buatWali("Wali Murid Ditagih");
+  const waliLain = await buatWali("Wali Murid Lain");
+  await tautkanWali(waliDitagih.id, ditagih.id);
+  await tautkanWali(waliLain.id, lain.id);
+
+  await picuTagihan({
+    muridIds: [ditagih.id],
+    periode: "2097-11",
+    nominal: 225_000,
+  });
+
+  assert.equal(await jumlahNotifikasi(waliDitagih.id, "tagihan_terbit"), 1);
+  assert.equal(await jumlahNotifikasi(waliLain.id, "tagihan_terbit"), 0);
+
+  // Menandai lunas pun hanya sampai ke walinya sendiri.
+  const id = await tagihanId(ditagih.id, "2097-11");
+  await picuUbahTagihan(id, { status: "lunas" });
+
+  assert.equal(await jumlahNotifikasi(waliDitagih.id, "tagihan_lunas"), 1);
+  assert.equal(await jumlahNotifikasi(waliLain.id, "tagihan_lunas"), 0);
+
+  await bersihkan();
+});
+
+/**
+ * Satu akun wali dengan dua anak yang ditagih pada periode yang sama menerima
+ * dua kabar — satu per tagihan — karena kuncinya memakai id tagihannya, bukan
+ * id anak dan periodenya. Kalau kuncinya disamakan, salah satu tagihan anaknya
+ * tidak pernah dikabarkan.
+ */
+test("wali dua anak dikabari sekali untuk tiap tagihan anaknya", async () => {
+  await bersihkan();
+  const wali = await buatWali("Wali Dua Anak");
+  const kakak = await buatMurid({ label: "Kakak Dua Anak" });
+  const adik = await buatMurid({ label: "Adik Dua Anak" });
+  await tautkanWali(wali.id, kakak.id);
+  await tautkanWali(wali.id, adik.id);
+
+  // Satu permintaan untuk kedua anaknya sekaligus.
+  const hasil = await picuTagihan({
+    muridIds: [kakak.id, adik.id],
+    periode: "2097-12",
+    nominal: 175_000,
+  });
+  assert.equal(hasil.dibuat, 2);
+
+  const pesan = await pesanNotifikasi(wali.id, "tagihan_terbit");
+  assert.equal(pesan.length, 2, "satu kabar per tagihan anaknya");
+  assert.ok(
+    pesan.some((baris) => baris.includes(kakak.nama)),
+    "kabar kakaknya ada",
+  );
+  assert.ok(
+    pesan.some((baris) => baris.includes(adik.nama)),
+    "kabar adiknya ada",
+  );
+
+  const kunci = await pool.query(
+    "SELECT kunci FROM notifications WHERE user_id = $1 AND tipe = 'tagihan_terbit' ORDER BY kunci",
+    [wali.id],
+  );
+  assert.equal(new Set(kunci.rows.map((baris) => baris.kunci)).size, 2);
+
+  // Menerbitkan ulang periode yang sama tidak menambah kabar keduanya.
+  const ulang = await picuTagihan({
+    muridIds: [kakak.id, adik.id],
+    periode: "2097-12",
+    nominal: 175_000,
+  });
+  assert.equal(ulang.dibuat, 0);
+  assert.equal(await jumlahNotifikasi(wali.id, "tagihan_terbit"), 2);
+
+  await bersihkan();
+});
