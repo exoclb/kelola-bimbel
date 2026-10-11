@@ -271,7 +271,14 @@ export async function daftarMuridSudahDitagih({ periode }: ListTagihanInput) {
   return baris.map((catatan) => catatan.muridId);
 }
 
-export type HasilBuatTagihan = { dibuat: number; dilewati: string[] };
+/**
+ * Hasil penerbitan tagihan: berapa yang benar-benar terbit beserta nama murid
+yang dilewati karena periodenya sudah ditagih, atau daftar id murid yang tidak
+ada lagi (mis. dihapus di perangkat lain) sehingga tidak ada yang diterbitkan.
+ */
+export type HasilBuatTagihan =
+  | { status: "tersimpan"; dibuat: number; dilewati: string[] }
+  | { status: "murid_tidak_ada"; muridIds: string[] };
 
 /**
  * Membuat tagihan sekaligus untuk banyak murid. Penjagaan ganda ada di indeks
@@ -282,6 +289,11 @@ export type HasilBuatTagihan = { dibuat: number; dilewati: string[] };
  * (`tagihan_terbit`). Kuncinya memakai id tagihannya sendiri
  * (`tagihan:<idTagihan>`), jadi baris yang sudah ada — dan karenanya dilewati
  * `onConflictDoNothing` — tidak pernah dikabarkan.
+ *
+ * Murid yang tidak ada lagi diperiksa lebih dulu dan menolak seluruh permintaan:
+ * tanpa pemeriksaan itu penulisannya gagal sebagai galat kunci asing, dan
+ * pemanggilnya hanya melihat kegagalan server tanpa tahu murid mana yang
+ * bermasalah. Satu id ganda dalam satu permintaan dihitung sekali.
  */
 export async function createTagihan({
   periode,
@@ -289,11 +301,20 @@ export async function createTagihan({
   muridIds,
 }: CreateTagihanInput): Promise<HasilBuatTagihan> {
   const { periodeTahun, periodeBulan } = pecahPeriode(periode);
+  const unik = [...new Set(muridIds)];
+
+  const dikenal = await db
+    .select({ id: students.id })
+    .from(students)
+    .where(inArray(students.id, unik));
+  const idDikenal = new Set(dikenal.map((murid) => murid.id));
+  const hilang = unik.filter((muridId) => !idDikenal.has(muridId));
+  if (hilang.length > 0) return { status: "murid_tidak_ada", muridIds: hilang };
 
   const dibuat = await db
     .insert(studentInvoices)
     .values(
-      muridIds.map((muridId) => ({
+      unik.map((muridId) => ({
         studentId: muridId,
         periodeBulan,
         periodeTahun,
@@ -313,7 +334,7 @@ export async function createTagihan({
     });
 
   const dibuatIds = new Set(dibuat.map((catatan) => catatan.muridId));
-  const dilewatiIds = muridIds.filter((muridId) => !dibuatIds.has(muridId));
+  const dilewatiIds = unik.filter((muridId) => !dibuatIds.has(muridId));
 
   const nama =
     dilewatiIds.length === 0
@@ -351,6 +372,7 @@ export async function createTagihan({
   }
 
   return {
+    status: "tersimpan" as const,
     dibuat: dibuat.length,
     dilewati: dilewatiIds.map((muridId) => petaNama.get(muridId) ?? muridId),
   };

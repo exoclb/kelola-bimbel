@@ -39,6 +39,17 @@ const bulanTampil = (bulan: number) =>
 
 const bulanSekarang = new Date();
 
+/** Pesan cadangan kalau jawabannya tidak memuat penjelasan (mis. jaringan). */
+const GALAT_SIMPAN = "Tagihan belum bisa disimpan. Coba lagi sebentar lagi.";
+
+/** Ambil pesan galat dari jawaban API; `cadangan` untuk galat jaringan. */
+async function pesanGalatApi(jawaban: Response, cadangan: string) {
+  const isi = (await jawaban.json().catch(() => null)) as {
+    error?: { message?: string };
+  } | null;
+  return isi?.error?.message ?? cadangan;
+}
+
 /**
  * Formulir buat tagihan bulanan: pilih periode dan nominal, centang murid yang
  * ditagih (satu atau sekaligus banyak), lalu simpan. Murid yang sudah punya
@@ -126,7 +137,12 @@ export function FormTagihanBulanan({
           muridIds: terpilih.map((anak) => anak.id),
         }),
       });
-      if (!jawaban.ok) throw new Error("gagal");
+      if (!jawaban.ok) {
+        // Penjelasan dari server lebih berguna daripada "coba lagi", mis. saat
+        // muridnya sudah dihapus dan mengulang tidak akan pernah berhasil.
+        setGalat(await pesanGalatApi(jawaban, GALAT_SIMPAN));
+        return;
+      }
       const isi = await jawaban.json();
       const hasil = (isi?.data ?? { dibuat: 0, dilewati: [] }) as {
         dibuat: number;
@@ -149,7 +165,7 @@ export function FormTagihanBulanan({
       ]);
       router.refresh();
     } catch {
-      setGalat("Tagihan belum bisa disimpan. Coba lagi sebentar lagi.");
+      setGalat(GALAT_SIMPAN);
     } finally {
       setPending(false);
     }

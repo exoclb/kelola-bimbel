@@ -298,7 +298,9 @@ test("halaman tagihan bisa dipilih per periode dan statusnya disaring", async ({
   await page.getByLabel("Bulan").selectOption(String(bulanLalu));
   await page.getByLabel("Tahun").selectOption(String(tahunLalu));
   await page.getByRole("button", { name: "Tampilkan" }).click();
-  await expect(page).toHaveURL(`/app/tagihan?bulan=${bulanLalu}&tahun=${tahunLalu}`);
+  await expect(page).toHaveURL(
+    `/app/tagihan?bulan=${bulanLalu}&tahun=${tahunLalu}`,
+  );
 
   const baris = page.locator("li").filter({ hasText: "Murid Tagihan Periode" });
   await expect(baris.getByText("Rp210.000").first()).toBeVisible();
@@ -357,4 +359,60 @@ test("halaman tagihan bisa dipilih per periode dan statusnya disaring", async ({
   } finally {
     await db.end();
   }
+});
+
+/**
+ * Murid yang id-nya sudah tidak ada (mis. dihapus di perangkat lain sementara
+ * formulirnya masih terbuka) ditolak dengan jawaban yang bisa dibaca pengguna,
+ * bukan galat server — dan tidak ada tagihan yang tersimpan separuh jalan untuk
+ * murid lain di daftar yang sama.
+ */
+test("penerbitan tagihan menolak murid yang sudah tidak ada", async ({
+  request,
+}) => {
+  const email = await daftar(request, "Owner Tagihan Hantu");
+  await setRole(email, "owner");
+  await masuk(request, email);
+
+  const buat = await request.post("/api/murid", {
+    headers,
+    data: { nama: "Murid Tagihan Hantu", tanggalLahir: "2015-07-07" },
+  });
+  expect(buat.status()).toBe(201);
+  const muridId = (await buat.json()).data.id as string;
+
+  // Periode jauh di depan supaya tidak bertabrakan dengan data uji lain.
+  const periode = "2098-11";
+  const hantu = "22222222-2222-4222-8222-222222222222";
+
+  const terbitkan = (muridIds: string[]) =>
+    request.post("/api/tagihan", {
+      headers,
+      data: { periode, nominal: 210000, muridIds },
+    });
+
+  const hantuSaja = await terbitkan([hantu]);
+  expect(hantuSaja.status()).toBe(404);
+  const galat = (await hantuSaja.json()).error as {
+    code: string;
+    message: string;
+  };
+  expect(galat.code).toBe("NOT_FOUND");
+  expect(galat.message.length).toBeGreaterThan(0);
+
+  // Satu id yang tidak dikenal membatalkan seluruh permintaan.
+  const campur = await terbitkan([muridId, hantu]);
+  expect(campur.status()).toBe(404);
+
+  // Daftar periodenya tetap kosong, jadi kiriman ulang dengan pilihan yang
+  // benar masih menerbitkan tagihannya.
+  const daftarSetelahGagal = await request.get(
+    `/api/tagihan?periode=${periode}`,
+    { headers },
+  );
+  expect((await daftarSetelahGagal.json()).data).toHaveLength(0);
+
+  const ulang = await terbitkan([muridId]);
+  expect(ulang.status()).toBe(201);
+  expect((await ulang.json()).data.dibuat).toBe(1);
 });

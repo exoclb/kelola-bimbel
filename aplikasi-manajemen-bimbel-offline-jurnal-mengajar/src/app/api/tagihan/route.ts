@@ -1,4 +1,4 @@
-import { readJson, withApiPermission } from "@/lib/api";
+import { ApiError, readJson, withApiPermission } from "@/lib/api";
 import {
   createTagihan,
   daftarMuridSudahDitagih,
@@ -29,11 +29,19 @@ export function GET(request: Request) {
 }
 
 // Membuat tagihan sekaligus untuk banyak murid. Murid yang sudah punya
-// tagihan periode itu dilewati, bukan dibuat dobel.
+// tagihan periode itu dilewati, bukan dibuat dobel; murid yang id-nya sudah
+// tidak ada ditolak sebagai 404 supaya batch-nya tidak disimpan separuh.
 export function POST(request: Request) {
   return withApiPermission(request, { tagihan: ["write-any"] }, async () => {
     const input = createTagihanSchema.parse(await readJson(request));
     const hasil = await createTagihan(input);
+    if (hasil.status === "murid_tidak_ada")
+      throw new ApiError(
+        404,
+        "NOT_FOUND",
+        "Sebagian murid tidak ditemukan. Muat ulang halaman lalu pilih lagi.",
+      );
+
     return Response.json({ data: hasil }, { status: 201 });
   });
 }
