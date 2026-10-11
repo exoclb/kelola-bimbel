@@ -54,6 +54,11 @@ export function POST(request: Request, context: Context) {
         "MURID_TIDAK_AKTIF",
         "Murid ini sudah tidak aktif, jadi belum bisa ditempatkan. Aktifkan dulu di halaman Murid.",
       );
+    // Kelas di cabang nonaktif tidak dipakai untuk penempatan baru; pesannya
+    // sama dengan yang tampil di layar detail murid dan panel kelas, supaya
+    // penolakannya tidak perlu dijelaskan dua kali dengan kalimat berbeda.
+    if (hasil.status === "cabang_nonaktif")
+      throw new ApiError(409, "CABANG_NONAKTIF", hasil.pesan);
     // Sejak aturan multi-kelas, murid boleh aktif di beberapa kelas; yang
     // ditolak hanya penempatan kedua di kelas yang sama.
     if (hasil.status === "sudah_terdaftar")

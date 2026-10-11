@@ -154,7 +154,7 @@ export function DaftarKelas({
       ? `${kelasCabangHilang.length} kelas memakai cabang yang belum terdaftar — ganti cabangnya lewat “Ubah data kelas” supaya jumlah kelas per cabang cocok.`
       : "",
     kelasCabangNonaktif.length > 0
-      ? `${kelasCabangNonaktif.length} kelas berada di cabang nonaktif; kelasnya tetap berjalan, tetapi cabang itu tidak ditawarkan untuk kelas baru.`
+      ? `${kelasCabangNonaktif.length} kelas berada di cabang nonaktif; kelasnya tetap berjalan, tetapi cabang itu tidak ditawarkan untuk kelas baru maupun penempatan murid baru.`
       : "",
   ]
     .filter(Boolean)
@@ -233,9 +233,10 @@ export function DaftarKelas({
     // Sejak aturan multi-kelas, murid boleh aktif di beberapa kelas; yang
     // ditolak hanya penempatan kedua di kelas yang sama. Aturannya dipakai
     // bersama halaman detail murid lewat `src/lib/penempatan-kelas.ts`, jadi
-    // pesan penolakannya sama di kedua layar. Cabang tidak diperiksa di sini:
-    // panel ini membuka kelas yang sudah dipilih, dan kelasnya tetap berjalan
-    // sampai muridnya keluar, termasuk saat cabangnya dinonaktifkan.
+    // pesan penolakannya sama di kedua layar — termasuk penolakan kelas di
+    // cabang nonaktif, yang juga dijawab 409 `CABANG_NONAKTIF` oleh
+    // `src/services/kelas.service.ts`. Kelasnya sendiri tetap berjalan dan
+    // tetap terbuka di layar sampai muridnya keluar.
     const murid = daftarMurid.find((anak) => anak.id === muridId);
     const hasil = periksaPenempatan({
       murid: murid ?? {

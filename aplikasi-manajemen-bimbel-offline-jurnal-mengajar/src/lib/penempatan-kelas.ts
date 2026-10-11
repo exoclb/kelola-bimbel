@@ -65,6 +65,21 @@ export function cabangDariKelas(
 }
 
 /**
+ * Pesan penolakan karena cabangnya belum terdaftar. Dipisah supaya kalimatnya
+ * dipakai bersama oleh pemeriksaan di layar dan oleh penolakan layanan
+ * penempatan (`src/services/kelas.service.ts`) — dua tempat yang tidak boleh
+ * menjelaskan hal yang berbeda tentang alasan yang sama.
+ */
+export function pesanCabangBelumTerdaftar(namaKelas: string, cabang: string) {
+  return `Kelas ${namaKelas} memakai cabang ${cabang} yang belum terdaftar, jadi belum bisa dipakai untuk penempatan baru. Perbaiki cabang kelasnya di halaman Kelas.`;
+}
+
+/** Pasangan pesan di atas untuk cabang yang masih terdaftar tetapi nonaktif. */
+export function pesanCabangNonaktif(namaKelas: string, cabang: string) {
+  return `Kelas ${namaKelas} berada di cabang ${cabang} yang nonaktif, jadi belum bisa dipakai untuk penempatan baru. Aktifkan dulu cabangnya di halaman Cabang.`;
+}
+
+/**
  * Kenapa sebuah kelas belum bisa dipakai untuk penempatan **baru**, dilihat
  * dari cabangnya: cabang nonaktif dan cabang yang belum terdaftar sama-sama
  * tidak ditawarkan untuk penempatan baru — aturan yang sama dengan kelas baru
@@ -79,12 +94,12 @@ export function penghalangCabang(
   if (!cabang)
     return {
       alasan: "cabang_belum_terdaftar",
-      pesan: `Kelas ${kelas.namaKelas} memakai cabang ${kelas.cabang} yang belum terdaftar, jadi belum bisa dipakai untuk penempatan baru. Perbaiki cabang kelasnya di halaman Kelas.`,
+      pesan: pesanCabangBelumTerdaftar(kelas.namaKelas, kelas.cabang),
     };
   if (!cabang.statusAktif)
     return {
       alasan: "cabang_nonaktif",
-      pesan: `Kelas ${kelas.namaKelas} berada di cabang ${cabang.nama} yang nonaktif, jadi belum bisa dipakai untuk penempatan baru. Aktifkan dulu cabangnya di halaman Cabang.`,
+      pesan: pesanCabangNonaktif(kelas.namaKelas, cabang.nama),
     };
   return null;
 }
@@ -116,11 +131,11 @@ export function kelasBelumDiikuti(input: {
  * kelas itu, lalu cabang kelasnya siap — supaya pesan di layar menyebut hal
  * yang sama dengan jawaban API-nya.
  *
- * `periksaCabang` dinyalakan oleh halaman yang menawarkan kelas lintas cabang
- * (halaman detail murid): di sana kelas di cabang nonaktif tidak dipakai untuk
- * penempatan baru. Panel kelas sengaja tidak memeriksanya karena kelasnya sudah
- * terbuka di layar dan tetap berjalan sampai muridnya keluar, jadi murid yang
- * sudah belajar di sana masih bisa ditambah.
+ * Pemeriksaan cabang tidak lagi bisa dimatikan: layanan penempatan di server
+ * (`tempatkanMurid`) menolak kelas di cabang nonaktif, jadi layar mana pun yang
+ * menawarkan penempatan harus menolaknya lebih dulu dengan alasan yang sama.
+ * Kelasnya sendiri tetap berjalan dan tetap terbuka di layar — yang berhenti
+ * hanya penempatan baru ke sana.
  */
 export function periksaPenempatan(input: {
   murid: MuridPenempatan;
@@ -128,7 +143,6 @@ export function periksaPenempatan(input: {
   daftarKelas: KelasPenempatan[];
   daftarCabang: CabangPenempatan[];
   penempatan: PenempatanRingkas[];
-  periksaCabang?: boolean;
 }): HasilPenempatan {
   const kelas = input.daftarKelas.find((baris) => baris.id === input.kelasId);
   if (!kelas)
@@ -159,10 +173,8 @@ export function periksaPenempatan(input: {
       pesan: `${input.murid.nama} sudah terdaftar di kelas ini.`,
     };
 
-  if (input.periksaCabang) {
-    const penghalang = penghalangCabang(kelas, input.daftarCabang);
-    if (penghalang) return { boleh: false, ...penghalang };
-  }
+  const penghalang = penghalangCabang(kelas, input.daftarCabang);
+  if (penghalang) return { boleh: false, ...penghalang };
 
   return { boleh: true };
 }

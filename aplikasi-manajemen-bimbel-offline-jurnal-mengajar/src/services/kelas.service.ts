@@ -2,8 +2,10 @@ import "server-only";
 import { and, asc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { pelanggaranUnik } from "@/lib/db-error";
+import { pesanCabangNonaktif } from "@/lib/penempatan-kelas";
 import { urutkanJadwal } from "@/lib/tanggal";
 import {
+  cabang,
   classes,
   schedules,
   studentEnrollments,
@@ -558,6 +560,7 @@ export type HasilTempatkanMurid =
   | { status: "kelas_tidak_ada" }
   | { status: "murid_tidak_ada" }
   | { status: "murid_tidak_aktif" }
+  | { status: "cabang_nonaktif"; pesan: string }
   | { status: "sudah_terdaftar" };
 
 /**
@@ -575,11 +578,38 @@ export async function tempatkanMurid(
   tanggalMulai: string,
 ): Promise<HasilTempatkanMurid> {
   const [kelas] = await db
-    .select({ id: classes.id })
+    .select({
+      id: classes.id,
+      namaKelas: classes.namaKelas,
+      cabang: classes.cabang,
+    })
     .from(classes)
     .where(eq(classes.id, kelasId))
     .limit(1);
   if (!kelas) return { status: "kelas_tidak_ada" };
+
+  // Kelas di cabang nonaktif tidak dipakai untuk penempatan baru — aturan yang
+  // sama dengan kelas baru dan pemindahan kelas (`periksaCabangKelas`), dan
+  // sama dengan pemeriksaan di layar (`penghalangCabang`). Kelasnya sendiri
+  // tidak dikunci: yang sudah belajar di sana tetap boleh keluar masuk sampai
+  // penempatan barunya ditolak, dan cabang yang diaktifkan lagi langsung
+  // membuka penempatan. Baris cabangnya dijamin ada oleh foreign key
+  // `classes_cabang_cabang_nama_fk` (ganti nama ikut memindahkan kelas, hapus
+  // dibatasi), jadi cabang yang "belum terdaftar" tidak mungkin terjadi di
+  // sini — pemeriksaan ini yang berdiri terakhir kalau keadaannya tidak terduga.
+  const [cabangKelas] = await db
+    .select({ nama: cabang.nama, statusAktif: cabang.statusAktif })
+    .from(cabang)
+    .where(eq(cabang.nama, kelas.cabang))
+    .limit(1);
+  if (!cabangKelas?.statusAktif)
+    return {
+      status: "cabang_nonaktif",
+      pesan: pesanCabangNonaktif(
+        kelas.namaKelas,
+        cabangKelas?.nama ?? kelas.cabang,
+      ),
+    };
 
   const [murid] = await db
     .select({ id: students.id, statusAktif: students.statusAktif })

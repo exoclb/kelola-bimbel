@@ -21,18 +21,24 @@ persiapan ujian — dengan jadwal maupun guru pengampu yang berbeda.
    ditempatkan lagi di kelas itu (baris baru berstatus `aktif`), jadi kelas yang
    riwayatnya sudah `selesai` tetap ikut ditawarkan di halaman detail murid.
 5. **Cabang harus siap dipakai.** Kelas di **cabang nonaktif** dan kelas yang
-   **cabangnya belum terdaftar** (namanya berubah atau baris cabangnya terhapus)
-   tidak dipakai untuk penempatan baru; kelas yang sudah berjalan tetap dibuka
-   sampai muridnya keluar. Aturan ini dipakai halaman detail murid
-   (`/app/murid/<id>`) yang menawarkan kelas lintas cabang; panel kelas di
-   `/app/kelas` sengaja tidak memeriksanya karena kelasnya sudah terbuka di
-   layar.
+   **cabangnya belum terdaftar** (namanya berubah atau baris cabangnya
+   terhapus) tidak dipakai untuk penempatan baru; kelas yang sudah berjalan
+   tetap dibuka sampai muridnya keluar — yang berhenti hanya penempatan baru ke
+   sana. Aturannya ditegakkan di layanan penempatan (`tempatkanMurid` di
+   `src/services/kelas.service.ts`, dijawab 409 `CABANG_NONAKTIF` dengan pesan
+   yang sama seperti di layar), jadi pemanggil API mana pun tidak bisa
+   melewatinya; pemeriksaan di layar (`penghalangCabang`/`periksaPenempatan`)
+   memakai aturan dan kalimat yang sama supaya panelnya menolak lebih dulu,
+   termasuk panel kelas di `/app/kelas`. Cabang yang diaktifkan lagi langsung
+   menerima penempatan baru, tanpa langkah lain. Tidak ada status aktif untuk
+   kelasnya sendiri: sebuah kelas berhenti dipakai kalau barisnya dihapus, bukan
+   dinonaktifkan.
 
 ## Alur di aplikasi
 
 | Lokasi            | Yang bisa dilakukan                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/app/kelas`      | Panel "Murid di kelas ini": pilih murid lalu "Masukkan ke kelas"; tombol "Keluarkan" per murid untuk kelas itu saja. Pilihan muridnya hanya berisi murid **aktif** yang belum ada di kelas itu; kalau penempatan tetap ditolak (murid nonaktif atau sudah terdaftar), alasannya muncul sebagai kotak peringatan **di dalam panel kelas yang bersangkutan**, bukan di kepala halaman.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `/app/kelas`      | Panel "Murid di kelas ini": pilih murid lalu "Masukkan ke kelas"; tombol "Keluarkan" per murid untuk kelas itu saja. Pilihan muridnya hanya berisi murid **aktif** yang belum ada di kelas itu; kalau penempatan tetap ditolak (murid nonaktif, sudah terdaftar, atau kelasnya di cabang nonaktif), alasannya muncul sebagai kotak peringatan **di dalam panel kelas yang bersangkutan**, bukan di kepala halaman.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `/app/murid`      | Saringan **status** (semua / hanya aktif / hanya tidak aktif), **cabang**, dan **kelas** di samping pencarian, ringkasan "N dari M murid cocok …", dan tiap kartu punya tautan "Detail murid". Pilihan cabang/kelasnya hanya yang masih berisi murid aktif (kelas yang seluruh penempatannya sudah `selesai` tidak ditawarkan), memilih cabang mempersempit pilihan kelasnya, dan tiap kartu menyebut kelas + cabang yang sedang diikuti. Murid nonaktif ditandai pil "Tidak aktif".                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `/app/murid/<id>` | Daftar **kelas yang sedang diikuti** (dengan tombol "Keluarkan dari kelas ini"), pilihan **"Tambah ke kelas lain"** (kelas yang belum aktif), dan **riwayat kelas** yang sudah selesai. Pilihan kelasnya dikosongkan dulu ("Pilih kelas…"), tombolnya baru hidup setelah satu kelas dipilih, dan setelah tersimpan pilihannya kosong lagi — jadi klik beruntun tidak bisa menempatkan murid ke kelas yang tidak dimaksud. Penempatannya diperiksa Aturan 2 di bawah: murid nonaktif, kelas duplikat, dan kelas di **cabang nonaktif atau belum terdaftar** ditolak dengan alasannya di layar (kelas seperti itu tetap terlihat dengan tanda "(cabang nonaktif)" supaya alasannya terbaca). Tombol **"Ubah data murid"** di bawah rangkuman identitasnya membuka formulir yang sama dengan halaman daftar (nama, tanggal lahir, orang tua, dan status aktif), lalu kepala halaman, pil status, dan baris kontaknya ikut berubah. |
 | `/app/penempatan` | Daftar penempatan **dikelompokkan per kelas**: tiap kelas punya kepala (nama kelas, cabang, guru, jumlah murid) berisi daftar muridnya, termasuk baris berstatus `selesai` sebagai riwayat ("Pernah diikuti sejak …"). Ringkasan "N penempatan · M aktif · K murid aktif di lebih dari satu kelas", saringan status, dan pencarian nama murid/kelas/cabang/guru tetap di atas daftar; kelas yang tidak punya baris cocok ikut hilang.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
@@ -93,7 +99,11 @@ Aturan penolakan di layar dipusatkan di `src/lib/penempatan-kelas.ts`
 (`periksaPenempatan`, `penghalangCabang`, `kelasBelumDiikuti`) supaya halaman
 detail murid dan panel kelas memakai pemeriksaan yang sama dengan pesan yang
 sama; pesannya sendiri mengikuti 409 `MURID_TIDAK_AKTIF` dan `SUDAH_TERDAFTAR`
-milik `src/services/kelas.service.ts`. Unit testnya ada di
+milik `src/services/kelas.service.ts`. Aturan cabangnya juga dikunci langsung di
+layanan (`tests/tempatkan-murid.test.mjs`) dan di kontrak API
+(`e2e/api-penempatan.spec.ts`, yang memeriksa 409 `CABANG_NONAKTIF` beserta
+pesannya dan mencoba lagi setelah cabangnya diaktifkan) supaya penolakan
+tidak bisa hilang tanpa ada tes yang gagal. Unit testnya ada di
 `tests/penempatan-kelas.test.mjs`.
 
 ## Yang masih data tiruan

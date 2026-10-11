@@ -74,20 +74,33 @@ async function buatMurid(client: APIRequestContext, nama: string) {
 }
 
 /** Daftarkan cabang dan kelas uji langsung di basis data; dibersihkan sesudahnya. */
-async function siapkanKelas(namaKelas: string) {
+async function siapkanKelas(namaKelas: string, cabangAktif = true) {
   const db = await pool();
   try {
     await db.query(
       `INSERT INTO cabang (nama, alamat, kontak, status_aktif)
-       VALUES ($1, 'Jl. Uji API No. 2', '0800-0002', true)
-       ON CONFLICT (lower(btrim(nama))) DO NOTHING`,
-      [CABANG],
+       VALUES ($1, 'Jl. Uji API No. 2', '0800-0002', $2)
+       ON CONFLICT (lower(btrim(nama))) DO UPDATE SET status_aktif = EXCLUDED.status_aktif`,
+      [CABANG, cabangAktif],
     );
     const { rows } = await db.query(
       "INSERT INTO classes (nama_kelas, cabang) VALUES ($1, $2) RETURNING id",
       [namaKelas, CABANG],
     );
     return rows[0].id as string;
+  } finally {
+    await db.end();
+  }
+}
+
+/** Nyalakan/matikan cabang uji tanpa lewat API (endpoint cabang milik owner). */
+async function aturCabangAktif(statusAktif: boolean) {
+  const db = await pool();
+  try {
+    await db.query("UPDATE cabang SET status_aktif = $2 WHERE nama = $1", [
+      CABANG,
+      statusAktif,
+    ]);
   } finally {
     await db.end();
   }
@@ -358,6 +371,53 @@ test("penempatan menolak id asing dan isian tidak sah", async ({ request }) => {
     headers,
   });
   expect(lintasKelas.status()).toBe(422);
+});
+
+/**
+ * Cabang yang dinonaktifkan tidak boleh dipakai untuk penempatan baru, dan
+ * penolakan itu harus datang dari servernya — bukan hanya dari pemeriksaan di
+ * layar, karena aturan ini yang menjaga pemanggil API mana pun. Kelasnya tidak
+ * ikut dikunci: begitu cabangnya diaktifkan lagi, penempatan langsung diterima.
+ */
+test("penempatan ditolak selama cabang kelasnya nonaktif", async ({
+  request,
+}) => {
+  await masukApi(request);
+  const kelasId = await siapkanKelas(`${PENANDA} Kelas Cabang Mati`, false);
+  const muridId = await buatMurid(request, `${PENANDA} Murid Cabang Mati`);
+
+  const ditolak = await request.post(`/api/kelas/${kelasId}/murid`, {
+    headers,
+    data: { muridId },
+  });
+  expect(ditolak.status()).toBe(409);
+  const galat = await ditolak.json();
+  expect(galat.error.code).toBe("CABANG_NONAKTIF");
+  expect(galat.error.message).toBe(
+    `Kelas ${PENANDA} Kelas Cabang Mati berada di cabang ${CABANG} yang nonaktif, jadi belum bisa dipakai untuk penempatan baru. Aktifkan dulu cabangnya di halaman Cabang.`,
+  );
+  // Penolakannya benar-benar tidak menyisipkan baris apa pun.
+  expect(await hitungPenempatan(kelasId, muridId)).toEqual([]);
+
+  // Yang menolak adalah keadaan cabangnya, bukan kelasnya: setelah cabangnya
+  // aktif lagi, kelas yang sama langsung menerima penempatan.
+  await aturCabangAktif(true);
+  const diterima = await request.post(`/api/kelas/${kelasId}/murid`, {
+    headers,
+    data: { muridId },
+  });
+  expect(diterima.status()).toBe(201);
+  expect((await hitungPenempatan(kelasId, muridId))[0].status).toBe("aktif");
+
+  // Murid yang sudah belajar di sana tetap boleh dikeluarkan meski cabangnya
+  // dimatikan lagi — yang berhenti hanya penempatan baru.
+  await aturCabangAktif(false);
+  const keluar = await request.delete(
+    `/api/kelas/${kelasId}/murid/${muridId}`,
+    { headers },
+  );
+  expect(keluar.status()).toBe(204);
+  expect((await hitungPenempatan(kelasId, muridId))[0].status).toBe("selesai");
 });
 
 /** Perubahan dari luar aplikasi tetap harus datang dari alamat aplikasi. */

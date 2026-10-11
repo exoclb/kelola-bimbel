@@ -5,6 +5,7 @@ import {
   kelasBelumDiikuti,
   periksaPenempatan,
   penghalangCabang,
+  pesanCabangNonaktif,
 } from "../src/lib/penempatan-kelas.ts";
 
 // Aturan penempatan murid ke kelas diuji tanpa peramban: halaman detail murid
@@ -111,14 +112,13 @@ test("kelas yang tidak ada lagi ditolak tanpa menyalahkan muridnya", () => {
   assert.match(hasil.pesan, /tidak ada lagi/);
 });
 
-test("kelas di cabang nonaktif ditolak saat cabangnya diperiksa", () => {
+test("kelas di cabang nonaktif ditolak dengan alasannya", () => {
   const hasil = periksaPenempatan({
     murid: murid(),
     kelasId: "kls-4",
     daftarKelas,
     daftarCabang,
     penempatan: [],
-    periksaCabang: true,
   });
 
   assert.equal(hasil.boleh, false);
@@ -129,7 +129,13 @@ test("kelas di cabang nonaktif ditolak saat cabangnya diperiksa", () => {
   );
 });
 
-test("kelas di cabang nonaktif tetap boleh dipakai panel kelas", () => {
+/**
+ * Penolakan cabang tidak bisa dimatikan pemanggil: layanan penempatan di server
+ * menolak kelas di cabang nonaktif, jadi panel kelas pun harus menolaknya
+ * dengan alasan yang sama — bukan menawarkan kelas yang nanti ditolak API.
+ * Pesan dua pemeriksaan ini berasal dari satu tempat, jadi tidak bisa berbeda.
+ */
+test("penghalang cabang berlaku di semua pemanggil dengan pesan yang sama", () => {
   const hasil = periksaPenempatan({
     murid: murid(),
     kelasId: "kls-4",
@@ -137,8 +143,15 @@ test("kelas di cabang nonaktif tetap boleh dipakai panel kelas", () => {
     daftarCabang,
     penempatan: [],
   });
+  const penghalang = penghalangCabang(daftarKelas[3], daftarCabang);
 
-  assert.deepEqual(hasil, { boleh: true });
+  assert.equal(hasil.boleh, false);
+  assert.equal(penghalang?.alasan, hasil.alasan);
+  assert.equal(penghalang?.pesan, hasil.pesan);
+  assert.equal(
+    pesanCabangNonaktif(daftarKelas[3].namaKelas, "Cabang Selatan"),
+    hasil.pesan,
+  );
 });
 
 test("kelas yang cabangnya belum terdaftar ditolak dengan alasannya", () => {
@@ -151,7 +164,6 @@ test("kelas yang cabangnya belum terdaftar ditolak dengan alasannya", () => {
     daftarKelas,
     daftarCabang: tanpaCabangSelatan,
     penempatan: [],
-    periksaCabang: true,
   });
 
   assert.equal(hasil.boleh, false);
@@ -175,7 +187,6 @@ test("nama cabang dicocokkan tanpa peduli spasi tepi dan besar-kecil huruf", () 
     daftarKelas: [kelas("kls-1", "Matematika SD Kelas 4", " cabang pusat ")],
     daftarCabang,
     penempatan: [],
-    periksaCabang: true,
   });
   assert.deepEqual(hasil, { boleh: true });
 });
@@ -190,7 +201,6 @@ test("penempatan yang masih boleh disimpan dijawab boleh", () => {
       penempatan("mrd-1", "kls-1", "aktif"),
       penempatan("mrd-1", "kls-2", "selesai"),
     ],
-    periksaCabang: true,
   });
 
   assert.deepEqual(hasil, { boleh: true });

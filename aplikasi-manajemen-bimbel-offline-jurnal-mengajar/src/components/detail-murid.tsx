@@ -196,7 +196,6 @@ export function DetailMurid({
       // yang sama tetap ditolak sebagai penempatan dobel, bukan diam-diam
       // menambah kelas lain.
       penempatan: penempatanTerkini.current,
-      periksaCabang: true,
     });
     if (!hasil.boleh) {
       tampilkanGalat(hasil.pesan);
