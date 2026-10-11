@@ -54,7 +54,7 @@ export const pengeluaranIdSchema = z
   .string()
   .uuid("Id pengeluaran harus UUID yang sah.");
 
-/** Id kategori dipakai route `PATCH`/`DELETE /api/pengeluaran/kategori/:id`. */
+/** Id kategori dipakai route `GET`/`PATCH`/`DELETE /api/pengeluaran/kategori/:id`. */
 export const kategoriPengeluaranIdSchema = z
   .string()
   .uuid("Id kategori harus UUID yang sah.");
