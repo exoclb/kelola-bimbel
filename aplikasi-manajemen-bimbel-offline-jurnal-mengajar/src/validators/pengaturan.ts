@@ -1,20 +1,43 @@
 import { z } from "zod";
 import { skemaLimit, skemaOffset } from "@/validators/bersama";
+import {
+  isiLogoGambar,
+  MAX_LOGO_BYTE,
+  PESAN_LOGO_BUKAN_GAMBAR,
+  PESAN_UKURAN_LOGO,
+  ukuranLogo,
+} from "@/lib/logo";
 import { DAFTAR_JENIS_NOTIFIKASI } from "@/lib/notifikasi";
 import { TARIF_MAKS } from "@/lib/gaji";
 import { skemaTanggal } from "@/validators/tanggal";
 
 // Logo dikirim sebagai data URL (base64) dan disimpan apa adanya di basis data.
-// Batasnya mengikuti pratinjau di layar: berkas sampai 1 MB.
+// Batas panjang teksnya mengikuti pratinjau di layar: berkas sampai 1 MB —
+// dipotong lebih dulu supaya data URL yang jelas kebesaran tidak perlu didekode
+// — lalu isinya diperiksa dengan batas byte yang sama dengan yang dipakai
+// peramban (`src/lib/logo.ts`).
 const MAX_LOGO_CHAR = 1_400_000;
 
-const logo = z
+const skemaDataLogo = z
   .string()
   .regex(
     /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/,
     "Logo harus berupa data URL gambar PNG, JPG, atau WebP.",
   )
-  .max(MAX_LOGO_CHAR, "Ukuran logo terlalu besar. Pakai gambar di bawah 1 MB.");
+  .max(MAX_LOGO_CHAR, PESAN_UKURAN_LOGO)
+  .refine(isiLogoGambar, PESAN_LOGO_BUKAN_GAMBAR)
+  .refine((nilai) => {
+    const ukuran = ukuranLogo(nilai);
+    return ukuran === null || ukuran <= MAX_LOGO_BYTE;
+  }, PESAN_UKURAN_LOGO);
+
+const logo = skemaDataLogo.nullish();
+
+// Unggah logo saja (`POST /api/pengaturan/profil/logo`): satu kolom, jadi
+// tipe yang menunggunya pun cuma satu — bukan seluruh isian profil.
+export const unggahLogoSchema = z.object({ logo: skemaDataLogo }).strict();
+
+export type UnggahLogoInput = z.infer<typeof unggahLogoSchema>;
 
 export const profilBimbelSchema = z
   .object({

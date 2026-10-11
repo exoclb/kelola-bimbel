@@ -111,6 +111,52 @@ export async function simpanProfilBimbel(
   return simpan().then((baris) => baris ?? ambilProfilBimbel());
 }
 
+export type HasilSimpanLogo =
+  { ok: true; profil: ProfilBimbelTersimpan } | { ok: false; pesan: string };
+
+/**
+ * Mengganti atau menghapus logonya saja, tanpa menyentuh nama dan kontaknya.
+ * `PUT /api/pengaturan/profil` mengganti profil secara utuh dan menuntut
+ * `nama`, jadi pemanggil yang cuma ingin mengganti logo harus membaca dulu lalu
+ * mengirim ulang seluruh isiannya (dan yang lupa menyertakan kontak akan
+ * menghapusnya).
+ *
+ * Barisnya tidak pernah dibuat di sini: nama bimbel wajib terisi, jadi bimbel
+ * yang belum pernah mengisi profilnya dijawab "isi dulu" alih-alih menyimpan
+ * baris tanpa identitas. Menghapus logo yang memang belum ada tidak menulis apa
+ * pun — permintaan yang diulang tidak menggeser `updated_at`.
+ */
+export async function simpanLogoBimbel(
+  logo: string | null,
+): Promise<HasilSimpanLogo> {
+  const baris = await db.transaction(async (tx) => {
+    const [ada] = await tx
+      .select({ id: bimbelProfile.id, ...fields })
+      .from(bimbelProfile)
+      .limit(1);
+    if (!ada) return null;
+
+    // `id` tidak ikut dikirim ke klien, sama seperti pembacaan lewat `GET`.
+    const { id, ...profil } = ada;
+    if (profil.logo === null && logo === null) return profil;
+
+    const [diperbarui] = await tx
+      .update(bimbelProfile)
+      .set({ logo, updatedAt: new Date() })
+      .where(eq(bimbelProfile.id, id))
+      .returning(fields);
+    return diperbarui ?? null;
+  });
+
+  if (baris) return { ok: true, profil: baris };
+  if (logo !== null)
+    return {
+      ok: false,
+      pesan: "Isi dan simpan profil bimbel dulu sebelum memasang logo.",
+    };
+  return { ok: true, profil: KOSONG };
+}
+
 /** Satu baris aturan gaji seperti yang dikirim ke klien. */
 export type AturanGajiTersimpan = AturanTarif;
 

@@ -28,15 +28,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PesanGalat } from "@/components/status-antarmuka";
 import type { ProfilDokumen } from "@/lib/dokumen-html";
+import {
+  MAX_LOGO_BYTE,
+  PESAN_LOGO_BUKAN_GAMBAR,
+  PESAN_UKURAN_LOGO,
+  TIPE_LOGO,
+} from "@/lib/logo";
 import { pesanGalatApi } from "@/lib/pesan-api";
 
-// Sama dengan batas di `profilBimbelSchema` (server) dan kolom `logo` di tabel
-// `bimbel_profile`: berkas sampai 1 MB, disimpan sebagai data URL.
-const MAX_LOGO_BYTE = 1_000_000;
-const JENIS_LOGO = ["image/png", "image/jpeg", "image/webp"];
-const PESAN_JENIS_LOGO = "Logo harus berupa berkas gambar PNG, JPG, atau WebP.";
-const PESAN_UKURAN_LOGO =
-  "Ukuran logo terlalu besar. Pakai gambar di bawah 1 MB.";
+// Batas dan kalimat penolakannya dipakai bersama server (`src/lib/logo.ts` dan
+// `profilBimbelSchema`), jadi berkas yang ditolak di layar adalah berkas yang
+// sama dengan yang ditolak API — bukan dua daftar yang harus dijaga sinkron.
+const JENIS_LOGO: readonly string[] = TIPE_LOGO;
 
 type FormProfilBimbelProps = {
   /** Identitas bimbel dari tabel `bimbel_profile`, hasil `ambilProfilBimbel()`. */
@@ -105,7 +108,7 @@ export function FormProfilBimbel({ profilAwal }: FormProfilBimbelProps) {
     // Pemeriksaannya sengaja sama ketat dengan validasi server: yang ditolak di
     // sini tidak perlu dikirim ke sana lebih dulu.
     if (!JENIS_LOGO.includes(berkasDipilih.type)) {
-      setMasalah([{ field: "logo", pesan: PESAN_JENIS_LOGO }]);
+      setMasalah([{ field: "logo", pesan: PESAN_LOGO_BUKAN_GAMBAR }]);
       event.target.value = "";
       return;
     }
