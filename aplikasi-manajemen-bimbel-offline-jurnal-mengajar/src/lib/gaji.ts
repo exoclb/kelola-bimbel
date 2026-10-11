@@ -96,6 +96,16 @@ export function hitungGaji(totalJam: number, tarifPerJam: number) {
   return Math.round(totalJam * tarifPerJam);
 }
 
+/**
+ * Batas tarif per jam yang boleh diisi, baik lewat formulir aturan gaji maupun
+ * lewat API. Angkanya jauh di atas tarif bimbel mana pun, jadi yang ditahan
+ * hanya salah ketik; tarif di atas ini akan membuat honor satu bulan tidak
+ * masuk akal. `src/validators/pengaturan.ts` dan formulir aturan gaji memakai
+ * konstanta yang sama ini supaya batas di layar dan batas yang ditegakkan
+ * server tidak bisa berbeda.
+ */
+export const TARIF_MAKS = 10_000_000;
+
 /** Periode bulan dalam bentuk `YYYY-MM` untuk bulan berjalan. */
 export function periodeBulan(tanggal: Date) {
   return `${tanggal.getFullYear()}-${String(tanggal.getMonth() + 1).padStart(2, "0")}`;

@@ -16,11 +16,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { PesanGalat } from "@/components/status-antarmuka";
-import { aturanTarifBerlaku, formatRupiah, type AturanTarif } from "@/lib/gaji";
+import {
+  aturanTarifBerlaku,
+  formatRupiah,
+  TARIF_MAKS,
+  type AturanTarif,
+} from "@/lib/gaji";
 import { formatTanggalLengkap, tanggalISO } from "@/lib/tanggal";
 
-const MAX_TARIF = 10_000_000;
-
+// Batas tarif di layar memakai konstanta yang sama dengan validator server
+// (`TARIF_MAKS` di `src/lib/gaji.ts`), jadi yang ditolak formulir ini persis
+// yang ditolak `POST /api/pengaturan/gaji`.
 // Satu tanggal hanya boleh punya satu aturan (dijaga indeks unik
 // `salary_settings_berlaku_sejak_idx`), jadi pemeriksaan di layar dan jawaban
 // 409 server memakai kalimat yang sama.
@@ -80,10 +86,10 @@ export function FormAturanGaji({ riwayatAwal }: FormAturanGajiProps) {
         field: "tarif",
         pesan: "Tarif harus lebih besar dari nol.",
       });
-    else if (angka > MAX_TARIF)
+    else if (angka > TARIF_MAKS)
       ditemukan.push({
         field: "tarif",
-        pesan: `Tarif terlalu besar. Isi di bawah ${formatRupiah(MAX_TARIF)}.`,
+        pesan: `Tarif terlalu besar. Isi di bawah ${formatRupiah(TARIF_MAKS)}.`,
       });
 
     if (!berlakuSejak)
@@ -117,9 +123,7 @@ export function FormAturanGaji({ riwayatAwal }: FormAturanGajiProps) {
       // Pemeriksaan di atas bisa saja sudah basi (mis. owner lain baru
       // menambah tarif bertanggal sama), jadi jawaban server yang menentukan.
       if (jawaban.status === 409) {
-        setMasalah([
-          { field: "berlakuSejak", pesan: PESAN_TANGGAL_TERPAKAI },
-        ]);
+        setMasalah([{ field: "berlakuSejak", pesan: PESAN_TANGGAL_TERPAKAI }]);
         return;
       }
       if (!jawaban.ok) throw new Error(String(jawaban.status));
@@ -134,9 +138,7 @@ export function FormAturanGaji({ riwayatAwal }: FormAturanGajiProps) {
       // Halamannya disegarkan supaya kartu ringkasan dan rekap ikut angka baru.
       router.refresh();
     } catch {
-      setGalat(
-        "Tarif belum bisa disimpan. Periksa koneksi lalu coba lagi.",
-      );
+      setGalat("Tarif belum bisa disimpan. Periksa koneksi lalu coba lagi.");
     } finally {
       setSedangMenyimpan(false);
     }

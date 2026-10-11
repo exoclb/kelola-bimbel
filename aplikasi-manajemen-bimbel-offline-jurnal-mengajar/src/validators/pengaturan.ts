@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { skemaLimit, skemaOffset } from "@/validators/bersama";
 import { DAFTAR_JENIS_NOTIFIKASI } from "@/lib/notifikasi";
+import { TARIF_MAKS } from "@/lib/gaji";
 import { skemaTanggal } from "@/validators/tanggal";
 
 // Logo dikirim sebagai data URL (base64) dan disimpan apa adanya di basis data.
@@ -44,7 +45,10 @@ export const aturanGajiSchema = z
     tarifPerJam: z
       .number()
       .positive("Tarif harus lebih besar dari nol.")
-      .max(1_000_000_000, "Tarif terlalu besar."),
+      // Batasnya sama dengan yang dipakai formulir aturan gaji
+      // (`TARIF_MAKS`), jadi tarif yang lolos di layar tidak pernah ditolak
+      // server dan sebaliknya.
+      .max(TARIF_MAKS, "Tarif terlalu besar."),
     skema: z.enum(SKEMA_GAJI),
     berlakuSejak: skemaTanggal,
   })
