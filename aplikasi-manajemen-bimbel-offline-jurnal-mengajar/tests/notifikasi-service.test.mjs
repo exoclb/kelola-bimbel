@@ -171,6 +171,41 @@ test("buatNotifikasi menulis satu baris per peristiwa walau diulang", async () =
 });
 
 /**
+ * Jaminan idempotensinya ada di database, bukan di pemeriksaan aplikasi: enam
+ * permintaan yang berjalan bersamaan dengan kunci peristiwa yang sama tetap
+ * hanya menghasilkan satu baris per akun. Diuji serentak supaya jalur
+ * `onConflictDoNothing` benar-benar dilewati, bukan cuma urutan panggilan yang
+ * kebetulan berurutan.
+ */
+test("buatNotifikasi serentak tetap satu baris per peristiwa", async () => {
+  await bersihkan();
+  const guru = await buatGuru("Guru Serentak");
+  const owner = await buatPemilik("Owner Serentak");
+  const kunci = `rekap_honor:${guru.id}:2097-10`;
+  const pesan = "Rekap honor Oktober 2097 sudah tersedia.";
+
+  const hasil = await Promise.all(
+    Array.from({ length: 6 }, () =>
+      buatNotifikasi("rekap_honor", pesan, [guru.id, owner.id], kunci),
+    ),
+  );
+  assert.equal(
+    hasil.reduce((total, jumlah) => total + jumlah, 0),
+    2,
+    "dua penerima, sekali saja walau dipicu bersamaan",
+  );
+  assert.equal(await jumlahNotifikasi(guru.id, "rekap_honor"), 1);
+  assert.equal(await jumlahNotifikasi(owner.id, "rekap_honor"), 1);
+  assert.equal(
+    await jumlahNotifikasiBerKunci(guru.id, "rekap_honor", kunci),
+    1,
+    "hanya satu baris memakai kunci peristiwa itu",
+  );
+
+  await bersihkan();
+});
+
+/**
  * Preferensi akun tetap berlaku di jalur idempoten: jenis yang dimatikan tidak
  * menerima baris, dan penerima yang ditahan tidak dihitung sebagai dibuat.
  */
