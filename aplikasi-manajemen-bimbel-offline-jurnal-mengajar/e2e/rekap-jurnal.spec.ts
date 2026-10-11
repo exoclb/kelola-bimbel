@@ -60,6 +60,26 @@ async function siapkanCabang(nama: string) {
   }
 }
 
+async function pool() {
+  return new Pool({
+    connectionString: process.env.STARTER_TEST_DATABASE_URL,
+    max: 1,
+  });
+}
+
+async function setRole(email: string, role: string) {
+  const db = await pool();
+  try {
+    const { rowCount } = await db.query(
+      'UPDATE "user" SET role = $1 WHERE email = $2',
+      [role, email],
+    );
+    expect(rowCount).toBe(1);
+  } finally {
+    await db.end();
+  }
+}
+
 function hariIni() {
   return ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"][
     new Date().getDay()
@@ -219,4 +239,136 @@ test("rekap jam mengajar, presensi guru, dan kehadiran murid sejalan", async ({
   expect(isiGajiSetelah.guru.jumlahJurnal).toBe(2);
   expect(isiGajiSetelah.guru.totalJam).toBe(2.5);
   expect(isiGajiSetelah.guru.rincian).toHaveLength(2);
+});
+
+/**
+ * Idempotensi jurnal dan kabarnya lewat endpoint sungguhan: guru yang mengirim
+ * ulang sesi yang sama (mis. setelah memperbaiki materinya) memperbarui jurnal
+ * yang sudah ada, jadi jam mengajarnya tetap dihitung sekali di rekap gaji dan
+ * owner tetap menerima satu kabar. Kalau ini bocor, gaji guru bisa dobel dan
+ * lonceng owner berbunyi dua kali untuk satu pertemuan.
+ */
+test("kirim ulang jurnal yang sama tetap satu jam dan satu kabar", async ({
+  request,
+}) => {
+  await siapkanCabang("Cabang Idempoten Rekap");
+  const email = await signUp(request, "Guru Idempoten Jurnal");
+  await masuk(request, email);
+  const guruId = await idAkun(email);
+
+  // Akun pemilik penerima kabar: satu akun yang berkas tes ini kendalikan
+  // sendiri, supaya hitungannya tetap pasti walau berkas tes lain berjalan
+  // bersamaan dan menambah pemilik di basis data uji yang sama.
+  const emailPemilik = await signUp(request, "Pemilik Idempoten Rekap");
+  await setRole(emailPemilik, "owner");
+  const pemilikId = await idAkun(emailPemilik);
+  // Pendaftaran akun di atas mengganti sesi permintaan; sesi guru dipulihkan.
+  await masuk(request, email);
+
+  const murid = await request.post("/api/murid", {
+    headers,
+    data: { nama: "Murid Idempoten Rekap", tanggalLahir: "2015-05-05" },
+  });
+  expect(murid.status()).toBe(201);
+  const muridId = (await murid.json()).data.id as string;
+
+  const kelas = await request.post("/api/kelas", {
+    headers,
+    data: {
+      namaKelas: "Kelas Idempoten Rekap",
+      cabang: "Cabang Idempoten Rekap",
+      guruId,
+      jadwal: [{ hari: hariIni(), jamMulai: "06:00", jamSelesai: "07:00" }],
+    },
+  });
+  expect(kelas.status()).toBe(201);
+  const dataKelas = (await kelas.json()).data;
+  const kelasId = dataKelas.id as string;
+  const jadwalId = dataKelas.jadwal[0].id as string;
+  const tempatkan = await request.post(`/api/kelas/${kelasId}/murid`, {
+    headers,
+    data: { muridId },
+  });
+  expect(tempatkan.status()).toBe(201);
+
+  const simpan = (materi: string) =>
+    request.post("/api/jurnal", {
+      headers,
+      data: {
+        jadwalId,
+        materi,
+        catatan: "",
+        kehadiran: [{ muridId, hadir: true, catatan: "" }],
+      },
+    });
+
+  const db = await pool();
+  // Kabar satu kelas uji hanya milik akun penerima yang berkas tes ini buat,
+  // jadi angkanya tetap sama berapa pun akun pemilik lain di basis data uji.
+  const kabarKelas = () =>
+    db.query(
+      "SELECT pesan FROM notifications WHERE user_id = $1 AND tipe = 'jurnal_baru' AND pesan LIKE $2",
+      [pemilikId, "%Kelas Idempoten Rekap%"],
+    );
+  try {
+    const pertama = await simpan("Materi idempoten");
+    expect(pertama.status()).toBe(200);
+    const jurnalId = (await pertama.json()).data.id as string;
+
+    const kabarPertama = await kabarKelas();
+    expect(kabarPertama.rows).toHaveLength(1);
+    expect(kabarPertama.rows[0].pesan).toBe(
+      "Jurnal Kelas Idempoten Rekap sudah dikirim Guru Idempoten Jurnal · 1 jam",
+    );
+    // Gurunya sendiri tidak ikut dikabari kabar operasional bimbel.
+    const kabarGuru = await db.query(
+      "SELECT count(*)::int AS jumlah FROM notifications WHERE user_id = $1",
+      [guruId],
+    );
+    expect(kabarGuru.rows[0].jumlah).toBe(0);
+
+    // Kirim ulang sesi yang sama: barisnya diperbarui, bukan ditambah.
+    const ulang = await simpan("Materi idempoten setelah dikoreksi");
+    expect(ulang.status()).toBe(200);
+    expect((await ulang.json()).data.id).toBe(jurnalId);
+
+    const jurnalKelas = await db.query(
+      "SELECT count(*)::int AS jumlah FROM teaching_journals WHERE class_id = $1",
+      [kelasId],
+    );
+    expect(jurnalKelas.rows[0].jumlah).toBe(1);
+    const kehadiranTersimpan = await db.query(
+      "SELECT count(*)::int AS jumlah FROM journal_attendances WHERE journal_id = $1",
+      [jurnalId],
+    );
+    expect(kehadiranTersimpan.rows[0].jumlah).toBe(1);
+    const isiJurnal = await db.query(
+      "SELECT materi FROM teaching_journals WHERE id = $1",
+      [jurnalId],
+    );
+    expect(isiJurnal.rows[0].materi).toBe("Materi idempoten setelah dikoreksi");
+
+    const kabarSetelah = await kabarKelas();
+    expect(kabarSetelah.rows).toHaveLength(1);
+  } finally {
+    await db.end();
+  }
+
+  // Gaji menghitung sesi itu sekali, walau jurnalnya dikirim dua kali.
+  const gaji = await request.get(`/api/gaji?periode=${bulanIni()}`, {
+    headers,
+  });
+  expect(gaji.status()).toBe(200);
+  const isiGaji = (await gaji.json()).data;
+  expect(isiGaji.guru.jumlahJurnal).toBe(1);
+  expect(isiGaji.guru.totalJam).toBe(1);
+  expect(isiGaji.guru.rincian).toHaveLength(1);
+
+  const kehadiran = await request.get(
+    `/api/kehadiran?kelasId=${kelasId}&dari=${tanggalHariIni()}&sampai=${tanggalHariIni()}`,
+    { headers },
+  );
+  const isiKehadiran = await kehadiran.json();
+  expect(isiKehadiran.data).toHaveLength(1);
+  expect(isiKehadiran.meta.hadir).toBe(1);
 });
