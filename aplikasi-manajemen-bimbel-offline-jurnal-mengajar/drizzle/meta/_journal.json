@@ -253,6 +253,13 @@
       "when": 1791722795796,
       "tag": "0035_evaluasi_sikap_terisi",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1791724494655,
+      "tag": "0036_tarif_honor_skema_terisi",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,1 @@
+ALTER TABLE "salary_settings" ADD CONSTRAINT "salary_settings_skema_terisi" CHECK (length(btrim("salary_settings"."skema")) > 0);

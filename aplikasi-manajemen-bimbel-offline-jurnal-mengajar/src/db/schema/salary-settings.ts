@@ -40,5 +40,14 @@ export const salarySettings = pgTable(
       "salary_settings_tarif_tidak_negatif",
       sql`${table.tarifPerJam} >= 0`,
     ),
+    // Skema harus benar-benar berisi. Kolomnya punya bawaan "per jam", jadi
+    // baris kosong hanya bisa masuk lewat tulisan langsung ke basis data; di
+    // layar ia muncul sebagai keterangan menggantung ("per jam · · mulai …")
+    // dan tidak bisa dibedakan dari skema yang belum dipilih. Sama seperti
+    // `students_nama_terisi` dan `classes_nama_kelas_terisi`.
+    check(
+      "salary_settings_skema_terisi",
+      sql`length(btrim(${table.skema})) > 0`,
+    ),
   ],
 );
