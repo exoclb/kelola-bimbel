@@ -4,7 +4,6 @@ import { db } from "@/db";
 import {
   classes,
   journalAttendances,
-  notifications,
   schedules,
   students,
   teachingJournals,
@@ -14,9 +13,8 @@ import {
 import { formatJam } from "@/lib/jurnal";
 import { tanggalISO } from "@/lib/tanggal";
 import {
-  penerimaNotifikasi,
+  catatNotifikasi,
   penerimaPemilik,
-  penerimaYangMasihAda,
 } from "@/services/notifikasi.service";
 import type {
   KoreksiJurnalInput,
@@ -147,10 +145,11 @@ export async function simpanJurnal(
     .where(eq(user.id, guruId))
     .limit(1);
 
-  // Penerima dihitung sebelum transaksi: akun pemilik/admin disaring lagi oleh
-  // pengaturan notifikasi masing-masing akun.
+  // Penerima pemberitahuan ditentukan sekali di sini: akun owner/admin, dan
+  // hanya saat jurnal ini pertama kali masuk — kirim ulang (memperbarui
+  // jurnal) tidak menambah antrean owner lagi. Penyaringan preferensi tiap akun
+  // dan akun yang sudah hilang diurus `catatNotifikasi` di dalam transaksinya.
   const calonPenerima = sudahAda ? [] : await penerimaPemilik();
-  const penerima = await penerimaNotifikasi("jurnal_baru", calonPenerima);
 
   return db.transaction(async (tx) => {
     const [jurnal] = await tx
@@ -197,20 +196,18 @@ export async function simpanJurnal(
       );
     }
 
-    if (penerima.length > 0) {
-      // Akun yang hilang setelah penghitungan di atas disaring lagi di dalam
-      // transaksi: notifikasi untuk akun yang sudah tidak ada menggagalkan
-      // seluruh simpan jurnal, bukan cuma baris notifikasinya.
-      const penerimaTersisa = await penerimaYangMasihAda(penerima, tx);
-      if (penerimaTersisa.length > 0) {
-        await tx.insert(notifications).values(
-          penerimaTersisa.map((userId) => ({
-            userId,
-            tipe: "jurnal_baru",
-            pesan: `Jurnal ${jadwal.namaKelas} sudah dikirim ${guru?.nama ?? "guru"} · ${formatJam(jadwal.jamMengajar)}`,
-          })),
-        );
-      }
+    if (calonPenerima.length > 0) {
+      // Pemicunya memakai penulis notifikasi yang sama dengan alur lain, dan
+      // karena ikut transaksi ini kabarnya batal bersama jurnalnya kalau
+      // simpannya gagal — bukan tertinggal sebagai kabar untuk jurnal yang
+      // tidak pernah ada. Peristiwanya sengaja tanpa kunci: penjaganya
+      // pemeriksaan "jurnal ini sudah ada?" di atas, bukan kunci peristiwa.
+      await catatNotifikasi(
+        "jurnal_baru",
+        `Jurnal ${jadwal.namaKelas} sudah dikirim ${guru?.nama ?? "guru"} · ${formatJam(jadwal.jamMengajar)}`,
+        calonPenerima,
+        tx,
+      );
     }
 
     const kehadiran = await tx

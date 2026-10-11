@@ -11,9 +11,11 @@ import {
   buatNotifikasi,
   buatPemilik,
   buatWali,
+  catatNotifikasi,
   db,
   jumlahNotifikasi,
   jumlahNotifikasiBerKunci,
+  jumlahNotifikasiPesan,
   kunciLaporanBulanan,
   penerimaPemilik,
   pesanNotifikasi,
@@ -321,6 +323,41 @@ test("buatNotifikasi mengikuti transaksi pemanggilnya", async () => {
     await buatNotifikasi("jurnal_baru", "Jurnal masuk.", [guru.id], kunci, tx);
   });
   assert.equal(await jumlahNotifikasi(guru.id, "jurnal_baru"), 1);
+
+  await bersihkan();
+});
+
+/**
+ * Jalur tanpa kunci peristiwa (dipakai pemicu jurnal) juga boleh ikut
+ * transaksi pemanggilnya: kabar untuk jurnal yang gagal disimpan tidak boleh
+ * tertinggal sebagai notifikasi untuk peristiwa yang tidak pernah terjadi.
+ * Tanpa kunci, tiap panggilan tetap satu baris — penjaga "peristiwanya sudah
+ * pernah dikabarkan?" milik pemanggilnya, bukan milik kolom `kunci`.
+ *
+ * Barisnya dihitung dari pesan yang khas milik tes ini: jenis `jurnal_baru`
+ * disiarkan ke seluruh pemilik bimbel, jadi berkas tes lain yang berjalan
+ * bersamaan juga menambah baris jenis yang sama untuk akun pemilik di sini.
+ */
+test("catatNotifikasi mengikuti transaksi pemanggilnya", async () => {
+  await bersihkan();
+  const pemilik = await buatPemilik("Pemilik Catat Transaksi");
+  const pesan = "Jurnal masuk (uji transaksi catat).";
+  const jumlah = () => jumlahNotifikasiPesan(pemilik.id, "jurnal_baru", pesan);
+
+  await assert.rejects(
+    db.transaction(async (tx) => {
+      await catatNotifikasi("jurnal_baru", pesan, [pemilik.id], tx);
+      throw new Error("transaksi dibatalkan");
+    }),
+    /transaksi dibatalkan/,
+  );
+  assert.equal(await jumlah(), 0);
+
+  await db.transaction(async (tx) => {
+    await catatNotifikasi("jurnal_baru", pesan, [pemilik.id], tx);
+    await catatNotifikasi("jurnal_baru", pesan, [pemilik.id], tx);
+  });
+  assert.equal(await jumlah(), 2, "tanpa kunci, tiap panggilan satu baris");
 
   await bersihkan();
 });

@@ -180,14 +180,17 @@ async function tulisNotifikasi(
  * Menulis satu notifikasi untuk tiap penerima yang masih mau menerimanya,
  * tanpa kunci peristiwa. Dipakai alur yang sudah ada; alur yang aksinya bisa
  * diulang (pemicu notifikasi) memakai `buatNotifikasi` supaya tepat satu baris
- * per peristiwa. Mengembalikan jumlah notifikasi yang benar-benar dibuat.
+ * per peristiwa. Pemanggil yang peristiwanya tidak boleh dikabarkan saat
+ * simpannya batal boleh mengirim transaksinya sebagai `eksekutor`, sama seperti
+ * `buatNotifikasi`. Mengembalikan jumlah notifikasi yang benar-benar dibuat.
  */
 export async function catatNotifikasi(
   jenis: JenisNotifikasi,
   pesan: string,
   kandidatIds: string[],
+  eksekutor: EksekutorNotifikasi = db,
 ): Promise<number> {
-  return tulisNotifikasi(jenis, pesan, kandidatIds, null, db);
+  return tulisNotifikasi(jenis, pesan, kandidatIds, null, eksekutor);
 }
 
 /**

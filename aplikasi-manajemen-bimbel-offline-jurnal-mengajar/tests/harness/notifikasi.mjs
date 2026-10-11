@@ -455,4 +455,29 @@ export const {
   listNotifikasi,
   tandaiNotifikasiDibaca,
 } = notifikasiService;
-export { simpanJurnal, tandaiPembayaranGaji, createTagihan, updateTagihan };
+/**
+ * Layanan tulis yang dipakai berkas tes, dalam versi tahan-akun-hilang.
+ * Berkas tes memanggil layanan ini langsung (bukan hanya lewat `picuJurnal`),
+ * dan panggilan langsung itu bisa bertemu akun penerima yang dihapus berkas
+ * tes lain di tengah penulisannya: tanpa pengulangan, simpannya gagal karena
+ * akun yang menghilang, bukan karena perilaku yang sedang diuji — dan berkas
+ * tes yang tidak memakai penolong ini (mis. `tests/jurnal-idempoten.test.mjs`)
+ * sesekali gagal saat seluruh berkas dijalankan bersamaan. Pembungkusnya juga
+ * dipakai `picuJurnal` dan kawan-kawan, jadi pembungkusan ganda tidak
+ * mengubah perilakunya.
+ */
+const simpanJurnalAman = (...args) =>
+  tahanAkunHilang(() => simpanJurnal(...args));
+const tandaiPembayaranGajiAman = (...args) =>
+  tahanAkunHilang(() => tandaiPembayaranGaji(...args));
+const createTagihanAman = (...args) =>
+  tahanAkunHilang(() => createTagihan(...args));
+const updateTagihanAman = (...args) =>
+  tahanAkunHilang(() => updateTagihan(...args));
+
+export {
+  simpanJurnalAman as simpanJurnal,
+  tandaiPembayaranGajiAman as tandaiPembayaranGaji,
+  createTagihanAman as createTagihan,
+  updateTagihanAman as updateTagihan,
+};
