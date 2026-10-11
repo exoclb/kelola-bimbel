@@ -289,3 +289,28 @@ test("buatNotifikasi mengikuti transaksi pemanggilnya", async () => {
 
   await bersihkan();
 });
+
+/**
+ * Kunci peristiwa harus benar-benar berisi. Kunci kosong bukan "tanpa kunci"
+ * (yang memang boleh dan selalu menulis baris baru): `''` adalah nilai biasa
+ * bagi indeks unik, jadi seluruh peristiwa bertipe sama akan dianggap satu
+ * peristiwa dan notifikasinya hilang diam-diam. Database menolaknya lebih dulu
+ * supaya salah pakai terlihat sebagai galat, bukan sebagai kabar yang tidak
+ * pernah sampai.
+ */
+test("buatNotifikasi menolak kunci peristiwa yang kosong", async () => {
+  await bersihkan();
+  const guru = await buatGuru("Guru Kunci Kosong");
+
+  for (const kunci of ["", "   "]) {
+    // Drizzle membungkus galat pg-nya, jadi kodenya dibaca dari `cause`.
+    await assert.rejects(
+      () => buatNotifikasi("rekap_honor", "Honor 2097", [guru.id], kunci),
+      (galat) => (galat.cause?.code ?? galat.code) === "23514",
+      `kunci ${JSON.stringify(kunci)} ditolak database`,
+    );
+  }
+  assert.equal(await jumlahNotifikasi(guru.id, "rekap_honor"), 0);
+
+  await bersihkan();
+});

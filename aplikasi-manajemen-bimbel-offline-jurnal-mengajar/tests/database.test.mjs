@@ -939,9 +939,11 @@ test("profil bimbel dijaga tunggal, namanya terisi, dan logonya data URL", async
 
 /**
  * Invarian notifikasi dan catatan backup (`drizzle/0013_notifikasi.sql`,
- * `0014_backup_runs.sql`, `0026_notifikasi_backup_invarian.sql`, dan
- * `0031_notifikasi_kunci_idempoten.sql`): tipe/pesan
- * notifikasi dan jenis preferensi harus terisi, preferensi unik per akun per
+ * `0014_backup_runs.sql`, `0026_notifikasi_backup_invarian.sql`,
+ * `0031_notifikasi_kunci_idempoten.sql`, dan
+ * `0033_notifikasi_kunci_terisi.sql`): tipe/pesan
+ * notifikasi dan jenis preferensi harus terisi, kunci peristiwa boleh kosong
+ * (`null`) tetapi tidak boleh berisi spasi saja, preferensi unik per akun per
  * jenis, dan status backup harus sejalan dengan waktu selesainya.
  */
 test("notifikasi dan backup dijaga isi, keunikan, dan statusnya", async () => {
@@ -991,6 +993,22 @@ test("notifikasi dan backup dijaga isi, keunikan, dan statusnya", async () => {
     [guru, "rekap_honor", "Rekap honor Agustus 2097", `${guru}:2097-08`],
   );
   assert.equal(peristiwaLain.rowCount, 1);
+
+  // Kunci kosong bukan "tanpa kunci": kunci `''` adalah nilai biasa bagi
+  // indeks unik, jadi semua peristiwa bertipe sama akan dianggap satu
+  // peristiwa dan notifikasinya bisa hilang diam-diam. Karena itu yang boleh
+  // hanya `null` atau kunci yang benar-benar berisi.
+  const kunciKosong = await ditolak(
+    "INSERT INTO notifications (user_id, tipe, pesan, kunci) VALUES ($1, $2, $3, $4)",
+    [guru, "rekap_honor", "Rekap honor September 2097", ""],
+  );
+  assert.equal(kunciKosong.code, "23514");
+
+  const kunciSpasi = await ditolak(
+    "INSERT INTO notifications (user_id, tipe, pesan, kunci) VALUES ($1, $2, $3, $4)",
+    [guru, "rekap_honor", "Rekap honor Oktober 2097", "   "],
+  );
+  assert.equal(kunciSpasi.code, "23514");
 
   const jenisKosong = await ditolak(
     "INSERT INTO notification_preferences (user_id, jenis_notifikasi) VALUES ($1, $2)",

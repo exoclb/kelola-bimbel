@@ -1,0 +1,1 @@
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_kunci_terisi" CHECK ("notifications"."kunci" is null or length(btrim("notifications"."kunci")) > 0);

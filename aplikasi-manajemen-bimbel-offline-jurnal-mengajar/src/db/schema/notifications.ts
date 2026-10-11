@@ -57,5 +57,13 @@ export const notifications = pgTable(
     // dikelompokkan, jadi tidak boleh masuk sama sekali.
     check("notifications_tipe_terisi", sql`length(btrim(${table.tipe})) > 0`),
     check("notifications_pesan_terisi", sql`length(btrim(${table.pesan})) > 0`),
+    // Kunci peristiwa yang kosong bukan "tanpa kunci" (yang memang boleh),
+    // melainkan peristiwa yang salah satu: semua peristiwa bertipe sama akan
+    // dianggap peristiwa yang sama dan notifikasinya diam-diam hilang. Jadi
+    // yang boleh hanya `null` atau kunci yang benar-benar berisi.
+    check(
+      "notifications_kunci_terisi",
+      sql`${table.kunci} is null or length(btrim(${table.kunci})) > 0`,
+    ),
   ],
 );
