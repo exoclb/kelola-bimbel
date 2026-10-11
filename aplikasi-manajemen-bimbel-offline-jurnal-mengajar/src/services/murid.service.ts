@@ -2,7 +2,27 @@ import "server-only";
 import { and, asc, eq, ilike, notExists, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { studentEnrollments, students } from "@/db/schema";
-import type { CreateMuridInput, ListMuridFilter } from "@/validators/murid";
+import type {
+  CreateMuridInput,
+  ListMuridFilter,
+  UbahMuridInput,
+} from "@/validators/murid";
+
+/**
+ * Satu baris murid seperti yang dikirim ke klien — bentuknya sama di daftar,
+ * detail, dan balasan penyimpanan. `tanggalLahir` boleh `NULL` karena data murid
+ * lama memang belum mengisinya, sedangkan kolom orang tua kosong disimpan
+ * sebagai `NULL` (lihat `kosongJadiNull`).
+ */
+export type Murid = {
+  id: string;
+  nama: string;
+  tanggalLahir: string | null;
+  namaOrangTua: string | null;
+  kontakOrangTua: string | null;
+  statusAktif: boolean;
+  createdAt: Date;
+};
 
 // Kolom yang dikirim ke klien; tidak ada data akun yang ikut keluar.
 const fields = {
@@ -91,6 +111,16 @@ export async function listMurid({
   };
 }
 
+/**
+ * Kolom teks yang boleh kosong disimpan sebagai `NULL` kalau isinya cuma
+ * spasi, supaya "belum diisi" punya satu bentuk saja di basis data — bukan
+ * campur antara `NULL` dan teks kosong.
+ */
+function kosongJadiNull(teks: string): string | null {
+  const terpangkas = teks.trim();
+  return terpangkas === "" ? null : terpangkas;
+}
+
 /** Menambah murid baru. Data murid dipakai bersama seluruh akun bimbel. */
 export async function createMurid(input: CreateMuridInput) {
   const [murid] = await db
@@ -98,8 +128,8 @@ export async function createMurid(input: CreateMuridInput) {
     .values({
       nama: input.nama,
       tanggalLahir: input.tanggalLahir,
-      namaOrangTua: input.namaOrangTua ?? null,
-      kontakOrangTua: input.kontakOrangTua ?? null,
+      namaOrangTua: kosongJadiNull(input.namaOrangTua ?? ""),
+      kontakOrangTua: kosongJadiNull(input.kontakOrangTua ?? ""),
       statusAktif: input.statusAktif,
     })
     .returning(fields);
@@ -107,11 +137,60 @@ export async function createMurid(input: CreateMuridInput) {
 }
 
 /** Satu murid beserta kolom yang dipakai tampilan, atau null. */
-export async function getMurid(id: string) {
+export async function getMurid(id: string): Promise<Murid | null> {
   const [murid] = await db
     .select(fields)
     .from(students)
     .where(eq(students.id, id))
     .limit(1);
   return murid ?? null;
+}
+
+export type HasilUbahMurid =
+  { ok: true; murid: Murid } | { ok: false; kode: "TIDAK_ADA"; pesan: string };
+
+/**
+ * Perbaiki identitas satu murid dan/atau ubah status aktifnya. Kolom yang tidak
+ * dikirim dibiarkan seperti semula, dan mengubah status juga lewat sini: satu
+ * jalur tulis berarti aturan (penanganan id asing, pengosongan isian orang tua)
+ * tidak bisa berbeda antar pemanggil.
+ *
+ * Menonaktifkan murid tidak menyentuh penempatan maupun riwayat jurnalnya.
+ * Yang berubah hanya apakah anaknya masih ditawarkan untuk kelas baru; kelas
+ * yang sedang diikuti, absensi, dan tagihannya tetap utuh supaya laporannya
+ * tidak berlubang.
+ */
+export async function ubahMurid(
+  id: string,
+  input: UbahMuridInput,
+): Promise<HasilUbahMurid> {
+  const sekarang = await getMurid(id);
+  if (!sekarang)
+    return { ok: false, kode: "TIDAK_ADA", pesan: "Murid tidak ditemukan." };
+
+  const perubahan = {
+    ...(input.nama === undefined ? {} : { nama: input.nama }),
+    ...(input.tanggalLahir === undefined
+      ? {}
+      : { tanggalLahir: input.tanggalLahir }),
+    ...(input.namaOrangTua === undefined
+      ? {}
+      : { namaOrangTua: kosongJadiNull(input.namaOrangTua) }),
+    ...(input.kontakOrangTua === undefined
+      ? {}
+      : { kontakOrangTua: kosongJadiNull(input.kontakOrangTua) }),
+    ...(input.statusAktif === undefined
+      ? {}
+      : { statusAktif: input.statusAktif }),
+  };
+
+  // Tidak ada kolom yang benar-benar dikirim: tidak perlu menulis apa pun.
+  if (Object.keys(perubahan).length === 0) return { ok: true, murid: sekarang };
+
+  const [baris] = await db
+    .update(students)
+    .set(perubahan)
+    .where(eq(students.id, id))
+    .returning(fields);
+  return { ok: true, murid: baris ?? sekarang };
 }

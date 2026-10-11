@@ -1,10 +1,22 @@
 import { z } from "zod";
-import { skemaLimit, skemaOffset } from "@/validators/bersama";
+import { skemaId, skemaLimit, skemaOffset } from "@/validators/bersama";
 import { skemaTanggal } from "@/validators/tanggal";
 
-const nama = z.string().trim().min(1).max(120);
-const namaOrangTua = z.string().trim().max(120);
-const kontakOrangTua = z.string().trim().max(40);
+// Pesan tiap kolom memakai kalimat yang sama dengan pemeriksaan formulir
+// (`src/lib/murid.ts`), supaya galat dari server dan dari layar terbaca sama.
+const nama = z
+  .string()
+  .trim()
+  .min(1, "Nama murid wajib diisi.")
+  .max(120, "Nama murid maksimal 120 karakter.");
+const namaOrangTua = z
+  .string()
+  .trim()
+  .max(120, "Nama orang tua maksimal 120 karakter.");
+const kontakOrangTua = z
+  .string()
+  .trim()
+  .max(40, "Kontak orang tua maksimal 40 karakter.");
 
 export const listMuridSchema = z
   .object({
@@ -46,3 +58,28 @@ export const createMuridSchema = z
   .strict();
 
 export type CreateMuridInput = z.infer<typeof createMuridSchema>;
+
+// Perbaikan identitas satu murid: minimal satu kolom. Kolom yang tidak dikirim
+// dibiarkan seperti semula, dan status aktif juga lewat sini — menonaktifkan
+// murid bukan operasi tersendiri, jadi tidak ada endpoint kedua yang aturannya
+// bisa berbeda.
+//
+// Field orang tua boleh dikirim kosong untuk mengosongkan isiannya; layanannya
+// yang menyimpannya sebagai `NULL`, bukan teks kosong.
+export const ubahMuridSchema = z
+  .object({
+    nama: nama.optional(),
+    tanggalLahir: skemaTanggal.optional(),
+    namaOrangTua: namaOrangTua.optional(),
+    kontakOrangTua: kontakOrangTua.optional(),
+    statusAktif: z.boolean().optional(),
+  })
+  .strict()
+  .refine((nilai) => Object.keys(nilai).length > 0, {
+    message: "Kirim minimal satu kolom yang ingin diubah.",
+  });
+
+export type UbahMuridInput = z.infer<typeof ubahMuridSchema>;
+
+// Id murid dari tabel `students`, sama bentuknya dengan `kelasIdSchema`.
+export const muridIdSchema = skemaId;
