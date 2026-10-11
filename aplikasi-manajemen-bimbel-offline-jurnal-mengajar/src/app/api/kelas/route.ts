@@ -1,4 +1,4 @@
-import { ApiError, readJson, withApiSession } from "@/lib/api";
+import { ApiError, readJson, withApiPermission } from "@/lib/api";
 import { periksaCabangKelas } from "@/services/cabang.service";
 import {
   adaGuru,
@@ -15,7 +15,7 @@ export const runtime = "nodejs";
 // Daftar kelas beserta jadwalnya. Bisa disaring dengan `?cari=` (nama kelas,
 // cabang, atau nama guru) dan dibatasi dengan `?limit=&offset=`.
 export function GET(request: Request) {
-  return withApiSession(request, async () => {
+  return withApiPermission(request, { staf: ["read"] }, async () => {
     const filter = listKelasSchema.parse(
       Object.fromEntries(new URL(request.url).searchParams),
     );
@@ -26,7 +26,7 @@ export function GET(request: Request) {
 // Membuat kelas baru, boleh sekaligus dengan jadwalnya. Guru maupun owner
 // boleh mengatur data kelas bimbel.
 export function POST(request: Request) {
-  return withApiSession(request, async () => {
+  return withApiPermission(request, { staf: ["write"] }, async () => {
     const input = createKelasSchema.parse(await readJson(request));
     // Tanpa pemeriksaan ini, guru yang tidak ada berhenti sebagai galat
     // foreign key dan klien hanya menerima 500 tanpa keterangan.

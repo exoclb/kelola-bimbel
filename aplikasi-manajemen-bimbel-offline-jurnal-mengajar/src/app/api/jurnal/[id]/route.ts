@@ -1,4 +1,4 @@
-import { ApiError, readJson, withApiSession } from "@/lib/api";
+import { ApiError, readJson, withApiPermission } from "@/lib/api";
 import { getJurnalGuru, koreksiJurnal } from "@/services/jurnal.service";
 import { jurnalIdSchema, koreksiJurnalSchema } from "@/validators/jurnal";
 
@@ -7,7 +7,7 @@ type Context = { params: Promise<{ id: string }> };
 
 // Detail satu jurnal milik guru yang sedang masuk.
 export function GET(request: Request, context: Context) {
-  return withApiSession(request, async (session) => {
+  return withApiPermission(request, { staf: ["read"] }, async (session) => {
     const id = jurnalIdSchema.parse((await context.params).id);
     const jurnal = await getJurnalGuru(session.user.id, id);
     if (!jurnal)
@@ -18,7 +18,7 @@ export function GET(request: Request, context: Context) {
 
 // Koreksi isi jurnal yang pernah dikirim (materi, catatan, kehadiran).
 export function PATCH(request: Request, context: Context) {
-  return withApiSession(request, async (session) => {
+  return withApiPermission(request, { staf: ["write"] }, async (session) => {
     const id = jurnalIdSchema.parse((await context.params).id);
     const input = koreksiJurnalSchema.parse(await readJson(request));
     const hasil = await koreksiJurnal(session.user.id, id, input);

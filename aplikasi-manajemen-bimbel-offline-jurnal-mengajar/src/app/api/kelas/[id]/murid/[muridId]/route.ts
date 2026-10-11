@@ -1,4 +1,4 @@
-import { ApiError, withApiSession } from "@/lib/api";
+import { ApiError, withApiPermission } from "@/lib/api";
 import { keluarkanMurid } from "@/services/kelas.service";
 import { kelasIdSchema, muridIdSchema } from "@/validators/kelas";
 
@@ -8,7 +8,7 @@ type Context = { params: Promise<{ id: string; muridId: string }> };
 // Mengeluarkan murid dari kelas. Penempatannya ditandai selesai, bukan
 // dihapus, sehingga riwayatnya tetap tersimpan.
 export function DELETE(request: Request, context: Context) {
-  return withApiSession(request, async () => {
+  return withApiPermission(request, { staf: ["write"] }, async () => {
     const { id, muridId } = await context.params;
     const terkeluar = await keluarkanMurid(
       kelasIdSchema.parse(id),

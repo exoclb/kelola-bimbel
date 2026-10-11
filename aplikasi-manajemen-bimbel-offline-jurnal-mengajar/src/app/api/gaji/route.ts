@@ -1,4 +1,4 @@
-import { withApiSession } from "@/lib/api";
+import { withApiPermission } from "@/lib/api";
 import { periodeBulan } from "@/lib/gaji";
 import { rekapGajiGuru } from "@/services/gaji.service";
 import { periodeGajiSchema } from "@/validators/gaji";
@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 // diambil dari id sesi, jadi tidak perlu izin tambahan — guru memang berhak
 // melihat jam dan gajinya sendiri.
 export function GET(request: Request) {
-  return withApiSession(request, async (session) => {
+  return withApiPermission(request, { staf: ["read"] }, async (session) => {
     const { periode } = periodeGajiSchema.parse(
       Object.fromEntries(new URL(request.url).searchParams),
     );

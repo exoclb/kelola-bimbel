@@ -1,4 +1,4 @@
-import { withApiSession } from "@/lib/api";
+import { withApiPermission } from "@/lib/api";
 import { listPenempatan } from "@/services/kelas.service";
 import { listPenempatanSchema } from "@/validators/kelas";
 
@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 // kelas ke kelas bisa ditelusuri. Saringan `muridId`, `kelasId`, dan `status`
 // dikerjakan di database; urutannya penempatan aktif lebih dulu.
 export function GET(request: Request) {
-  return withApiSession(request, async () => {
+  return withApiPermission(request, { staf: ["read"] }, async () => {
     const filter = listPenempatanSchema.parse(
       Object.fromEntries(new URL(request.url).searchParams),
     );

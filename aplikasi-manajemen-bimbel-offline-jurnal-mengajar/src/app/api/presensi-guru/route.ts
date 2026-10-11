@@ -1,4 +1,4 @@
-import { ApiError, readJson, withApiSession } from "@/lib/api";
+import { ApiError, readJson, withApiPermission } from "@/lib/api";
 import { peranDariRole } from "@/lib/peran";
 import { tanggalISO } from "@/lib/tanggal";
 import {
@@ -20,7 +20,7 @@ export const runtime = "nodejs";
 // status yang sudah tersimpan (`null` = belum ditandai). Tanpa `tanggal`,
 // server memakai hari ini.
 export function GET(request: Request) {
-  return withApiSession(request, async (session) => {
+  return withApiPermission(request, { staf: ["read"] }, async (session) => {
     const query = listPresensiGuruSchema.parse(
       Object.fromEntries(new URL(request.url).searchParams),
     );
@@ -57,7 +57,7 @@ export function GET(request: Request) {
 // memperbarui catatan yang sudah ada (bukan baris kedua), jadi jawabannya 201
 // saat barisnya baru dibuat dan 200 saat catatannya diperbarui.
 export function POST(request: Request) {
-  return withApiSession(request, async (session) => {
+  return withApiPermission(request, { staf: ["write"] }, async (session) => {
     const input = simpanPresensiGuruSchema.parse(await readJson(request));
     const hasil = await simpanPresensiGuru(session.user.id, input);
 

@@ -1,4 +1,4 @@
-import { ApiError, withApiSession } from "@/lib/api";
+import { ApiError, withApiPermission } from "@/lib/api";
 import { hapusPresensiGuru } from "@/services/presensi-guru.service";
 import { presensiGuruIdSchema } from "@/validators/presensi-guru";
 
@@ -8,7 +8,7 @@ type Context = { params: Promise<{ id: string }> };
 // Membatalkan tanda kehadiran satu sesi. Catatan milik guru lain (atau id yang
 // tidak ada) dijawab 404, jadi bentuk galatnya tidak membocorkan apa pun.
 export function DELETE(request: Request, context: Context) {
-  return withApiSession(request, async (session) => {
+  return withApiPermission(request, { staf: ["write"] }, async (session) => {
     const id = presensiGuruIdSchema.parse((await context.params).id);
     const terhapus = await hapusPresensiGuru(session.user.id, id);
     if (!terhapus)

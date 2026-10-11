@@ -28,6 +28,13 @@ export const statement = {
   // yang boleh membuka fitur ini sama sekali: guru (role `user`), owner, dan
   // admin. Peran lain tidak diberi izin ini.
   perkembangan: ["read", "write"],
+  // Data bimbel yang dipakai bersama staf — murid, kelas, jadwal, penempatan,
+  // jurnal, presensi guru, dan rekap gaji. Aksi ini yang memisahkan akun staf
+  // (guru, owner, admin) dari akun wali (`orang-tua`): wali hanya membuka
+  // portal anaknya, jadi perannya sengaja tidak diberi `staf`. Endpoint yang
+  // menyentuh data bersama wajib memakainya — sesi yang sah saja tidak cukup,
+  // karena akun wali juga punya sesi.
+  staf: ["read", "write"],
   // Pengaturan bimbel (profil, aturan gaji, kelola guru) hanya untuk owner:
   // guru tidak mengubah data yang memengaruhi seluruh bimbel.
   pengaturan: ["read", "write"],
@@ -39,11 +46,19 @@ export const ac = createAccessControl(statement);
 // from the shared development records (every guru needs to read and write
 // them), the signed-in default can do nothing beyond its own rows.
 export const roles = {
-  user: ac.newRole({ notes: [], perkembangan: ["read", "write"] }),
-  // Orang tua/wali: hanya membuka portal dan membaca data anaknya.
+  // Guru: mengelola data bimbel yang dipakai bersama sesama staf (murid,
+  // kelas, jurnal, presensi) dan menulis catatan perkembangannya sendiri.
+  user: ac.newRole({
+    staf: ["read", "write"],
+    notes: [],
+    perkembangan: ["read", "write"],
+  }),
+  // Orang tua/wali: hanya membuka portal dan membaca data anaknya. Sengaja
+  // tanpa `staf`, jadi rute tulis maupun baca data bimbel menjawab 403.
   "orang-tua": ac.newRole({ portal: ["read"] }),
   // Pemilik bimbel: memantau jurnal dan gaji semua guru, tanpa hak admin sistem.
   owner: ac.newRole({
+    staf: ["read", "write"],
     jurnal: ["read-any"],
     gaji: ["read-any"],
     tagihan: ["read-any", "write-any"],
@@ -54,6 +69,7 @@ export const roles = {
   }),
   admin: ac.newRole({
     ...adminAc.statements,
+    staf: ["read", "write"],
     notes: ["read-any", "delete-any"],
     jurnal: ["read-any"],
     gaji: ["read-any"],

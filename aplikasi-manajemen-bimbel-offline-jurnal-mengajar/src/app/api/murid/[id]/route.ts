@@ -1,4 +1,4 @@
-import { ApiError, readJson, withApiSession } from "@/lib/api";
+import { ApiError, readJson, withApiPermission } from "@/lib/api";
 import { getMurid, ubahMurid } from "@/services/murid.service";
 import { muridIdSchema, ubahMuridSchema } from "@/validators/murid";
 
@@ -9,7 +9,7 @@ type Context = { params: Promise<{ id: string }> };
 // `GET /api/murid`, jadi alamat di header `Location` saat menambah murid
 // (`POST /api/murid`) benar-benar bisa dibuka.
 export function GET(request: Request, context: Context) {
-  return withApiSession(request, async () => {
+  return withApiPermission(request, { staf: ["read"] }, async () => {
     const id = muridIdSchema.parse((await context.params).id);
     const murid = await getMurid(id);
     if (!murid) throw new ApiError(404, "NOT_FOUND", "Murid tidak ditemukan.");
@@ -27,7 +27,7 @@ export function GET(request: Request, context: Context) {
 // `POST /api/kelas/:id/murid` menjawab 409 `MURID_TIDAK_AKTIF` selama statusnya
 // masih nonaktif.
 export function PATCH(request: Request, context: Context) {
-  return withApiSession(request, async () => {
+  return withApiPermission(request, { staf: ["write"] }, async () => {
     const id = muridIdSchema.parse((await context.params).id);
     const input = ubahMuridSchema.parse(await readJson(request));
     const hasil = await ubahMurid(id, input);

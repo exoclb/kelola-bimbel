@@ -1,4 +1,4 @@
-import { ApiError, readJson, withApiSession } from "@/lib/api";
+import { ApiError, readJson, withApiPermission } from "@/lib/api";
 import { pesanBentrokJadwal, tambahJadwal } from "@/services/kelas.service";
 import { kelasIdSchema, tambahJadwalSchema } from "@/validators/kelas";
 
@@ -8,7 +8,7 @@ type Context = { params: Promise<{ id: string }> };
 // Menambah satu jadwal ke kelas yang sudah ada, misalnya karena kelasnya
 // mengajar dua kali dalam seminggu.
 export function POST(request: Request, context: Context) {
-  return withApiSession(request, async () => {
+  return withApiPermission(request, { staf: ["write"] }, async () => {
     const id = kelasIdSchema.parse((await context.params).id);
     const jadwal = tambahJadwalSchema.parse(await readJson(request));
     const hasil = await tambahJadwal(id, jadwal);

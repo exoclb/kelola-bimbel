@@ -1,4 +1,4 @@
-import { ApiError, readJson, withApiSession } from "@/lib/api";
+import { ApiError, readJson, withApiPermission } from "@/lib/api";
 import {
   adaKelas,
   listMuridKelas,
@@ -17,7 +17,7 @@ type Context = { params: Promise<{ id: string }> };
 // Daftar murid yang sedang belajar di satu kelas. `?status=semua`
 // menyertakan penempatan lama yang sudah selesai sebagai riwayat kelas itu.
 export function GET(request: Request, context: Context) {
-  return withApiSession(request, async () => {
+  return withApiPermission(request, { staf: ["read"] }, async () => {
     const id = kelasIdSchema.parse((await context.params).id);
     if (!(await adaKelas(id)))
       throw new ApiError(404, "NOT_FOUND", "Kelas tidak ditemukan.");
@@ -35,7 +35,7 @@ export function GET(request: Request, context: Context) {
 // Menempatkan murid ke kelas ini. Satu murid hanya boleh punya satu kelas
 // aktif di kelas yang sama, jadi penempatan kedua di kelas itu dijawab 409.
 export function POST(request: Request, context: Context) {
-  return withApiSession(request, async () => {
+  return withApiPermission(request, { staf: ["write"] }, async () => {
     const id = kelasIdSchema.parse((await context.params).id);
     const input = tempatkanMuridSchema.parse(await readJson(request));
     const hasil = await tempatkanMurid(

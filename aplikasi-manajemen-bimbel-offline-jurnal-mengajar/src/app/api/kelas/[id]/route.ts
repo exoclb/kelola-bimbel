@@ -1,4 +1,4 @@
-import { ApiError, readJson, withApiSession } from "@/lib/api";
+import { ApiError, readJson, withApiPermission } from "@/lib/api";
 import { periksaCabangKelas } from "@/services/cabang.service";
 import {
   getKelasById,
@@ -13,7 +13,7 @@ type Context = { params: Promise<{ id: string }> };
 // Satu kelas beserta jadwal dan jumlah muridnya — bentuknya sama dengan satu
 // baris pada `GET /api/kelas`.
 export function GET(request: Request, context: Context) {
-  return withApiSession(request, async () => {
+  return withApiPermission(request, { staf: ["read"] }, async () => {
     const id = kelasIdSchema.parse((await context.params).id);
     const kelas = await getKelasById(id);
     if (!kelas) throw new ApiError(404, "NOT_FOUND", "Kelas tidak ditemukan.");
@@ -24,7 +24,7 @@ export function GET(request: Request, context: Context) {
 // Mengubah nama, cabang, atau guru pengampu kelas. Jadwalnya tidak ikut
 // diubah di sini; menambah & menghapus jadwal punya endpoint sendiri.
 export function PATCH(request: Request, context: Context) {
-  return withApiSession(request, async () => {
+  return withApiPermission(request, { staf: ["write"] }, async () => {
     const id = kelasIdSchema.parse((await context.params).id);
     const input = updateKelasSchema.parse(await readJson(request));
 
