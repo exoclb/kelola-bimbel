@@ -1,26 +1,50 @@
 import { randomUUID } from "node:crypto";
-import { expect, test, type APIRequestContext } from "@playwright/test";
+import { setTimeout as delay } from "node:timers/promises";
+import {
+  expect,
+  test,
+  type APIRequestContext,
+  type APIResponse,
+} from "@playwright/test";
 import { Pool } from "pg";
 
 const origin = "http://localhost:3101";
 const headers = { Origin: origin };
 const sandi = "Laba-rugi-test-123!";
 
+// Server auth membatasi permintaan berturut-turut; hormati jendela retry-nya
+// supaya berkas ini tidak menghabiskan kuota berkas uji lain.
+async function denganRetry(kirim: () => Promise<APIResponse>) {
+  let response = await kirim();
+  if (response.status() === 429) {
+    const detik = Number(response.headers()["retry-after"] ?? 10);
+    await delay((Math.min(Math.max(detik, 0), 10) + 0.2) * 1000);
+    response = await kirim();
+  }
+  return response;
+}
+
 async function daftar(client: APIRequestContext, nama: string) {
   const email = `labarugi-${randomUUID()}@example.com`;
-  const response = await client.post("/api/akun", {
-    headers,
-    data: { nama, email, sandi },
-  });
+  const response = await denganRetry(() =>
+    client.post("/api/akun", {
+      headers,
+      data: { nama, email, sandi },
+    }),
+  );
   expect(response.status()).toBe(201);
   return email;
 }
 
-async function setRole(email: string, role: string) {
-  const db = new Pool({
+async function pool() {
+  return new Pool({
     connectionString: process.env.STARTER_TEST_DATABASE_URL,
     max: 1,
   });
+}
+
+async function setRole(email: string, role: string) {
+  const db = await pool();
   try {
     const { rowCount } = await db.query(
       'UPDATE "user" SET role = $1 WHERE email = $2',
@@ -32,11 +56,29 @@ async function setRole(email: string, role: string) {
   }
 }
 
+/** Jumlah pemberitahuan satu jenis milik satu akun uji. */
+async function jumlahNotifikasi(email: string, tipe: string) {
+  const db = await pool();
+  try {
+    const { rows } = await db.query(
+      `SELECT count(*)::int AS jumlah FROM notifications
+        WHERE tipe = $1
+          AND user_id = (SELECT id FROM "user" WHERE email = $2)`,
+      [tipe, email],
+    );
+    return rows[0].jumlah as number;
+  } finally {
+    await db.end();
+  }
+}
+
 async function masuk(client: APIRequestContext, email: string) {
-  const response = await client.post("/api/masuk", {
-    headers,
-    data: { email, sandi },
-  });
+  const response = await denganRetry(() =>
+    client.post("/api/masuk", {
+      headers,
+      data: { email, sandi },
+    }),
+  );
   expect(response.status()).toBe(200);
 }
 
@@ -136,9 +178,7 @@ test("laporan laba rugi menjumlahkan periode yang dipilih saja", async ({
   await page.getByLabel("Bulan", { exact: true }).selectOption(String(bulan));
   await page.getByLabel("Tahun", { exact: true }).selectOption(String(tahun));
   await page.getByRole("button", { name: "Tampilkan", exact: true }).click();
-  await expect(page).toHaveURL(
-    `/app/laba-rugi?bulan=${bulan}&tahun=${tahun}`,
-  );
+  await expect(page).toHaveURL(`/app/laba-rugi?bulan=${bulan}&tahun=${tahun}`);
 
   // Pemasukan hanya dari tagihan lunas periode itu, operasional dari catatan
   // periode itu, dan tidak ada honor guru karena jurnalnya bukan bulan itu.
@@ -153,9 +193,7 @@ test("laporan laba rugi menjumlahkan periode yang dipilih saja", async ({
   // Tautan geser memindahkan periodenya lewat alamat, dan judul rinciannya
   // ikut berpindah ke bulan sebelum periode uji ini.
   await page.getByRole("link", { name: "Bulan sebelumnya" }).click();
-  await expect(page).toHaveURL(
-    `/app/laba-rugi?periode=${geser(periode, -1)}`,
-  );
+  await expect(page).toHaveURL(`/app/laba-rugi?periode=${geser(periode, -1)}`);
   await expect(
     page.getByText(`Rincian ${labelPeriode(geser(periode, -1))}`, {
       exact: true,
@@ -174,9 +212,9 @@ test("laporan laba rugi menjumlahkan periode yang dipilih saja", async ({
 
   // Kop bimbel tampil di layar, jadi cetakan PDF-nya beridentitas sama dengan
   // berkas Excel yang diunduh.
-  await expect(page.getByText("Laporan Laba Rugi", { exact: true })).toHaveCount(
-    2,
-  );
+  await expect(
+    page.getByText("Laporan Laba Rugi", { exact: true }),
+  ).toHaveCount(2);
   await expect(
     page.getByText(`Periode ${labelPeriode(periode)}`, { exact: true }),
   ).toBeVisible();
@@ -202,4 +240,159 @@ test("laporan laba rugi menjumlahkan periode yang dipilih saja", async ({
   await expect(
     page.getByRole("link", { name: "Kembali ke bulan berjalan" }),
   ).toHaveCount(0);
+});
+
+/**
+ * Endpoint laporan laba rugi: satu periode, angka yang sama dengan halaman.
+ * Endpoint ini hanya membaca — pemicu notifikasi `laporan_bulanan` tetap milik
+ * halaman, dan itu ikut diperiksa di sini supaya permintaan baca tidak
+ * diam-diam menulis pemberitahuan baru.
+ */
+test("endpoint laba rugi periode memberi angka yang sama dengan halaman", async ({
+  request,
+}) => {
+  // Bulan tetap yang tidak dipakai berkas uji lain, supaya angkanya bisa
+  // diperiksa tepat: tidak ada honor guru di bulan itu.
+  const periode = "2099-04";
+  const pemasukan = 640000;
+  const operasional = 96000;
+
+  // Tanpa sesi tidak ada laporan keuangan yang bocor.
+  const tamu = await request.get(`/api/laba-rugi?periode=${periode}`, {
+    headers,
+  });
+  expect(tamu.status()).toBe(401);
+  expect((await tamu.json()).error.code).toBe("UNAUTHORIZED");
+
+  const email = await daftar(request, "Owner Endpoint Laba Rugi");
+  await setRole(email, "owner");
+  await masuk(request, email);
+
+  const murid = await request.post("/api/murid", {
+    headers,
+    data: { nama: "Murid Endpoint Laba Rugi", tanggalLahir: "2013-04-04" },
+  });
+  expect(murid.status()).toBe(201);
+  const muridId = (await murid.json()).data.id as string;
+
+  const terbit = await request.post("/api/tagihan", {
+    headers,
+    data: { periode, nominal: pemasukan, muridIds: [muridId] },
+  });
+  expect(terbit.status()).toBe(201);
+  const daftarTagihan = await request.get(`/api/tagihan?periode=${periode}`, {
+    headers,
+  });
+  const tagihan = (await daftarTagihan.json()).data[0] as { id: string };
+  const pelunasan = await request.patch(`/api/tagihan/${tagihan.id}`, {
+    headers,
+    data: { status: "lunas", tanggalBayar: `${periode}-09` },
+  });
+  expect(pelunasan.status()).toBe(200);
+
+  const kategori = await request.post("/api/pengeluaran/kategori", {
+    headers,
+    data: {
+      nama: `Operasional Endpoint Laba Rugi ${randomUUID().slice(0, 6)}`,
+    },
+  });
+  expect(kategori.status()).toBe(201);
+  const kategoriId = (await kategori.json()).data.id as string;
+  const pengeluaran = await request.post("/api/pengeluaran", {
+    headers,
+    data: {
+      kategoriId,
+      nominal: operasional,
+      tanggal: `${periode}-12`,
+      catatan: "Uji endpoint laba rugi",
+    },
+  });
+  expect(pengeluaran.status()).toBe(201);
+
+  // Pemilik menyalakan pemberitahuan laporan bulanan supaya pemicunya bisa
+  // dibedakan dari endpointnya: jenis ini bawaannya mati.
+  const preferensi = await request.patch("/api/pengaturan/notifikasi", {
+    headers,
+    data: { jenis: "laporan_bulanan", aktif: true },
+  });
+  expect(preferensi.status()).toBe(200);
+
+  // Satu periode: SPP lunas dikurangi honor (nihil) dan operasional bulan itu.
+  const jawaban = await request.get(`/api/laba-rugi?periode=${periode}`, {
+    headers,
+  });
+  expect(jawaban.status()).toBe(200);
+  expect(await jawaban.json()).toEqual({
+    data: {
+      periode,
+      pemasukan,
+      biayaHonor: 0,
+      biayaOperasional: operasional,
+      pengeluaran: operasional,
+      laba: pemasukan - operasional,
+    },
+  });
+
+  // Endpoint yang baru dibuka itu tidak mengirim pemberitahuan apa pun:
+  // pemberitahuan laporan bulanan tetap dibuat halaman, bukan oleh permintaan
+  // baca.
+  expect(await jumlahNotifikasi(email, "laporan_bulanan")).toBe(0);
+
+  // Halaman menampilkan angka yang sama; kop dan label periodenya tetap ada,
+  // jadi laporan yang dicetak dari halaman itu berisi angka endpoint ini.
+  const halaman = await request.get(`/app/laba-rugi?periode=${periode}`, {
+    headers,
+  });
+  expect(halaman.status()).toBe(200);
+  const isiHalaman = await halaman.text();
+  expect(isiHalaman).toContain(rupiah(pemasukan));
+  expect(isiHalaman).toContain(rupiah(pemasukan - operasional));
+
+  // Satu periode hanya diberitakan sekali walau halamannya dibuka berkali-kali.
+  expect(await jumlahNotifikasi(email, "laporan_bulanan")).toBe(1);
+
+  // Tanpa `?periode`, jawabannya laporan bulan berjalan.
+  const bulanIni = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
+  const bawaan = await request.get("/api/laba-rugi", { headers });
+  expect(bawaan.status()).toBe(200);
+  expect((await bawaan.json()).data.periode).toBe(bulanIni);
+
+  // Alamat yang tidak sah ditolak 422, termasuk bentuk pemilih di halaman yang
+  // bukan bagian kontrak endpoint.
+  for (const alamat of [
+    `/api/laba-rugi?periode=`,
+    `/api/laba-rugi?periode=2099-13`,
+    `/api/laba-rugi?periode=2099-4`,
+    `/api/laba-rugi?periode=2099-04-01`,
+    `/api/laba-rugi?bulan=4&tahun=2099`,
+    `/api/laba-rugi?periode=${periode}&jumlahBulan=4`,
+  ]) {
+    const ditolak = await request.get(alamat, { headers });
+    expect(ditolak.status(), alamat).toBe(422);
+    expect((await ditolak.json()).error.code, alamat).toBe("VALIDATION_ERROR");
+  }
+
+  // Guru tidak boleh membaca laporan keuangan bimbel (401/403 dibedakan:
+  // sesinya ada, izinnya tidak).
+  await setRole(email, "user");
+  await masuk(request, email);
+  const guru = await request.get(`/api/laba-rugi?periode=${periode}`, {
+    headers,
+  });
+  expect(guru.status()).toBe(403);
+  expect((await guru.json()).error.code).toBe("FORBIDDEN");
+
+  // Dikembalikan ke pemilik supaya baris uji ini bisa dibersihkan.
+  await setRole(email, "owner");
+  await masuk(request, email);
+  const hapusPengeluaran = await request.delete(
+    `/api/pengeluaran/${(await pengeluaran.json()).data.id}`,
+    { headers },
+  );
+  expect(hapusPengeluaran.status()).toBe(200);
+  const hapusKategori = await request.delete(
+    `/api/pengeluaran/kategori/${kategoriId}`,
+    { headers },
+  );
+  expect(hapusKategori.status()).toBe(200);
 });

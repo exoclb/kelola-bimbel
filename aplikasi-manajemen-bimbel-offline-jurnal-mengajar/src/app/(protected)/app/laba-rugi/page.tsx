@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { LaporanLabaRugi } from "@/components/laporan-laba-rugi";
 import { periodeBulan } from "@/lib/gaji";
-import { ringkasanLabaRugi } from "@/lib/laporan-bulanan";
+import { ringkasanLabaRugiPeriode } from "@/lib/laporan-bulanan";
 import { requirePermission } from "@/lib/session";
 import { rekapHonorBulanan } from "@/services/gaji.service";
 import { beritahuLaporanBulanan } from "@/services/notifikasi.service";
@@ -25,7 +25,8 @@ function periodeDariAlamat(params: {
   bulan?: string;
   tahun?: string;
 }) {
-  if (params.periode && POLA_PERIODE.test(params.periode)) return params.periode;
+  if (params.periode && POLA_PERIODE.test(params.periode))
+    return params.periode;
   if (
     params.bulan &&
     params.tahun &&
@@ -70,16 +71,11 @@ export default async function LabaRugiPage({
   // tidak mengubah pemicunya: yang diberitakan tetap laporan bulan berjalan.
   await beritahuLaporanBulanan(
     periodeBerjalan,
-    ringkasanLabaRugi({
-      pemasukan:
-        rekapPemasukan.find((baris) => baris.periode === periodeBerjalan)
-          ?.nominalLunas ?? 0,
-      biayaHonor:
-        rekapHonor.find((baris) => baris.periode === periodeBerjalan)?.total ??
-        0,
-      biayaOperasional:
-        rekapPengeluaran.find((baris) => baris.periode === periodeBerjalan)
-          ?.total ?? 0,
+    ringkasanLabaRugiPeriode({
+      periode: periodeBerjalan,
+      rekapPemasukan,
+      rekapHonor,
+      rekapPengeluaran,
     }),
   );
 
