@@ -348,3 +348,84 @@ test("wali dua anak dikabari sekali untuk tiap tagihan anaknya", async () => {
 
   await bersihkan();
 });
+
+/**
+ * Satu permintaan penerbitan untuk beberapa anak sekaligus, dengan penerima yang
+ * tidak seragam: satu anak belum punya akun wali, satu punya dua wali, dan satu
+ * lagi walinya mematikan kabar penerbitan. Yang berhak dikabari tepat satu kali,
+ * anak tanpa wali tidak menahan anak lain, dan id anak yang dikirim dua kali
+ * dalam satu permintaan tetap dihitung sebagai satu tagihan dan satu kabar —
+ * peta wali per anak dibaca sekali untuk seluruh batch, jadi anak yang tidak
+ * ada di peta itu harus dilewati tanpa mengganggu sisanya.
+ */
+test("penerbitan sekaligus hanya mengabari wali yang berhak", async () => {
+  await bersihkan();
+  const tanpaWali = await buatMurid({ label: "Murid Batch Tanpa Wali" });
+  const duaWali = await buatMurid({ label: "Murid Batch Dua Wali" });
+  const dibisukan = await buatMurid({ label: "Murid Batch Wali Bisu" });
+  const ayah = await buatWali("Ayah Batch Tagihan");
+  const ibu = await buatWali("Ibu Batch Tagihan");
+  const bisu = await buatWali("Wali Bisu Batch Tagihan");
+  await tautkanWali(ayah.id, duaWali.id);
+  await tautkanWali(ibu.id, duaWali.id);
+  await tautkanWali(bisu.id, dibisukan.id);
+  await aturPreferensi(bisu.id, "tagihan_terbit", false);
+
+  const hasil = await picuTagihan({
+    muridIds: [tanpaWali.id, duaWali.id, dibisukan.id, duaWali.id],
+    periode: "2098-02",
+    nominal: 225_000,
+  });
+  assert.equal(hasil.dibuat, 3, "id anak yang diulang dihitung sekali");
+  assert.equal(hasil.dilewati.length, 0);
+
+  assert.equal(await jumlahNotifikasi(ayah.id, "tagihan_terbit"), 1);
+  assert.equal(await jumlahNotifikasi(ibu.id, "tagihan_terbit"), 1);
+  assert.equal(
+    await jumlahNotifikasi(bisu.id, "tagihan_terbit"),
+    0,
+    "walinya mematikan jenisnya, jadi dilewati dalam batch yang sama",
+  );
+
+  // Anak tanpa wali tetap diterbitkan, dan kunci peristiwa tagihan itu tidak
+  // pernah terpakai satu baris pun — dicari ke seluruh tabel, bukan per akun.
+  const idTanpaWali = await tagihanId(tanpaWali.id, "2098-02");
+  assert.ok(idTanpaWali, "tagihannya tetap terbit");
+  const { rows } = await pool.query(
+    "SELECT count(*)::int AS jumlah FROM notifications WHERE kunci = $1",
+    [`tagihan:${idTanpaWali}`],
+  );
+  assert.equal(rows[0].jumlah, 0);
+
+  await bersihkan();
+});
+
+/**
+ * Jalur pelunasan anak tanpa wali: statusnya tetap tersimpan dan tanggal
+ * bayarnya ikut tercatat, tetapi tidak ada satu pun kabar yang ditulis — dan
+ * bukan galat. Penerima yang kosong itu berbeda dari "preferensinya dimatikan":
+ * di sini tidak ada kandidat sama sekali, jadi kunci
+ * `tagihan:<idTagihan>:lunas` tidak pernah terpakai.
+ */
+test("menandai lunas tagihan anak tanpa wali tersimpan tanpa kabar", async () => {
+  await bersihkan();
+  const murid = await buatMurid({ label: "Murid Lunas Tanpa Wali" });
+  await picuTagihan({
+    muridIds: [murid.id],
+    periode: "2098-03",
+    nominal: 190_000,
+  });
+  const id = await tagihanId(murid.id, "2098-03");
+  assert.ok(id, "tagihannya terbit lebih dulu");
+
+  const tagihan = await picuUbahTagihan(id, { status: "lunas" });
+  assert.equal(tagihan?.status, "lunas", "statusnya tetap tersimpan");
+
+  const { rows } = await pool.query(
+    "SELECT count(*)::int AS jumlah FROM notifications WHERE kunci = $1",
+    [`tagihan:${id}:lunas`],
+  );
+  assert.equal(rows[0].jumlah, 0);
+
+  await bersihkan();
+});
