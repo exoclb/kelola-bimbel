@@ -161,6 +161,38 @@ test("tagihan yang ditandai lunas bersamaan mengabari sekali", async () => {
 });
 
 /**
+ * Preferensi menahan sebelum kuncinya terpakai. Pemicu yang sama dijalankan
+ * serentak saat jenisnya dimatikan: tidak ada satu baris pun yang ditulis, dan
+ * tidak ada galat walau keduanya sama-sama lolos pemeriksaan awal. Angka nol
+ * itu yang benar — bukan "satu baris ditandai dilewati" — sebab yang menahan
+ * memang penyaringan penerima, bukan indeks uniknya.
+ */
+test("pemicu bersamaan saat jenisnya dimatikan tidak menulis apa pun", async () => {
+  await bersihkan();
+  const guru = await buatGuru("Guru Serentak Dimatikan");
+  const kunci = `rekap_honor:${guru.id}:2096-10`;
+  await aturPreferensi(guru.id, "rekap_honor", false);
+
+  const hasil = await Promise.all([
+    picuRekapHonor({ guruId: guru.id, periode: "2096-10" }),
+    picuRekapHonor({ guruId: guru.id, periode: "2096-10" }),
+  ]);
+
+  assert.deepEqual(
+    hasil.map((baris) => baris.status),
+    ["tersimpan", "tersimpan"],
+    "penahanannya bukan galat",
+  );
+  assert.equal(await jumlahNotifikasi(guru.id, "rekap_honor"), 0);
+  assert.equal(
+    await jumlahNotifikasiBerKunci(guru.id, "rekap_honor", kunci),
+    0,
+  );
+
+  await bersihkan();
+});
+
+/**
  * Laporan bulanan — satu-satunya jenis yang disiarkan ke seluruh pemilik —
  * dihitung ulang untuk periode yang sama pada saat yang hampir bersamaan.
  * Kuncinya `laporan_bulanan:<periode>` tanpa id akun, jadi yang diperiksa
