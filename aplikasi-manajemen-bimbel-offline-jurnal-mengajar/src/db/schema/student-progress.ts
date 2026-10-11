@@ -56,5 +56,18 @@ export const studentProgress = pgTable(
       "student_progress_nilai_rentang",
       sql`${table.nilai} >= 0 and ${table.nilai} <= 100`,
     ),
+    // Sikap anak adalah kolom ringkas yang ditampilkan di kartu halaman
+    // perkembangan dan laporan ke orang tua; baris dengan sikap kosong atau
+    // spasi saja muncul sebagai celah kosong di layar. Validator formulir dan
+    // API sudah menolaknya, di sini dijaga ulang supaya penulisan langsung ke
+    // basis data pun aman, sama seperti `students_nama_terisi`.
+    //
+    // `catatan_perkembangan` sengaja tidak dijaga: guru boleh menyimpan
+    // catatan evaluasi tanpa uraian (nilainya sudah diisi, uraiannya belum
+    // ditulis), dan itu memang bawaan formulirnya.
+    check(
+      "student_progress_sikap_terisi",
+      sql`length(btrim(${table.sikap})) > 0`,
+    ),
   ],
 );

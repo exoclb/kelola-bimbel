@@ -1,0 +1,1 @@
+ALTER TABLE "student_progress" ADD CONSTRAINT "student_progress_sikap_terisi" CHECK (length(btrim("student_progress"."sikap")) > 0);
