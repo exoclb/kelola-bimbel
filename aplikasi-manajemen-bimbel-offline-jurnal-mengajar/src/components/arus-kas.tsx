@@ -24,24 +24,13 @@ import {
 } from "@/components/ui/card";
 import { cn } from "cn";
 import { formatPeriode, formatRupiah } from "@/lib/gaji";
-import type { ProfilDokumen } from "@/lib/dokumen-html";
 import {
-  geserPeriode,
-  rekapTagihanKosong,
-  type RekapTagihanPeriode,
-} from "@/lib/tagihan";
-
-// Berapa bulan yang ditampilkan pada tren.
-const JUMLAH_BULAN = 4;
-
-type BarisArusKas = {
-  periode: string;
-  pemasukan: number;
-  honor: number;
-  operasional: number;
-  pengeluaran: number;
-  laba: number;
-};
+  hitungArusKasBulanan,
+  JUMLAH_BULAN_ARUS_KAS,
+  totalArusKas,
+} from "@/lib/arus-kas";
+import type { ProfilDokumen } from "@/lib/dokumen-html";
+import { geserPeriode, type RekapTagihanPeriode } from "@/lib/tagihan";
 
 type ArusKasProps = {
   /** Total pengeluaran operasional per periode (`YYYY-MM`) dari tabel `expenses`. */
@@ -83,7 +72,13 @@ function nilaiTampil(nilai: number) {
  * Satu sel tabel rekap: kolom pertama jadi label barisnya, sisanya angka
  * rupiah yang rata kanan supaya bisa dibandingkan per kolom.
  */
-function SelRekap({ nilai, kolomKe }: { nilai: string | number; kolomKe: number }) {
+function SelRekap({
+  nilai,
+  kolomKe,
+}: {
+  nilai: string | number;
+  kolomKe: number;
+}) {
   if (kolomKe === 0) {
     return (
       <th scope="row" className="py-2 pr-3 font-medium whitespace-nowrap">
@@ -118,69 +113,27 @@ export function ArusKas({
   tahunTersedia,
   profil,
 }: ArusKasProps) {
-  const totalHonor = useMemo(
-    () =>
-      new Map(rekapHonor.map((baris) => [baris.periode, baris.total] as const)),
-    [rekapHonor],
-  );
-
-  const totalOperasional = useMemo(
-    () =>
-      new Map(
-        rekapPengeluaran.map((baris) => [baris.periode, baris.total] as const),
-      ),
-    [rekapPengeluaran],
-  );
-
-  const pemasukanPeriode = useMemo(
-    () =>
-      new Map(rekapPemasukan.map((baris) => [baris.periode, baris] as const)),
-    [rekapPemasukan],
-  );
-
   const [tahunTerpilih, bulanTerpilih] = periodeAkhir.split("-").map(Number);
 
-  // Urut dari bulan terlama ke terbaru supaya trennya terbaca kiri ke kanan.
-  const daftar = useMemo<BarisArusKas[]>(() => {
-    const bulan = Array.from({ length: JUMLAH_BULAN }, (_, urutan) =>
-      geserPeriode(periodeAkhir, urutan - (JUMLAH_BULAN - 1)),
-    );
-    return bulan.map((periode) => {
-      const rekap =
-        pemasukanPeriode.get(periode) ?? rekapTagihanKosong(periode);
-      const honor = totalHonor.get(periode) ?? 0;
-      const operasional = totalOperasional.get(periode) ?? 0;
-      return {
-        periode,
-        pemasukan: rekap.nominalLunas,
-        honor,
-        operasional,
-        pengeluaran: honor + operasional,
-        laba: rekap.nominalLunas - honor - operasional,
-      };
-    });
-  }, [pemasukanPeriode, totalHonor, totalOperasional, periodeAkhir]);
+  // Hitungan trennya (jendela bulan, penggabungan ketiga rekap, dan labanya)
+  // dipakai bersama endpoint `GET /api/arus-kas` lewat `src/lib/arus-kas.ts`,
+  // jadi layar dan endpointnya tidak bisa memuat angka yang berbeda.
+  const daftar = useMemo(
+    () =>
+      hitungArusKasBulanan({
+        rekapPemasukan,
+        rekapHonor,
+        rekapPengeluaran,
+        periodeAkhir,
+      }),
+    [rekapPemasukan, rekapHonor, rekapPengeluaran, periodeAkhir],
+  );
 
   const maksimum = Math.max(
     1,
     ...daftar.flatMap((baris) => [baris.pemasukan, baris.pengeluaran]),
   );
-  const total = daftar.reduce(
-    (jumlah, baris) => ({
-      pemasukan: jumlah.pemasukan + baris.pemasukan,
-      honor: jumlah.honor + baris.honor,
-      operasional: jumlah.operasional + baris.operasional,
-      pengeluaran: jumlah.pengeluaran + baris.pengeluaran,
-      laba: jumlah.laba + baris.laba,
-    }),
-    {
-      pemasukan: 0,
-      honor: 0,
-      operasional: 0,
-      pengeluaran: 0,
-      laba: 0,
-    },
-  );
+  const total = useMemo(() => totalArusKas(daftar), [daftar]);
 
   // Satu daftar baris dipakai dua kali: tabel rekap di layar dan lembar yang
   // diunduh, jadi berkasnya tidak mungkin memuat angka yang berbeda.
@@ -195,7 +148,7 @@ export function ArusKas({
         baris.laba,
       ]),
       [
-        `Total ${JUMLAH_BULAN} bulan`,
+        `Total ${JUMLAH_BULAN_ARUS_KAS} bulan`,
         total.pemasukan,
         total.honor,
         total.operasional,
@@ -216,7 +169,7 @@ export function ArusKas({
       </h1>
       <p className="mt-3 text-base leading-7 text-muted-foreground">
         Pergerakan pemasukan SPP, pengeluaran (honor guru + operasional), dan
-        laba bersih {JUMLAH_BULAN} bulan terakhir sampai{" "}
+        laba bersih {JUMLAH_BULAN_ARUS_KAS} bulan terakhir sampai{" "}
         {formatPeriode(periodeAkhir)}.
       </p>
 
@@ -239,8 +192,9 @@ export function ArusKas({
         <CardHeader>
           <CardTitle>Pilih periode</CardTitle>
           <CardDescription>
-            Tren selalu {JUMLAH_BULAN} bulan dan berakhir di bulan yang dipilih,
-            jadi bulan-bulan sebelumnya bisa dibandingkan tanpa mengubah data.
+            Tren selalu {JUMLAH_BULAN_ARUS_KAS} bulan dan berakhir di bulan yang
+            dipilih, jadi bulan-bulan sebelumnya bisa dibandingkan tanpa
+            mengubah data.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -310,7 +264,7 @@ export function ArusKas({
 
       <Card className="mt-6">
         <CardHeader>
-          <CardTitle>Tren {JUMLAH_BULAN} Bulan</CardTitle>
+          <CardTitle>Tren {JUMLAH_BULAN_ARUS_KAS} Bulan</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
@@ -384,7 +338,7 @@ export function ArusKas({
               ) : (
                 <TrendingDown className="size-4" aria-hidden="true" />
               )}
-              Total {JUMLAH_BULAN} bulan
+              Total {JUMLAH_BULAN_ARUS_KAS} bulan
             </span>
             <span className="text-sm text-muted-foreground">
               Masuk {formatRupiah(total.pemasukan)} · Keluar{" "}
