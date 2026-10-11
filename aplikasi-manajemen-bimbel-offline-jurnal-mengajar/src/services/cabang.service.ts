@@ -167,19 +167,6 @@ export async function tambahCabang(
   }
 }
 
-/** Nyalakan atau matikan satu cabang. `null` kalau id-nya tidak ada. */
-export async function setStatusAktif(
-  id: string,
-  statusAktif: boolean,
-): Promise<Cabang | null> {
-  const [baris] = await db
-    .update(tabelCabang)
-    .set({ statusAktif })
-    .where(eq(tabelCabang.id, id))
-    .returning(fields);
-  return baris ?? null;
-}
-
 export type HasilUbahCabang =
   | { ok: true; cabang: Cabang }
   | { ok: false; kode: "TIDAK_ADA" | "NAMA_SUDAH_DIPAKAI"; pesan: string };
@@ -187,7 +174,8 @@ export type HasilUbahCabang =
 /**
  * Ubah nama, alamat, kontak, dan/atau status aktif satu cabang. Nama yang sudah
  * dipakai cabang lain ditolak; kolom yang tidak dikirim dibiarkan seperti
- * semula.
+ * semula. Menonaktifkan cabang juga lewat sini: satu jalur tulis berarti aturan
+ * (penolakan nama kembar, penanganan id asing) tidak bisa berbeda antar pemanggil.
  */
 export async function ubahCabang(
   id: string,

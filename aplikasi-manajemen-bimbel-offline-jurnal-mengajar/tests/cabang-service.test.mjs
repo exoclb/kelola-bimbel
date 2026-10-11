@@ -11,7 +11,6 @@ const {
   namaCabangDipakai,
   periksaCabangKelas,
   ringkasCabang,
-  setStatusAktif,
   tambahCabang,
   ubahCabang,
 } = await import("../src/services/cabang.service.ts");
@@ -151,10 +150,11 @@ test("tambahCabang menolak nama kembar tak peka huruf besar-kecil", async () => 
 });
 
 /**
- * `ubahCabang` dan `setStatusAktif` mengembalikan baris terbaru, menolak id
- * yang tidak ada, dan aman dijalankan berulang dengan hasil yang sama.
+ * `ubahCabang` mengembalikan baris terbaru, menolak id yang tidak ada, dan aman
+ * dijalankan berulang dengan hasil yang sama. Penonaktifan cabang ikut di sini:
+ * satu-satunya jalur tulis ke kolom status supaya aturannya tidak bercabang.
  */
-test("ubahCabang dan setStatusAktif idempoten dan menolak id asing", async () => {
+test("ubahCabang idempoten, bisa menonaktifkan, dan menolak id asing", async () => {
   await bersihkan();
   const nama = `${PENANDA} Ubah`;
   const dibuat = await tambahCabang({
@@ -195,14 +195,19 @@ test("ubahCabang dan setStatusAktif idempoten dan menolak id asing", async () =>
   assert.equal(bentrok.kode, "NAMA_SUDAH_DIPAKAI");
 
   for (const ulangan of [1, 2]) {
-    const nonaktif = await setStatusAktif(id, false);
-    assert.equal(nonaktif.statusAktif, false, `nonaktif ke-${ulangan}`);
+    const nonaktif = await ubahCabang(id, { statusAktif: false });
+    assert.equal(nonaktif.ok, true, `nonaktif ke-${ulangan}`);
+    assert.equal(nonaktif.cabang.statusAktif, false, `nonaktif ke-${ulangan}`);
   }
   assert.equal((await getCabang(id)).statusAktif, false);
 
   const asing = "0b7f0f1e-0000-4000-8000-000000000000";
   assert.equal(await getCabang(asing), null);
-  assert.equal(await setStatusAktif(asing, true), null);
+  assert.deepEqual(await ubahCabang(asing, { statusAktif: true }), {
+    ok: false,
+    kode: "TIDAK_ADA",
+    pesan: "Cabang tidak ditemukan.",
+  });
   assert.deepEqual(await ubahCabang(asing, { kontak: "0800-9" }), {
     ok: false,
     kode: "TIDAK_ADA",
