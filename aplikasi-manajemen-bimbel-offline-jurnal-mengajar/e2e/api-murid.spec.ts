@@ -90,18 +90,18 @@ async function buatMurid(
 }
 
 /** Daftarkan cabang dan kelas uji langsung di basis data; bersihkan sesudahnya. */
-async function siapkanKelas(namaKelas: string) {
+async function siapkanKelas(namaKelas: string, namaCabang = CABANG) {
   const db = await pool();
   try {
     await db.query(
       `INSERT INTO cabang (nama, alamat, kontak, status_aktif)
        VALUES ($1, 'Jl. Uji API No. 1', '0800-0001', true)
        ON CONFLICT (lower(btrim(nama))) DO NOTHING`,
-      [CABANG],
+      [namaCabang],
     );
     const { rows } = await db.query(
       "INSERT INTO classes (nama_kelas, cabang) VALUES ($1, $2) RETURNING id",
-      [namaKelas, CABANG],
+      [namaKelas, namaCabang],
     );
     return rows[0].id as string;
   } finally {
@@ -357,6 +357,103 @@ test("endpoint murid menolak isian tidak sah dan id asing", async ({
 });
 
 /** Perubahan dari luar aplikasi tetap harus datang dari alamat aplikasi. */
+/**
+ * Penyaring cabang dan kelas di endpoint daftar: layar daftar murid memakai
+ * keduanya, jadi bentuknya harus sama dengan yang dihitung di layar — hanya
+ * penempatan yang masih aktif yang dihitung, dan `meta.total` ikut tersaring.
+ */
+test("daftar murid bisa disaring menurut cabang dan kelas", async ({
+  request,
+}) => {
+  await masukApi(request);
+  // Penanda sendiri untuk tes ini: berkas ini dipakai banyak tes lain yang
+  // namanya juga memuat PENANDA, jadi penyaringnya harus lebih sempit supaya
+  // hitungannya tidak ikut murid dari tes lain.
+  const SARING = `${PENANDA} Saring`;
+  const cabangUtara = `${SARING} Utara`;
+  const kelasUtara = await siapkanKelas(`${SARING} Kelas Utara`, cabangUtara);
+  const kelasPusat = await siapkanKelas(`${SARING} Kelas Pusat`);
+
+  const diUtara = (await buatMurid(request, `${SARING} Di Utara`)).id;
+  const diPusat = (await buatMurid(request, `${SARING} Di Pusat`)).id;
+  const tanpaKelas = (await buatMurid(request, `${SARING} Tanpa Kelas`)).id;
+  const tempatkan = (kelasId: string, muridId: string) =>
+    request.post(`/api/kelas/${kelasId}/murid`, {
+      headers,
+      data: { muridId },
+    });
+  expect((await tempatkan(kelasUtara, diUtara)).status()).toBe(201);
+  expect((await tempatkan(kelasPusat, diPusat)).status()).toBe(201);
+
+  const daftar = async (kueri: string) => {
+    const response = await request.get(
+      `/api/murid?cari=${encodeURIComponent(SARING)}${kueri}`,
+      { headers },
+    );
+    expect(response.status(), kueri).toBe(200);
+    return response.json();
+  };
+
+  // Tanpa penyaring cabang/kelas, ketiga murid tes ini ikut terbaca.
+  expect((await daftar("")).meta.total).toBe(3);
+
+  const utara = await daftar(`&cabang=${encodeURIComponent(cabangUtara)}`);
+  expect(utara.data.map((murid: { id: string }) => murid.id)).toEqual([
+    diUtara,
+  ]);
+  expect(utara.meta.total).toBe(1);
+
+  // Nama cabang tidak peka besar/kecil huruf dan spasi tepi, dan cabang yang
+  // tidak dipakai siapa pun menghasilkan daftar kosong (bukan seluruh murid).
+  const utaraBesar = await daftar(
+    `&cabang=${encodeURIComponent(` ${cabangUtara.toUpperCase()} `)}`,
+  );
+  expect(utaraBesar.meta.total).toBe(1);
+  expect(
+    (await daftar(`&cabang=${encodeURIComponent(`${SARING} Selatan`)}`)).data,
+  ).toEqual([]);
+  // Nilai kosong berarti tanpa penyaringan.
+  expect((await daftar("&cabang=")).meta.total).toBe(3);
+
+  const kelas = await daftar(`&kelasId=${kelasPusat}`);
+  expect(kelas.data.map((murid: { id: string }) => murid.id)).toEqual([
+    diPusat,
+  ]);
+  expect(kelas.meta.total).toBe(1);
+
+  // Murid tanpa kelas tidak muncul di penyaring kelas mana pun.
+  expect(
+    (await daftar(`&kelasId=${kelasUtara}`)).data.some(
+      (murid: { id: string }) => murid.id === tanpaKelas,
+    ),
+  ).toBe(false);
+
+  // Setelah keluar dari kelas, muridnya tidak lagi cocok dengan cabang itu.
+  const keluar = await request.delete(
+    `/api/kelas/${kelasUtara}/murid/${diUtara}`,
+    { headers },
+  );
+  expect(keluar.status()).toBe(204);
+  expect(
+    (await daftar(`&cabang=${encodeURIComponent(cabangUtara)}`)).meta.total,
+  ).toBe(0);
+
+  // Penyaring cabang/kelas bisa digabung dengan penyaring status.
+  await request.patch(`/api/murid/${diPusat}`, {
+    headers,
+    data: { statusAktif: false },
+  });
+  expect((await daftar("&status=aktif")).meta.total).toBe(2);
+  expect((await daftar("&status=nonaktif")).meta.total).toBe(1);
+
+  // Id kelas yang bukan UUID ditolak, bukan dianggap tanpa penyaringan.
+  const kelasTidakSah = await request.get(`/api/murid?kelasId=bukan-uuid`, {
+    headers,
+  });
+  expect(kelasTidakSah.status()).toBe(422);
+  expect((await kelasTidakSah.json()).error.code).toBe("VALIDATION_ERROR");
+});
+
 test("ubah murid tanpa Origin ditolak", async ({ request }) => {
   await masukApi(request);
   const murid = await buatMurid(request, `${PENANDA} Origin`);

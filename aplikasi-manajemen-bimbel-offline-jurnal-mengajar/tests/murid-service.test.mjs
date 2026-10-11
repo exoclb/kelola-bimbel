@@ -44,26 +44,26 @@ function isian(nama, tambahan = {}) {
  * Siapkan satu kelas beserta cabangnya (kelas wajib menunjuk cabang yang ada)
  * dan kembalikan idnya.
  */
-async function siapkanKelas(namaKelas) {
+async function siapkanKelas(namaKelas, namaCabang = CABANG) {
   await pool.query(
     `INSERT INTO cabang (nama, alamat, kontak, status_aktif)
      VALUES ($1, 'Jl. Uji No. 1', '0800-1', true)
      ON CONFLICT (lower(btrim(nama))) DO NOTHING`,
-    [CABANG],
+    [namaCabang],
   );
   const { rows } = await pool.query(
     "INSERT INTO classes (nama_kelas, cabang) VALUES ($1, $2) RETURNING id",
-    [namaKelas, CABANG],
+    [namaKelas, namaCabang],
   );
   return rows[0].id;
 }
 
 /** Tempatkan murid di kelas lewat basis data, seperti penempatan yang tersimpan. */
-async function tempatkan(muridId, kelasId) {
+async function tempatkan(muridId, kelasId, status = "aktif") {
   await pool.query(
     `INSERT INTO student_enrollments (student_id, class_id, tanggal_mulai, status)
-     VALUES ($1, $2, '2026-01-05', 'aktif')`,
-    [muridId, kelasId],
+     VALUES ($1, $2, '2026-01-05', $3)`,
+    [muridId, kelasId, status],
   );
 }
 
@@ -269,5 +269,75 @@ test("listMurid dengan tanpaKelas menyembunyikan murid yang sudah di kelas", asy
   assert.equal(
     kelasLain.data.some((baris) => baris.id === dibuat.id),
     true,
+  );
+});
+
+/**
+ * Penyaring cabang dan kelas mengikuti layar: yang dihitung hanya penempatan
+ * yang masih `aktif`. Murid yang sudah keluar dari kelasnya tidak lagi muncul
+ * saat menyaring kelas itu — kalau tidak, saringan cabang/kelas akan berbeda
+ * dari yang terlihat di kartu muridnya.
+ */
+test("listMurid menyaring cabang dan kelas dari penempatan aktif", async () => {
+  await bersihkan();
+  const cabangUtara = `${PENANDA} Utara`;
+  const kelasUtara = await siapkanKelas(`${PENANDA} Kelas Utara`, cabangUtara);
+  const kelasPusat = await siapkanKelas(`${PENANDA} Kelas Pusat`, CABANG);
+
+  const diUtara = await createMurid(isian(`${PENANDA} Di Utara`));
+  const diPusat = await createMurid(isian(`${PENANDA} Di Pusat`));
+  const tanpaKelas = await createMurid(isian(`${PENANDA} Tanpa Kelas`));
+  const pernahUtara = await createMurid(isian(`${PENANDA} Pernah Utara`));
+  await tempatkan(diUtara.id, kelasUtara);
+  await tempatkan(diPusat.id, kelasPusat);
+  await tempatkan(pernahUtara.id, kelasUtara, "selesai");
+  // Satu murid boleh di dua cabang sekaligus.
+  await tempatkan(diPusat.id, kelasUtara);
+
+  const cari = (saringan) =>
+    listMurid({ limit: 50, offset: 0, cari: PENANDA, ...saringan });
+
+  const utara = await cari({ cabang: cabangUtara });
+  assert.deepEqual(
+    utara.data.map((baris) => baris.nama),
+    [`${PENANDA} Di Pusat`, `${PENANDA} Di Utara`],
+  );
+  assert.equal(utara.meta.total, 2);
+
+  // Nama cabang dicocokkan tanpa peduli besar/kecil huruf dan spasi tepi.
+  assert.equal(
+    (await cari({ cabang: `  ${cabangUtara.toUpperCase()}  ` })).meta.total,
+    2,
+  );
+  // Cabang yang tidak dipakai siapa pun menghasilkan daftar kosong, bukan
+  // seluruh murid.
+  assert.deepEqual((await cari({ cabang: `${PENANDA} Selatan` })).data, []);
+  // Nilai kosong berarti tanpa penyaringan.
+  assert.equal((await cari({ cabang: "" })).meta.total, 4);
+
+  const kelas = await cari({ kelasId: kelasUtara });
+  assert.deepEqual(
+    kelas.data.map((baris) => baris.nama),
+    [`${PENANDA} Di Pusat`, `${PENANDA} Di Utara`],
+  );
+  assert.equal(
+    (await cari({ kelasId: kelasPusat })).data.some(
+      (baris) => baris.id === tanpaKelas.id,
+    ),
+    false,
+  );
+  assert.equal((await cari({ kelasId: kelasPusat })).meta.total, 1);
+
+  // Penyaring cabang/kelas bisa digabung dengan status murid.
+  await ubahMurid(diUtara.id, { statusAktif: false });
+  const utaraAktif = await cari({ cabang: cabangUtara, status: "aktif" });
+  assert.deepEqual(
+    utaraAktif.data.map((baris) => baris.nama),
+    [`${PENANDA} Di Pusat`],
+  );
+  assert.equal(utaraAktif.meta.total, 1);
+  assert.equal(
+    (await cari({ cabang: cabangUtara, status: "nonaktif" })).meta.total,
+    1,
   );
 });

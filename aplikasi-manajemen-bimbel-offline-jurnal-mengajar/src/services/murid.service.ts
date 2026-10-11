@@ -1,7 +1,8 @@
 import "server-only";
-import { and, asc, eq, ilike, notExists, or, sql } from "drizzle-orm";
+import { and, asc, eq, exists, ilike, notExists, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { studentEnrollments, students } from "@/db/schema";
+import { classes, studentEnrollments, students } from "@/db/schema";
+import { kunciCabang } from "@/lib/penempatan-kelas";
 import type {
   CreateMuridInput,
   ListMuridFilter,
@@ -46,9 +47,27 @@ export async function listMurid({
   cari,
   status,
   tanpaKelas,
+  cabang,
+  kelasId,
 }: ListMuridFilter) {
   // Tanda % dan _ pada kata kunci dianggap huruf biasa, bukan pola pencarian.
   const kataKunci = cari?.replaceAll(/[%_\\]/g, "\\$&");
+  // Penempatan yang masih berjalan milik murid ini; dipakai penyaring cabang
+  // dan kelas. Kelas yang penempatannya sudah `selesai` tidak dihitung, sama
+  // seperti penyaring di layar (`src/lib/murid.ts`).
+  const punyaKelasAktif = (tambahan: ReturnType<typeof eq>) =>
+    exists(
+      db
+        .select({ satu: sql`1` })
+        .from(studentEnrollments)
+        .where(
+          and(
+            eq(studentEnrollments.studentId, students.id),
+            eq(studentEnrollments.status, "aktif"),
+            tambahan,
+          ),
+        ),
+    );
   const syarat = and(
     kataKunci
       ? or(
@@ -77,6 +96,30 @@ export async function listMurid({
               ),
             ),
         )
+      : undefined,
+    // Penyaring cabang: muridnya harus sedang belajar di salah satu kelas
+    // cabang itu. Nama cabang dicocokkan tanpa peduli besar/kecil huruf dan
+    // spasi tepi, sama seperti pencocokan cabang pada kelas.
+    cabang
+      ? exists(
+          db
+            .select({ satu: sql`1` })
+            .from(studentEnrollments)
+            .innerJoin(classes, eq(studentEnrollments.classId, classes.id))
+            .where(
+              and(
+                eq(studentEnrollments.studentId, students.id),
+                eq(studentEnrollments.status, "aktif"),
+                sql`lower(btrim(${classes.cabang})) = ${kunciCabang(cabang)}`,
+              ),
+            ),
+        )
+      : undefined,
+    // Penyaring kelas: muridnya harus sedang aktif di kelas itu. Murid yang
+    // belum punya kelas sama sekali ikut tersaring, jadi pemilih kelas tidak
+    // pernah menampilkan anak yang tidak belajar di sana.
+    kelasId
+      ? punyaKelasAktif(eq(studentEnrollments.classId, kelasId))
       : undefined,
   );
 

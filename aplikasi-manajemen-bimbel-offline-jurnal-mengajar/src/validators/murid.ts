@@ -30,6 +30,11 @@ export const listMuridSchema = z
     // Id kelas yang muridnya tidak perlu ditampilkan lagi, karena sudah aktif
     // di kelas itu.
     tanpaKelas: z.string().uuid().optional(),
+    // Nama cabang yang muridnya harus sedang punya kelas aktif di sana. Nilai
+    // kosong berarti tanpa penyaringan, sama seperti `cari`.
+    cabang: z.string().trim().max(80).optional(),
+    // Id kelas yang sedang diikuti muridnya.
+    kelasId: z.string().uuid().optional(),
   })
   .strict();
 
@@ -45,6 +50,8 @@ export type ListMuridFilter = {
   cari?: string;
   status?: ListMuridInput["status"];
   tanpaKelas?: string;
+  cabang?: string;
+  kelasId?: string;
 };
 
 export const createMuridSchema = z
