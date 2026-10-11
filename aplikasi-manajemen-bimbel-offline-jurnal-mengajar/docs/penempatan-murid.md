@@ -77,7 +77,12 @@ CREATE UNIQUE INDEX "student_enrollments_student_kelas_aktif_idx"
 Tidak ada baris yang diubah, jadi riwayat penempatan lama tetap apa adanya.
 Migrasi berjalan lewat target `migrator` image produksi sebelum aplikasi start
 (lihat `docs/deployment.md`); uji perilakunya ada di
-`e2e/penempatan.spec.ts` (aturan API), `e2e/panel-penempatan.spec.ts` (panel
+`e2e/penempatan.spec.ts` (alur lengkap lewat API: multi-kelas, penolakan
+penempatan dobel, keluar dari satu kelas saja, dan kembali setelah keluar),
+`e2e/api-penempatan.spec.ts` (kontrak HTTP endpointnya: 401 tanpa sesi, 403
+untuk permintaan tanpa origin, 404/422 untuk id dan isian yang tidak sah,
+pencatatan `tanggalMulai`, serta penjaga duplikatnya diuji dengan dua permintaan
+bersamaan), `e2e/panel-penempatan.spec.ts` (panel
 "Murid di kelas ini" di `/app/kelas`, yang masih data tiruan), dan
 `e2e/murid-daftar.spec.ts` (penyaring cabang/kelas halaman daftar murid, yang
 juga masih data tiruan), `e2e/murid-penempatan.spec.ts` (penolakan penempatan di
