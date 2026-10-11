@@ -1,0 +1,2 @@
+ALTER TABLE "salary_recaps" DROP CONSTRAINT "salary_recaps_tanggal_dibayar_konsisten";--> statement-breakpoint
+ALTER TABLE "salary_recaps" ADD CONSTRAINT "salary_recaps_tanggal_dibayar_konsisten" CHECK (("salary_recaps"."status_pembayaran" = 'dibayar') = ("salary_recaps"."tanggal_dibayar" is not null));

@@ -77,10 +77,14 @@ export const salaryRecaps = pgTable(
       "salary_recaps_angka_tidak_negatif",
       sql`${table.totalJam} >= 0 and ${table.tarifPerJam} >= 0 and ${table.totalGaji} >= 0`,
     ),
-    // Status "dibayar" wajib punya tanggal bayarnya.
+    // Status dan tanggal bayarnya harus konsisten dua arah, sama seperti
+    // `student_invoices_tanggal_bayar_konsisten`: "dibayar" wajib punya tanggal,
+    // dan "belum_dibayar" tidak boleh menyimpan tanggal. Satu arah saja
+    // membiarkan catatan honor yang belum dibayar tampil bertanggal bayar di
+    // riwayat gaji.
     check(
       "salary_recaps_tanggal_dibayar_konsisten",
-      sql`${table.statusPembayaran} = 'belum_dibayar' or ${table.tanggalDibayar} is not null`,
+      sql`(${table.statusPembayaran} = 'dibayar') = (${table.tanggalDibayar} is not null)`,
     ),
   ],
 );

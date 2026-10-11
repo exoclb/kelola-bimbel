@@ -742,9 +742,10 @@ test("tarif honor satu per tanggal dan tidak boleh negatif", async () => {
 
 /**
  * Invarian skema honor terhitung (`drizzle/0007_rekap_gaji.sql` dan
- * `0022_honor_terhitung_invarian.sql`): satu catatan per guru per bulan,
- * periodenya berbentuk `YYYY-MM`, angkanya tidak negatif, dan status "dibayar"
- * selalu punya tanggal bayar.
+ * `0022_honor_terhitung_invarian.sql` dan `0037_rekap_honor_tanggal_dibayar.sql`):
+ * satu catatan per guru per bulan, periodenya berbentuk `YYYY-MM`, angkanya
+ * tidak negatif, dan status pembayarannya sejalan dua arah dengan tanggal
+ * bayarnya — sama seperti tagihan SPP.
  */
 test("catatan honor terhitung dijaga periode, angka, dan tanggal bayarnya", async () => {
   const { guru } = await siapkanJurnal();
@@ -778,6 +779,15 @@ test("catatan honor terhitung dijaga periode, angka, dan tanggal bayarnya", asyn
     [guru, "2099-03", 10, 50000, 500000, "dibayar", null],
   );
   assert.equal(dibayarTanpaTanggal.code, "23514");
+
+  // Arah sebaliknya juga ditolak: catatan yang belum dibayar tidak boleh
+  // menyimpan tanggal, karena riwayat gaji akan menampilkannya seolah sudah
+  // dibayarkan pada tanggal itu.
+  const belumDibayarDenganTanggal = await ditolak(
+    "INSERT INTO salary_recaps (guru_id, periode_bulan, total_jam, tarif_per_jam, total_gaji, status_pembayaran, tanggal_dibayar) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+    [guru, "2099-05", 10, 50000, 500000, "belum_dibayar", "2099-05-01"],
+  );
+  assert.equal(belumDibayarDenganTanggal.code, "23514");
 
   const dibayarDenganTanggal = await tulis("2099-04", "dibayar", "2099-05-01");
   assert.equal(dibayarDenganTanggal.rowCount, 1);

@@ -260,6 +260,13 @@
       "when": 1791724494655,
       "tag": "0036_tarif_honor_skema_terisi",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1791724706659,
+      "tag": "0037_rekap_honor_tanggal_dibayar",
+      "breakpoints": true
     }
   ]
 }
