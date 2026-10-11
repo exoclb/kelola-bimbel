@@ -15,6 +15,12 @@ import { Pool } from "pg";
 // penjaganya indeks unik `expense_categories_nama_unik_idx`
 // (`drizzle/0038_kategori_pengeluaran_nama_unik.sql`).
 //
+// Hal kedua yang diuji di sini adalah kunci kiriman pengeluaran
+// (`expenses.kunci`, `drizzle/0039_pengeluaran_kunci_idempoten.sql`): satu
+// kunci hanya boleh menghasilkan satu baris, dan "tanpa kunci" (NULL) tetap
+// boleh berkali-kali — di situlah idempotensi pencatatan pengeluaran dijaga,
+// bukan oleh pemeriksaan di aplikasi.
+//
 // Semua baris uji memakai nama dan tanggal bertanda "uji skema" pada tahun 2097
 // supaya tidak bertabrakan dengan data sungguhan maupun berkas uji lain, dan
 // dibersihkan sebelum maupun sesudah tiap tes.
@@ -153,7 +159,8 @@ test("tabel pengeluaran memuat kolom, indeks, dan batasan yang dipakai rekap", a
   await bersihkan();
 
   const { rows: kolom } = await pool.query(
-    `SELECT column_name, data_type, is_nullable, numeric_precision, numeric_scale
+    `SELECT column_name, data_type, is_nullable, numeric_precision, numeric_scale,
+            character_maximum_length
        FROM information_schema.columns
       WHERE table_schema = 'public' AND table_name = 'expenses'
       ORDER BY column_name`,
@@ -165,6 +172,7 @@ test("tabel pengeluaran memuat kolom, indeks, dan batasan yang dipakai rekap", a
       "created_at",
       "id",
       "kategori_id",
+      "kunci",
       "nominal",
       "tanggal",
       "updated_at",
@@ -186,6 +194,12 @@ test("tabel pengeluaran memuat kolom, indeks, dan batasan yang dipakai rekap", a
   // Catatan boleh kosong (dikembalikan sebagai teks kosong oleh layanan).
   assert.equal(perKolom.catatan.is_nullable, "YES");
   assert.ok(perKolom.kategori_id, "kolom kategori_id ada");
+  // Kunci kiriman opsional (pengeluaran tanpa kunci tetap boleh dicatat),
+  // panjangnya mengikuti skema validasi. `character_maximum_length` masih
+  // dilaporkan information_schema untuk kolom varchar.
+  assert.equal(perKolom.kunci.data_type, "character varying");
+  assert.equal(perKolom.kunci.character_maximum_length, 160);
+  assert.equal(perKolom.kunci.is_nullable, "YES");
 
   const { rows: batasan } = await pool.query(
     "SELECT conname FROM pg_constraint WHERE connamespace = 'public'::regnamespace",
@@ -194,19 +208,30 @@ test("tabel pengeluaran memuat kolom, indeks, dan batasan yang dipakai rekap", a
   for (const wajib of [
     "expenses_nominal_tidak_negatif",
     "expenses_tanggal_masuk_akal",
+    "expenses_kunci_terisi",
     "expenses_kategori_id_expense_categories_id_fk",
   ])
     assert.ok(namaBatasan.has(wajib), `batasan ${wajib} ada`);
 
   // Daftar dan rekap membaca urut tanggal dan menyaring per kategori, jadi
-  // kedua indeks itu bagian dari kontrak tabelnya.
+  // kedua indeks itu bagian dari kontrak tabelnya. Indeks kunci kiriman adalah
+  // penjaga idempotensi, jadi bentuknya (unik, di kolom `kunci`) ikut dikunci.
   const { rows: indeks } = await pool.query(
-    `SELECT indexname FROM pg_indexes
+    `SELECT indexname, indexdef FROM pg_indexes
       WHERE schemaname = 'public' AND tablename = 'expenses'`,
   );
   const namaIndeks = new Set(indeks.map((baris) => baris.indexname));
-  for (const wajib of ["expenses_tanggal_idx", "expenses_kategori_idx"])
+  for (const wajib of [
+    "expenses_tanggal_idx",
+    "expenses_kategori_idx",
+    "expenses_kunci_unik_idx",
+  ])
     assert.ok(namaIndeks.has(wajib), `indeks ${wajib} ada`);
+  const kunciIdx = indeks.find(
+    (baris) => baris.indexname === "expenses_kunci_unik_idx",
+  );
+  assert.match(kunciIdx.indexdef, /UNIQUE/);
+  assert.match(kunciIdx.indexdef, /\(kunci\)/);
 
   await bersihkan();
 });
@@ -266,6 +291,62 @@ test("baris pengeluaran salah ditolak basis data walau ditulis langsung", async 
     [kategoriId],
   );
   assert.equal(jumlah[0].jumlah, 2, "hanya baris yang sah yang tersimpan");
+
+  await bersihkan();
+});
+
+/**
+ * Kunci kiriman adalah penjaga idempotensi: satu kunci satu baris, dan kiriman
+ * berulang ditolak basis data (23505) supaya layanan bisa mengembalikan baris
+ * yang sudah ada alih-alih membuat pengeluaran kedua. Pengeluaran tanpa kunci
+ * (NULL) tetap boleh berapa pun — indeks unik mengabaikan nilai kosong, jadi
+ * pencatat lama tidak ikut terkunci.
+ */
+test("kunci kiriman hanya boleh menghasilkan satu pengeluaran", async () => {
+  await bersihkan();
+
+  const kategoriId = await tambahKategori(`${AWALAN} Kunci`);
+  const kunci = `uji-skema-${Date.now()}`;
+  await pool.query(
+    "INSERT INTO expenses (kategori_id, nominal, tanggal, kunci) VALUES ($1, $2, $3, $4)",
+    [kategoriId, 90000, "2097-04-01", kunci],
+  );
+
+  // Kiriman ulang dengan kunci yang sama tidak menambah baris kedua.
+  assert.ok(
+    await ditolak(
+      "INSERT INTO expenses (kategori_id, nominal, tanggal, kunci) VALUES ($1, $2, $3, $4)",
+      [kategoriId, 90000, "2097-04-01", kunci],
+      "23505",
+    ),
+    "kunci yang sama ditolak",
+  );
+
+  // Kunci kosong bukan "tanpa kunci": kunci `null` boleh berkali-kali,
+  // sedangkan teks kosong hanya akan membuat kiriman berbeda dianggap sama.
+  for (const kosong of ["", "   "]) {
+    assert.ok(
+      await ditolak(
+        "INSERT INTO expenses (kategori_id, nominal, tanggal, kunci) VALUES ($1, $2, $3, $4)",
+        [kategoriId, 90000, "2097-04-02", kosong],
+        "23514",
+      ),
+      `kunci "${kosong}" ditolak`,
+    );
+  }
+
+  for (const tanggal of ["2097-04-03", "2097-04-04"]) {
+    await pool.query(
+      "INSERT INTO expenses (kategori_id, nominal, tanggal) VALUES ($1, $2, $3)",
+      [kategoriId, 90000, tanggal],
+    );
+  }
+
+  const { rows } = await pool.query(
+    "SELECT count(*)::int AS jumlah FROM expenses WHERE kategori_id = $1",
+    [kategoriId],
+  );
+  assert.equal(rows[0].jumlah, 3, "baris tanpa kunci tetap boleh berulang");
 
   await bersihkan();
 });

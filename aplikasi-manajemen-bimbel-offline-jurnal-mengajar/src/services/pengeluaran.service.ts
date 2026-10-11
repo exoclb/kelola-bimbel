@@ -201,26 +201,86 @@ async function getPengeluaran(id: string): Promise<Pengeluaran | null> {
   return baris ?? null;
 }
 
-/** Mencatat satu pengeluaran baru. Kategorinya diperiksa pemanggil. */
+/**
+ * Pengeluaran lama yang dibuat dengan kunci kiriman itu, atau `null` kalau
+ * kuncinya belum pernah dipakai. Dipakai jalur idempotensi: kiriman ulang
+ * mengembalikan baris yang sudah ada, bukan membuat baris kedua.
+ */
+async function pengeluaranBerkunci(kunci: string): Promise<Pengeluaran | null> {
+  const [baris] = await ambilPengeluaran(eq(expenses.kunci, kunci));
+  return baris ?? null;
+}
+
+/** Isian yang dinormalisasi seperti yang disimpan tabel `expenses`. */
+type IsianTersimpan = {
+  kategoriId: string;
+  nominal: number;
+  tanggal: string;
+  catatan: string | null;
+};
+
+// Perbandingan isian dipakai saat kunci kiriman sudah terpakai: kiriman ulang
+// yang benar-benar sama dianggap percobaan ulang, isian yang berbeda dianggap
+// kunci yang salah pakai.
+function isianSama(lama: Pengeluaran, baru: IsianTersimpan) {
+  return (
+    lama.kategoriId === baru.kategoriId &&
+    lama.nominal === baru.nominal &&
+    lama.tanggal === baru.tanggal &&
+    lama.catatan === (baru.catatan ?? "")
+  );
+}
+
+/** Hasil pencatatan: `diulang` benar kalau barisnya sudah ada dari kiriman sebelumnya. */
+export type HasilBuatPengeluaran =
+  | { ok: true; pengeluaran: Pengeluaran; diulang: boolean }
+  | { ok: false; alasan: "kunci_dipakai_lain" };
+
+/**
+ * Mencatat satu pengeluaran baru. Kategorinya diperiksa pemanggil.
+ *
+ * Kalau `kunci` diisi, pencatatannya idempoten: kiriman dengan kunci yang sama
+ * tidak menambah baris kedua — yang dikembalikan baris yang sudah ada, dan
+ * `diulang` menandainya. Penjaganya indeks unik `expenses_kunci_unik_idx` di
+ * basis data (`onConflictDoNothing`), jadi dua permintaan yang berjalan
+ * bersamaan pun hanya menghasilkan satu baris. Kunci yang sudah dipakai untuk
+ * isian yang berbeda ditolak (409 di endpoint) supaya kiriman yang salah tidak
+ * diam-diam dianggap yang lama.
+ */
 export async function buatPengeluaran({
   kategoriId,
   nominal,
   tanggal,
   catatan,
-}: BuatPengeluaranInput): Promise<Pengeluaran> {
+  kunci,
+}: BuatPengeluaranInput): Promise<HasilBuatPengeluaran> {
+  const isian: IsianTersimpan = {
+    kategoriId,
+    nominal,
+    tanggal,
+    catatan: catatan?.trim() ? catatan.trim() : null,
+  };
+
   const [baris] = await db
     .insert(expenses)
-    .values({
-      kategoriId,
-      nominal,
-      tanggal,
-      catatan: catatan?.trim() ? catatan.trim() : null,
-    })
+    .values({ ...isian, kunci: kunci ?? null })
+    .onConflictDoNothing({ target: expenses.kunci })
     .returning({ id: expenses.id });
+
+  if (!baris) {
+    // Hanya mungkin terjadi kalau kuncinya ada: nilai `null` tidak pernah
+    // bentrok di indeks unik.
+    const lama = kunci ? await pengeluaranBerkunci(kunci) : null;
+    if (!lama)
+      throw new Error("Pengeluaran dengan kunci itu tidak ditemukan.");
+    return isianSama(lama, isian)
+      ? { ok: true, pengeluaran: lama, diulang: true }
+      : { ok: false, alasan: "kunci_dipakai_lain" };
+  }
 
   const dibuat = await getPengeluaran(baris.id);
   if (!dibuat) throw new Error("Pengeluaran yang baru dibuat tidak ditemukan.");
-  return dibuat;
+  return { ok: true, pengeluaran: dibuat, diulang: false };
 }
 
 /**

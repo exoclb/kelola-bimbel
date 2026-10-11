@@ -28,7 +28,10 @@ export function GET(request: Request) {
 }
 
 // Mencatat satu pengeluaran baru. Kategori yang tidak ada dijawab 422 supaya
-// pesannya jelas, bukan galat kunci asing dari basis data.
+// pesannya jelas, bukan galat kunci asing dari basis data. Badan boleh membawa
+// `kunci` (penanda kiriman): dengan kunci yang sama, kiriman ulang menjawab 200
+// berisi baris yang sudah ada — bukan 201 dan bukan baris kedua — sedangkan
+// kunci yang sudah dipakai untuk isian berbeda dijawab 409.
 export function POST(request: Request) {
   return withApiPermission(
     request,
@@ -43,8 +46,18 @@ export function POST(request: Request) {
           "Kategori pengeluaran itu tidak ditemukan.",
         );
 
-      const data = await buatPengeluaran(input);
-      return Response.json({ data }, { status: 201 });
+      const hasil = await buatPengeluaran(input);
+      if (!hasil.ok)
+        throw new ApiError(
+          409,
+          "KUNCI_SUDAH_DIPAKAI",
+          "Kunci kiriman itu sudah dipakai pengeluaran lain.",
+        );
+
+      return Response.json(
+        { data: hasil.pengeluaran },
+        { status: hasil.diulang ? 200 : 201 },
+      );
     },
   );
 }

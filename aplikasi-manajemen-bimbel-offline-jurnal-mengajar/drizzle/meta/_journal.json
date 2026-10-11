@@ -274,6 +274,13 @@
       "when": 1791727824095,
       "tag": "0038_kategori_pengeluaran_nama_unik",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1791728428080,
+      "tag": "0039_pengeluaran_kunci_idempoten",
+      "breakpoints": true
     }
   ]
 }

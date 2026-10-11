@@ -23,12 +23,22 @@ const kategoriId = z.string().uuid("Id kategori harus UUID yang sah.");
 // Catatan opsional; dibersihkan spasi tepinya sebelum disimpan.
 const catatan = z.string().trim().max(500, "Catatan maksimal 500 karakter.");
 
+// Kunci idempotensi opsional dari klien: satu kiriman yang diulang (tombol
+// tertekan dua kali, percobaan ulang sesudah jaringan putus) tidak menambah
+// pengeluaran kedua. Panjangnya mengikuti kolom `expenses.kunci`.
+const kunci = z
+  .string()
+  .trim()
+  .min(1, "Kunci kiriman tidak boleh kosong.")
+  .max(160, "Kunci kiriman maksimal 160 karakter.");
+
 export const buatPengeluaranSchema = z
   .object({
     kategoriId,
     nominal,
     tanggal: skemaTanggal,
     catatan: catatan.optional(),
+    kunci: kunci.optional(),
   })
   .strict();
 
