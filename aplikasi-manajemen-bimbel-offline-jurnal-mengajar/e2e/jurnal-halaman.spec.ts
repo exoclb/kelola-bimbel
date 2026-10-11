@@ -127,9 +127,11 @@ test("guru mengisi jurnal dari jadwalnya hari ini dan kirim ulang memperbarui ca
   const muridKelas = await buatMurid("Rani Halaman Jurnal");
   await buatMurid("Sari Luar Kelas");
 
-  // Guru yang mengisi jurnalnya lewat layar.
+  // Guru yang mengisi jurnalnya lewat layar. Peran guru bernama `user`; nama
+  // lain yang tidak dideklarasikan di src/lib/permissions.ts tidak memberi izin
+  // apa pun, sehingga rute staf menjawabnya 403.
   const emailGuru = await daftar(request, "Guru Halaman Jurnal");
-  await setRole(emailGuru, "guru");
+  await setRole(emailGuru, "user");
   const guruId = await idAkun(emailGuru);
 
   const kelas = await request.post("/api/kelas", {
