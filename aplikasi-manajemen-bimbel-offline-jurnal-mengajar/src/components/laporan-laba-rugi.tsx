@@ -27,7 +27,10 @@ import {
   rekapTagihanKosong,
   type RekapTagihanPeriode,
 } from "@/lib/tagihan";
-import { ringkasanLabaRugi } from "@/lib/laporan-bulanan";
+import {
+  lembarLabaRugi,
+  ringkasanLabaRugiPeriode,
+} from "@/lib/laporan-bulanan";
 
 const NAMA_BULAN = new Intl.DateTimeFormat("id-ID", { month: "long" });
 const bulanTampil = (bulan: number) =>
@@ -75,20 +78,6 @@ export function LaporanLabaRugi({
   tahunTersedia,
   profil,
 }: LaporanLabaRugiProps) {
-  const biayaHonorPeriode = useMemo(
-    () =>
-      new Map(rekapHonor.map((baris) => [baris.periode, baris.total] as const)),
-    [rekapHonor],
-  );
-
-  const totalOperasional = useMemo(
-    () =>
-      new Map(
-        rekapPengeluaran.map((baris) => [baris.periode, baris.total] as const),
-      ),
-    [rekapPengeluaran],
-  );
-
   const pemasukanPeriode = useMemo(
     () =>
       new Map(rekapPemasukan.map((baris) => [baris.periode, baris] as const)),
@@ -103,23 +92,16 @@ export function LaporanLabaRugi({
     [pemasukanPeriode, periode],
   );
 
-  const biayaHonor = useMemo(
-    () => biayaHonorPeriode.get(periode) ?? 0,
-    [biayaHonorPeriode, periode],
-  );
-
-  const biayaOperasional = useMemo(
-    () => totalOperasional.get(periode) ?? 0,
-    [totalOperasional, periode],
-  );
-
-  // Rumusnya sama dengan yang dipakai notifikasi laporan bulanan, jadi angka
-  // di layar dan di kotak notifikasi tidak bisa berbeda.
-  const { laba: labaBersih } = ringkasanLabaRugi({
-    pemasukan: rekapTagihan.nominalLunas,
-    biayaHonor,
-    biayaOperasional,
+  // Rumusnya sama dengan yang dipakai notifikasi laporan bulanan dan endpoint
+  // `GET /api/laba-rugi`: tiga rekap yang sama dirangkum satu fungsi, jadi angka
+  // di layar, di kotak notifikasi, dan di berkas unduhan tidak bisa berbeda.
+  const angka = ringkasanLabaRugiPeriode({
+    periode,
+    rekapPemasukan,
+    rekapHonor,
+    rekapPengeluaran,
   });
+  const { biayaHonor, biayaOperasional, laba: labaBersih } = angka;
   const untung = labaBersih >= 0;
 
   const baris = [
@@ -298,17 +280,12 @@ export function LaporanLabaRugi({
       </div>
 
       <div className="mt-4">
+        {/* Baris unduhannya dirakit fungsi yang sama dengan endpoint
+            `GET /api/laba-rugi/unduh`, jadi berkas dari tombol ini dan berkas
+            dari endpointnya berisi baris yang sama. */}
         <TombolUnduhLaporan
-          judul="Laporan Laba Rugi"
-          periode={periodeTampil}
+          {...lembarLabaRugi({ periodeTampil, angka })}
           profil={profil}
-          kolom={["Keterangan", "Jumlah (Rp)"]}
-          baris={[
-            ["Pemasukan SPP (lunas)", rekapTagihan.nominalLunas],
-            ["Biaya honor guru", -biayaHonor],
-            ["Pengeluaran operasional", -biayaOperasional],
-            [untung ? "Laba bersih" : "Rugi bersih", labaBersih],
-          ]}
         />
       </div>
 

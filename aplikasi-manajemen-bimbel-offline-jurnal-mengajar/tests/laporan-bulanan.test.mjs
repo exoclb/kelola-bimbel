@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  lembarLabaRugi,
   ringkasanLabaRugi,
   ringkasanLabaRugiPeriode,
 } from "../src/lib/laporan-bulanan.ts";
@@ -153,4 +154,67 @@ test("periode rugi menghasilkan laba negatif", () => {
   });
   assert.equal(angka.pengeluaran, 375_000);
   assert.equal(angka.laba, -175_000);
+});
+
+// ---------------------------------------------------------------------------
+// lembarLabaRugi — isi berkas unduhan laporan laba rugi
+// ---------------------------------------------------------------------------
+
+// Lembar unduhan dan halaman memakai fungsi ini bersama, jadi barisnya harus
+// sama persis: pemasukan apa adanya, biaya bertanda minus (supaya bisa
+// dijumlahkan di lembar kerja), dan baris terakhir hasilnya.
+test("lembar laba rugi menyusun baris dari angka periode", () => {
+  const angka = ringkasanLabaRugiPeriode({
+    periode: "2096-02",
+    rekapPemasukan,
+    rekapHonor,
+    rekapPengeluaran,
+  });
+  assert.deepEqual(lembarLabaRugi({ periodeTampil: "Februari 2096", angka }), {
+    judul: "Laporan Laba Rugi",
+    periode: "Februari 2096",
+    kolom: ["Keterangan", "Jumlah (Rp)"],
+    baris: [
+      ["Pemasukan SPP (lunas)", 1_500_000],
+      ["Biaya honor guru", -450_000],
+      ["Pengeluaran operasional", -125_000],
+      ["Laba bersih", 925_000],
+    ],
+  });
+});
+
+// Barisnya harus bisa dijumlahkan lagi: pemasukan dikurangi kedua baris biaya
+// menghasilkan baris terakhir, baik saat untung maupun saat rugi.
+test("baris lembar laba rugi bisa dijumlahkan kembali", () => {
+  const untung = lembarLabaRugi({
+    periodeTampil: "Februari 2096",
+    angka: {
+      pemasukan: 1_500_000,
+      biayaHonor: 450_000,
+      biayaOperasional: 125_000,
+      pengeluaran: 575_000,
+      laba: 925_000,
+    },
+  });
+  const [, ...biaya] = untung.baris;
+  const jumlah =
+    untung.baris[0][1] +
+    biaya.slice(0, -1).reduce((total, sel) => total + sel[1], 0);
+  assert.equal(jumlah, untung.baris[3][1]);
+
+  const rugi = lembarLabaRugi({
+    periodeTampil: "Mei 2096",
+    angka: {
+      pemasukan: 200_000,
+      biayaHonor: 350_000,
+      biayaOperasional: 25_000,
+      pengeluaran: 375_000,
+      laba: -175_000,
+    },
+  });
+  assert.deepEqual(rugi.baris[3], ["Rugi bersih", -175_000]);
+  assert.equal(
+    rugi.baris[0][1] + rugi.baris[1][1] + rugi.baris[2][1],
+    rugi.baris[3][1],
+  );
 });

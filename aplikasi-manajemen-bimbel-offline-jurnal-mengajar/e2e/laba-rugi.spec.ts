@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { setTimeout as delay } from "node:timers/promises";
 import {
   expect,
@@ -102,6 +103,17 @@ function labelPeriode(periode: string) {
   }).format(
     new Date(Number(periode.slice(0, 4)), Number(periode.slice(5, 7)) - 1, 1),
   );
+}
+
+/**
+ * "Oktober 2026" → "oktober-2026": bagian periode pada nama berkas, sama dengan
+ * `namaBerkasLembar` di aplikasi.
+ */
+function slugPeriode(periode: string) {
+  return labelPeriode(periode)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 /**
@@ -377,6 +389,164 @@ test("endpoint laba rugi periode memberi angka yang sama dengan halaman", async 
   await setRole(email, "user");
   await masuk(request, email);
   const guru = await request.get(`/api/laba-rugi?periode=${periode}`, {
+    headers,
+  });
+  expect(guru.status()).toBe(403);
+  expect((await guru.json()).error.code).toBe("FORBIDDEN");
+
+  // Dikembalikan ke pemilik supaya baris uji ini bisa dibersihkan.
+  await setRole(email, "owner");
+  await masuk(request, email);
+  const hapusPengeluaran = await request.delete(
+    `/api/pengeluaran/${(await pengeluaran.json()).data.id}`,
+    { headers },
+  );
+  expect(hapusPengeluaran.status()).toBe(200);
+  const hapusKategori = await request.delete(
+    `/api/pengeluaran/kategori/${kategoriId}`,
+    { headers },
+  );
+  expect(hapusKategori.status()).toBe(200);
+});
+
+/**
+ * Endpoint unduhan laporan laba rugi: berkasnya sama persis dengan yang keluar
+ * dari tombol unduh di halaman, dan namanya memakai penamaan berkas laporan
+ * yang seragam. Satu bulan tetap dipakai supaya angkanya bisa diperiksa tepat.
+ */
+test("laporan laba rugi bisa diunduh dari endpoint dan sama dengan tombol halaman", async ({
+  page,
+  request,
+}) => {
+  const periode = "2099-08";
+  const pemasukan = 720000;
+  const operasional = 84000;
+  const laba = pemasukan - operasional;
+  const namaBerkas = `laporan-laba-rugi-${slugPeriode(periode)}.xls`;
+
+  // Tanpa sesi laporan keuangan tidak boleh terunduh.
+  const tamu = await request.get(`/api/laba-rugi/unduh?periode=${periode}`, {
+    headers,
+  });
+  expect(tamu.status()).toBe(401);
+  expect((await tamu.json()).error.code).toBe("UNAUTHORIZED");
+
+  const email = await daftar(request, "Owner Unduh Laba Rugi");
+  await setRole(email, "owner");
+  await masuk(request, email);
+
+  const murid = await request.post("/api/murid", {
+    headers,
+    data: { nama: "Murid Unduh Laba Rugi", tanggalLahir: "2013-08-08" },
+  });
+  expect(murid.status()).toBe(201);
+  const muridId = (await murid.json()).data.id as string;
+
+  const terbit = await request.post("/api/tagihan", {
+    headers,
+    data: { periode, nominal: pemasukan, muridIds: [muridId] },
+  });
+  expect(terbit.status()).toBe(201);
+  const daftarTagihan = await request.get(`/api/tagihan?periode=${periode}`, {
+    headers,
+  });
+  const tagihan = (await daftarTagihan.json()).data[0] as { id: string };
+  const pelunasan = await request.patch(`/api/tagihan/${tagihan.id}`, {
+    headers,
+    data: { status: "lunas", tanggalBayar: `${periode}-10` },
+  });
+  expect(pelunasan.status()).toBe(200);
+
+  const kategori = await request.post("/api/pengeluaran/kategori", {
+    headers,
+    data: { nama: `Operasional Unduh Laba Rugi ${randomUUID().slice(0, 6)}` },
+  });
+  expect(kategori.status()).toBe(201);
+  const kategoriId = (await kategori.json()).data.id as string;
+  const pengeluaran = await request.post("/api/pengeluaran", {
+    headers,
+    data: {
+      kategoriId,
+      nominal: operasional,
+      tanggal: `${periode}-14`,
+      catatan: "Uji unduhan laba rugi",
+    },
+  });
+  expect(pengeluaran.status()).toBe(201);
+
+  // Berkasnya diantar sebagai lampiran dengan nama yang seragam, jadi
+  // menyimpannya di perangkat tidak menimpa laporan bulan lain.
+  const berkas = await request.get(`/api/laba-rugi/unduh?periode=${periode}`, {
+    headers,
+  });
+  expect(berkas.status()).toBe(200);
+  expect(berkas.headers()["content-type"]).toContain(
+    "application/vnd.ms-excel",
+  );
+  expect(berkas.headers()["content-disposition"]).toBe(
+    `attachment; filename="${namaBerkas}"`,
+  );
+
+  const isiEndpoint = await berkas.text();
+  // Kop bimbel, judul, dan periode laporannya ikut di berkas.
+  expect(isiEndpoint).toContain(`Laporan Laba Rugi — ${labelPeriode(periode)}`);
+  // Angkanya mentah supaya bisa dijumlahkan lagi di aplikasi lembar kerja:
+  // baris biaya bertanda minus dan baris akhirnya hasil pengurangannya.
+  expect(isiEndpoint).toContain(
+    "<td>Pemasukan SPP (lunas)</td><td>720000</td>",
+  );
+  // Biaya nol ditulis "0", bukan "-0" dari angka nol yang dinegatifkan.
+  expect(isiEndpoint).toContain("<td>Biaya honor guru</td><td>0</td>");
+  expect(isiEndpoint).toContain(
+    `<td>Pengeluaran operasional</td><td>-${operasional}</td>`,
+  );
+  expect(isiEndpoint).toContain(`<td>Laba bersih</td><td>${laba}</td>`);
+
+  // Tanpa `?periode`, berkasnya laporan bulan berjalan.
+  const bulanIni = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
+  const bawaan = await request.get("/api/laba-rugi/unduh", { headers });
+  expect(bawaan.status()).toBe(200);
+  expect(bawaan.headers()["content-disposition"]).toBe(
+    `attachment; filename="laporan-laba-rugi-${slugPeriode(bulanIni)}.xls"`,
+  );
+
+  // Alamat yang tidak sah ditolak 422 dengan kontrak yang sama seperti endpoint
+  // angkanya, termasuk pemilih `?bulan=&tahun=` milik halaman.
+  for (const alamat of [
+    `/api/laba-rugi/unduh?periode=`,
+    `/api/laba-rugi/unduh?periode=2099-13`,
+    `/api/laba-rugi/unduh?periode=2099-4`,
+    `/api/laba-rugi/unduh?periode=${periode}&bulan=8`,
+  ]) {
+    const ditolak = await request.get(alamat, { headers });
+    expect(ditolak.status(), alamat).toBe(422);
+    expect((await ditolak.json()).error.code, alamat).toBe("VALIDATION_ERROR");
+  }
+
+  // Tombol di halaman dirakit dari fungsi baris yang sama dengan endpoint,
+  // jadi berkas yang disimpan pengguna berisi baris yang sama persis dengan
+  // jawaban endpoint itu.
+  await page.goto("/sign-in");
+  await page.getByLabel("Email", { exact: true }).fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(sandi);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.waitForURL((url) => !url.pathname.startsWith("/sign-in"));
+  await page.goto(`/app/laba-rugi?periode=${periode}`);
+  await expect(
+    page.getByText(`Rincian ${labelPeriode(periode)}`, { exact: true }),
+  ).toBeVisible();
+
+  const [unduhan] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("button", { name: "Unduh Excel", exact: true }).click(),
+  ]);
+  expect(unduhan.suggestedFilename()).toBe(namaBerkas);
+  expect(await readFile((await unduhan.path())!, "utf8")).toBe(isiEndpoint);
+
+  // Guru tidak boleh mengunduh laporan keuangan bimbel.
+  await setRole(email, "user");
+  await masuk(request, email);
+  const guru = await request.get(`/api/laba-rugi/unduh?periode=${periode}`, {
     headers,
   });
   expect(guru.status()).toBe(403);
