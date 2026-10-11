@@ -10,6 +10,7 @@ import {
   daftarNotifikasi,
   jumlahNotifikasi,
   jumlahNotifikasiPesan,
+  pesanNotifikasi,
   picuJurnal,
   pool,
   tempatkanMurid,
@@ -254,6 +255,59 @@ test("menyalakan kembali jenis jurnal_baru mengabari peristiwa berikutnya", asyn
     await jumlahNotifikasiPesan(pemilik.id, "jurnal_baru", kelasLanjut.nama),
     1,
     "jurnal berikutnya dikabari lagi",
+  );
+
+  await bersihkan();
+});
+
+/**
+ * Pesan "jurnal baru" dan batas peristiwanya. Kabarnya menyebut kelas, nama
+ * guru, dan durasi sesinya — angka yang sama dengan yang dihitung rekap gaji —
+ * dan hanya lahir saat jurnal pertama masuk: koreksi isi jurnal mengubah
+ * barisnya tanpa mengabari owner lagi, karena kalau tidak, owner akan
+ * dibanjiri kabar setiap kali guru memperbaiki satu salah tulis.
+ */
+test("koreksi jurnal mengubah isinya tanpa mengabari ulang", async () => {
+  await bersihkan();
+  const pemilik = await buatPemilik("Pemilik Pesan Jurnal");
+  const guru = await buatGuru("Guru Pesan Jurnal");
+  const kelas = await buatKelas({
+    guruId: guru.id,
+    label: "Kelas Pesan Jurnal",
+    jamMulai: "07:15",
+    jamSelesai: "08:45",
+  });
+
+  const hasil = await picuJurnal({
+    guruId: guru.id,
+    jadwalId: kelas.jadwal.id,
+    materi: "Materi pesan",
+  });
+  assert.equal(hasil.status, "tersimpan");
+
+  const pesan = await pesanNotifikasi(pemilik.id, "jurnal_baru");
+  assert.deepEqual(
+    pesan.filter((baris) => baris.includes(kelas.nama)),
+    [`Jurnal ${kelas.nama} sudah dikirim ${guru.nama} · 1,5 jam`],
+  );
+
+  // Koreksi isi jurnal bukan peristiwa baru: barisnya berubah, kabarnya tidak.
+  const { koreksiJurnal } = await import("../src/services/jurnal.service.ts");
+  const koreksi = await koreksiJurnal(guru.id, hasil.jurnal.id, {
+    materi: "Materi setelah dikoreksi",
+  });
+  assert.equal(koreksi.status, "tersimpan");
+  assert.equal(koreksi.jurnal.materi, "Materi setelah dikoreksi");
+
+  const { rows } = await pool.query(
+    "SELECT materi FROM teaching_journals WHERE id = $1",
+    [hasil.jurnal.id],
+  );
+  assert.equal(rows[0].materi, "Materi setelah dikoreksi");
+  assert.equal(
+    await jumlahNotifikasiPesan(pemilik.id, "jurnal_baru", kelas.nama),
+    1,
+    "koreksi tidak mengabari owner lagi",
   );
 
   await bersihkan();
