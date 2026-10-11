@@ -291,6 +291,36 @@ test("buatNotifikasi mengikuti transaksi pemanggilnya", async () => {
 });
 
 /**
+ * Kunci peristiwa berlaku per akun, bukan global: akun yang sudah menerima
+ * sebuah peristiwa tidak menahan akun lain yang belum menerimanya — termasuk
+ * saat keduanya ditulis dalam satu perintah sisip. Kalau tidak begitu, satu
+ * baris lama milik akun lain akan menelan baris penerima baru, dan orang yang
+ * baru bergabung tidak pernah menerima kabar peristiwanya.
+ */
+test("kunci peristiwa yang sudah dipakai satu akun tidak menahan akun lain", async () => {
+  await bersihkan();
+  const guru = await buatGuru("Guru Kunci Sebagian");
+  const admin = await buatAdmin("Admin Kunci Sebagian");
+  const kunci = `rekap_honor:${guru.id}:2097-09`;
+  const pesan = "Rekap honor September 2097 sudah tersedia.";
+
+  // Guru sudah menerima peristiwa ini lewat panggilan sebelumnya.
+  assert.equal(await buatNotifikasi("rekap_honor", pesan, [guru.id], kunci), 1);
+
+  // Panggilan berikutnya menyertakan admin yang belum menerimanya: baris guru
+  // dilewati, baris admin tetap ditulis dalam perintah yang sama.
+  assert.equal(
+    await buatNotifikasi("rekap_honor", pesan, [guru.id, admin.id], kunci),
+    1,
+    "hanya penerima yang belum punya baris yang ditulis",
+  );
+  assert.equal(await jumlahNotifikasi(guru.id, "rekap_honor"), 1);
+  assert.equal(await jumlahNotifikasi(admin.id, "rekap_honor"), 1);
+
+  await bersihkan();
+});
+
+/**
  * Kunci peristiwa harus benar-benar berisi. Kunci kosong bukan "tanpa kunci"
  * (yang memang boleh dan selalu menulis baris baru): `''` adalah nilai biasa
  * bagi indeks unik, jadi seluruh peristiwa bertipe sama akan dianggap satu
