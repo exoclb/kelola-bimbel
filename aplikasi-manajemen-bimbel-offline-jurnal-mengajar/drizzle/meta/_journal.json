@@ -267,6 +267,13 @@
       "when": 1791724706659,
       "tag": "0037_rekap_honor_tanggal_dibayar",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1791727824095,
+      "tag": "0038_kategori_pengeluaran_nama_unik",
+      "breakpoints": true
     }
   ]
 }
