@@ -289,3 +289,123 @@ test("wali hanya melihat anak yang tertaut ke akunnya", async ({
     (await page.request.get(`/api/jejak-baca?anak=${muridB}`)).status(),
   ).toBe(404);
 });
+
+// Seluruh endpoint data portal yang membaca anak. Ditaruh di satu daftar
+// supaya endpoint portal baru wajib ikut diuji di sini, bukan lolos hanya
+// karena lupa ditambahkan.
+const ENDPOINT_PORTAL = [
+  "/api/portal/beranda",
+  "/api/portal/jadwal",
+  "/api/portal/perkembangan",
+  "/api/portal/tagihan",
+  "/api/portal/tagihan/bukti",
+  "/api/jejak-baca",
+] as const;
+
+// Lima endpoint yang memakai `anakPortalSchema`, jadi id anak yang bukan UUID
+// sudah ditolak validasi sebelum menyentuh layanan. `/api/jejak-baca` sengaja
+// tidak ikut: validatornya membiarkan `anak` sebagai teks bebas (id lama atau
+// asing diputuskan `wali_murid`, bukan validasi), dan sikap itu dikunci di
+// bagian 4.
+const ENDPOINT_PORTAL_UUID = ENDPOINT_PORTAL.filter(
+  (jalur) => jalur !== "/api/jejak-baca",
+);
+
+// Tiga penjaga yang harus dilewati sebelum data anak keluar, diurutkan dari
+// yang paling luar: izin `portal: read` (403), penautan `wali_murid` (404), dan
+// bentuk parameter `anak` (422). Pemeriksaannya sengaja dipisah dari tes
+// isolasi wali-vs-wali di atas karena di sini yang diuji bukan layarnya, tapi
+// urutan penjaganya: sebuah id anak yang benar pun tidak cukup kalau akunnya
+// bukan wali anak itu, dan izin `portal: read` saja tidak membuat akun
+// istimewa bisa membaca anak siapa pun.
+test("akses portal butuh izin dan penautan, bukan sekadar sesi", async ({
+  request,
+}) => {
+  // 1) Guru (role `user`) tidak punya izin `portal: read`. Izin diperiksa
+  // sebelum id anaknya dibaca, jadi seluruh endpoint dijawab 403 walau id
+  // anaknya asal-asalan — bukan 404 dan bukan data kosong.
+  const emailGuru = await signUp(
+    request,
+    "Guru Akses Portal",
+    "guru-akses-portal",
+  );
+  await setRole(emailGuru, "user");
+  await masuk(request, emailGuru);
+  for (const jalur of ENDPOINT_PORTAL) {
+    const jawaban = await request.get(`${jalur}?anak=${randomUUID()}`);
+    expect(jawaban.status(), `${jalur} harus 403 tanpa izin portal`).toBe(403);
+  }
+  const tandaiGuru = await request.post("/api/jejak-baca", {
+    headers,
+    data: { anak: randomUUID(), bagian: "kehadiran" },
+  });
+  expect(tandaiGuru.status()).toBe(403);
+
+  // 2) Owner punya izin `portal: read`, tapi anaknya tetap dibatasi penautan:
+  // anak yang tertaut ke akun wali lain tidak terbaca dari akun mana pun.
+  const emailOwner = await signUp(
+    request,
+    "Owner Akses Portal",
+    "owner-akses-portal",
+  );
+  await setRole(emailOwner, "owner");
+  await masuk(request, emailOwner);
+  const murid = await request.post("/api/murid", {
+    headers,
+    data: { nama: "Anak Akses Portal", tanggalLahir: "2015-05-05" },
+  });
+  expect(murid.status()).toBe(201);
+  const muridId = (await murid.json()).data.id as string;
+
+  const emailWali = await signUp(
+    request,
+    "Wali Akses Portal",
+    "wali-akses-portal",
+  );
+  await setRole(emailWali, "orang-tua");
+  const waliId = await idAkun(emailWali);
+  await masuk(request, emailOwner);
+  const tautan = await request.post(`/api/wali/${waliId}/murid`, {
+    headers,
+    data: { muridId },
+  });
+  expect(tautan.status()).toBe(201);
+
+  for (const jalur of ENDPOINT_PORTAL) {
+    const jawaban = await request.get(`${jalur}?anak=${muridId}`);
+    expect(
+      jawaban.status(),
+      `${jalur} harus 404 untuk akun yang bukan wali anak itu`,
+    ).toBe(404);
+  }
+
+  // 3) Wali yang benar-benar tertaut lolos ke anaknya sendiri.
+  await masuk(request, emailWali);
+  const beranda = await request.get(`/api/portal/beranda?anak=${muridId}`);
+  expect(beranda.status()).toBe(200);
+  expect((await beranda.json()).data.anak.muridId).toBe(muridId);
+  expect((await request.get(`/api/jejak-baca?anak=${muridId}`)).status()).toBe(
+    200,
+  );
+
+  // 4) Parameter `anak` yang hilang dijawab 422 di semua endpoint, dan yang
+  // bukan uuid dijawab 422 oleh lima endpoint ber-`anakPortalSchema`.
+  for (const jalur of ENDPOINT_PORTAL) {
+    expect((await request.get(jalur)).status(), `${jalur} tanpa anak`).toBe(
+      422,
+    );
+  }
+  for (const jalur of ENDPOINT_PORTAL_UUID) {
+    expect(
+      (await request.get(`${jalur}?anak=bukan-uuid`)).status(),
+      `${jalur} dengan id bukan uuid`,
+    ).toBe(422);
+  }
+
+  // `anak` di jejak baca memang teks bebas: id yang bukan uuid bukan kesalahan
+  // bentuk permintaan, tapi anak yang tidak tertaut — 404, sama seperti id
+  // asing yang berbentuk uuid.
+  expect((await request.get("/api/jejak-baca?anak=bukan-uuid")).status()).toBe(
+    404,
+  );
+});
