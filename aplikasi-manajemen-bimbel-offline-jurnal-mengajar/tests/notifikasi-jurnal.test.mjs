@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   aturPreferensi,
   bersihkan,
+  buatAdmin,
   buatGuru,
   buatKelas,
   buatMurid,
@@ -308,6 +309,43 @@ test("koreksi jurnal mengubah isinya tanpa mengabari ulang", async () => {
     await jumlahNotifikasiPesan(pemilik.id, "jurnal_baru", kelas.nama),
     1,
     "koreksi tidak mengabari owner lagi",
+  );
+
+  await bersihkan();
+});
+
+/**
+ * Penerima kabar jurnal adalah akun pemilik dan admin sekaligus: keduanya
+ * memantau operasional bimbel, dan aturan peran itu sendiri dikunci
+ * `tests/notifikasi-service.test.mjs` (`penerimaPemilik`). Yang dijaga di sini
+ * adalah pemicunya benar-benar memakai daftar itu untuk jenis ini — bukan
+ * kueri pemilik sendiri — karena gantinya daftar penerima tidak terlihat dari
+ * berkas tes layanan.
+ */
+test("admin juga dikabari jurnal baru seperti pemilik", async () => {
+  await bersihkan();
+  const pemilik = await buatPemilik("Pemilik Jurnal Admin");
+  const admin = await buatAdmin("Admin Jurnal Admin");
+  const guru = await buatGuru("Guru Jurnal Admin");
+  const kelas = await buatKelas({
+    guruId: guru.id,
+    label: "Kelas Jurnal Admin",
+  });
+
+  const hasil = await picuJurnal({
+    guruId: guru.id,
+    jadwalId: kelas.jadwal.id,
+  });
+  assert.equal(hasil.status, "tersimpan");
+
+  assert.equal(
+    await jumlahNotifikasiPesan(pemilik.id, "jurnal_baru", kelas.nama),
+    1,
+  );
+  assert.equal(
+    await jumlahNotifikasiPesan(admin.id, "jurnal_baru", kelas.nama),
+    1,
+    "admin ikut menerima kabar operasional jurnal",
   );
 
   await bersihkan();

@@ -219,3 +219,41 @@ test("menandai bayar ulang setelah dibatalkan tetap satu kabar", async () => {
 
   await bersihkan();
 });
+
+/**
+ * Arah sebaliknya dari preferensi honor: guru yang hanya mematikan
+ * `gaji_dibayar` tetap menerima kabar rekapnya, dan pembayarannya tetap
+ * tercatat — yang ditahan hanya pemberitahuannya, bukan pencatatan honornya.
+ * Penerima yang ditahan juga tidak dihitung sebagai baris yang dibuat.
+ */
+test("guru yang mematikan gaji_dibayar tidak dikirimi kabar pelunasan", async () => {
+  await bersihkan();
+  const mematikan = await buatGuru("Guru Tanpa Kabar Gaji");
+  const memakai = await buatGuru("Guru Dengan Kabar Gaji");
+  await aturPreferensi(mematikan.id, "gaji_dibayar", false);
+
+  const hasil = await picuRekapHonor({
+    guruId: mematikan.id,
+    periode: "2098-04",
+    dibayar: true,
+  });
+  await picuRekapHonor({
+    guruId: memakai.id,
+    periode: "2098-04",
+    dibayar: true,
+  });
+
+  assert.equal(hasil.status, "tersimpan");
+  assert.equal(
+    hasil.pembayaran.statusPembayaran,
+    "dibayar",
+    "pembayarannya tetap tercatat walau kabarnya ditahan",
+  );
+  assert.notEqual(hasil.pembayaran.tanggalDibayar, null);
+
+  assert.equal(await jumlahNotifikasi(mematikan.id, "gaji_dibayar"), 0);
+  assert.equal(await jumlahNotifikasi(mematikan.id, "rekap_honor"), 1);
+  assert.equal(await jumlahNotifikasi(memakai.id, "gaji_dibayar"), 1);
+
+  await bersihkan();
+});

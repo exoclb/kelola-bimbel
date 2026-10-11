@@ -99,7 +99,8 @@ export const KASUS_VERIFIKASI: KasusVerifikasi[] = [
     ],
     hasil:
       "Penanda baca hanya bekerja pada pemberitahuan milik akun yang sedang masuk.",
-    sumber: "PATCH /api/notifikasi · src/services/notifikasi.service.ts · tandaiNotifikasiDibaca",
+    sumber:
+      "PATCH /api/notifikasi · src/services/notifikasi.service.ts · tandaiNotifikasiDibaca",
   },
   {
     id: "aksi-berulang",
@@ -115,7 +116,8 @@ export const KASUS_VERIFIKASI: KasusVerifikasi[] = [
       "Tagihan ditandai lunas dua kali: tetap 1 pemberitahuan jenis tagihan_lunas.",
       "Koreksi jurnal yang benar-benar berubah tidak mengabari lagi; yang dikabarkan hanya jurnal pertama.",
     ],
-    hasil: "Hanya perubahan yang sungguh terjadi yang dikabarkan ke penerimanya.",
+    hasil:
+      "Hanya perubahan yang sungguh terjadi yang dikabarkan ke penerimanya.",
     sumber:
       "src/services/jurnal.service.ts · simpanJurnal · src/services/gaji.service.ts · tandaiPembayaranGaji · src/services/tagihan.service.ts · updateTagihan",
   },
@@ -185,6 +187,7 @@ export const PERISTIWA_UJI: HasilUjiPeristiwa[] = [
       "Dijaga pemeriksaan jurnal yang sudah ada, bukan kunci: kirim ulang jurnal yang sama tidak menambah pemberitahuan.",
     pemicu: "src/services/jurnal.service.ts · simpanJurnal",
     tes: [
+      "tests/notifikasi-jurnal.test.mjs · admin juga dikabari jurnal baru seperti pemilik",
       "e2e/notifikasi.spec.ts · jurnal baru hanya memberi tahu pemilik yang masih mengaktifkannya",
     ],
   },
@@ -214,6 +217,7 @@ export const PERISTIWA_UJI: HasilUjiPeristiwa[] = [
     pemicu: "src/services/gaji.service.ts · tandaiPembayaranGaji",
     tes: [
       "tests/notifikasi-gaji.test.mjs · tandai dibayar menambah notifikasi gaji sekali saja",
+      "tests/notifikasi-gaji.test.mjs · guru yang mematikan gaji_dibayar tidak dikirimi kabar pelunasan",
       "tests/notifikasi-anti-duplikat.test.mjs · rekap honor yang dipicu bersamaan mengabari sekali per jenis",
       "e2e/notifikasi.spec.ts · gaji dibayar memberi tahu gurunya sekali saja",
     ],
@@ -286,7 +290,7 @@ export const UJI_PREFERENSI: UjiPreferensi[] = [
       "Pemilik mematikan jenis ini, lalu gurunya tetap mengirim jurnal mengajar.",
     hasil:
       "Pemilik itu tidak dikirimi pemberitahuan walau jurnalnya tersimpan, sedangkan pemilik lain yang masih menyalakannya tetap diberi tahu.",
-    tes: "e2e/notifikasi.spec.ts · jurnal baru hanya memberi tahu pemilik yang masih mengaktifkannya",
+    tes: "tests/notifikasi-jurnal.test.mjs · mematikan jenis jurnal_baru menahan kabar tanpa menahan jurnalnya · e2e/notifikasi.spec.ts · jurnal baru hanya memberi tahu pemilik yang masih mengaktifkannya",
   },
   {
     id: "jurnal-baru-dinyalakan-kembali",
@@ -313,7 +317,7 @@ export const UJI_PREFERENSI: UjiPreferensi[] = [
       "Guru mematikan jenis ini, lalu rekornya ditandai sudah dibayar oleh pemilik.",
     hasil:
       "Guru itu tidak menerima pemberitahuannya, sementara guru lain yang tidak mengubah pengaturannya menerima tepat satu — walau pembayarannya ditandai dua kali.",
-    tes: "e2e/notifikasi.spec.ts · gaji dibayar memberi tahu gurunya sekali saja",
+    tes: "tests/notifikasi-gaji.test.mjs · guru yang mematikan gaji_dibayar tidak dikirimi kabar pelunasan · e2e/notifikasi.spec.ts · gaji dibayar memberi tahu gurunya sekali saja",
   },
   {
     id: "tagihan-terbit-tanpa-hubungan",
@@ -360,8 +364,7 @@ export const UJI_TANDAI_DIBACA: UjiTandaiDibaca[] = [
   {
     id: "satu-id",
     langkah: "ids: [<id milik sendiri>]",
-    hasil:
-      "1 baris berubah dan hitungan belum dibaca akun itu turun jadi 0.",
+    hasil: "1 baris berubah dan hitungan belum dibaca akun itu turun jadi 0.",
     tes: "tests/notifikasi-tandai-dibaca.test.mjs · tandaiNotifikasiDibaca mengubah status baris dan menurunkan hitungan belum dibaca · e2e/notifikasi.spec.ts · daftar dan tandai baca notifikasi terbatas pada akun sendiri",
   },
   {
@@ -374,8 +377,7 @@ export const UJI_TANDAI_DIBACA: UjiTandaiDibaca[] = [
   {
     id: "id-akun-lain",
     langkah: "ids: [<id akun lain>]",
-    hasil:
-      "0 baris berubah; pemberitahuan akun lain tetap utuh miliknya.",
+    hasil: "0 baris berubah; pemberitahuan akun lain tetap utuh miliknya.",
     tes: "tests/notifikasi-tandai-dibaca.test.mjs · penandaan baca tidak menyentuh baris akun lain · e2e/notifikasi.spec.ts · daftar dan tandai baca notifikasi terbatas pada akun sendiri · e2e/notifikasi.spec.ts · penandaan baca akun lain tidak mengubah notifikasi milik sendiri",
   },
   {
@@ -417,7 +419,5 @@ export function ringkasVerifikasi(
 
 /** Judul jenis notifikasi dari katalog, mis. `rekap_honor` → "Rekap honor guru". */
 export function judulJenisNotifikasi(jenis: JenisNotifikasi) {
-  return (
-    JENIS_NOTIFIKASI.find((item) => item.jenis === jenis)?.judul ?? jenis
-  );
+  return JENIS_NOTIFIKASI.find((item) => item.jenis === jenis)?.judul ?? jenis;
 }
