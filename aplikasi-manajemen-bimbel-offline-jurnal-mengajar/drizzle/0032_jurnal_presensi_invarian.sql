@@ -1,0 +1,4 @@
+ALTER TABLE "teaching_journals" ADD CONSTRAINT "teaching_journals_materi_terisi" CHECK (length(btrim("teaching_journals"."materi")) > 0);--> statement-breakpoint
+ALTER TABLE "teaching_journals" ADD CONSTRAINT "teaching_journals_jam_mengajar_positif" CHECK ("teaching_journals"."jam_mengajar" > 0);--> statement-breakpoint
+ALTER TABLE "teacher_attendances" ADD CONSTRAINT "teacher_attendances_pengganti_hanya_saat_digantikan" CHECK ("teacher_attendances"."guru_pengganti_id" is null or "teacher_attendances"."status" = 'digantikan');--> statement-breakpoint
+ALTER TABLE "teacher_attendances" ADD CONSTRAINT "teacher_attendances_catatan_terisi" CHECK ("teacher_attendances"."catatan" is null or length(btrim("teacher_attendances"."catatan")) > 0);

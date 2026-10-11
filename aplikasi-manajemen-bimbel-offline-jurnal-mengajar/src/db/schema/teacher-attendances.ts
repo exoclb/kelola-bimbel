@@ -1,4 +1,6 @@
+import { sql } from "drizzle-orm";
 import {
+  check,
   date,
   index,
   pgEnum,
@@ -62,5 +64,17 @@ export const teacherAttendances = pgTable(
     ),
     // Dipakai daftar presensi harian dan rekap per periode.
     index("teacher_attendances_tanggal_idx").on(table.tanggal),
+    // Guru pengganti hanya masuk akal untuk sesi yang memang digantikan.
+    // Arah sebaliknya tidak dikunci: akun pengganti yang dihapus membuat
+    // kolomnya jadi NULL sementara statusnya tetap `digantikan`.
+    check(
+      "teacher_attendances_pengganti_hanya_saat_digantikan",
+      sql`${table.guruPenggantiId} is null or ${table.status} = 'digantikan'`,
+    ),
+    // Catatan disimpan sebagai NULL kalau kosong, bukan teks berisi spasi.
+    check(
+      "teacher_attendances_catatan_terisi",
+      sql`${table.catatan} is null or length(btrim(${table.catatan})) > 0`,
+    ),
   ],
 );

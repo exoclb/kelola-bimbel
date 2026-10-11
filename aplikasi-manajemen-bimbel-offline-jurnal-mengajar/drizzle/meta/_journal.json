@@ -225,6 +225,13 @@
       "when": 1791583644546,
       "tag": "0031_notifikasi_kunci_idempoten",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1791708603321,
+      "tag": "0032_jurnal_presensi_invarian",
+      "breakpoints": true
     }
   ]
 }

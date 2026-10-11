@@ -1,4 +1,6 @@
+import { sql } from "drizzle-orm";
 import {
+  check,
   date,
   index,
   numeric,
@@ -67,6 +69,18 @@ export const teachingJournals = pgTable(
     index("teaching_journals_class_tanggal_idx").on(
       table.classId,
       table.tanggal.desc(),
+    ),
+    // Isian yang tidak bisa ditampilkan tidak boleh masuk: materi kosong
+    // membuat baris jurnal tak terbaca, dan jam mengajar nol/negatif membuat
+    // rekap gaji salah hitung tanpa jejak. Keduanya sudah dijaga validator;
+    // di sini dijaga ulang supaya penulisan langsung ke basis data pun aman.
+    check(
+      "teaching_journals_materi_terisi",
+      sql`length(btrim(${table.materi})) > 0`,
+    ),
+    check(
+      "teaching_journals_jam_mengajar_positif",
+      sql`${table.jamMengajar} > 0`,
     ),
   ],
 );

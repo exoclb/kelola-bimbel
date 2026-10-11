@@ -316,6 +316,77 @@ test("jam mengajar dan status jurnal dibatasi tipe kolomnya", async () => {
 });
 
 /**
+ * Invarian isi jurnal (`drizzle/0032_jurnal_presensi_invarian.sql`): materi
+ * kosong dan jam mengajar nol/negatif ditolak basis data, bukan hanya oleh
+ * validator. Keduanya merusak data yang sudah tersimpan — baris jurnal tanpa
+ * materi tidak bisa ditampilkan, dan jam mengajar tidak positif langsung
+ * membuat rekap gaji salah tanpa jejak.
+ */
+test("materi kosong dan jam mengajar tidak positif ditolak database", async () => {
+  const { jadwalA, guru, kelas } = await siapkanJurnal();
+  const tulis = `INSERT INTO teaching_journals (guru_id, class_id, schedule_id, tanggal, materi, jam_mengajar)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`;
+
+  try {
+    const materiKosong = await ditolak(tulis, [
+      guru,
+      kelas,
+      jadwalA,
+      "2026-10-12",
+      "   ",
+      1.5,
+    ]);
+    assert.equal(materiKosong.code, "23514");
+
+    const jamNol = await ditolak(tulis, [
+      guru,
+      kelas,
+      jadwalA,
+      "2026-10-12",
+      "Materi uji",
+      0,
+    ]);
+    assert.equal(jamNol.code, "23514");
+
+    // Isian yang benar tetap masuk, jadi kendalanya tidak menolak semuanya.
+    const sah = await dbJurnal.query(tulis, [
+      guru,
+      kelas,
+      jadwalA,
+      "2026-10-12",
+      "Materi uji",
+      1.5,
+    ]);
+    assert.ok(sah.rows[0].id);
+  } finally {
+    await dbJurnal.query(
+      "DELETE FROM teaching_journals WHERE guru_id = $1 AND tanggal = $2",
+      [guru, "2026-10-12"],
+    );
+  }
+});
+
+/**
+ * Nama kendala migrasi `drizzle/0032_jurnal_presensi_invarian.sql` diperiksa
+ * langsung supaya berkas migrasi yang terlewat atau salah nama langsung
+ * kelihatan, bukan cuma gagal di tes perilaku di bawahnya.
+ */
+test("kendala invarian jurnal dan presensi terpasang di basis data", async () => {
+  await siapkanJurnal();
+  const nama = [
+    "teaching_journals_materi_terisi",
+    "teaching_journals_jam_mengajar_positif",
+    "teacher_attendances_pengganti_hanya_saat_digantikan",
+    "teacher_attendances_catatan_terisi",
+  ];
+  const { rows } = await dbJurnal.query(
+    "SELECT conname FROM pg_constraint WHERE conname = ANY($1::text[])",
+    [nama],
+  );
+  assert.deepEqual(new Set(rows.map((baris) => baris.conname)), new Set(nama));
+});
+
+/**
  * Invarian skema presensi sesi guru (`drizzle/0017_presensi_guru.sql`): satu
  * catatan per guru + jadwal + tanggal (idempoten), jadwal dan guru yang hilang
  * ikut membersihkan catatannya, sedangkan guru pengganti hanya dilepas (null).
@@ -398,6 +469,63 @@ test("guru pengganti yang dihapus hanya dilepas, catatannya tetap ada", async ()
   ).rows[0];
   assert.equal(baris.guru_pengganti_id, null);
   assert.equal(baris.status, "digantikan");
+});
+
+/**
+ * Invarian isi presensi (`drizzle/0032_jurnal_presensi_invarian.sql`): guru
+ * pengganti hanya boleh tercatat pada sesi berstatus `digantikan`, dan catatan
+ * kosong disimpan sebagai NULL — bukan teks berisi spasi.
+ *
+ * Arah sebaliknya sengaja tidak dikunci: sesi `digantikan` boleh berakhir
+ * tanpa pengganti setelah akunnya dihapus (lihat tes di atas).
+ */
+test("guru pengganti dan catatan presensi dibatasi isinya", async () => {
+  const { guru, jadwalA } = await siapkanJurnal();
+  const pengganti = (
+    await dbJurnal.query(
+      `INSERT INTO "user" (id, name, email) VALUES ($1, $2, $3) RETURNING id`,
+      [
+        "guru-pengganti-invarian",
+        "Guru Pengganti Invarian",
+        "guru-pengganti-invarian@example.test",
+      ],
+    )
+  ).rows[0].id;
+
+  try {
+    const salahStatus = await ditolak(
+      `INSERT INTO teacher_attendances (guru_id, schedule_id, tanggal, status, guru_pengganti_id)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [guru, jadwalA, "2026-10-13", "hadir", pengganti],
+    );
+    assert.equal(salahStatus.code, "23514");
+
+    const catatanSpasi = await ditolak(
+      `INSERT INTO teacher_attendances (guru_id, schedule_id, tanggal, status, catatan)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [guru, jadwalA, "2026-10-13", "izin", "   "],
+    );
+    assert.equal(catatanSpasi.code, "23514");
+
+    // Isian yang sah tetap diterima: pengganti pada sesi digantikan, dan
+    // catatan kosong sebagai NULL.
+    await dbJurnal.query(
+      `INSERT INTO teacher_attendances (guru_id, schedule_id, tanggal, status, guru_pengganti_id)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [guru, jadwalA, "2026-10-13", "digantikan", pengganti],
+    );
+    await dbJurnal.query(
+      `INSERT INTO teacher_attendances (guru_id, schedule_id, tanggal, status, catatan)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [guru, jadwalA, "2026-10-14", "tidak_hadir", null],
+    );
+  } finally {
+    await dbJurnal.query(
+      "DELETE FROM teacher_attendances WHERE guru_id = $1 AND tanggal = ANY($2::date[])",
+      [guru, ["2026-10-13", "2026-10-14"]],
+    );
+    await dbJurnal.query('DELETE FROM "user" WHERE id = $1', [pengganti]);
+  }
 });
 
 /**
