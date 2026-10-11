@@ -1,0 +1,2 @@
+ALTER TABLE "classes" ADD CONSTRAINT "classes_nama_kelas_terisi" CHECK (length(btrim("classes"."nama_kelas")) > 0);--> statement-breakpoint
+ALTER TABLE "students" ADD CONSTRAINT "students_nama_terisi" CHECK (length(btrim("students"."nama")) > 0);

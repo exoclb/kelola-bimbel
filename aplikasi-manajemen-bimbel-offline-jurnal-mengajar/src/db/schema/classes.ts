@@ -1,4 +1,6 @@
+import { sql } from "drizzle-orm";
 import {
+  check,
   index,
   pgTable,
   text,
@@ -41,5 +43,13 @@ export const classes = pgTable(
     // menunjuknya (`on update cascade` / `on delete restrict`) — tanpa indeks
     // ini pemeriksaannya memindai seluruh tabel `classes`.
     index("classes_cabang_idx").on(table.cabang),
+    // Nama kelas dipakai sebagai penanda kelas di jadwal, jurnal, penempatan
+    // murid, dan laporan, jadi baris tanpa nama tidak bisa dikenali di mana pun.
+    // Validator formulir dan API sudah menolaknya; di sini dijaga ulang supaya
+    // penulisan langsung ke basis data pun aman.
+    check(
+      "classes_nama_kelas_terisi",
+      sql`length(btrim(${table.namaKelas})) > 0`,
+    ),
   ],
 );
