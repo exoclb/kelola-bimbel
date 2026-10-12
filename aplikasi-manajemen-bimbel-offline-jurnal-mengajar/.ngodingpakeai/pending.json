@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "48e6696a9d23ba19431774e53f0f809c376deb6d",
+  "generatedForCommit": "6cad22472109ce5cf26099a346fd5ea80996cbbd",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -616,7 +616,7 @@
     },
     {
       "path": "e2e/atur-ulang-sandi.spec.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 6903
     },
@@ -640,9 +640,9 @@
     },
     {
       "path": "e2e/halaman-contoh.spec.ts",
-      "reason": "new",
+      "reason": "changed",
       "language": "typescript",
-      "size": 3789
+      "size": 4473
     },
     {
       "path": "e2e/jadwal-bentrok.spec.ts",
@@ -801,12 +801,6 @@
       "size": 85
     },
     {
-      "path": "README.md",
-      "reason": "changed",
-      "language": "markdown",
-      "size": 11340
-    },
-    {
       "path": "scripts/backup.mjs",
       "reason": "needs_summary",
       "language": "javascript",
@@ -922,7 +916,7 @@
     },
     {
       "path": "scripts/test.mjs",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 3988
     },
@@ -1000,9 +994,9 @@
     },
     {
       "path": "src/app/(protected)/app/contoh-status/page.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 6090
+      "size": 6315
     },
     {
       "path": "src/app/(protected)/app/gaji/loading.tsx",
@@ -2560,7 +2554,7 @@
     },
     {
       "path": "src/lib/auth.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 3215
     },
@@ -2584,7 +2578,7 @@
     },
     {
       "path": "src/lib/email-tautan-reset.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 4673
     },
@@ -2599,6 +2593,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 968
+    },
+    {
+      "path": "src/lib/halaman-contoh.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1322
     },
     {
       "path": "src/lib/id-murid.mjs",
@@ -2658,7 +2658,7 @@
       "path": "src/lib/mock-menu.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 4332
+      "size": 3769
     },
     {
       "path": "src/lib/mock-murid.ts",
@@ -2764,7 +2764,7 @@
     },
     {
       "path": "src/lib/smtp.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 7063
     },
@@ -2818,7 +2818,7 @@
     },
     {
       "path": "src/services/email.service.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 5490
     },
@@ -3052,7 +3052,7 @@
     },
     {
       "path": "tests/atur-ulang-sandi.test.mjs",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 4633
     },
@@ -3070,27 +3070,33 @@
     },
     {
       "path": "tests/dukungan/impor-ts.mjs",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 1648
     },
     {
       "path": "tests/dukungan/smtp-palsu.mjs",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 5089
     },
     {
       "path": "tests/email-service.test.mjs",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 5117
     },
     {
       "path": "tests/email-tautan-reset.test.mjs",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 3357
+    },
+    {
+      "path": "tests/halaman-contoh.test.mjs",
+      "reason": "new",
+      "language": "javascript",
+      "size": 4466
     },
     {
       "path": "tests/lembar-laporan.test.mjs",
@@ -3100,15 +3106,9 @@
     },
     {
       "path": "tests/lupa-sandi-email.test.mjs",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 6871
-    },
-    {
-      "path": "tests/menu-contoh.test.mjs",
-      "reason": "new",
-      "language": "javascript",
-      "size": 3635
     },
     {
       "path": "tests/nav-portal.test.mjs",
@@ -3124,7 +3124,7 @@
     },
     {
       "path": "tests/smtp.test.mjs",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 6706
     },
