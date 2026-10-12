@@ -1,9 +1,10 @@
 // Uji pembantu tampilan modul backup (src/lib/tampilan-backup.ts): ukuran
-// berkas dan lama proses yang tampil di kartu ringkasan serta daftar riwayat.
+// berkas, lama proses, umur, dan kesegaran salinan yang tampil di kartu
+// ringkasan serta daftar riwayat.
 import test from "node:test";
 import assert from "node:assert/strict";
 
-const { lamaProses, ukuranTeks, waktuLengkap } =
+const { kesegaranBackup, lamaProses, ukuranTeks, umurBackup, waktuLengkap } =
   await import("../src/lib/tampilan-backup.ts");
 
 test("ukuranTeks menulis satuan yang mudah dibaca", () => {
@@ -50,5 +51,83 @@ test("waktu lengkap ditulis dalam bahasa Indonesia", () => {
   assert.match(
     waktuLengkap.format(new Date("2026-10-13T09:00:00Z")),
     /^\d{1,2} \p{L}+ \d{4} pukul \d{2}\.\d{2}$/u,
+  );
+});
+
+test("umurBackup menulis umur salinan dalam bahasa sehari-hari", () => {
+  const sekarang = new Date("2026-10-13T03:00:00Z");
+  assert.equal(
+    umurBackup(new Date("2026-10-13T02:00:00Z"), sekarang),
+    "hari ini",
+  );
+  assert.equal(
+    umurBackup(new Date("2026-10-12T02:00:00Z"), sekarang),
+    "kemarin",
+  );
+  assert.equal(
+    umurBackup(new Date("2026-10-10T02:00:00Z"), sekarang),
+    "3 hari lalu",
+  );
+  // Jam server yang bergeser: waktu di masa depan bukan "besok" yang aneh.
+  assert.equal(
+    umurBackup(new Date("2026-10-13T09:00:00Z"), sekarang),
+    "hari ini",
+  );
+});
+
+test("kesegaranBackup menilai salinan terhadap jadwal harian", () => {
+  const sekarang = new Date("2026-10-13T03:00:00Z");
+  const jadwal = { jedaJam: 24, retensiHari: 30 };
+
+  // Baru satu jam lalu: masih dalam tenggang jadwal.
+  const segar = kesegaranBackup(
+    new Date("2026-10-13T02:00:00Z"),
+    jadwal,
+    sekarang,
+  );
+  assert.equal(segar.tingkat, "segar");
+  assert.equal(segar.label, "Sesuai jadwal");
+
+  // Tenggang dua jam: backup yang mulai telat belum dicap terlambat.
+  assert.equal(
+    kesegaranBackup(new Date("2026-10-12T01:00:00Z"), jadwal, sekarang).tingkat,
+    "segar",
+  );
+  assert.equal(
+    kesegaranBackup(new Date("2026-10-12T00:59:59Z"), jadwal, sekarang).tingkat,
+    "terlambat",
+  );
+  const terlambat = kesegaranBackup(
+    new Date("2026-10-10T02:00:00Z"),
+    jadwal,
+    sekarang,
+  );
+  assert.equal(terlambat.label, "Terlambat");
+
+  // Salinan yang lebih tua dari retensi mungkin sudah dihapus penjadwal.
+  const kadaluarsa = kesegaranBackup(
+    new Date("2026-09-01T02:00:00Z"),
+    jadwal,
+    sekarang,
+  );
+  assert.equal(kadaluarsa.tingkat, "kadaluarsa");
+  assert.equal(kadaluarsa.label, "Lewat retensi");
+  assert.match(kadaluarsa.keterangan, /retensi 30 hari/);
+
+  // Ketiga keadaan selalu membawa penjelasan yang bisa dibaca pengguna.
+  for (const hasil of [segar, terlambat, kadaluarsa])
+    assert.ok(hasil.keterangan.length >= 40, hasil.keterangan);
+
+  // Retensi yang lebih pendek membuat salinan tua langsung lewat batas.
+  assert.equal(
+    kesegaranBackup(
+      new Date("2026-10-10T02:00:00Z"),
+      {
+        jedaJam: 24,
+        retensiHari: 1,
+      },
+      sekarang,
+    ).tingkat,
+    "kadaluarsa",
   );
 });

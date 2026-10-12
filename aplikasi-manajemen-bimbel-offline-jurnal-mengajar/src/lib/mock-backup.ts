@@ -29,6 +29,14 @@ const JADWAL_BACKUP_TIRUAN: JadwalBackup = {
   tujuan: "/var/backups/kelola",
 };
 
+/**
+ * Jarak antar-jadwal backup, dalam jam. Jadwal tiruannya harian, sama seperti
+ * `jadwalBerikutnya` di bawah dan contoh cron di `docs/deploy-coolify.md`
+ * (`0 2 * * *`); nanti nilai ini ikut pengaturan jadwal yang sebenarnya.
+ * Dipakai menilai kesegaran salinan terakhir.
+ */
+export const JEDA_JADWAL_JAM = 24;
+
 /** Jadwal backup yang sedang berlaku. Salinan, bukan objek bersama. */
 export function getJadwalBackup(): JadwalBackup {
   return { ...JADWAL_BACKUP_TIRUAN };
@@ -110,5 +118,5 @@ export function jadwalBerikutnya(
   // berikutnya besok, bukan detik ini.
   return calon > sekarang
     ? calon
-    : new Date(calon.getTime() + 24 * 60 * 60 * 1000);
+    : new Date(calon.getTime() + JEDA_JADWAL_JAM * 60 * 60 * 1000);
 }

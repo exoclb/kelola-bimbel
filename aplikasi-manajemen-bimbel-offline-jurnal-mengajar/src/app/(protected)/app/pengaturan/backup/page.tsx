@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
 import Link from "next/link";
-import { ArrowLeft, CalendarClock, DatabaseBackup, Timer } from "lucide-react";
+import { ArrowLeft, DatabaseBackup, Timer } from "lucide-react";
 import { AksiJalankanBackup } from "@/components/aksi-jalankan-backup";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +11,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { DaftarRiwayatBackup } from "@/components/daftar-riwayat-backup";
+import { RincianKartu } from "@/components/rincian-kartu";
+import { RingkasanBackupTerakhir } from "@/components/ringkasan-backup-terakhir";
 import { PesanKosong } from "@/components/status-antarmuka";
 import {
   getJadwalBackup,
@@ -19,39 +20,9 @@ import {
   ringkasanJadwal,
 } from "@/lib/mock-backup";
 import { requirePermission } from "@/lib/session";
-import { ukuranTeks, waktuLengkap } from "@/lib/tampilan-backup";
 import { ambilStatusBackup } from "@/services/backup.service";
 
 export const metadata: Metadata = { title: "Backup Database" };
-
-/** "Hari ini", "Kemarin", atau "N hari lalu" — cukup untuk menilai kesegaran. */
-function umurBackup(waktu: Date, sekarang = new Date()) {
-  const hari = Math.floor(
-    (sekarang.getTime() - waktu.getTime()) / (24 * 60 * 60 * 1000),
-  );
-  if (hari <= 0) return "hari ini";
-  if (hari === 1) return "kemarin";
-  return `${hari} hari lalu`;
-}
-
-/** Satu rincian kartu jadwal: label, nilai utama, dan keterangan kecilnya. */
-function RincianJadwal({
-  label,
-  nilai,
-  keterangan,
-}: {
-  label: string;
-  nilai: ReactNode;
-  keterangan: string;
-}) {
-  return (
-    <div className="space-y-1">
-      <p className="text-sm text-muted-foreground">{label}</p>
-      <p className="font-medium">{nilai}</p>
-      <p className="text-sm text-muted-foreground">{keterangan}</p>
-    </div>
-  );
-}
 
 export default async function BackupDatabasePage() {
   // Status backup menyangkut seluruh bimbel, jadi hanya owner/admin. Izin yang
@@ -68,16 +39,6 @@ export default async function BackupDatabasePage() {
   });
 
   const kartu = [
-    {
-      label: "Backup terakhir berhasil",
-      nilai: status.terakhirSukses
-        ? `${umurBackup(status.terakhirSukses.mulai)}`
-        : "Belum pernah",
-      keterangan: status.terakhirSukses
-        ? `${waktuLengkap.format(status.terakhirSukses.mulai)} · ${ukuranTeks(status.terakhirSukses.ukuranByte)}`
-        : "Tidak ada catatan backup yang berhasil.",
-      ikon: CalendarClock,
-    },
     {
       label: "Total catatan backup",
       nilai: `${status.jumlah.total}`,
@@ -116,7 +77,7 @@ export default async function BackupDatabasePage() {
         tertinggal cepat terlihat.
       </p>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-3">
+      <div className="mt-8 grid gap-4 sm:grid-cols-2">
         {kartu.map(({ label, nilai, keterangan, ikon: Ikon }) => (
           <Card key={label} className="gap-1 px-5 py-4">
             <p className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -129,6 +90,11 @@ export default async function BackupDatabasePage() {
         ))}
       </div>
 
+      <RingkasanBackupTerakhir
+        terakhir={status.terakhirSukses}
+        jadwal={jadwal}
+      />
+
       <Card className="mt-6">
         <CardHeader>
           <CardTitle className="text-base">Jadwal backup</CardTitle>
@@ -138,7 +104,7 @@ export default async function BackupDatabasePage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
-          <RincianJadwal
+          <RincianKartu
             label="Status"
             nilai={jadwal.aktif ? "Aktif" : "Nonaktif"}
             keterangan={
@@ -147,22 +113,22 @@ export default async function BackupDatabasePage() {
                 : "Backup hanya jalan kalau dijalankan manual di server."
             }
           />
-          <RincianJadwal
+          <RincianKartu
             label="Waktu"
             nilai={ringkasanJadwal(jadwal)}
             keterangan={`Menurut zona waktu ${jadwal.zonaWaktu}.`}
           />
-          <RincianJadwal
+          <RincianKartu
             label="Jalan berikutnya"
             nilai={waktuJadwal.format(jadwalBerikutnya(jadwal))}
             keterangan="Perkiraan menurut jadwal di atas."
           />
-          <RincianJadwal
+          <RincianKartu
             label="Retensi"
             nilai={`${jadwal.retensiHari} hari`}
             keterangan="Berkas yang lebih tua dari ini dihapus penjadwal, supaya salinan tidak menumpuk."
           />
-          <RincianJadwal
+          <RincianKartu
             label="Tujuan"
             nilai={<code className="text-sm">{jadwal.tujuan}</code>}
             keterangan="Salinan disalin juga ke penyimpanan terpisah di luar server."
@@ -176,7 +142,7 @@ export default async function BackupDatabasePage() {
         <PesanKosong
           className="mt-6"
           judul="Belum ada catatan backup"
-          keterangan="Catatan muncul setelah backup terjadwal pertama di server selesai — kartu di atas masih nol sampai itu terjadi. Proses yang sedang berjalan langsung muncul di sini dengan statusnya, jadi gagal atau menggantung tidak perlu dicari di log."
+          keterangan="Catatan muncul setelah backup terjadwal pertama di server selesai — hitungan di atas masih nol sampai itu terjadi. Proses yang sedang berjalan langsung muncul di sini dengan statusnya, jadi gagal atau menggantung tidak perlu dicari di log."
         />
       ) : (
         <DaftarRiwayatBackup

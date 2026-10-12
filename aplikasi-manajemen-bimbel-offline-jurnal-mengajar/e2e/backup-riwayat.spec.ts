@@ -41,6 +41,51 @@ async function masuk(client: APIRequestContext, email: string) {
 }
 
 /**
+ * Keadaan halaman sebelum ada catatan apa pun — yang dilihat pemasangan baru.
+ * Tabel `backup_runs` dikosongkan dulu supaya hasilnya tidak bergantung pada
+ * urutan berkas uji; tes lain di berkas ini mengisi catatannya sendiri.
+ */
+test("ringkasan backup terakhir kosong saat belum ada catatan", async ({
+  page,
+  request,
+}) => {
+  const email = await daftar(request, "Owner Backup Kosong");
+  await setRole(email, "owner");
+  await masuk(request, email);
+
+  const db = new Pool({
+    connectionString: process.env.STARTER_TEST_DATABASE_URL,
+    max: 1,
+  });
+  try {
+    await db.query("DELETE FROM backup_runs");
+  } finally {
+    await db.end();
+  }
+
+  await page.goto("/sign-in");
+  await page.getByLabel("Email", { exact: true }).fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(sandi);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.waitForURL((url) => !url.pathname.startsWith("/sign-in"));
+  await page.goto("/app/pengaturan/backup");
+
+  const ringkasan = page.locator('[data-slot="card"]').filter({
+    has: page.getByText("Ringkasan backup terakhir berhasil", { exact: true }),
+  });
+  await expect(
+    ringkasan.getByText("Belum ada backup yang berhasil"),
+  ).toBeVisible();
+  // Tanpa salinan, kesegarannya tidak bisa dinilai — jadi tidak ada cap apa pun.
+  await expect(ringkasan.getByText("Terlambat", { exact: true })).toHaveCount(
+    0,
+  );
+  await expect(
+    ringkasan.getByText("Sesuai jadwal", { exact: true }),
+  ).toHaveCount(0);
+});
+
+/**
  * Riwayat backup: halaman pengaturan menampilkan catatan yang ditulis proses
  * backup apa adanya — yang berhasil lengkap dengan lokasinya, yang gagal dengan
  * alasan kegagalannya, dan yang belum selesai sebagai masih berjalan.
@@ -85,7 +130,7 @@ test("riwayat backup menampilkan status, lokasi, dan alasan kegagalan", async ({
   await page.goto("/app/pengaturan/backup");
 
   await expect(page.getByText("Riwayat backup", { exact: true })).toBeVisible();
-  await expect(page.getByText(lokasiSukses)).toBeVisible();
+  await expect(page.getByText(lokasiSukses).first()).toBeVisible();
   await expect(page.getByText(`Restore diuji (${penanda}).`)).toBeVisible();
   await expect(page.getByText(pesanGagal)).toBeVisible();
   await expect(page.getByText("masih berjalan").first()).toBeVisible();
@@ -100,6 +145,18 @@ test("riwayat backup menampilkan status, lokasi, dan alasan kegagalan", async ({
   await expect(page.getByText(/1[.,]0 MB|1 MB/).first()).toBeVisible();
   // Lama proses ikut tampil untuk catatan yang sudah selesai (4 menit).
   await expect(page.getByText("4 menit").first()).toBeVisible();
+
+  // Ringkasan salinan terakhir yang berhasil: isinya catatan sukses paling
+  // baru, dan karena umurnya tiga hari sedangkan jadwalnya harian, keadaannya
+  // dilaporkan terlambat.
+  const ringkasan = page.locator('[data-slot="card"]').filter({
+    has: page.getByText("Ringkasan backup terakhir berhasil", { exact: true }),
+  });
+  await expect(ringkasan).toHaveCount(1);
+  await expect(ringkasan.getByText(lokasiSukses)).toBeVisible();
+  await expect(ringkasan.getByText("4 menit", { exact: true })).toBeVisible();
+  await expect(ringkasan.getByText("Terlambat", { exact: true })).toBeVisible();
+  await expect(ringkasan.getByText("sudah membuat salinan baru")).toBeVisible();
 });
 
 /**
@@ -123,9 +180,9 @@ test("kartu jadwal backup tampil dari data tiruan", async ({
   await page.waitForURL((url) => !url.pathname.startsWith("/sign-in"));
   await page.goto("/app/pengaturan/backup");
 
-  const kartu = page
-    .locator('[data-slot="card"]')
-    .filter({ hasText: "Jadwal backup" });
+  const kartu = page.locator('[data-slot="card"]').filter({
+    has: page.getByText("Jadwal backup", { exact: true }),
+  });
   await expect(kartu).toHaveCount(1);
 
   // Jadwal contoh: harian 02.00 WIB, retensi 30 hari, salinan di server.
@@ -139,6 +196,57 @@ test("kartu jadwal backup tampil dari data tiruan", async ({
 
   // Riwayat sungguhan tetap ada di halaman yang sama.
   await expect(page.getByText("Riwayat backup", { exact: true })).toBeVisible();
+});
+
+/**
+ * Ringkasan backup terakhir menilai kesegaran salinannya terhadap jadwal:
+ * salinan yang baru setengah jam umurnya masih sesuai jadwal harian, jadi
+ * angkanya dan keadaan itu yang harus terbaca - bukan peringatan terlambat.
+ */
+test("ringkasan backup terakhir menilai kesegaran salinannya", async ({
+  page,
+  request,
+}) => {
+  const email = await daftar(request, "Owner Ringkasan Backup");
+  await setRole(email, "owner");
+  await masuk(request, email);
+
+  const penanda = randomUUID().slice(0, 8);
+  const lokasiSegar = `/srv/backup/segar-${penanda}.dump`;
+
+  const db = new Pool({
+    connectionString: process.env.STARTER_TEST_DATABASE_URL,
+    max: 1,
+  });
+  try {
+    await db.query(
+      "INSERT INTO backup_runs (mulai, selesai, status, ukuran_byte, lokasi) VALUES (now() - interval '30 minutes', now() - interval '25 minutes', 'sukses', $1, $2)",
+      [8192, lokasiSegar],
+    );
+  } finally {
+    await db.end();
+  }
+
+  await page.goto("/sign-in");
+  await page.getByLabel("Email", { exact: true }).fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(sandi);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.waitForURL((url) => !url.pathname.startsWith("/sign-in"));
+  await page.goto("/app/pengaturan/backup");
+
+  const ringkasan = page.locator('[data-slot="card"]').filter({
+    has: page.getByText("Ringkasan backup terakhir berhasil", { exact: true }),
+  });
+  await expect(
+    ringkasan.getByText("Sesuai jadwal", { exact: true }),
+  ).toBeVisible();
+  await expect(ringkasan.getByText("hari ini", { exact: true })).toBeVisible();
+  await expect(ringkasan.getByText("5 menit", { exact: true })).toBeVisible();
+  await expect(ringkasan.getByText("8.0 KB", { exact: true })).toBeVisible();
+  await expect(ringkasan.getByText(lokasiSegar)).toBeVisible();
+  await expect(ringkasan.getByText("Terlambat", { exact: true })).toHaveCount(
+    0,
+  );
 });
 
 /**
