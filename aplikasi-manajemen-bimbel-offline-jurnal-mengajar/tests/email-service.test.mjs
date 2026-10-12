@@ -2,9 +2,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, statSync } from "node:fs";
 import { registerHooks } from "node:module";
-import { createServer } from "node:net";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import {
+  buatServerSmtp,
+  dekodePesan,
+  denganEnvSmtp,
+} from "./dukungan/smtp-palsu.mjs";
 
 // Alias "@/..." milik tsconfig diterjemahkan supaya layanan (yang mengimpor
 // `@/lib/...`, `@/db`, dan `@/services/...`) bisa dipakai langsung dari tes ini.
@@ -17,7 +21,10 @@ registerHooks({
   resolve(spesifier, konteks, lanjut) {
     let dasar;
     if (spesifier.startsWith("@/")) dasar = resolve(src, spesifier.slice(2));
-    else if (spesifier.startsWith(".") && konteks.parentURL?.startsWith("file:"))
+    else if (
+      spesifier.startsWith(".") &&
+      konteks.parentURL?.startsWith("file:")
+    )
       dasar = resolve(dirname(fileURLToPath(konteks.parentURL)), spesifier);
     if (dasar)
       for (const akhiran of AKHIRAN) {
@@ -29,9 +36,8 @@ registerHooks({
   },
 });
 
-const { kirimEmailTautanReset, kirimLewatSmtp } = await import(
-  "../src/services/email.service.ts"
-);
+const { kirimEmailTautanReset, kirimLewatSmtp } =
+  await import("../src/services/email.service.ts");
 
 // Layanan email harus bisa diandalkan dalam dua keadaan: SMTP belum diatur
 // (bimbel offline / dev / uji) dan SMTP sudah diatur. Yang pertama TIDAK boleh
@@ -40,92 +46,11 @@ const { kirimEmailTautanReset, kirimLewatSmtp } = await import(
 // seadanya di dalam tes, tanpa jaringan luar).
 
 const TAUTAN = "http://localhost:3000/atur-ulang-password?token=uji-123";
-const VARIABEL_SMTP = [
-  "SMTP_HOST",
-  "SMTP_PORT",
-  "SMTP_SECURE",
-  "SMTP_USER",
-  "SMTP_PASSWORD",
-  "SMTP_FROM",
-  "SMTP_FROM_NAME",
-];
-
-/** Jalankan `fn` dengan variabel SMTP tertentu, lalu kembalikan keadaan semula. */
-async function denganSmtp(nilai, fn) {
-  const sebelum = new Map(VARIABEL_SMTP.map((nama) => [nama, process.env[nama]]));
-  for (const nama of VARIABEL_SMTP) delete process.env[nama];
-  Object.assign(process.env, nilai);
-  try {
-    return await fn();
-  } finally {
-    for (const [nama, nilaiLama] of sebelum) {
-      if (nilaiLama === undefined) delete process.env[nama];
-      else process.env[nama] = nilaiLama;
-    }
-  }
-}
 
 /** Server SMTP seadanya: cukup untuk menerima satu email tanpa TLS. */
-function buatServerSmtp() {
-  const isiPesan = [];
-  let terkirim;
-  const selesai = new Promise((accept) => {
-    terkirim = accept;
-  });
-
-  const server = createServer((socket) => {
-    let penyangga = "";
-    let dalamData = false;
-    socket.on("error", () => socket.destroy());
-    socket.write("220 uji.local ESMTP\r\n");
-    socket.on("data", (potongan) => {
-      penyangga += potongan.toString("utf8");
-      while (penyangga.includes("\r\n")) {
-        const batas = penyangga.indexOf("\r\n");
-        const baris = penyangga.slice(0, batas);
-        penyangga = penyangga.slice(batas + 2);
-
-        if (dalamData) {
-          if (baris === ".") {
-            dalamData = false;
-            socket.write("250 2.0.0 Tersimpan\r\n");
-            terkirim();
-          } else isiPesan.push(baris);
-          continue;
-        }
-
-        const perintah = baris.split(" ")[0].toUpperCase();
-        if (perintah === "EHLO" || perintah === "HELO")
-          socket.write("250 uji.local\r\n");
-        else if (perintah === "MAIL" || perintah === "RCPT")
-          socket.write("250 2.1.0 Oke\r\n");
-        else if (perintah === "DATA") {
-          dalamData = true;
-          socket.write("354 Kirim isinya\r\n");
-        } else if (perintah === "QUIT") {
-          socket.write("221 2.0.0 Sampai jumpa\r\n");
-          socket.end();
-        } else socket.write("250 2.0.0 Oke\r\n");
-      }
-    });
-  });
-
-  return {
-    server,
-    async dengar() {
-      await new Promise((accept) =>
-        server.listen(0, "127.0.0.1", () => accept(undefined)),
-      );
-      return server.address().port;
-    },
-    tungguPesan: () => selesai,
-    ambilTeks: () => isiPesan.join("\n"),
-    tutup: () => new Promise((accept) => server.close(() => accept(undefined))),
-  };
-}
 
 test("SMTP belum diatur: lapor gagal dengan alasan, tanpa melempar galat", async () => {
-  await denganSmtp({}, async () => {
+  await denganEnvSmtp({}, async () => {
     let dipanggil = false;
     const hasil = await kirimEmailTautanReset(
       { ke: "guru@contoh.id", nama: "Bu Sri", tautan: TAUTAN },
@@ -142,7 +67,7 @@ test("SMTP belum diatur: lapor gagal dengan alasan, tanpa melempar galat", async
 });
 
 test("SMTP diatur: isi email lengkap dan alasan tidak dipakai", async () => {
-  await denganSmtp(
+  await denganEnvSmtp(
     {
       SMTP_HOST: "smtp.contoh.id",
       SMTP_PORT: "587",
@@ -173,18 +98,21 @@ test("SMTP diatur: isi email lengkap dan alasan tidak dipakai", async () => {
 });
 
 test("pengiriman yang gagal tidak melempar, tapi alasannya dilaporkan", async () => {
-  await denganSmtp({ SMTP_HOST: "smtp.contoh.id", SMTP_FROM: "bimbel@contoh.id" }, async () => {
-    const hasil = await kirimEmailTautanReset(
-      { ke: "guru@contoh.id", tautan: TAUTAN },
-      async () => {
-        throw new Error("koneksi ditolak");
-      },
-    );
+  await denganEnvSmtp(
+    { SMTP_HOST: "smtp.contoh.id", SMTP_FROM: "bimbel@contoh.id" },
+    async () => {
+      const hasil = await kirimEmailTautanReset(
+        { ke: "guru@contoh.id", tautan: TAUTAN },
+        async () => {
+          throw new Error("koneksi ditolak");
+        },
+      );
 
-    assert.equal(hasil.terkirim, false);
-    assert.match(hasil.alasan, /Pengiriman email gagal/);
-    assert.match(hasil.alasan, /koneksi ditolak/);
-  });
+      assert.equal(hasil.terkirim, false);
+      assert.match(hasil.alasan, /Pengiriman email gagal/);
+      assert.match(hasil.alasan, /koneksi ditolak/);
+    },
+  );
 });
 
 test("jalur SMTP sungguhan mengirim email ke server", async () => {
@@ -192,7 +120,7 @@ test("jalur SMTP sungguhan mengirim email ke server", async () => {
   const port = await server.dengar();
 
   try {
-    await denganSmtp(
+    await denganEnvSmtp(
       {
         SMTP_HOST: "127.0.0.1",
         SMTP_PORT: String(port),
@@ -209,14 +137,25 @@ test("jalur SMTP sungguhan mengirim email ke server", async () => {
       },
     );
 
-    const pesan = server.ambilTeks();
+    const [diterima] = server.pesanMasuk();
+    assert.equal(diterima.ke, "<guru@contoh.id>");
+    const pesan = dekodePesan(diterima.pesan);
     assert.match(pesan, /^From: bimbel@contoh\.id$/m);
     assert.match(pesan, /^To: guru@contoh\.id$/m);
-    assert.match(pesan, /^Subject: /m);
-    // Isi pesan dikodekan quoted-printable ("=" jadi "=3D", baris dilipat)
-    // supaya aman lintas server, jadi yang dicari penanda tautannya saja.
-    assert.match(pesan, /atur-ulang-password/);
-    assert.match(pesan, /uji-123/);
+    assert.match(pesan, /^Subject: Atur ulang sandi /m);
+    // Email dikirim sebagai dua bagian: teks polos dan HTML, keduanya bertautan.
+    assert.match(pesan, /Content-Type: text\/plain/);
+    assert.match(pesan, /Content-Type: text\/html/);
+    assert.equal(
+      pesan.split(`href="${TAUTAN}"`).length - 1,
+      1,
+      "tautan harus jadi tombol di bagian HTML",
+    );
+    assert.equal(
+      pesan.split(TAUTAN).length - 1 >= 3,
+      true,
+      "tautan muncul di teks, tombol, dan versi salin-tempel",
+    );
     assert.match(pesan, /Halo Bu Sri/);
   } finally {
     await server.tutup();
@@ -224,7 +163,7 @@ test("jalur SMTP sungguhan mengirim email ke server", async () => {
 });
 
 test("kirimLewatSmtp menolak dengan jelas kalau SMTP belum diatur", async () => {
-  await denganSmtp({}, async () => {
+  await denganEnvSmtp({}, async () => {
     await assert.rejects(
       () =>
         kirimLewatSmtp({

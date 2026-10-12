@@ -126,7 +126,9 @@ export function bacaKonfigurasiSmtp(
     masalah.push(
       `${VARIABEL_SMTP.pengguna} dan ${VARIABEL_SMTP.sandi} harus diisi bersama-sama.`,
     );
-    variabelBermasalah.add(pengguna ? VARIABEL_SMTP.sandi : VARIABEL_SMTP.pengguna);
+    variabelBermasalah.add(
+      pengguna ? VARIABEL_SMTP.sandi : VARIABEL_SMTP.pengguna,
+    );
   }
 
   if (!alamatPengirim) {

@@ -38,7 +38,9 @@ test("isian lengkap menghasilkan konfigurasi siap dipakai", () => {
   assert.equal(status.konfigurasi?.port, 587);
   assert.equal(status.konfigurasi?.pengguna, "bimbel@contoh.id");
   assert.equal(status.konfigurasi?.sandi, "sandi-rahasia");
-  assert.deepEqual(status.konfigurasi?.pengirim, { alamat: "bimbel@contoh.id" });
+  assert.deepEqual(status.konfigurasi?.pengirim, {
+    alamat: "bimbel@contoh.id",
+  });
 });
 
 test("port bawaan 587 dan mode TLS mengikuti port", () => {
@@ -142,9 +144,7 @@ test("isian yang setengah atau salah dilaporkan tanpa melempar galat", () => {
     [VARIABEL_SMTP.pengirim]: "bukan-email",
   });
   assert.equal(pengirimSalah.siap, false);
-  assert.ok(
-    pengirimSalah.variabelBermasalah.includes(VARIABEL_SMTP.pengirim),
-  );
+  assert.ok(pengirimSalah.variabelBermasalah.includes(VARIABEL_SMTP.pengirim));
 });
 
 test("nilai dibersihkan dari spasi dan sandi tidak bocor ke keterangan", () => {

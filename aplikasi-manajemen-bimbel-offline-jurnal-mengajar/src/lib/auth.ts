@@ -8,6 +8,7 @@ import * as schema from "@/db/schema";
 import { siteConfig } from "@/config/site";
 import { env } from "@/lib/env";
 import { ac, ADMIN_ROLES, DEFAULT_ROLE, roles } from "@/lib/permissions";
+import { kirimEmailTautanReset } from "@/services/email.service";
 
 export const auth = betterAuth({
   appName: siteConfig.name,
@@ -29,14 +30,22 @@ export const auth = betterAuth({
     // Sandi baru berarti sesi lama tidak boleh dipakai lagi — penting kalau
     // sandinya diganti justru karena akunnya sempat dipakai orang lain.
     revokeSessionsOnPasswordReset: true,
-    // Bimbel memakai aplikasi ini di jaringan lokal dan belum punya penyedia
-    // email, jadi tautan atur ulang sandi dicatat di log server. Siapa pun yang
-    // bisa membaca log (operator bimbel) bisa menyerahkan tautannya ke guru.
-    // Ganti isi fungsi ini dengan pengiriman email begitu penyedianya tersedia.
+    // Tautan atur ulang sandi dikirim lewat SMTP yang diatur variabel lingkungan
+    // (src/lib/smtp.ts + src/services/email.service.ts). Kalau SMTP belum diatur
+    // atau pengirimannya gagal, fungsi ini tetap selesai tanpa galat supaya
+    // permintaan lupa sandi tidak membocorkan email mana yang punya akun; yang
+    // gagal hanya dicatat tanpa tautannya — kalau tidak, tautan berisi token
+    // akan menumpuk di log produksi.
     sendResetPassword: async ({ user, url }) => {
-      console.info(
-        `[lupa-sandi] tautan atur ulang untuk ${user.email}: ${url}`,
-      );
+      const hasil = await kirimEmailTautanReset({
+        ke: user.email,
+        nama: user.name,
+        tautan: url,
+      });
+      if (!hasil.terkirim)
+        console.warn(
+          `[lupa-sandi] email tautan atur ulang untuk ${user.email} tidak terkirim: ${hasil.alasan}`,
+        );
     },
   },
   plugins: [
