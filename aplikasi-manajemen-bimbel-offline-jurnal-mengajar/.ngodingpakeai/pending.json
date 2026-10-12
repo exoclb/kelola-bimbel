@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "116944c97002ae0ac400f746d5cb770bb6b06c23",
+  "generatedForCommit": "23ecb874c5715a850cfd880df787c7c577366bca",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -208,9 +208,9 @@
     },
     {
       "path": "docs/peta-data-tiruan.md",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "markdown",
-      "size": 23535
+      "size": 24106
     },
     {
       "path": "docs/prompts.md",
@@ -627,8 +627,14 @@
       "size": 6912
     },
     {
+      "path": "e2e/backup-jalankan.spec.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 3827
+    },
+    {
       "path": "e2e/backup-riwayat.spec.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 7897
     },
@@ -1140,7 +1146,7 @@
       "path": "src/app/(protected)/app/pengaturan/backup/page.tsx",
       "reason": "changed",
       "language": "typescript",
-      "size": 7033
+      "size": 7190
     },
     {
       "path": "src/app/(protected)/app/pengaturan/ekspor/page.tsx",
@@ -1791,6 +1797,12 @@
       "size": 4843
     },
     {
+      "path": "src/components/aksi-jalankan-backup.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 3425
+    },
+    {
       "path": "src/components/aksi-lepas-tautan-wali.tsx",
       "reason": "needs_summary",
       "language": "typescript",
@@ -1918,7 +1930,7 @@
     },
     {
       "path": "src/components/daftar-riwayat-backup.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 3564
     },
@@ -2788,7 +2800,7 @@
     },
     {
       "path": "src/lib/tampilan-backup.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1304
     },
@@ -3160,7 +3172,7 @@
     },
     {
       "path": "tests/tampilan-backup.test.mjs",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 1960
     },
