@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "cab3ff418e024af2dc257d2c04e046a130143ccb",
+  "generatedForCommit": "ecc26360d16499595e436869c7209a298bd570fb",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -208,9 +208,9 @@
     },
     {
       "path": "docs/peta-data-tiruan.md",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "markdown",
-      "size": 22489
+      "size": 23535
     },
     {
       "path": "docs/prompts.md",
@@ -628,9 +628,9 @@
     },
     {
       "path": "e2e/backup-riwayat.spec.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 6361
+      "size": 7759
     },
     {
       "path": "e2e/gaji.spec.ts",
@@ -640,7 +640,7 @@
     },
     {
       "path": "e2e/halaman-contoh.spec.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 5527
     },
@@ -1138,9 +1138,9 @@
     },
     {
       "path": "src/app/(protected)/app/pengaturan/backup/page.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 8114
+      "size": 10451
     },
     {
       "path": "src/app/(protected)/app/pengaturan/ekspor/page.tsx",
@@ -1720,7 +1720,7 @@
     },
     {
       "path": "src/app/not-found.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1403
     },
@@ -2631,6 +2631,12 @@
       "size": 2573
     },
     {
+      "path": "src/lib/mock-backup.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 3898
+    },
+    {
       "path": "src/lib/mock-cabang.ts",
       "reason": "needs_summary",
       "language": "typescript",
@@ -3100,7 +3106,7 @@
     },
     {
       "path": "tests/halaman-penolakan.test.mjs",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 2424
     },
@@ -3115,6 +3121,12 @@
       "reason": "needs_summary",
       "language": "javascript",
       "size": 6871
+    },
+    {
+      "path": "tests/mock-backup.test.mjs",
+      "reason": "new",
+      "language": "javascript",
+      "size": 2965
     },
     {
       "path": "tests/nav-portal.test.mjs",
