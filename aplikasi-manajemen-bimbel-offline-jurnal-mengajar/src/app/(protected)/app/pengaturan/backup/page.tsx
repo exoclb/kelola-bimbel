@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { ArrowLeft, CalendarClock, DatabaseBackup, Timer } from "lucide-react";
+import { AksiJalankanBackup } from "@/components/aksi-jalankan-backup";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -169,6 +170,8 @@ export default async function BackupDatabasePage() {
         </CardContent>
       </Card>
 
+      <AksiJalankanBackup />
+
       {status.terbaru.length === 0 ? (
         <PesanKosong
           className="mt-6"
@@ -183,10 +186,11 @@ export default async function BackupDatabasePage() {
       )}
 
       <p className="mt-6 text-xs leading-5 text-muted-foreground">
-        Catatan: kartu jadwal di atas masih rancangan — jadwal, tempat
-        penyimpanan terpisah, aturan retensi, dan uji pemulihan sungguhannya
-        diatur di sisi server (lihat <code>docs/deploy-coolify.md</code>).
-        Riwayat di halaman ini membaca catatan yang sudah ditulis proses backup.
+        Catatan: kartu jadwal dan tombol jalankan backup di atas masih rancangan
+        — jadwal, proses backup, tempat penyimpanan terpisah, aturan retensi,
+        dan uji pemulihan sungguhannya diatur di sisi server (lihat{" "}
+        <code>docs/deploy-coolify.md</code>). Riwayat di halaman ini membaca
+        catatan yang sudah ditulis proses backup.
       </p>
     </div>
   );

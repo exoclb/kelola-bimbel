@@ -138,6 +138,17 @@ sesudah perubahan, dan aturan `@typescript-eslint/no-unused-vars` aktif
   mengimpor tipe itu dari `src/lib/mock-cabang.ts` sekarang mengimpornya dari
   layanan tersebut.
 
+## Aksi yang belum tersambung ke server
+
+Di luar kedua tabel di atas, ada aksi antarmuka yang sudah tampil tetapi belum
+memanggil server, sehingga tidak punya berkas data contoh:
+
+- `src/components/aksi-jalankan-backup.tsx` — tombol "Jalankan backup sekarang"
+  di halaman Pengaturan → Backup Database. Fungsi `jalankanBackup()` di berkas
+  itu masih menirukan prosesnya di layar; proses sungguhannya berjalan lewat
+  `npm run db:backup` di server dan catatannya belum bertambah di riwayat
+  (`backup_runs`). Sambungkan fungsi itu ke endpoint backup saat sudah ada.
+
 ## Rekomendasi lanjutan (belum dikerjakan)
 
 1. **Ekspor mati di tabel atas.** Bisa dihapus dalam perubahan kecil terpisah
