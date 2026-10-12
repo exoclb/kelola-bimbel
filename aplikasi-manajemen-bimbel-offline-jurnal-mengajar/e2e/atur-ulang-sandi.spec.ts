@@ -97,3 +97,106 @@ test("token atur ulang mengganti sandi, mencabut sesi lama, dan hanya bisa dipak
   });
   expect(dipakaiUlang.status()).toBe(422);
 });
+
+test("halaman atur ulang sandi menuntun pengunjung tanpa token ke halaman lupa sandi", async ({
+  page,
+}) => {
+  await page.goto("/atur-ulang-password");
+
+  await expect(
+    page.getByRole("heading", { name: "Tautan tidak lengkap" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      "Halaman ini harus dibuka lewat tautan atur ulang sandi dari email.",
+    ),
+  ).toBeVisible();
+
+  await page.getByRole("link", { name: "Minta tautan atur ulang" }).click();
+  await expect(page).toHaveURL(/\/lupa-password$/);
+});
+
+test("formulir atur ulang sandi memvalidasi isian lalu menyimpan sandi barunya", async ({
+  page,
+  playwright,
+}) => {
+  // Akun dibuat lewat konteks terpisah supaya halaman (auth) tidak mengalihkan
+  // pengunjung yang sudah punya sesi.
+  const api = await playwright.request.newContext({ baseURL: origin });
+  const email = `halaman-sandi-${randomUUID()}@example.com`;
+  const sandiBaru = "Sandi-baru-123!";
+  try {
+    const daftar = await api.post("/api/akun", {
+      headers,
+      data: { nama: "Uji Halaman Sandi", email, sandi: "Sandi-lama-123!" },
+    });
+    expect(daftar.status()).toBe(201);
+    const minta = await api.post("/api/lupa-sandi", {
+      headers,
+      data: { email },
+    });
+    expect(minta.status()).toBe(200);
+
+    const token = await tokenAturUlang(email);
+    expect(token).toBeTruthy();
+    await page.goto(`/atur-ulang-password?token=${token}`);
+
+    const isianSandi = page.getByLabel("Sandi baru", { exact: true });
+    const isianUlangi = page.getByLabel("Ulangi sandi baru", { exact: true });
+    const simpan = page.getByRole("button", { name: "Simpan sandi baru" });
+
+    // Sandi pendek dan ulangan yang tidak sama ditahan sebelum ke server.
+    await isianSandi.fill("pendek");
+    await isianUlangi.fill("pendek");
+    await simpan.click();
+    await expect(page.getByText("Sandi minimal 8 huruf.")).toBeVisible();
+
+    await isianSandi.fill(sandiBaru);
+    await isianUlangi.fill("Sandi-lain-123!");
+    await simpan.click();
+    await expect(
+      page.getByText("Ulangi sandi belum sama dengan sandi baru."),
+    ).toBeVisible();
+
+    await isianUlangi.fill(sandiBaru);
+    await simpan.click();
+
+    // Formulir berganti kartu konfirmasi: token sekali pakai tidak dikirim ulang.
+    await expect(page.getByRole("status")).toContainText(
+      "Sandi berhasil disimpan",
+    );
+    await expect(simpan).toBeHidden();
+
+    await page.getByRole("link", { name: "Masuk sekarang" }).click();
+    await expect(page).toHaveURL(/\/masuk$/);
+
+    // Sandi barunya benar-benar berlaku untuk masuk.
+    const masuk = await api.post("/api/masuk", {
+      headers,
+      data: { email, sandi: sandiBaru },
+    });
+    expect(masuk.status()).toBe(200);
+  } finally {
+    await api.dispose();
+  }
+});
+
+test("halaman atur ulang sandi menolak token yang sudah tidak berlaku", async ({
+  page,
+}) => {
+  await page.goto("/atur-ulang-password?token=token-palsu");
+  await page.getByLabel("Sandi baru", { exact: true }).fill("Sandi-baru-123!");
+  await page
+    .getByLabel("Ulangi sandi baru", { exact: true })
+    .fill("Sandi-baru-123!");
+  await page.getByRole("button", { name: "Simpan sandi baru" }).click();
+
+  await expect(
+    page.getByText(
+      "Tautan atur ulang ini sudah tidak berlaku. Minta tautan baru, lalu buka lagi.",
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Simpan sandi baru" }),
+  ).toBeVisible();
+});
