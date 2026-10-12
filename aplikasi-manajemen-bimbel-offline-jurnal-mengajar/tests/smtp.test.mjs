@@ -5,6 +5,7 @@ import {
   PORT_SMTP_TLS_LANGSUNG,
   VARIABEL_SMTP,
   bacaKonfigurasiSmtp,
+  pakaiCadanganLogTautan,
   smtpSiap,
 } from "../src/lib/smtp.ts";
 
@@ -145,6 +146,33 @@ test("isian yang setengah atau salah dilaporkan tanpa melempar galat", () => {
   });
   assert.equal(pengirimSalah.siap, false);
   assert.ok(pengirimSalah.variabelBermasalah.includes(VARIABEL_SMTP.pengirim));
+});
+
+test("tautan boleh masuk log saat dev/uji atau saat SMTP belum diatur", () => {
+  // Dev: log hanya ada di mesin pengembang, jadi tautannya aman dicatat.
+  assert.equal(pakaiCadanganLogTautan({ NODE_ENV: "development" }), true);
+  assert.equal(pakaiCadanganLogTautan({}), true);
+
+  // Uji e2e menjalankan server produksi di atas basis data sekali pakai dan
+  // membaca tautannya dari log, jadi STARTER_TEST_RUN juga membolehkan.
+  assert.equal(
+    pakaiCadanganLogTautan({
+      ...ISIAN_LENGKAP,
+      NODE_ENV: "production",
+      STARTER_TEST_RUN: "starter-pg-test-x",
+    }),
+    true,
+  );
+
+  // Produksi tanpa penyedia email: bimbel tetap harus bisa mengatur ulang sandi
+  // lewat log operator, jadi tautannya dicatat.
+  assert.equal(pakaiCadanganLogTautan({ NODE_ENV: "production" }), true);
+
+  // Produksi dengan SMTP lengkap: tautan berisi token tidak boleh menumpuk di log.
+  assert.equal(
+    pakaiCadanganLogTautan({ ...ISIAN_LENGKAP, NODE_ENV: "production" }),
+    false,
+  );
 });
 
 test("nilai dibersihkan dari spasi dan sandi tidak bocor ke keterangan", () => {

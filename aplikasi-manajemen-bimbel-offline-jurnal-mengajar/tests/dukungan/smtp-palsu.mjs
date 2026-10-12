@@ -20,17 +20,24 @@ export const VARIABEL_SMTP = [
  * di berkas yang sama.
  */
 export async function denganEnvSmtp(nilai, fn) {
+  // Kunci lain yang ikut disetel (mis. NODE_ENV) juga dikembalikan seperti semula.
+  const nama = new Set([...VARIABEL_SMTP, ...Object.keys(nilai)]);
   const sebelum = new Map(
-    VARIABEL_SMTP.map((nama) => [nama, process.env[nama]]),
+    [...nama].map((kunci) => [kunci, process.env[kunci]]),
   );
-  for (const nama of VARIABEL_SMTP) delete process.env[nama];
-  Object.assign(process.env, nilai);
+  for (const kunci of VARIABEL_SMTP) delete process.env[kunci];
+  // Nilai `undefined` berarti "hapus dulu": dipakai uji yang perlu memastikan
+  // sebuah saklar (mis. STARTER_TEST_RUN) benar-benar tidak ada.
+  for (const [kunci, nilaiBaru] of Object.entries(nilai)) {
+    if (nilaiBaru === undefined) delete process.env[kunci];
+    else process.env[kunci] = nilaiBaru;
+  }
   try {
     return await fn();
   } finally {
-    for (const [nama, nilaiLama] of sebelum) {
-      if (nilaiLama === undefined) delete process.env[nama];
-      else process.env[nama] = nilaiLama;
+    for (const [kunci, nilaiLama] of sebelum) {
+      if (nilaiLama === undefined) delete process.env[kunci];
+      else process.env[kunci] = nilaiLama;
     }
   }
 }

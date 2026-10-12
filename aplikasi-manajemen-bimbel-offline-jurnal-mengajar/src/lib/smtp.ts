@@ -169,3 +169,22 @@ export function bacaKonfigurasiSmtp(
 export function smtpSiap(sumber: NodeJS.ProcessEnv = process.env) {
   return bacaKonfigurasiSmtp(sumber).siap;
 }
+
+/**
+ * Boleh-tidaknya tautan atur ulang sandi ditulis ke log server sebagai
+ * cadangan ketika emailnya tidak terkirim.
+ *
+ * Tautan itu berisi token yang bisa dipakai siapa pun yang membacanya, jadi di
+ * produksi ia tidak boleh menumpuk di log. Dua keadaan dikecualikan supaya
+ * alurnya tidak terputus: saat aplikasi berjalan sebagai dev/uji (log hanya
+ * ada di mesin pengembang, dan uji e2e memang membacanya dari sana), dan saat
+ * SMTP belum diatur sama sekali — bimbel yang memilih belum menyiapkan
+ * penyedia email tetap harus bisa mengatur ulang sandinya lewat log operator.
+ */
+export function pakaiCadanganLogTautan(
+  sumber: NodeJS.ProcessEnv = process.env,
+) {
+  const modeDevAtauUji =
+    sumber.NODE_ENV !== "production" || Boolean(sumber.STARTER_TEST_RUN);
+  return modeDevAtauUji || !smtpSiap(sumber);
+}

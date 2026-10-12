@@ -5,8 +5,9 @@ import { expect, test } from "@playwright/test";
 const origin = "http://localhost:3101";
 const headers = { Origin: origin };
 
-// Tautannya "dikirim" lewat catatan server, jadi berkas uji ini membacanya dari
-// tabel `verification` seperti yang dilakukan operator bimbel.
+// Emailnya dikirim lewat SMTP dan tidak bisa dibaca dari sini, jadi berkas uji
+// ini mengambil tokennya langsung dari tabel `verification` — sama seperti yang
+// dilakukan operator bimbel lewat alat basis datanya.
 async function tokenAturUlang(email: string) {
   const pool = new Pool({
     connectionString: process.env.STARTER_TEST_DATABASE_URL,

@@ -8,6 +8,7 @@ import * as schema from "@/db/schema";
 import { siteConfig } from "@/config/site";
 import { env } from "@/lib/env";
 import { ac, ADMIN_ROLES, DEFAULT_ROLE, roles } from "@/lib/permissions";
+import { pakaiCadanganLogTautan } from "@/lib/smtp";
 import { kirimEmailTautanReset } from "@/services/email.service";
 
 export const auth = betterAuth({
@@ -33,16 +34,24 @@ export const auth = betterAuth({
     // Tautan atur ulang sandi dikirim lewat SMTP yang diatur variabel lingkungan
     // (src/lib/smtp.ts + src/services/email.service.ts). Kalau SMTP belum diatur
     // atau pengirimannya gagal, fungsi ini tetap selesai tanpa galat supaya
-    // permintaan lupa sandi tidak membocorkan email mana yang punya akun; yang
-    // gagal hanya dicatat tanpa tautannya — kalau tidak, tautan berisi token
-    // akan menumpuk di log produksi.
+    // permintaan lupa sandi tidak membocorkan email mana yang punya akun.
+    // Tautannya hanya ditulis ke log saat dev/uji atau saat SMTP belum diatur
+    // (lihat `pakaiCadanganLogTautan`); di produksi yang sudah punya penyedia
+    // email, kegagalannya dicatat tanpa tautannya supaya token tidak menumpuk
+    // di log.
     sendResetPassword: async ({ user, url }) => {
       const hasil = await kirimEmailTautanReset({
         ke: user.email,
         nama: user.name,
         tautan: url,
       });
-      if (!hasil.terkirim)
+      if (hasil.terkirim) return;
+
+      if (pakaiCadanganLogTautan())
+        console.info(
+          `[lupa-sandi] email tidak terkirim (${hasil.alasan}). Tautan atur ulang untuk ${user.email}: ${url}`,
+        );
+      else
         console.warn(
           `[lupa-sandi] email tautan atur ulang untuk ${user.email} tidak terkirim: ${hasil.alasan}`,
         );

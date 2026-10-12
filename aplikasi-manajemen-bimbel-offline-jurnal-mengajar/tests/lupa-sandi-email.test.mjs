@@ -126,7 +126,7 @@ test("permintaan lupa sandi mengirim tautannya lewat SMTP", async () => {
   }
 });
 
-test("SMTP belum diatur: alur tetap tenang dan tautan tidak masuk log", async () => {
+test("SMTP belum diatur: tautannya tetap dicatat ke log supaya alur lokal jalan", async () => {
   const server = buatServerSmtp();
   await server.dengar();
   const dicatat = [];
@@ -136,7 +136,7 @@ test("SMTP belum diatur: alur tetap tenang dan tautan tidak masuk log", async ()
   try {
     const akun = await buatAkun("Bu Rani");
     // SMTP dikosongkan: ini keadaan bimbel yang belum punya penyedia email.
-    await denganEnvSmtp({}, async () => {
+    await denganEnvSmtp({ NODE_ENV: "development" }, async () => {
       console.info = (...argumen) => void dicatat.push(argumen.join(" "));
       console.warn = (...argumen) => void dicatat.push(argumen.join(" "));
       try {
@@ -150,16 +150,66 @@ test("SMTP belum diatur: alur tetap tenang dan tautan tidak masuk log", async ()
 
     assert.equal(server.pesanMasuk().length, 0, "tidak ada email yang dikirim");
     const teks = dicatat.join("\n");
-    assert.match(teks, /tidak terkirim/, "kegagalan harus terlihat di log");
-    assert.doesNotMatch(
+    assert.match(teks, /SMTP belum diatur/, "alasannya harus terbaca operator");
+    // Operator bimbel harus bisa menyerahkan tautan ini ke gurunya.
+    const token = await tokenTersimpan(akun.email);
+    assert.ok(token, "token tersimpan di tabel verification");
+    assert.match(
       teks,
-      /reset-password/,
-      "tautan berisi token tidak boleh dicatat",
+      new RegExp(`reset-password/${token}(\\?|\\s|$)`),
+      "tautan cadangan harus tercatat di log",
     );
   } finally {
     console.info = infoAsli;
     console.warn = purnaAsli;
     await server.tutup();
+  }
+});
+
+test("produksi dengan SMTP yang gagal: tautannya tidak ikut ke log", async () => {
+  // Port yang baru saja dipakai server palsu lalu ditutup: dijamin tidak ada
+  // yang menyimak, jadi pengirimannya gagal dengan cepat.
+  const server = buatServerSmtp();
+  const port = await server.dengar();
+  await server.tutup();
+
+  const dicatat = [];
+  const infoAsli = console.info;
+  const purnaAsli = console.warn;
+
+  try {
+    const akun = await buatAkun("Bu Sari");
+    await denganEnvSmtp(
+      {
+        ...TERBATAS,
+        SMTP_PORT: String(port),
+        SMTP_FROM_NAME: "Bimbel Uji",
+        NODE_ENV: "production",
+        // Uji e2e menyalakan saklar ini; di produksi asli ia tidak ada.
+        STARTER_TEST_RUN: undefined,
+      },
+      async () => {
+        console.info = (...argumen) => void dicatat.push(argumen.join(" "));
+        console.warn = (...argumen) => void dicatat.push(argumen.join(" "));
+        try {
+          await auth.api.requestPasswordReset({ body: { email: akun.email } });
+        } finally {
+          console.info = infoAsli;
+          console.warn = purnaAsli;
+        }
+      },
+    );
+
+    const teks = dicatat.join("\n");
+    assert.match(teks, /tidak terkirim/, "kegagalan harus terlihat di log");
+    assert.doesNotMatch(
+      teks,
+      /reset-password/,
+      "tautan berisi token tidak boleh dicatat di produksi",
+    );
+  } finally {
+    console.info = infoAsli;
+    console.warn = purnaAsli;
   }
 });
 
