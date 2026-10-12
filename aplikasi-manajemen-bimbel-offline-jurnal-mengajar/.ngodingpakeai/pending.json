@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "904852ee27f1293c5dbd8a0c56a2b8831de381bc",
+  "generatedForCommit": "6c1bb8e0c4525bee58290bcb2106966384c3f457",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -175,6 +175,12 @@
       "reason": "needs_summary",
       "language": "markdown",
       "size": 34166
+    },
+    {
+      "path": "docs/backend.md",
+      "reason": "changed",
+      "language": "markdown",
+      "size": 98183
     },
     {
       "path": "docs/deploy-coolify.md",
@@ -616,9 +622,9 @@
     },
     {
       "path": "e2e/atur-ulang-sandi.spec.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 6829
+      "size": 6700
     },
     {
       "path": "e2e/auth.spec.ts",
@@ -772,13 +778,13 @@
     },
     {
       "path": "package-lock.json",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "json",
       "size": 373165
     },
     {
       "path": "package.json",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "json",
       "size": 2542
     },
@@ -793,6 +799,12 @@
       "reason": "needs_summary",
       "language": "javascript",
       "size": 85
+    },
+    {
+      "path": "README.md",
+      "reason": "changed",
+      "language": "markdown",
+      "size": 11213
     },
     {
       "path": "scripts/backup.mjs",
@@ -910,9 +922,9 @@
     },
     {
       "path": "scripts/test.mjs",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "javascript",
-      "size": 3768
+      "size": 3864
     },
     {
       "path": "src/app/(auth)/atur-ulang-password/page.tsx",
@@ -2548,9 +2560,9 @@
     },
     {
       "path": "src/lib/auth.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 2435
+      "size": 3142
     },
     {
       "path": "src/lib/bukti-tagihan-html.ts",
@@ -2572,7 +2584,7 @@
     },
     {
       "path": "src/lib/email-tautan-reset.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 4577
     },
@@ -2752,9 +2764,9 @@
     },
     {
       "path": "src/lib/smtp.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 6033
+      "size": 6873
     },
     {
       "path": "src/lib/tagihan.ts",
@@ -2806,7 +2818,7 @@
     },
     {
       "path": "src/services/email.service.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 5325
     },
@@ -3039,6 +3051,12 @@
       "size": 186
     },
     {
+      "path": "tests/atur-ulang-sandi.test.mjs",
+      "reason": "new",
+      "language": "javascript",
+      "size": 4498
+    },
+    {
       "path": "tests/beda-hari.test.mjs",
       "reason": "needs_summary",
       "language": "javascript",
@@ -3051,14 +3069,26 @@
       "size": 3200
     },
     {
-      "path": "tests/email-service.test.mjs",
+      "path": "tests/dukungan/impor-ts.mjs",
       "reason": "new",
       "language": "javascript",
-      "size": 7799
+      "size": 1606
+    },
+    {
+      "path": "tests/dukungan/smtp-palsu.mjs",
+      "reason": "new",
+      "language": "javascript",
+      "size": 4942
+    },
+    {
+      "path": "tests/email-service.test.mjs",
+      "reason": "changed",
+      "language": "javascript",
+      "size": 4962
     },
     {
       "path": "tests/email-tautan-reset.test.mjs",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 3273
     },
@@ -3067,6 +3097,12 @@
       "reason": "needs_summary",
       "language": "javascript",
       "size": 2549
+    },
+    {
+      "path": "tests/lupa-sandi-email.test.mjs",
+      "reason": "new",
+      "language": "javascript",
+      "size": 6673
     },
     {
       "path": "tests/nav-portal.test.mjs",
@@ -3082,9 +3118,9 @@
     },
     {
       "path": "tests/smtp.test.mjs",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "javascript",
-      "size": 5491
+      "size": 6513
     },
     {
       "path": "tests/variant.test.mjs",
