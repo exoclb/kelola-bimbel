@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "ecc26360d16499595e436869c7209a298bd570fb",
+  "generatedForCommit": "116944c97002ae0ac400f746d5cb770bb6b06c23",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -208,7 +208,7 @@
     },
     {
       "path": "docs/peta-data-tiruan.md",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "markdown",
       "size": 23535
     },
@@ -630,7 +630,7 @@
       "path": "e2e/backup-riwayat.spec.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 7759
+      "size": 7897
     },
     {
       "path": "e2e/gaji.spec.ts",
@@ -1140,7 +1140,7 @@
       "path": "src/app/(protected)/app/pengaturan/backup/page.tsx",
       "reason": "changed",
       "language": "typescript",
-      "size": 10451
+      "size": 7033
     },
     {
       "path": "src/app/(protected)/app/pengaturan/ekspor/page.tsx",
@@ -1917,6 +1917,12 @@
       "size": 13324
     },
     {
+      "path": "src/components/daftar-riwayat-backup.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 3564
+    },
+    {
       "path": "src/components/daftar-riwayat-jurnal.tsx",
       "reason": "needs_summary",
       "language": "typescript",
@@ -2632,7 +2638,7 @@
     },
     {
       "path": "src/lib/mock-backup.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 3898
     },
@@ -2779,6 +2785,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 5115
+    },
+    {
+      "path": "src/lib/tampilan-backup.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1304
     },
     {
       "path": "src/lib/tanggal-perangkat.ts",
@@ -3124,7 +3136,7 @@
     },
     {
       "path": "tests/mock-backup.test.mjs",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 2965
     },
@@ -3145,6 +3157,12 @@
       "reason": "needs_summary",
       "language": "javascript",
       "size": 6706
+    },
+    {
+      "path": "tests/tampilan-backup.test.mjs",
+      "reason": "new",
+      "language": "javascript",
+      "size": 1960
     },
     {
       "path": "tests/variant.test.mjs",
