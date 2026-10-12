@@ -1,31 +1,63 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import {
-  MENU_PER_PERAN,
-  TAUTAN_CONTOH,
-  menuUntukPeran,
-  tampilkanTautanContoh,
-} from "../src/lib/mock-menu.ts";
+import { pasangImporTs } from "./dukungan/impor-ts.mjs";
 
-// Tautan halaman contoh (showcase) hanya boleh tampil selama aplikasi belum
-// rilis: pengguna bimbel tidak perlu halaman acuan tampilan. Uji di sini
-// menjaga dua hal — saklar mock-nya menentukan, dan penyaringan tautannya
-// benar-benar jalan untuk tiap peran staf.
+// Halaman contoh (showcase) hanya boleh terjangkau selama aplikasi belum rilis:
+// pengguna bimbel tidak perlu halaman acuan tampilan. Uji di sini menjaga tiga
+// hal — saklar mock-nya menentukan, tautan menunya ikut tersaring, dan setiap
+// halaman contoh benar-benar dijaga saklar yang sama.
+//
+// Alias "@/..." milik tsconfig diterjemahkan oleh penerjemah bersama di
+// tests/dukungan/impor-ts.mjs, supaya modul aplikasi bisa diimpor langsung.
+pasangImporTs();
+
+const { HALAMAN_CONTOH, halamanContohAktif } =
+  await import("../src/lib/halaman-contoh.ts");
+const { MENU_PER_PERAN, TAUTAN_CONTOH, menuUntukPeran } =
+  await import("../src/lib/mock-menu.ts");
 
 const akarRepo = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const href = (tautan) => tautan.href;
 const alamatContoh = TAUTAN_CONTOH.map(href);
 const hanyaContoh = (menu) => menu.filter((item) => item.contoh).map(href);
+const berkasHalaman = (alamat) =>
+  resolve(akarRepo, "src/app/(protected)", `.${alamat}/page.tsx`);
 
-test("saklar menutup tautan contoh hanya pada mode rilis", () => {
-  assert.equal(tampilkanTautanContoh({ NODE_ENV: "production" }), false);
-  assert.equal(tampilkanTautanContoh({ NODE_ENV: "development" }), true);
-  assert.equal(tampilkanTautanContoh({ NODE_ENV: "test" }), true);
+test("saklar menutup halaman contoh hanya pada mode rilis", () => {
+  assert.equal(halamanContohAktif({ NODE_ENV: "production" }), false);
+  assert.equal(halamanContohAktif({ NODE_ENV: "development" }), true);
+  assert.equal(halamanContohAktif({ NODE_ENV: "test" }), true);
   // Tanpa penanda apa pun (mis. skrip biasa) halaman contoh tetap terjangkau.
-  assert.equal(tampilkanTautanContoh({}), true);
+  assert.equal(halamanContohAktif({}), true);
+});
+
+test("daftar halaman contoh sejalan dengan tautan menunya", () => {
+  assert.deepEqual(alamatContoh, [...HALAMAN_CONTOH]);
+  for (const tautan of TAUTAN_CONTOH) {
+    assert.equal(tautan.contoh, true, `${tautan.href} belum ditandai contoh.`);
+    assert.ok(tautan.href.startsWith("/app/"), `${tautan.href} bukan di /app.`);
+  }
+});
+
+test("setiap halaman contoh ada dan dijaga saklar yang sama", () => {
+  for (const alamat of HALAMAN_CONTOH) {
+    const berkas = berkasHalaman(alamat);
+    assert.ok(existsSync(berkas), `Halaman ${alamat} tidak ditemukan.`);
+    const isi = readFileSync(berkas, "utf8");
+    assert.match(
+      isi,
+      /halamanContohAktif/,
+      `${alamat} tidak memakai saklar halaman contoh.`,
+    );
+    assert.match(
+      isi,
+      /notFound\(\)/,
+      `${alamat} tidak menyembunyikan diri saat saklar halaman contoh mati.`,
+    );
+  }
 });
 
 test("menu staf menampilkan tautan contoh selama saklar menyala", () => {
@@ -59,7 +91,7 @@ test("menu tanpa paksaan mengikuti saklar yang sedang berlaku", () => {
   const bawaan = menuUntukPeran("owner");
   assert.deepEqual(
     hanyaContoh(bawaan),
-    tampilkanTautanContoh() ? alamatContoh : [],
+    halamanContohAktif() ? alamatContoh : [],
   );
 });
 
@@ -81,17 +113,4 @@ test("daftar menu yang dibagikan tidak ikut berubah saat pemanggil mengubahnya",
     hanyaContoh(menuUntukPeran("owner", { tautanContoh: true })),
     [...alamatContoh],
   );
-});
-
-test("setiap tautan contoh punya halaman dan penandanya", () => {
-  for (const tautan of TAUTAN_CONTOH) {
-    assert.equal(tautan.contoh, true, `${tautan.href} belum ditandai contoh.`);
-    assert.ok(tautan.href.startsWith("/app/"), `${tautan.href} bukan di /app.`);
-    const berkas = resolve(
-      akarRepo,
-      "src/app/(protected)",
-      `.${tautan.href}/page.tsx`,
-    );
-    assert.ok(existsSync(berkas), `Halaman ${tautan.href} tidak ditemukan.`);
-  }
 });

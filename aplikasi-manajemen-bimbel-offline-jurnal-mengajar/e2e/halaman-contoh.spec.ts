@@ -3,10 +3,11 @@ import { setTimeout as delay } from "node:timers/promises";
 import { Pool } from "pg";
 import { expect, test, type APIResponse } from "@playwright/test";
 
-// Halaman contoh (showcase) bawaan starter tidak boleh punya tautan di menu
-// penerapan rilis. Berkas ini berjalan di atas server rilis yang sama dengan
-// penerapan sungguhan (`npm run build` + `next start`), jadi menu yang
-// diperiksa memang menu rilis.
+// Halaman contoh (showcase) bawaan starter tidak boleh terlihat di penerapan
+// rilis: tautan menunya hilang dan alamatnya berakhir sebagai halaman tidak
+// ditemukan. Berkas ini berjalan di atas server rilis yang sama dengan
+// penerapan sungguhan (`npm run build` + `next start`), jadi yang diperiksa
+// memang perilaku rilis.
 //
 // Saklarnya masih data tiruan (mode jalan, lihat `src/lib/mock-menu.ts`), dan
 // perilaku sisi pengembangan tidak bisa diperiksa dari sini — bagian itu diuji
@@ -102,5 +103,18 @@ for (const { peran, email, menuWajib } of akun) {
       ).toBeVisible();
       await expect(page.locator(`a[href="${alamatContoh}"]`)).toHaveCount(0);
     }
+
+    // Alamatnya pun tidak terbuka walau diketik langsung: permintaannya
+    // berakhir sebagai halaman tidak ditemukan, bukan halaman acuan tampilan.
+    // Status HTTP-nya tetap 200 karena cangkang halaman sudah terkirim lebih
+    // dulu (perilaku yang sama dipakai penjaga izin di src/lib/session.ts),
+    // jadi yang menentukan di sini isi halamannya.
+    await page.goto(alamatContoh);
+    await expect(
+      page.getByRole("heading", { name: "This page isn’t here" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Contoh Status Antarmuka" }),
+    ).toHaveCount(0);
   });
 }

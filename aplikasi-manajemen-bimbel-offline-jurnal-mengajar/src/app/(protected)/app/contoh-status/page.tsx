@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { AlertTriangle, Plus, RefreshCw } from "lucide-react";
 import { ContohPenjagaIzin } from "@/components/contoh-penjaga-izin";
 import { IsianTeks } from "@/components/isian-form";
@@ -10,6 +11,7 @@ import {
   PesanKosong,
   StatusMemuat,
 } from "@/components/status-antarmuka";
+import { halamanContohAktif } from "@/lib/halaman-contoh";
 import { requireSession } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Contoh Status Antarmuka" };
@@ -19,9 +21,15 @@ export const metadata: Metadata = { title: "Contoh Status Antarmuka" };
  * memuat, tidak ada isinya, dan gagal dimuat — plus contoh pesan validasi.
  * Datanya tiruan (tidak memanggil API); halaman ini jadi acuan tampilan saat
  * keadaan-keadaan itu dipasang di halaman sebenarnya.
+ *
+ * Halaman ini tidak ikut ke rilis: selama saklar halaman contoh mati, alamatnya
+ * berakhir sebagai halaman tidak ditemukan — sama seperti halaman yang tidak
+ * boleh dibuka pemakainya. Tautan menunya disaring di `src/lib/mock-menu.ts`.
  */
 export default async function ContohStatusPage() {
   await requireSession();
+
+  if (!halamanContohAktif()) notFound();
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">

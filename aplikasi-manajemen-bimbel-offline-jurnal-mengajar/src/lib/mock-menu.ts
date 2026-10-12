@@ -5,6 +5,7 @@
 // menu guru dan owner bisa ditinjau dari satu tempat. Menu hanyalah tampilan —
 // halaman dan API-nya tetap memeriksa izin sendiri, jadi menyembunyikan menu
 // bukan pengaman.
+import { halamanContohAktif } from "@/lib/halaman-contoh";
 import type { PeranPengguna } from "@/lib/peran";
 import type { Permissions } from "@/lib/permissions";
 
@@ -35,30 +36,13 @@ const MENU_DASAR: MenuApp[] = [
   { href: "/app/pengaturan", label: "Pengaturan" },
 ];
 
-// Halaman contoh (showcase) dari starter: isinya acuan bentuk antarmuka saat
-// pengembangan, bukan bagian aplikasi bimbel. Tautannya hanya ikut ke menu
-// selama saklar di bawah menyala.
+// Tautan halaman contoh (showcase) dari starter: isinya acuan bentuk antarmuka
+// saat pengembangan, bukan bagian aplikasi bimbel. Tautannya hanya ikut ke menu
+// selama saklar di `src/lib/halaman-contoh.ts` masih menyala, dan rutenya
+// dijaga saklar yang sama.
 export const TAUTAN_CONTOH: readonly MenuApp[] = [
   { href: "/app/contoh-status", label: "Contoh Status", contoh: true },
 ];
-
-/**
- * Saklar tautan halaman contoh — masih data tiruan.
- *
- * Nilai sungguhannya nanti dibaca dari pengaturan lingkungan rilis (task
- * "Saklar Mode Rilis"). Sementara itu penanda mode jalan yang sudah ada
- * dipakai lebih dulu: `npm run dev` menampilkan halaman contoh sebagai acuan
- * tampilan, sedangkan hasil rilis (`next build` + `next start`) tidak
- * menautkannya sama sekali, jadi pengguna rilis tidak bisa tersesat ke sana.
- *
- * Menyembunyikan tautan hanyalah tampilan: rutenya tetap perlu dijaga sendiri
- * (task "Kunci Rute Contoh").
- */
-export function tampilkanTautanContoh(
-  sumber: NodeJS.ProcessEnv = process.env,
-): boolean {
-  return sumber.NODE_ENV !== "production";
-}
 
 export const MENU_PER_PERAN: Record<PeranPengguna, MenuApp[]> = {
   // Guru: mengisi jurnal dan melihat gajinya sendiri.
@@ -116,7 +100,7 @@ export type OpsiMenuPeran = {
  */
 export function menuUntukPeran(
   peran: PeranPengguna,
-  { tautanContoh = tampilkanTautanContoh() }: OpsiMenuPeran = {},
+  { tautanContoh = halamanContohAktif() }: OpsiMenuPeran = {},
 ): MenuApp[] {
   return MENU_PER_PERAN[peran]
     .filter((menu) => tautanContoh || !menu.contoh)
