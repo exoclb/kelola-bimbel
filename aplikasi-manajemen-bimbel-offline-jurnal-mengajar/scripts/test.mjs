@@ -91,9 +91,15 @@ try {
       testEnv,
     );
   } else {
+    // Argumen tambahan diteruskan ke Playwright, jadi satu berkas uji bisa
+    // dijalankan sendiri: `npm run test:e2e -- e2e/atur-ulang-sandi.spec.ts`.
     await run(
       process.execPath,
-      [resolve(root, "node_modules/@playwright/test/cli.js"), "test"],
+      [
+        resolve(root, "node_modules/@playwright/test/cli.js"),
+        "test",
+        ...process.argv.slice(3),
+      ],
       testEnv,
     );
   }

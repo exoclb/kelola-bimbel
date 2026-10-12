@@ -1,40 +1,17 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, statSync } from "node:fs";
-import { registerHooks } from "node:module";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pasangImporTs } from "./dukungan/impor-ts.mjs";
 import {
   buatServerSmtp,
   dekodePesan,
   denganEnvSmtp,
 } from "./dukungan/smtp-palsu.mjs";
 
-// Alias "@/..." milik tsconfig diterjemahkan supaya layanan (yang mengimpor
-// `@/lib/...`, `@/db`, dan `@/services/...`) bisa dipakai langsung dari tes ini.
-// Node menjalankan TypeScript dengan menghapus tipe, dan `npm test` mengaktifkan
-// kondisi `react-server` sehingga modul ber-"server-only" boleh diimpor.
-const src = resolve(dirname(fileURLToPath(import.meta.url)), "../src");
-const AKHIRAN = [".ts", ".tsx", "/index.ts"];
-
-registerHooks({
-  resolve(spesifier, konteks, lanjut) {
-    let dasar;
-    if (spesifier.startsWith("@/")) dasar = resolve(src, spesifier.slice(2));
-    else if (
-      spesifier.startsWith(".") &&
-      konteks.parentURL?.startsWith("file:")
-    )
-      dasar = resolve(dirname(fileURLToPath(konteks.parentURL)), spesifier);
-    if (dasar)
-      for (const akhiran of AKHIRAN) {
-        const berkas = dasar + akhiran;
-        if (existsSync(berkas) && statSync(berkas).isFile())
-          return lanjut(pathToFileURL(berkas).href, konteks);
-      }
-    return lanjut(spesifier, konteks);
-  },
-});
+// Alias "@/..." milik tsconfig dan impor JSON diterjemahkan oleh penerjemah
+// bersama di tests/dukungan/impor-ts.mjs. Node menjalankan TypeScript dengan
+// menghapus tipe, dan `npm test` mengaktifkan kondisi `react-server` sehingga
+// modul ber-"server-only" boleh diimpor.
+pasangImporTs();
 
 const { kirimEmailTautanReset, kirimLewatSmtp } =
   await import("../src/services/email.service.ts");

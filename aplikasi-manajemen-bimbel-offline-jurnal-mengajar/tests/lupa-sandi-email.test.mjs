@@ -1,11 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { existsSync, readFileSync, statSync } from "node:fs";
-import { registerHooks } from "node:module";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
 import { Pool } from "pg";
+import { pasangImporTs } from "./dukungan/impor-ts.mjs";
 import {
   buatServerSmtp,
   dekodePesan,
@@ -13,41 +10,10 @@ import {
   headerPesan,
 } from "./dukungan/smtp-palsu.mjs";
 
-// Alias "@/..." milik tsconfig diterjemahkan supaya `src/lib/auth.ts` (dan
-// layanan email di belakangnya) bisa diimpor langsung oleh tes ini.
-const src = resolve(dirname(fileURLToPath(import.meta.url)), "../src");
-const AKHIRAN = [".ts", ".tsx", "/index.ts"];
-
-registerHooks({
-  resolve(spesifier, konteks, lanjut) {
-    let dasar;
-    if (spesifier.startsWith("@/")) dasar = resolve(src, spesifier.slice(2));
-    else if (
-      spesifier.startsWith(".") &&
-      konteks.parentURL?.startsWith("file:")
-    )
-      dasar = resolve(dirname(fileURLToPath(konteks.parentURL)), spesifier);
-    if (dasar)
-      for (const akhiran of AKHIRAN) {
-        const berkas = dasar + akhiran;
-        if (existsSync(berkas) && statSync(berkas).isFile())
-          return lanjut(pathToFileURL(berkas).href, konteks);
-      }
-    return lanjut(spesifier, konteks);
-  },
-  // Next boleh mengimpor JSON tanpa atribut; Node tidak. `starter.config.json`
-  // (dipakai config/site.ts) harus dibaca di sini supaya rantai impor auth
-  // berjalan di luar bundler.
-  load(url, konteks, lanjut) {
-    if (url.endsWith(".json"))
-      return {
-        format: "json",
-        source: readFileSync(fileURLToPath(url), "utf8"),
-        shortCircuit: true,
-      };
-    return lanjut(url, konteks);
-  },
-});
+// Alias "@/..." milik tsconfig dan impor JSON diterjemahkan oleh penerjemah
+// bersama di tests/dukungan/impor-ts.mjs, supaya modul aplikasi bisa diimpor
+// langsung.
+pasangImporTs();
 
 // `npm test` menyiapkan basis data sekali pakai; berkas ini memakainya seperti
 // tes layanan lain. Yang diuji di sini adalah SAMBUNGANNYA: permintaan lupa

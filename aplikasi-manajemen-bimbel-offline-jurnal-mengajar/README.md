@@ -94,7 +94,7 @@ Not every screen is wired to the database yet. Expenses, teacher attendance, and
 | `npm run test:e2e`            | Run browser tests against a separate PostgreSQL container                                      |
 | `npm run format`              | Format source and docs                                                                         |
 
-Tests require Docker even if your app uses a hosted database. They launch a unique disposable PostgreSQL server, inject its URL into the test processes, and remove it afterward. Your app database is never used. Browser tests use port **3101**; first run `npx playwright install chromium` and `npm run build`.
+Tests require Docker even if your app uses a hosted database. They launch a unique disposable PostgreSQL server, inject its URL into the test processes, and remove it afterward. Your app database is never used. Browser tests use port **3101**; first run `npx playwright install chromium` and `npm run build`. To run one spec on its own, pass it through: `npm run test:e2e -- e2e/atur-ulang-sandi.spec.ts`.
 
 ## Customize and extend
 
