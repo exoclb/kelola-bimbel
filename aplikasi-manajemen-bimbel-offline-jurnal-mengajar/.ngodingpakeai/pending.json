@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "23ecb874c5715a850cfd880df787c7c577366bca",
+  "generatedForCommit": "0d4313ac935d1eb2c0321a883e751fdda184ab0d",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -628,15 +628,15 @@
     },
     {
       "path": "e2e/backup-jalankan.spec.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 3827
     },
     {
       "path": "e2e/backup-riwayat.spec.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 7897
+      "size": 12083
     },
     {
       "path": "e2e/gaji.spec.ts",
@@ -1146,7 +1146,7 @@
       "path": "src/app/(protected)/app/pengaturan/backup/page.tsx",
       "reason": "changed",
       "language": "typescript",
-      "size": 7190
+      "size": 6119
     },
     {
       "path": "src/app/(protected)/app/pengaturan/ekspor/page.tsx",
@@ -1798,7 +1798,7 @@
     },
     {
       "path": "src/components/aksi-jalankan-backup.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 3425
     },
@@ -2253,6 +2253,18 @@
       "size": 7725
     },
     {
+      "path": "src/components/rincian-kartu.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 631
+    },
+    {
+      "path": "src/components/ringkasan-backup-terakhir.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 3229
+    },
+    {
       "path": "src/components/riwayat-gaji.tsx",
       "reason": "needs_summary",
       "language": "typescript",
@@ -2650,9 +2662,9 @@
     },
     {
       "path": "src/lib/mock-backup.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 3898
+      "size": 4230
     },
     {
       "path": "src/lib/mock-cabang.ts",
@@ -2800,9 +2812,9 @@
     },
     {
       "path": "src/lib/tampilan-backup.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 1304
+      "size": 3391
     },
     {
       "path": "src/lib/tanggal-perangkat.ts",
@@ -3172,9 +3184,9 @@
     },
     {
       "path": "tests/tampilan-backup.test.mjs",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "javascript",
-      "size": 1960
+      "size": 4295
     },
     {
       "path": "tests/variant.test.mjs",
