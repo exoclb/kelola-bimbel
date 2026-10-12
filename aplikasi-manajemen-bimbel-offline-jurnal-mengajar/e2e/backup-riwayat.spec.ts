@@ -101,6 +101,45 @@ test("riwayat backup menampilkan status, lokasi, dan alasan kegagalan", async ({
 });
 
 /**
+ * Kartu jadwal: bagian modul backup yang jadwalnya masih data tiruan
+ * (src/lib/mock-backup.ts) tetap tampil lengkap bersama riwayat sungguhan,
+ * supaya bentuk halaman modulnya terlihat utuh sebelum pengaturan jadwal
+ * tersambung ke server.
+ */
+test("kartu jadwal backup tampil dari data tiruan", async ({
+  page,
+  request,
+}) => {
+  const email = await daftar(request, "Owner Jadwal Backup");
+  await setRole(email, "owner");
+  await masuk(request, email);
+
+  await page.goto("/sign-in");
+  await page.getByLabel("Email", { exact: true }).fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(sandi);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.waitForURL((url) => !url.pathname.startsWith("/sign-in"));
+  await page.goto("/app/pengaturan/backup");
+
+  const kartu = page
+    .locator('[data-slot="card"]')
+    .filter({ hasText: "Jadwal backup" });
+  await expect(kartu).toHaveCount(1);
+
+  // Jadwal contoh: harian 02.00 WIB, retensi 30 hari, salinan di server.
+  await expect(kartu.getByText("Aktif", { exact: true })).toBeVisible();
+  await expect(kartu.getByText("Setiap hari pukul 02.00 WIB")).toBeVisible();
+  await expect(kartu.getByText("30 hari", { exact: true })).toBeVisible();
+  await expect(kartu.getByText("/var/backups/kelola")).toBeVisible();
+  await expect(
+    kartu.getByText("Jalan berikutnya", { exact: true }),
+  ).toBeVisible();
+
+  // Riwayat sungguhan tetap ada di halaman yang sama.
+  await expect(page.getByText("Riwayat backup", { exact: true })).toBeVisible();
+});
+
+/**
  * Endpoint riwayat backup: ringkasan status (jumlah per status dan backup
  * terakhir yang berhasil) plus daftar catatan terbaru yang jumlahnya bisa
  * dibatasi, hanya untuk akun berizin baca pengaturan.

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -16,6 +17,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { PesanKosong } from "@/components/status-antarmuka";
+import {
+  getJadwalBackup,
+  jadwalBerikutnya,
+  ringkasanJadwal,
+} from "@/lib/mock-backup";
 import { requirePermission } from "@/lib/session";
 import { ambilStatusBackup } from "@/services/backup.service";
 
@@ -58,11 +64,38 @@ function ukuranTeks(byte: number | null) {
   return `${(byte / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+/** Satu rincian kartu jadwal: label, nilai utama, dan keterangan kecilnya. */
+function RincianJadwal({
+  label,
+  nilai,
+  keterangan,
+}: {
+  label: string;
+  nilai: ReactNode;
+  keterangan: string;
+}) {
+  return (
+    <div className="space-y-1">
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="font-medium">{nilai}</p>
+      <p className="text-sm text-muted-foreground">{keterangan}</p>
+    </div>
+  );
+}
+
 export default async function BackupDatabasePage() {
   // Status backup menyangkut seluruh bimbel, jadi hanya owner/admin. Izin yang
   // sama dengan halaman pengaturan lain; akun lain melihat halaman tidak ada.
   await requirePermission({ pengaturan: ["read"] });
   const status = await ambilStatusBackup();
+  // Jadwalnya masih data tiruan (src/lib/mock-backup.ts): bagian modul backup
+  // yang belum punya tempat penyimpanan di aplikasi.
+  const jadwal = getJadwalBackup();
+  const waktuJadwal = new Intl.DateTimeFormat("id-ID", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: jadwal.zonaWaktu,
+  });
 
   const kartu = [
     {
@@ -125,6 +158,47 @@ export default async function BackupDatabasePage() {
           </Card>
         ))}
       </div>
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle className="text-base">Jadwal backup</CardTitle>
+          <CardDescription>
+            Rancangan jadwal modul backup. Sampai pengaturannya bisa diubah dari
+            halaman ini, jadwal sungguhan masih dijalankan penjadwal di server.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2">
+          <RincianJadwal
+            label="Status"
+            nilai={jadwal.aktif ? "Aktif" : "Nonaktif"}
+            keterangan={
+              jadwal.aktif
+                ? "Penjadwal menjalankan backup menurut jadwal di bawah."
+                : "Backup hanya jalan kalau dijalankan manual di server."
+            }
+          />
+          <RincianJadwal
+            label="Waktu"
+            nilai={ringkasanJadwal(jadwal)}
+            keterangan={`Menurut zona waktu ${jadwal.zonaWaktu}.`}
+          />
+          <RincianJadwal
+            label="Jalan berikutnya"
+            nilai={waktuJadwal.format(jadwalBerikutnya(jadwal))}
+            keterangan="Perkiraan menurut jadwal di atas."
+          />
+          <RincianJadwal
+            label="Retensi"
+            nilai={`${jadwal.retensiHari} hari`}
+            keterangan="Berkas yang lebih tua dari ini dihapus penjadwal, supaya salinan tidak menumpuk."
+          />
+          <RincianJadwal
+            label="Tujuan"
+            nilai={<code className="text-sm">{jadwal.tujuan}</code>}
+            keterangan="Salinan disalin juga ke penyimpanan terpisah di luar server."
+          />
+        </CardContent>
+      </Card>
 
       {status.terbaru.length === 0 ? (
         <PesanKosong
@@ -197,10 +271,10 @@ export default async function BackupDatabasePage() {
       )}
 
       <p className="mt-6 text-xs leading-5 text-muted-foreground">
-        Catatan: jadwal backup, tempat penyimpanan terpisah, aturan retensi, dan
-        uji pemulihan diatur di sisi server — lihat{" "}
-        <code>docs/deploy-coolify.md</code>. Halaman ini hanya membaca catatan
-        yang sudah ditulis proses backup.
+        Catatan: kartu jadwal di atas masih rancangan — jadwal, tempat
+        penyimpanan terpisah, aturan retensi, dan uji pemulihan sungguhannya
+        diatur di sisi server (lihat <code>docs/deploy-coolify.md</code>).
+        Riwayat di halaman ini membaca catatan yang sudah ditulis proses backup.
       </p>
     </div>
   );
