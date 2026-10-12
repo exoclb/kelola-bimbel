@@ -8,7 +8,8 @@ import "server-only";
 //
 // Kategori:
 // - wajib    : aplikasi tidak bisa jalan (auth atau database mati) tanpa ini.
-// - opsional : hanya menambah kenyamanan penyiapan/migrasi; bawaannya aman.
+// - opsional : hanya menambah kenyamanan penyiapan/migrasi atau kanal email;
+//              bawaannya aman (aplikasi tetap jalan tanpa ini).
 // - otomatis : diisi kerangka kerja atau platform, bukan oleh operator.
 
 export type KategoriVariabelLingkungan = "wajib" | "opsional" | "otomatis";
@@ -46,6 +47,51 @@ export const VARIABEL_LINGKUNGAN: readonly MetadataVariabelLingkungan[] = [
     kategori: "opsional",
     keterangan:
       "Koneksi langsung ke PostgreSQL untuk migrasi kalau DATABASE_URL lewat pooler.",
+  },
+  // Kanal email pengirim (Fase 1 roadmap). Semuanya opsional: selama belum
+  // diisi, tautan atur ulang sandi tetap dicatat ke log server. Diperiksa
+  // src/lib/smtp.ts — halaman status hanya menampilkan terpasang/belum.
+  {
+    nama: "SMTP_HOST",
+    kategori: "opsional",
+    keterangan:
+      "Alamat server SMTP pengirim email. Kalau kosong, fitur email mati dan tautan atur ulang sandi cukup dicatat ke log server.",
+  },
+  {
+    nama: "SMTP_PORT",
+    kategori: "opsional",
+    keterangan:
+      "Port server SMTP; bawaannya 587 (STARTTLS). Port 465 memakai TLS sejak awal koneksi.",
+  },
+  {
+    nama: "SMTP_SECURE",
+    kategori: "opsional",
+    keterangan:
+      "Paksa mode TLS: true atau false. Kalau kosong, nilainya ditentukan dari port (465 berarti true).",
+  },
+  {
+    nama: "SMTP_USER",
+    kategori: "opsional",
+    keterangan:
+      "Nama pengguna autentikasi SMTP; harus diisi bersama SMTP_PASSWORD.",
+  },
+  {
+    nama: "SMTP_PASSWORD",
+    kategori: "opsional",
+    keterangan:
+      "Sandi autentikasi SMTP. Rahasia: hanya diisi di pengaturan lingkungan, jangan di berkas repo.",
+  },
+  {
+    nama: "SMTP_FROM",
+    kategori: "opsional",
+    keterangan:
+      "Alamat pengirim pada email; kalau kosong memakai SMTP_USER.",
+  },
+  {
+    nama: "SMTP_FROM_NAME",
+    kategori: "opsional",
+    keterangan:
+      "Nama tampilan pengirim pada kotak masuk penerima; kosong berarti hanya alamatnya yang tampil.",
   },
   {
     nama: "POSTGRES_USER",
