@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "fcb58fe46244c39f2ad6c79a162e17aa453627fb",
+  "generatedForCommit": "904852ee27f1293c5dbd8a0c56a2b8831de381bc",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -60,7 +60,7 @@
       "path": ".cursor/skills/ngodingpakeai/SKILL.md",
       "reason": "needs_summary",
       "language": "markdown",
-      "size": 19096
+      "size": 19376
     },
     {
       "path": ".dockerignore",
@@ -616,9 +616,9 @@
     },
     {
       "path": "e2e/atur-ulang-sandi.spec.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
-      "size": 6627
+      "size": 6829
     },
     {
       "path": "e2e/auth.spec.ts",
@@ -672,7 +672,7 @@
       "path": "e2e/lupa-sandi.spec.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 4208
+      "size": 4321
     },
     {
       "path": "e2e/masuk-per-peran.spec.ts",
@@ -772,15 +772,15 @@
     },
     {
       "path": "package-lock.json",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "json",
-      "size": 373404
+      "size": 373165
     },
     {
       "path": "package.json",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "json",
-      "size": 2478
+      "size": 2542
     },
     {
       "path": "playwright.config.ts",
@@ -1954,9 +1954,9 @@
     },
     {
       "path": "src/components/form-atur-ulang-sandi.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
-      "size": 6576
+      "size": 6769
     },
     {
       "path": "src/components/form-aturan-gaji.tsx",
@@ -1980,7 +1980,7 @@
       "path": "src/components/form-lupa-sandi.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 7475
+      "size": 7706
     },
     {
       "path": "src/components/form-profil-bimbel.tsx",
@@ -2571,6 +2571,12 @@
       "size": 3988
     },
     {
+      "path": "src/lib/email-tautan-reset.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 4577
+    },
+    {
       "path": "src/lib/env.ts",
       "reason": "needs_summary",
       "language": "typescript",
@@ -2745,6 +2751,12 @@
       "size": 5430
     },
     {
+      "path": "src/lib/smtp.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 6033
+    },
+    {
       "path": "src/lib/tagihan.ts",
       "reason": "needs_summary",
       "language": "typescript",
@@ -2778,7 +2790,7 @@
       "path": "src/lib/variabel-lingkungan.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 5381
+      "size": 6931
     },
     {
       "path": "src/services/backup.service.ts",
@@ -2791,6 +2803,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 7654
+    },
+    {
+      "path": "src/services/email.service.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 5325
     },
     {
       "path": "src/services/gaji.service.ts",
@@ -3033,6 +3051,18 @@
       "size": 3200
     },
     {
+      "path": "tests/email-service.test.mjs",
+      "reason": "new",
+      "language": "javascript",
+      "size": 7799
+    },
+    {
+      "path": "tests/email-tautan-reset.test.mjs",
+      "reason": "new",
+      "language": "javascript",
+      "size": 3273
+    },
+    {
       "path": "tests/lembar-laporan.test.mjs",
       "reason": "needs_summary",
       "language": "javascript",
@@ -3049,6 +3079,12 @@
       "reason": "needs_summary",
       "language": "javascript",
       "size": 4608
+    },
+    {
+      "path": "tests/smtp.test.mjs",
+      "reason": "needs_summary",
+      "language": "javascript",
+      "size": 5491
     },
     {
       "path": "tests/variant.test.mjs",
