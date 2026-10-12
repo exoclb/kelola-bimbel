@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "0d4313ac935d1eb2c0321a883e751fdda184ab0d",
+  "generatedForCommit": "d43fbf812d1d59e075f4e8b8db6ec98785d3fbc1",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -210,7 +210,7 @@
       "path": "docs/peta-data-tiruan.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 24106
+      "size": 24525
     },
     {
       "path": "docs/prompts.md",
@@ -636,7 +636,7 @@
       "path": "e2e/backup-riwayat.spec.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 12083
+      "size": 15804
     },
     {
       "path": "e2e/gaji.spec.ts",
@@ -1146,7 +1146,7 @@
       "path": "src/app/(protected)/app/pengaturan/backup/page.tsx",
       "reason": "changed",
       "language": "typescript",
-      "size": 6119
+      "size": 4366
     },
     {
       "path": "src/app/(protected)/app/pengaturan/ekspor/page.tsx",
@@ -1995,6 +1995,12 @@
       "size": 5784
     },
     {
+      "path": "src/components/form-jadwal-backup.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 10558
+    },
+    {
       "path": "src/components/form-jadwal-kelas.tsx",
       "reason": "needs_summary",
       "language": "typescript",
@@ -2254,13 +2260,13 @@
     },
     {
       "path": "src/components/rincian-kartu.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 631
     },
     {
       "path": "src/components/ringkasan-backup-terakhir.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 3229
     },
@@ -2662,7 +2668,7 @@
     },
     {
       "path": "src/lib/mock-backup.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 4230
     },
@@ -2812,7 +2818,7 @@
     },
     {
       "path": "src/lib/tampilan-backup.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 3391
     },
@@ -3184,7 +3190,7 @@
     },
     {
       "path": "tests/tampilan-backup.test.mjs",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 4295
     },
