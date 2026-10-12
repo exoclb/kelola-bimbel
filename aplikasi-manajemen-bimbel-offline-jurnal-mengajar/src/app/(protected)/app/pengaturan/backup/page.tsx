@@ -1,13 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  CalendarClock,
-  DatabaseBackup,
-  Timer,
-  TriangleAlert,
-} from "lucide-react";
+import { ArrowLeft, CalendarClock, DatabaseBackup, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { DaftarRiwayatBackup } from "@/components/daftar-riwayat-backup";
 import { PesanKosong } from "@/components/status-antarmuka";
 import {
   getJadwalBackup,
@@ -23,14 +18,10 @@ import {
   ringkasanJadwal,
 } from "@/lib/mock-backup";
 import { requirePermission } from "@/lib/session";
+import { ukuranTeks, waktuLengkap } from "@/lib/tampilan-backup";
 import { ambilStatusBackup } from "@/services/backup.service";
 
 export const metadata: Metadata = { title: "Backup Database" };
-
-const waktuLengkap = new Intl.DateTimeFormat("id-ID", {
-  dateStyle: "long",
-  timeStyle: "short",
-});
 
 /** "Hari ini", "Kemarin", atau "N hari lalu" — cukup untuk menilai kesegaran. */
 function umurBackup(waktu: Date, sekarang = new Date()) {
@@ -40,28 +31,6 @@ function umurBackup(waktu: Date, sekarang = new Date()) {
   if (hari <= 0) return "hari ini";
   if (hari === 1) return "kemarin";
   return `${hari} hari lalu`;
-}
-
-/** Lama satu proses backup, mis. "1 menit 12 detik"; null berarti belum selesai. */
-function lamaProses(mulai: Date, selesai: Date | null) {
-  if (!selesai) return null;
-  const detik = Math.max(
-    0,
-    Math.round((selesai.getTime() - mulai.getTime()) / 1000),
-  );
-  if (detik < 60) return `${detik} detik`;
-  const menit = Math.floor(detik / 60);
-  const sisaDetik = detik % 60;
-  return sisaDetik === 0
-    ? `${menit} menit`
-    : `${menit} menit ${sisaDetik} detik`;
-}
-
-function ukuranTeks(byte: number | null) {
-  if (!byte) return "—";
-  if (byte < 1024) return `${byte} B`;
-  if (byte < 1024 * 1024) return `${(byte / 1024).toFixed(1)} KB`;
-  return `${(byte / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 /** Satu rincian kartu jadwal: label, nilai utama, dan keterangan kecilnya. */
@@ -207,67 +176,10 @@ export default async function BackupDatabasePage() {
           keterangan="Catatan muncul setelah backup terjadwal pertama di server selesai — kartu di atas masih nol sampai itu terjadi. Proses yang sedang berjalan langsung muncul di sini dengan statusnya, jadi gagal atau menggantung tidak perlu dicari di log."
         />
       ) : (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle className="text-base">Riwayat backup</CardTitle>
-            <CardDescription>
-              {status.terbaru.length} catatan terbaru dari {status.jumlah.total}{" "}
-              catatan.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="divide-y">
-            {status.terbaru.map((baris) => (
-              <div
-                key={baris.id}
-                className="flex flex-wrap items-start justify-between gap-3 py-4 first:pt-0 last:pb-0"
-              >
-                <div className="space-y-1">
-                  <p className="font-medium">
-                    {waktuLengkap.format(baris.mulai)}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {ukuranTeks(baris.ukuranByte)}
-                    {lamaProses(baris.mulai, baris.selesai)
-                      ? ` · ${lamaProses(baris.mulai, baris.selesai)}`
-                      : " · masih berjalan"}
-                    {baris.lokasi ? ` · ${baris.lokasi}` : ""}
-                  </p>
-                  {baris.status === "gagal" ? (
-                    // Alasan kegagalan dibuat menonjol: inilah bagian yang
-                    // dicari saat backup gagal.
-                    <p className="border-destructive/20 bg-destructive/5 text-destructive flex items-start gap-2 rounded-lg border px-3 py-2 text-sm leading-6">
-                      <TriangleAlert
-                        className="mt-0.5 size-4 shrink-0"
-                        aria-hidden="true"
-                      />
-                      <span>
-                        {baris.pesan?.trim() ||
-                          "Proses berhenti tanpa pesan. Periksa log backup di server untuk sebabnya."}
-                      </span>
-                    </p>
-                  ) : (
-                    baris.pesan && (
-                      <p className="text-sm leading-6 text-muted-foreground">
-                        {baris.pesan}
-                      </p>
-                    )
-                  )}
-                </div>
-                <span
-                  className={
-                    baris.status === "sukses"
-                      ? "rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary"
-                      : baris.status === "gagal"
-                        ? "rounded-full border border-destructive/30 bg-destructive/10 px-2.5 py-0.5 text-xs font-medium text-destructive"
-                        : "rounded-full border bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground"
-                  }
-                >
-                  {baris.status}
-                </span>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+        <DaftarRiwayatBackup
+          baris={status.terbaru}
+          total={status.jumlah.total}
+        />
       )}
 
       <p className="mt-6 text-xs leading-5 text-muted-foreground">

@@ -98,6 +98,8 @@ test("riwayat backup menampilkan status, lokasi, dan alasan kegagalan", async ({
   await expect(page.getByText("Belum ada catatan backup")).toHaveCount(0);
   // 1 MB ditulis dalam satuan yang mudah dibaca.
   await expect(page.getByText(/1[.,]0 MB|1 MB/).first()).toBeVisible();
+  // Lama proses ikut tampil untuk catatan yang sudah selesai (4 menit).
+  await expect(page.getByText("4 menit").first()).toBeVisible();
 });
 
 /**
