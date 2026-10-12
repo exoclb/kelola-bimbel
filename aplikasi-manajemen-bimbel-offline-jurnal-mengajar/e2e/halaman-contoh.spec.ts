@@ -4,14 +4,14 @@ import { Pool } from "pg";
 import { expect, test, type APIResponse } from "@playwright/test";
 
 // Halaman contoh (showcase) bawaan starter tidak boleh terlihat di penerapan
-// rilis: tautan menunya hilang dan alamatnya berakhir sebagai halaman tidak
-// ditemukan. Berkas ini berjalan di atas server rilis yang sama dengan
-// penerapan sungguhan (`npm run build` + `next start`), jadi yang diperiksa
-// memang perilaku rilis.
+// rilis: tautan menunya hilang dan alamatnya berakhir di tampilan penolakan
+// bersama, bukan halaman acuan tampilan. Berkas ini berjalan di atas server
+// rilis yang sama dengan penerapan sungguhan (`npm run build` + `next start`),
+// jadi yang diperiksa memang perilaku rilis.
 //
-// Saklarnya masih data tiruan (mode jalan, lihat `src/lib/mock-menu.ts`), dan
-// perilaku sisi pengembangan tidak bisa diperiksa dari sini — bagian itu diuji
-// di `tests/menu-contoh.test.mjs`.
+// Saklarnya masih data tiruan (mode jalan, lihat `src/lib/halaman-contoh.ts`),
+// dan perilaku sisi pengembangan tidak bisa diperiksa dari sini — bagian itu
+// diuji di `tests/halaman-contoh.test.mjs`.
 const origin = "http://localhost:3101";
 const headers = { Origin: origin };
 const sandi = "Halaman-contoh-test-123!";
@@ -105,16 +105,41 @@ for (const { peran, email, menuWajib } of akun) {
     }
 
     // Alamatnya pun tidak terbuka walau diketik langsung: permintaannya
-    // berakhir sebagai halaman tidak ditemukan, bukan halaman acuan tampilan.
+    // berakhir di tampilan penolakan bersama, bukan halaman acuan tampilan.
     // Status HTTP-nya tetap 200 karena cangkang halaman sudah terkirim lebih
     // dulu (perilaku yang sama dipakai penjaga izin di src/lib/session.ts),
     // jadi yang menentukan di sini isi halamannya.
     await page.goto(alamatContoh);
     await expect(
-      page.getByRole("heading", { name: "This page isn’t here" }),
+      page.getByRole("heading", { name: "Halaman ini tidak tersedia" }),
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Contoh Status Antarmuka" }),
     ).toHaveCount(0);
+    // Tampilan penolakan menyediakan jalan kembali dan tidak memuat pesan
+    // teknis apa pun. Yang diperiksa teks yang benar-benar terlukis, bukan
+    // isi berkas halaman.
+    await expect(
+      page.getByRole("link", { name: "Kembali ke beranda" }),
+    ).toBeVisible();
+    const teks = await page.locator("body").innerText();
+    expect(teks).not.toContain("404");
+    expect(teks).not.toContain(alamatContoh);
   });
 }
+
+test("alamat asing ditolak dengan tampilan yang sama dan tanpa pesan teknis", async ({
+  page,
+}) => {
+  const balasan = await page.goto("/alamat-yang-tidak-ada");
+  // Alamat yang benar-benar tidak ada dijawab 404 karena tidak ada cangkang
+  // halaman yang terlanjur terkirim.
+  expect(balasan?.status()).toBe(404);
+  await expect(
+    page.getByRole("heading", { name: "Halaman ini tidak tersedia" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Kembali ke beranda" }),
+  ).toBeVisible();
+  expect(await page.locator("body").innerText()).not.toContain("404");
+});
