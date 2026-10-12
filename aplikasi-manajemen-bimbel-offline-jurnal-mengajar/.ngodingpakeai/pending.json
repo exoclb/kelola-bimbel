@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "6c1bb8e0c4525bee58290bcb2106966384c3f457",
+  "generatedForCommit": "48e6696a9d23ba19431774e53f0f809c376deb6d",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -175,12 +175,6 @@
       "reason": "needs_summary",
       "language": "markdown",
       "size": 34166
-    },
-    {
-      "path": "docs/backend.md",
-      "reason": "changed",
-      "language": "markdown",
-      "size": 98183
     },
     {
       "path": "docs/deploy-coolify.md",
@@ -624,7 +618,7 @@
       "path": "e2e/atur-ulang-sandi.spec.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 6700
+      "size": 6903
     },
     {
       "path": "e2e/auth.spec.ts",
@@ -643,6 +637,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 12907
+    },
+    {
+      "path": "e2e/halaman-contoh.spec.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 3789
     },
     {
       "path": "e2e/jadwal-bentrok.spec.ts",
@@ -804,7 +804,7 @@
       "path": "README.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 11213
+      "size": 11340
     },
     {
       "path": "scripts/backup.mjs",
@@ -924,7 +924,7 @@
       "path": "scripts/test.mjs",
       "reason": "changed",
       "language": "javascript",
-      "size": 3864
+      "size": 3988
     },
     {
       "path": "src/app/(auth)/atur-ulang-password/page.tsx",
@@ -2562,7 +2562,7 @@
       "path": "src/lib/auth.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 3142
+      "size": 3215
     },
     {
       "path": "src/lib/bukti-tagihan-html.ts",
@@ -2584,9 +2584,9 @@
     },
     {
       "path": "src/lib/email-tautan-reset.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 4577
+      "size": 4673
     },
     {
       "path": "src/lib/env.ts",
@@ -2656,9 +2656,9 @@
     },
     {
       "path": "src/lib/mock-menu.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 2756
+      "size": 4332
     },
     {
       "path": "src/lib/mock-murid.ts",
@@ -2766,7 +2766,7 @@
       "path": "src/lib/smtp.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 6873
+      "size": 7063
     },
     {
       "path": "src/lib/tagihan.ts",
@@ -2818,9 +2818,9 @@
     },
     {
       "path": "src/services/email.service.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 5325
+      "size": 5490
     },
     {
       "path": "src/services/gaji.service.ts",
@@ -3052,9 +3052,9 @@
     },
     {
       "path": "tests/atur-ulang-sandi.test.mjs",
-      "reason": "new",
+      "reason": "changed",
       "language": "javascript",
-      "size": 4498
+      "size": 4633
     },
     {
       "path": "tests/beda-hari.test.mjs",
@@ -3070,27 +3070,27 @@
     },
     {
       "path": "tests/dukungan/impor-ts.mjs",
-      "reason": "new",
+      "reason": "changed",
       "language": "javascript",
-      "size": 1606
+      "size": 1648
     },
     {
       "path": "tests/dukungan/smtp-palsu.mjs",
-      "reason": "new",
+      "reason": "changed",
       "language": "javascript",
-      "size": 4942
+      "size": 5089
     },
     {
       "path": "tests/email-service.test.mjs",
       "reason": "changed",
       "language": "javascript",
-      "size": 4962
+      "size": 5117
     },
     {
       "path": "tests/email-tautan-reset.test.mjs",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "javascript",
-      "size": 3273
+      "size": 3357
     },
     {
       "path": "tests/lembar-laporan.test.mjs",
@@ -3100,9 +3100,15 @@
     },
     {
       "path": "tests/lupa-sandi-email.test.mjs",
+      "reason": "changed",
+      "language": "javascript",
+      "size": 6871
+    },
+    {
+      "path": "tests/menu-contoh.test.mjs",
       "reason": "new",
       "language": "javascript",
-      "size": 6673
+      "size": 3635
     },
     {
       "path": "tests/nav-portal.test.mjs",
@@ -3120,7 +3126,7 @@
       "path": "tests/smtp.test.mjs",
       "reason": "changed",
       "language": "javascript",
-      "size": 6513
+      "size": 6706
     },
     {
       "path": "tests/variant.test.mjs",
