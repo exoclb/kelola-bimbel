@@ -1,10 +1,30 @@
 import { randomUUID } from "node:crypto";
-import { expect, test, type APIRequestContext } from "@playwright/test";
+import {
+  expect,
+  test,
+  type APIRequestContext,
+  type Locator,
+} from "@playwright/test";
 import { Pool } from "pg";
 
 const origin = "http://localhost:3101";
 const headers = { Origin: origin };
 const sandi = "Backup-riwayat-test-123!";
+
+/**
+ * Mengisi input waktu seperti pemakai: fokus ke bagian jam lalu ketik empat
+ * angka, mis. "0330" menjadi 03.30. Nilai kosong diketik dengan Delete.
+ *
+ * `fill()` tidak dipakai di sini: pada input waktu Playwright hanya mengubah
+ * nilai di DOM — React tidak menerima kejadian `input`-nya, jadi ringkasan
+ * jadwal dan hasil simpan tidak ikut berubah.
+ */
+async function ketikJam(input: Locator, nilai: string) {
+  await input.click();
+  await input.press("Home");
+  if (nilai === "") await input.press("Delete");
+  else await input.pressSequentially(nilai.replace(":", ""));
+}
 
 async function daftar(client: APIRequestContext, nama: string) {
   const email = `backup-${randomUUID()}@example.com`;
@@ -160,12 +180,12 @@ test("riwayat backup menampilkan status, lokasi, dan alasan kegagalan", async ({
 });
 
 /**
- * Kartu jadwal: bagian modul backup yang jadwalnya masih data tiruan
+ * Formulir jadwal: bagian modul backup yang jadwalnya masih data tiruan
  * (src/lib/mock-backup.ts) tetap tampil lengkap bersama riwayat sungguhan,
  * supaya bentuk halaman modulnya terlihat utuh sebelum pengaturan jadwal
  * tersambung ke server.
  */
-test("kartu jadwal backup tampil dari data tiruan", async ({
+test("form jadwal backup terisi dari data tiruan", async ({
   page,
   request,
 }) => {
@@ -186,16 +206,86 @@ test("kartu jadwal backup tampil dari data tiruan", async ({
   await expect(kartu).toHaveCount(1);
 
   // Jadwal contoh: harian 02.00 WIB, retensi 30 hari, salinan di server.
-  await expect(kartu.getByText("Aktif", { exact: true })).toBeVisible();
-  await expect(kartu.getByText("Setiap hari pukul 02.00 WIB")).toBeVisible();
-  await expect(kartu.getByText("30 hari", { exact: true })).toBeVisible();
-  await expect(kartu.getByText("/var/backups/kelola")).toBeVisible();
   await expect(
-    kartu.getByText("Jalan berikutnya", { exact: true }),
-  ).toBeVisible();
+    kartu.getByRole("checkbox", { name: "Jalankan backup otomatis" }),
+  ).toBeChecked();
+  await expect(kartu.getByLabel("Jam mulai")).toHaveValue("02:00");
+  await expect(kartu.getByLabel("Zona waktu")).toHaveValue("Asia/Jakarta");
+  await expect(kartu.getByLabel("Retensi (hari)")).toHaveValue("30");
+  await expect(kartu.getByLabel("Tempat penyimpanan")).toHaveValue(
+    "/var/backups/kelola",
+  );
+  await expect(kartu.getByText("Setiap hari pukul 02.00 WIB")).toBeVisible();
+  await expect(kartu.getByText(/Jalan berikutnya /)).toBeVisible();
 
   // Riwayat sungguhan tetap ada di halaman yang sama.
   await expect(page.getByText("Riwayat backup", { exact: true })).toBeVisible();
+});
+
+/**
+ * Formulir jadwal bisa diisi dan diringkas sambil diubah, tapi isian yang salah
+ * ditahan lebih dulu; yang "tersimpan" pun masih keadaan di layar, bukan
+ * perubahan di server.
+ */
+test("form jadwal backup mengubah ringkasan dan menolak isian yang salah", async ({
+  page,
+  request,
+}) => {
+  const email = await daftar(request, "Owner Ubah Jadwal Backup");
+  await setRole(email, "owner");
+  await masuk(request, email);
+
+  await page.goto("/sign-in");
+  await page.getByLabel("Email", { exact: true }).fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(sandi);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.waitForURL((url) => !url.pathname.startsWith("/sign-in"));
+  await page.goto("/app/pengaturan/backup");
+
+  const kartu = page.locator('[data-slot="card"]').filter({
+    has: page.getByText("Jadwal backup", { exact: true }),
+  });
+
+  // Perubahan isian langsung terbaca di ringkasan di atas formulir.
+  await ketikJam(kartu.getByLabel("Jam mulai"), "03:30");
+  await expect(kartu.getByText("Setiap hari pukul 03.30 WIB")).toBeVisible();
+
+  // Isian bermasalah ditampilkan sekaligus, dan belum ada yang tersimpan.
+  await ketikJam(kartu.getByLabel("Jam mulai"), "");
+  await kartu.getByLabel("Retensi (hari)").fill("0");
+  await kartu.getByLabel("Tempat penyimpanan").fill("backups/kelola");
+  await kartu.getByRole("button", { name: "Simpan jadwal" }).click();
+
+  const peringatan = kartu.getByRole("alert");
+  await expect(peringatan).toContainText(
+    "Jam mulai wajib diisi dengan format 24 jam",
+  );
+  await expect(peringatan).toContainText(
+    "Retensi minimal 1 hari, ditulis dalam angka bulat.",
+  );
+  await expect(peringatan).toContainText("Tulis path lengkap di server");
+  await expect(kartu.getByText("Jadwal backup tersimpan")).toHaveCount(0);
+
+  // Setelah diperbaiki, jadwalnya "tersimpan" sebagai tampilan sementara.
+  await ketikJam(kartu.getByLabel("Jam mulai"), "03:30");
+  await kartu.getByLabel("Retensi (hari)").fill("45");
+  await kartu.getByLabel("Tempat penyimpanan").fill("/var/backups/kelola-baru");
+  await kartu.getByRole("button", { name: "Simpan jadwal" }).click();
+
+  const konfirmasi = page.locator('[data-slot="card"]').filter({
+    has: page.getByText("Jadwal backup tersimpan", { exact: true }),
+  });
+  await expect(konfirmasi.getByText("45 hari", { exact: true })).toBeVisible();
+  await expect(konfirmasi.getByText("/var/backups/kelola-baru")).toBeVisible();
+  await expect(
+    konfirmasi.getByText("Setiap hari pukul 03.30 WIB"),
+  ).toBeVisible();
+  await expect(konfirmasi.getByText(/belum dikirim ke server/)).toBeVisible();
+
+  // "Ubah lagi" mengembalikan formulir bersama isian terakhirnya.
+  await konfirmasi.getByRole("button", { name: "Ubah lagi" }).click();
+  await expect(kartu.getByLabel("Jam mulai")).toHaveValue("03:30");
+  await expect(kartu.getByLabel("Retensi (hari)")).toHaveValue("45");
 });
 
 /**

@@ -3,22 +3,12 @@ import Link from "next/link";
 import { ArrowLeft, DatabaseBackup, Timer } from "lucide-react";
 import { AksiJalankanBackup } from "@/components/aksi-jalankan-backup";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { DaftarRiwayatBackup } from "@/components/daftar-riwayat-backup";
-import { RincianKartu } from "@/components/rincian-kartu";
+import { FormJadwalBackup } from "@/components/form-jadwal-backup";
 import { RingkasanBackupTerakhir } from "@/components/ringkasan-backup-terakhir";
 import { PesanKosong } from "@/components/status-antarmuka";
-import {
-  getJadwalBackup,
-  jadwalBerikutnya,
-  ringkasanJadwal,
-} from "@/lib/mock-backup";
+import { getJadwalBackup } from "@/lib/mock-backup";
 import { requirePermission } from "@/lib/session";
 import { ambilStatusBackup } from "@/services/backup.service";
 
@@ -32,11 +22,6 @@ export default async function BackupDatabasePage() {
   // Jadwalnya masih data tiruan (src/lib/mock-backup.ts): bagian modul backup
   // yang belum punya tempat penyimpanan di aplikasi.
   const jadwal = getJadwalBackup();
-  const waktuJadwal = new Intl.DateTimeFormat("id-ID", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: jadwal.zonaWaktu,
-  });
 
   const kartu = [
     {
@@ -95,46 +80,9 @@ export default async function BackupDatabasePage() {
         jadwal={jadwal}
       />
 
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle className="text-base">Jadwal backup</CardTitle>
-          <CardDescription>
-            Rancangan jadwal modul backup. Sampai pengaturannya bisa diubah dari
-            halaman ini, jadwal sungguhan masih dijalankan penjadwal di server.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <RincianKartu
-            label="Status"
-            nilai={jadwal.aktif ? "Aktif" : "Nonaktif"}
-            keterangan={
-              jadwal.aktif
-                ? "Penjadwal menjalankan backup menurut jadwal di bawah."
-                : "Backup hanya jalan kalau dijalankan manual di server."
-            }
-          />
-          <RincianKartu
-            label="Waktu"
-            nilai={ringkasanJadwal(jadwal)}
-            keterangan={`Menurut zona waktu ${jadwal.zonaWaktu}.`}
-          />
-          <RincianKartu
-            label="Jalan berikutnya"
-            nilai={waktuJadwal.format(jadwalBerikutnya(jadwal))}
-            keterangan="Perkiraan menurut jadwal di atas."
-          />
-          <RincianKartu
-            label="Retensi"
-            nilai={`${jadwal.retensiHari} hari`}
-            keterangan="Berkas yang lebih tua dari ini dihapus penjadwal, supaya salinan tidak menumpuk."
-          />
-          <RincianKartu
-            label="Tujuan"
-            nilai={<code className="text-sm">{jadwal.tujuan}</code>}
-            keterangan="Salinan disalin juga ke penyimpanan terpisah di luar server."
-          />
-        </CardContent>
-      </Card>
+      <div className="mt-6">
+        <FormJadwalBackup jadwal={jadwal} />
+      </div>
 
       <AksiJalankanBackup />
 
@@ -152,9 +100,9 @@ export default async function BackupDatabasePage() {
       )}
 
       <p className="mt-6 text-xs leading-5 text-muted-foreground">
-        Catatan: kartu jadwal dan tombol jalankan backup di atas masih rancangan
-        — jadwal, proses backup, tempat penyimpanan terpisah, aturan retensi,
-        dan uji pemulihan sungguhannya diatur di sisi server (lihat{" "}
+        Catatan: formulir jadwal dan tombol jalankan backup di atas masih
+        rancangan — jadwal, proses backup, tempat penyimpanan terpisah, aturan
+        retensi, dan uji pemulihan sungguhannya diatur di sisi server (lihat{" "}
         <code>docs/deploy-coolify.md</code>). Riwayat di halaman ini membaca
         catatan yang sudah ditulis proses backup.
       </p>
