@@ -299,23 +299,105 @@ dan rencanakan pemulihan database secara terpisah bila ada perubahan berisiko.
 
 ## Fase 4 — Auto-deploy dari Git & Backup Database
 
-### 1. Webhook dan rilis otomatis
+### 1. Webhook, pipa CI, dan rilis otomatis
+
+Rilis di repo ini dua tahap: **pull request yang pipa CI-nya hijau**, lalu
+**auto-deploy Coolify** setelah commit itu mendarat di `master`. Push langsung ke
+`master` bukan lagi jalur rilis — cabangnya sudah dilindungi syarat merge di
+bagian bawah.
 
 1. Di resource aplikasi → **Webhooks**: hubungkan repository (GitHub App atau
    deploy webhook) dengan branch `master` sebagai pemicu.
-2. Push ke `master` → Coolify otomatis build dan deploy ulang. Uji dengan satu
-   commit kecil, lalu lihat **Deployments**.
+2. Uji dengan satu pull request kecil: gabung setelah pipanya hijau, lalu lihat
+   build dan deploy-nya di **Deployments** Coolify.
 3. Nyalakan **Notifications** (email/Discord/Telegram sesuai kebutuhan) untuk
    kabar sukses maupun gagal setiap deploy.
 
-> **Usang (audit deploy):** push ke `master` bukan lagi jalur rilis yang benar.
-> Pipa CI (`.github/workflows/ci.yml`) memeriksa setiap push dan pull request,
-> dan cabang `master` sudah menuntut status check `Ringkasan hasil CI` lulus
-> sebelum digabung (`npm run ci:wajib`), jadi perubahannya masuk lewat pull
-> request yang hijau; auto-deploy Coolify baru jalan setelah commit itu mendarat
-> di `master`. Cara membaca hasil pipanya dari dalam aplikasi ada di Pengaturan
-> → Status CI (`/app/pengaturan/ci`). Rinciannya di
-> `docs/audit-deploy-usang.md` (butir 3).
+#### a. Apa yang diperiksa pipa CI
+
+Pipanya `.github/workflows/ci.yml` dan berjalan pada **setiap push dan pull
+request**. Berkasnya sengaja ada di **akar repo**, bukan di dalam folder aplikasi:
+GitHub hanya membaca `.github/workflows` di akar repo, sedangkan
+langkah-langkahnya dijalankan dari folder aplikasi (`defaults.run`).
+
+| Langkah                         | Perintah               | Job            |
+| ------------------------------- | ---------------------- | -------------- |
+| Penyiapan proyek                | `npm run setup`        | `check`, `e2e` |
+| Pemeriksaan kode & uji otomatis | `npm run check`        | `check`        |
+| Format berkas                   | `npm run format:check` | `check`        |
+| Build produksi                  | `npm run build`        | `e2e`          |
+| Uji end-to-end (Playwright)     | `npm run test:e2e`     | `e2e`          |
+
+Tiga job-nya sengaja dipisah: `check` (tanpa peramban) harus lulus dulu sebelum
+`e2e` jalan, lalu `ringkasan` selalu jalan — walau ada yang gagal — menuliskan
+tabel hasil kelima langkah ke halaman jalan, dan menggagalkan pipanya kalau ada
+job yang merah. Nama status check yang dipakai sebagai syarat merge adalah job
+ringkasan itu: **Ringkasan hasil CI**. Push yang menyusul membatalkan jalan yang
+sedang berjalan, jadi hasilnya selalu tentang commit terbaru.
+
+Hasilnya dibaca di **GitHub → tab Actions** pada commit atau pull request-nya;
+kalau uji peramban gagal, artefak **`laporan-uji-peramban`** (tangkapan layar,
+jejak langkah, dan laporan HTML) tersimpan 7 hari sehingga tidak perlu menjalankan
+ulang pipanya untuk menyelidiki.
+
+**Pengaturan → Status CI** (`/app/pengaturan/ci`) membaca daftar langkah baku yang
+sama, tetapi halaman itu **belum tersambung ke GitHub**: isinya masih contoh
+bentuk dan ditandai begitu di layar, jadi jangan dipakai sebagai bukti rilis —
+yang sahih tetap tab Actions. Daftar langkahnya tinggal di
+`src/lib/ci-otomatis.ts`, dan `tests/ci-otomatis.test.mjs` menjaga daftar itu
+selalu sama dengan urutan langkah di berkas pipa: menambah langkah di pipa berarti
+menambahkannya di sana juga, atau pipanya sendiri yang merah.
+
+#### b. Mengulang pemeriksaannya sendiri sebelum push
+
+Urutan yang sama bisa dijalankan dari folder aplikasi, jadi kesalahan ketahuan
+sebelum menghabiskan kuota Actions:
+
+```bash
+npm run check          # lint + tipe + seluruh uji unit/integrasi
+npm run format:check   # tata tulisan Prettier (npm run format untuk memperbaiki)
+npm run test:e2e       # skenario peramban (Playwright)
+```
+
+`check` dan `test:e2e` menyiapkan **PostgreSQL sekali pakai** dari
+`compose.test.yaml` lewat `scripts/test.mjs`, dan tidak pernah menyentuh database
+pengembangan. Karena itu keduanya butuh Docker yang jalan; kalau Docker mati,
+perintahnya gagal di penyiapan — bukan berarti kodenya salah. Untuk uji peramban
+pertama kali, unduh perambannya dulu:
+`npx playwright install --with-deps chromium`.
+
+Berkas dokumentasi ikut diperiksa langkah format, jadi sesudah menyunting panduan
+ini jalankan `npm run format` — kalau tidak, langkah format di CI yang merah,
+bukan kodenya.
+
+#### c. Memasang syarat merge di cabang utama
+
+`npm run ci:wajib` menyetel branch protection GitHub dari terminal: status check
+**Ringkasan hasil CI** harus lulus, dan cabangnya harus sudah memuat cabang
+dasarnya (supaya yang lulus itu kode terbaru). Nama check-nya dibaca dari berkas
+pipanya sendiri — job yang selalu jalan — jadi tidak bisa melenceng dari pipanya.
+
+- Butuh GitHub CLI (`gh`) yang sudah `gh auth login` dan hak admin di reponya.
+- Branch protection hanya tersedia di **repo publik atau GitHub Pro**; repo privat
+  di paket gratis dijawab GitHub dengan 403, dan pesannya diteruskan apa adanya.
+- `npm run ci:wajib -- --kering` hanya **mencetak** perintah `gh api` yang akan
+  dipakai, tanpa mengubah setelan apa pun; `--hapus` mencabut kewajibannya lagi.
+- Setelannya hanya **menambah** kewajiban itu (`enforce_admins: false`, jadi
+  pemilik repo masih punya jalan darurat), tetapi cabang yang dilindungi tidak
+  bisa lagi di-push langsung — perubahannya masuk lewat pull request.
+- Sesudah disetel, setelannya dibaca ulang dari GitHub, jadi yang dilaporkan
+  memang yang benar-benar terpasang.
+
+#### d. Urutan rilis yang dipakai sekarang
+
+1. Commit di cabang kerja → push → buka **pull request** ke `master`.
+2. Tunggu sampai ketiga job pipanya hijau, terutama **Ringkasan hasil CI**.
+   Merah berarti perbaiki dan push lagi; jalan lama otomatis dibatalkan.
+3. Gabungkan pull request → commit mendarat di `master` → webhook Coolify build
+   dan deploy ulang. Pantau di **Deployments**.
+4. Deploy yang sukses belum berarti selesai: jalankan checklist Fase 5 pada
+   aplikasi yang sudah jalan.
+5. Kalau rollback ternyata perlu, ikuti §2 — bukan dengan push ulang kode lama.
 
 ### 2. Kembali ke rilis sebelumnya
 
@@ -715,10 +797,11 @@ Jalankan berurutan dengan data uji, lalu rapikan datanya:
 
 - [ ] Database produksi jalan, port tidak terbuka ke internet, `npm run doctor` hijau.
 - [ ] Ketiga variabel wajib (`BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`,
-      `DATABASE_URL`) ada di secret Coolify; tidak ada **nilai** rahasia di
-      repo — hanya nama variabel yang muncul (di `.env.example`, `docs/`, dan
-      `scripts/`), dan pemindaian nilai dari `.env.local` atas semua berkas
-      terlacak menghasilkan 0 temuan.
+      `DATABASE_URL`) ada di secret Coolify; di berkas terlacak yang muncul hanya
+      **nama** variabelnya (di `.env.example`, `docs/`, dan `scripts/`) — tidak
+      ada satu pun **nilai** dari `.env.local` yang bocor (perintahnya di bagian
+      **Memeriksa nilai rahasia** di bawah).
+
 - [ ] Build memakai Dockerfile target `runner`; healthcheck hijau.
 - [ ] Migrasi terakhir sudah dijalankan dan lognya tersimpan.
 - [ ] Domain + HTTPS aktif; `BETTER_AUTH_URL` sama persis dengan domain itu.
@@ -730,7 +813,8 @@ Jalankan berurutan dengan data uji, lalu rapikan datanya:
 - [ ] Halaman contoh tertutup: `/app/contoh-status` menjawab **Halaman ini tidak
       tersedia** dan tidak ada tautan contoh di menu; `MODE_RILIS` tidak
       tertinggal bernilai `false`.
-- [ ] Auto-deploy dari `master` teruji; notifikasi deploy aktif.
+- [ ] Auto-deploy dari `master` teruji; notifikasi deploy aktif; syarat merge
+      terpasang (`npm run ci:wajib`, Fase 4 §1c).
 - [ ] Backup terjadwal jalan; baris terakhir di riwayat berstatus `sukses`;
       salinannya juga tersimpan di penyimpanan terpisah; aturan retensi berkas
       ditulis (Fase 4 §6).
@@ -738,9 +822,22 @@ Jalankan berurutan dengan data uji, lalu rapikan datanya:
       (Fase 4 §4–§6).
 - [ ] Akun uji dibersihkan; hanya akun sungguhan yang tersisa.
 
-> **Perlu bukti (audit deploy):** klaim “0 temuan” pada butir di atas belum bisa
-> diulang pembaca — tidak ada perintah, skrip, maupun ujinya di repo.
-> Rinciannya di `docs/audit-deploy-usang.md` (butir 6).
+## Memeriksa nilai rahasia
+
+Butir pertama checklist di atas bisa diulang: perintah berikut mencari nilai dari
+`.env.local` (yang tidak dilacak git) di seluruh berkas yang dilacak, dan hanya
+mencetak **nama berkasnya** — nilainya sendiri tidak pernah ditampilkan:
+
+```bash
+# Jalankan dari folder aplikasi.
+git ls-files -z | xargs -0 grep -lFf \
+  <(sed -n 's/^[A-Za-z_][A-Za-z0-9_]*=//p' .env.local | awk 'length($0) >= 8' | sort -u)
+```
+
+Keluaran **kosong** berarti 0 temuan; perintahnya juga tidak menemukan apa pun
+kalau `.env.local` belum ada. Yang dicari hanya nilai minimal 8 karakter, supaya
+nilai pendek seperti `true` atau `3000` — yang memang wajar muncul di dokumentasi —
+tidak terbaca sebagai temuan palsu.
 
 ## Masalah yang sering muncul
 
@@ -754,6 +851,7 @@ Jalankan berurutan dengan data uji, lalu rapikan datanya:
 | Migrasi gagal saat deploy                 | perintah pre-deployment gagal                                                 | perbaiki penyebabnya di lingkungan uji dulu; migrasi tidak boleh di-skip                                               |
 | Rollback tidak mengembalikan data         | rollback hanya menukar image                                                  | pulihkan database dari backup (Fase 4)                                                                                 |
 | Halaman contoh masih terbuka di produksi  | `MODE_RILIS=false` tertinggal di environment produksi                         | hapus variabelnya (atau isi `true`), deploy ulang, lalu uji ulang rutenya                                              |
+| Deploy jalan tanpa pipa CI hijau          | perubahan di-push langsung ke `master`, atau syarat merge-nya belum dipasang  | lewatkan perubahan via pull request, lalu pasang syaratnya: `npm run ci:wajib` (Fase 4 §1c)                            |
 | Backup terjadwal tidak pernah jalan       | `PENJADWAL_BACKUP=nonaktif` tertinggal, atau `pg_dump` tidak ada di container | cek environment aplikasi dan log container; jalankan tombol **Jalankan backup sekarang** untuk membuktikan perintahnya |
 | Catatan backup `gagal` setiap hari        | perintah dumpnya tidak bisa dipanggil dari container aplikasi                 | uji lewat tombol manual, betulkan `BACKUP_COMMAND`, atau pindahkan jadwalnya ke cron                                   |
 
