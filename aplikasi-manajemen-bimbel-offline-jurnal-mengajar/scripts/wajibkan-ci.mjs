@@ -36,7 +36,12 @@ export function cariPipa(akar = akarAplikasi) {
 
 /** Job-job di dalam berkas pipa, urut sesuai tulisannya. */
 export function daftarJob(isi) {
-  const baris = isi.split("\n");
+  // Baris CRLF (checkout Windows dengan `core.autocrlf=true`) dibuang dulu:
+  // pola di bawah memakai `$` di ujung baris, sedangkan `.` tidak pernah cocok
+  // dengan `\r`. Tanpa ini `name:` job tidak terbaca dan nama check yang
+  // diwajibkan jatuh ke kunci job — kewajibannya lalu tidak pernah terpenuhi,
+  // karena GitHub melaporkan `name:` job-nya.
+  const baris = isi.replaceAll("\r\n", "\n").split("\n");
   const mulai = baris.findIndex((satu) => /^jobs:\s*$/.test(satu));
   const job = [];
   for (const satu of baris.slice(mulai + 1)) {

@@ -86,7 +86,11 @@ if (!jalurPipa)
   throw new Error(
     "Berkas ci.yml tidak ketemu di akar repo maupun di folder aplikasi.",
   );
-const berkasPipa = () => readFileSync(jalurPipa, "utf8");
+const berkasPipa = () =>
+  // Baris CRLF (checkout Windows) dinormalkan dulu: pembantu di bawah
+  // membandingkan baris utuh, jadi `\r` yang tersisa akan membuat job-job di
+  // berkas ini tidak dikenali sama sekali.
+  readFileSync(jalurPipa, "utf8").replaceAll("\r\n", "\n");
 const namaFolderAplikasi = basename(akarRepo);
 /** Awalan rujukan berkas dari akar repo, kosong kalau pipanya ada di folder ini. */
 const awalanAplikasi = jalurPipa.startsWith(akarRepo)
@@ -287,6 +291,14 @@ test("berkas ci.yml merangkum hasil kedua job di satu tempat", () => {
       `ringkasan menyebut perintah ${langkah.perintah}`,
     );
   }
+  // Job ini tidak memeriksa repositori, jadi folder aplikasi tidak ada di
+  // mesinnya: `defaults.run` global harus dinolkan lagi di sini, kalau tidak
+  // seluruh langkah ringkasan gagal karena folder kerjanya tidak ketemu.
+  if (awalanAplikasi)
+    assert.ok(
+      ringkasan.some((satu) => satu.trim() === "working-directory: ."),
+      "job ringkasan berjalan di akar repo, bukan folder aplikasi",
+    );
 });
 
 test("definisiPemeriksaan mencari langkah dari kuncinya", () => {

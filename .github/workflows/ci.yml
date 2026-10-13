@@ -47,7 +47,8 @@ concurrency:
   cancel-in-progress: true
 
 # Seluruh perintah aplikasi dijalankan dari folder aplikasinya, bukan dari akar
-# repo yang tidak punya `package.json`.
+# repo yang tidak punya `package.json`. Job yang tidak memeriksa repositori
+# (hanya `ringkasan`) menolak bawaan ini dengan `working-directory: .`.
 defaults:
   run:
     working-directory: aplikasi-manajemen-bimbel-offline-jurnal-mengajar
@@ -129,6 +130,13 @@ jobs:
 
   ringkasan:
     name: Ringkasan hasil CI
+    # Job ini tidak memeriksa repositori (tidak ada `actions/checkout`), jadi
+    # folder aplikasi tidak ada di mesinnya. `defaults.run` di atas berlaku per
+    # job juga, jadi tanpa baris ini langkahnya disuruh masuk ke folder yang
+    # tidak ada dan job ini gagal sebelum sempat menulis ringkasan apa pun.
+    defaults:
+      run:
+        working-directory: .
     # Tanpa `always()` job ini ikut dilewati saat ada yang gagal — justru saat
     # itulah ringkasannya paling dibutuhkan.
     if: always()

@@ -33,6 +33,16 @@ test("wajibkan-ci membaca nama check dari job ringkasan di berkas pipa", () => {
   assert.match(namaGerbang(isi), /^Ringkasan hasil CI$/);
 });
 
+test("wajibkan-ci mengenali nama check pada pipa berakhiran baris CRLF", () => {
+  // Checkout Windows (`core.autocrlf=true`) mengubah akhir barisnya, dan itu
+  // tidak boleh mengubah nama check yang diwajibkan: salah baca di sini membuat
+  // kewajibannya tidak pernah terpenuhi, karena GitHub melaporkan `name:` job.
+  const isi = readFileSync(cariPipa(), "utf8")
+    .replaceAll("\r\n", "\n")
+    .replaceAll("\n", "\r\n");
+  assert.equal(namaGerbang(isi), "Ringkasan hasil CI");
+});
+
 test("wajibkan-ci menolak pipa tanpa job ringkasan", () => {
   assert.throws(
     () =>
