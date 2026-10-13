@@ -12,18 +12,22 @@ const headers = { Origin: origin };
 const sandi = "Backup-riwayat-test-123!";
 
 /**
- * Mengisi input waktu seperti pemakai: fokus ke bagian jam lalu ketik empat
- * angka, mis. "0330" menjadi 03.30. Nilai kosong diketik dengan Delete.
+ * Mengisi input waktu dengan nilai 24 jam, mis. "03:30"; nilai kosong
+ * mengosongkannya lagi.
  *
- * `fill()` tidak dipakai di sini: pada input waktu Playwright hanya mengubah
- * nilai di DOM — React tidak menerima kejadian `input`-nya, jadi ringkasan
- * jadwal dan hasil simpan tidak ikut berubah.
+ * Isian ini diubah lewat `fill()`, bukan dengan mengetikkan angkanya ke bagian
+ * jam dan menit seperti pemakai: pada input waktu bawaan peramban, angka yang
+ * diketik hanya masuk kalau kursor sudah berada di salah satu bagiannya, dan
+ * bagian itu ditentukan oleh tempat yang diklik di dalam kotaknya. Posisi itu
+ * ikut bergeser mengikuti lebar teks dan font mesinnya, jadi ketikan yang sama
+ * lolos di satu komputer lalu diam-diam tidak masuk sama sekali di runner Linux
+ * — jamnya tetap kosong dan formulirnya ditahan sebagai isian bermasalah.
+ * `fill()` mengubah nilainya langsung, sehingga hasilnya sama di mana pun,
+ * sementara React tetap menerima kejadian `input`-nya (ringkasan jadwal di
+ * atas formulir ikut berubah, dan simpanannya benar-benar terkirim).
  */
-async function ketikJam(input: Locator, nilai: string) {
-  await input.click();
-  await input.press("Home");
-  if (nilai === "") await input.press("Delete");
-  else await input.pressSequentially(nilai.replace(":", ""));
+async function isiJam(input: Locator, nilai: string) {
+  await input.fill(nilai);
 }
 
 async function daftar(client: APIRequestContext, nama: string) {
@@ -263,11 +267,11 @@ test("form jadwal backup menyimpan pengaturannya ke server", async ({
   });
 
   // Perubahan isian langsung terbaca di ringkasan di atas formulir.
-  await ketikJam(kartu.getByLabel("Jam mulai"), "03:30");
+  await isiJam(kartu.getByLabel("Jam mulai"), "03:30");
   await expect(kartu.getByText("Setiap hari pukul 03.30 WIB")).toBeVisible();
 
   // Isian bermasalah ditampilkan sekaligus, dan belum ada yang tersimpan.
-  await ketikJam(kartu.getByLabel("Jam mulai"), "");
+  await isiJam(kartu.getByLabel("Jam mulai"), "");
   await kartu.getByLabel("Retensi (hari)").fill("0");
   await kartu.getByLabel("Tempat penyimpanan").fill("backups/kelola");
   await kartu.getByRole("button", { name: "Simpan jadwal" }).click();
@@ -288,7 +292,7 @@ test("form jadwal backup menyimpan pengaturannya ke server", async ({
     expect(kosong).toHaveLength(0);
 
     // Setelah diperbaiki, jadwalnya benar-benar tersimpan.
-    await ketikJam(kartu.getByLabel("Jam mulai"), "03:30");
+    await isiJam(kartu.getByLabel("Jam mulai"), "03:30");
     await kartu.getByLabel("Retensi (hari)").fill("45");
     await kartu
       .getByLabel("Tempat penyimpanan")
