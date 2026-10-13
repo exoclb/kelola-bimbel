@@ -170,6 +170,37 @@ test("berkas ci.yml memisahkan uji peramban ke jobnya sendiri", () => {
   );
 });
 
+test("berkas ci.yml merangkum hasil kedua job di satu tempat", () => {
+  const isi = berkasRepo(".github/workflows/ci.yml");
+  const ringkasan = blokJob(isi, "ringkasan");
+
+  assert.ok(ringkasan, "ci.yml punya job ringkasan");
+  const teks = ringkasan.join("\n");
+  // Ringkasan harus tetap jalan walau ada job yang gagal; kalau ikut dilewati,
+  // justru tidak ada yang merangkum kegagalannya.
+  assert.ok(ringkasan.some((satu) => /^\s*if: always\(\)\s*$/.test(satu)));
+  assert.match(teks, /needs:.*check.*e2e/);
+  // Hasilnya ditulis ke halaman ringkasan jalan, bukan cuma ke log job.
+  assert.ok(teks.includes("$GITHUB_STEP_SUMMARY"));
+  // Satu pintu penutup: pipa digagalkan di sini kalau ada job yang tidak lulus.
+  assert.ok(teks.includes("needs.check.result != 'success'"));
+  assert.ok(teks.includes("needs.e2e.result != 'success'"));
+  // Nama dan perintah langkahnya sama dengan daftar baku yang dibacakan
+  // halaman Pengaturan → Status CI. Backtick di blok `run: |` lolos dari shell
+  // sebagai \`` , jadi pembandingnya melepas escape itu dulu.
+  const teksTanpaEscape = teks.replaceAll("\\`", "`");
+  for (const langkah of PEMERIKSAAN_CI) {
+    assert.ok(
+      teks.includes(langkah.nama),
+      `ringkasan menyebut ${langkah.nama}`,
+    );
+    assert.ok(
+      teksTanpaEscape.includes(`\`${langkah.perintah}\``),
+      `ringkasan menyebut perintah ${langkah.perintah}`,
+    );
+  }
+});
+
 test("definisiPemeriksaan mencari langkah dari kuncinya", () => {
   assert.equal(definisiPemeriksaan("build").nama, "Build produksi");
   // Kunci yang tidak dikenal dikembalikan apa adanya, bukan hilang diam-diam.

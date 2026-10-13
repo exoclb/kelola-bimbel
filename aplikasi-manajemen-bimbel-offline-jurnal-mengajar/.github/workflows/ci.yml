@@ -1,10 +1,14 @@
 # Pipa CI otomatis: setiap push dan pull request diperiksa di sini, supaya yang
 # rusak ketahuan sebelum rilis — bukan sesudah pengguna menemukannya.
 #
-# Dipisah dua job supaya uji peramban tidak menahan pemeriksaan yang murah:
+# Dipisah dua job supaya uji peramban tidak menahan pemeriksaan yang murah,
+# lalu ditutup satu job ringkasan yang merangkum hasil keduanya:
 #   - `check`: langkah statis dan uji unit/integrasi, tanpa peramban.
 #   - `e2e`: build produksi lalu seluruh skenario peramban, dan hanya berjalan
 #     kalau `check` sudah lulus.
+#   - `ringkasan`: selalu jalan (walau ada job yang gagal), menuliskan tabel
+#     hasil kelima langkah ke halaman jalan, lalu menggagalkan pipa kalau ada
+#     job yang tidak lulus.
 #
 # Urutan dan perintah langkahnya sengaja sama dengan `PEMERIKSAAN_CI` di
 # `src/lib/ci-otomatis.ts`: halaman Pengaturan → Status CI membacakan daftar itu,
@@ -86,3 +90,56 @@ jobs:
           name: browser-test-results
           path: test-results/
           retention-days: 7
+
+  ringkasan:
+    name: Ringkasan hasil CI
+    # Tanpa `always()` job ini ikut dilewati saat ada yang gagal — justru saat
+    # itulah ringkasannya paling dibutuhkan.
+    if: always()
+    needs: [check, e2e]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Susun ringkasan hasil
+        env:
+          HASIL_PEMERIKSAAN: ${{ needs.check.result }}
+          HASIL_PERAMBAN: ${{ needs.e2e.result }}
+        run: |
+          # Hasil GitHub (success/failure/cancelled/skipped) diterjemahkan ke
+          # kata yang sama dengan keadaan pemeriksaan di halaman Status CI.
+          arti() {
+            case "$1" in
+              success) echo "lulus" ;;
+              failure) echo "gagal" ;;
+              cancelled) echo "dibatalkan" ;;
+              skipped) echo "dilewati" ;;
+              *) echo "$1" ;;
+            esac
+          }
+          {
+            echo "## Ringkasan CI otomatis"
+            echo ""
+            if [ "$HASIL_PEMERIKSAAN" = "success" ] && [ "$HASIL_PERAMBAN" = "success" ]; then
+              echo "**Lulus.** Seluruh langkah pipa selesai, jadi commit ini boleh dilanjutkan ke rilis."
+            else
+              echo "**Gagal.** Jangan rilis dulu: perbaiki langkah yang merah, push lagi, lalu pastikan jalan barunya lulus."
+            fi
+            echo ""
+            echo "| Langkah | Perintah | Job | Hasil |"
+            echo "| --- | --- | --- | --- |"
+            echo "| Penyiapan proyek | \`npm run setup\` | check, e2e | $(arti "$HASIL_PEMERIKSAAN") |"
+            echo "| Pemeriksaan kode & uji otomatis | \`npm run check\` | check | $(arti "$HASIL_PEMERIKSAAN") |"
+            echo "| Format berkas | \`npm run format:check\` | check | $(arti "$HASIL_PEMERIKSAAN") |"
+            echo "| Build produksi | \`npm run build\` | e2e | $(arti "$HASIL_PERAMBAN") |"
+            echo "| Uji end-to-end (Playwright) | \`npm run test:e2e\` | e2e | $(arti "$HASIL_PERAMBAN") |"
+            echo ""
+            echo "Penyiapan dijalankan di kedua job, jadi barisnya mengikuti job \`check\`. Nama dan perintah langkah di tabel ini sama dengan daftar baku di \`src/lib/ci-otomatis.ts\` yang dibacakan halaman Pengaturan → Status CI."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Pipa sudah merah sendiri kalau ada job yang gagal, tapi menutupnya di
+      # sini membuat satu tempat saja yang perlu diperiksa: job ringkasan.
+      - name: Hentikan pipa kalau ada job yang tidak lulus
+        if: needs.check.result != 'success' || needs.e2e.result != 'success'
+        run: |
+          echo "::error::CI belum lulus: check=${{ needs.check.result }}, e2e=${{ needs.e2e.result }}"
+          exit 1
