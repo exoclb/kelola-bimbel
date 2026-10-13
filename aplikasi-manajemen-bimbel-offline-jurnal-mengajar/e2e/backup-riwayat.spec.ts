@@ -644,3 +644,113 @@ test("endpoint jadwal backup menyimpan untuk owner dan menolak akun lain", async
     ).status(),
   ).toBe(403);
 });
+
+/**
+ * Endpoint daftar berkas siap diuji pemulihan: hanya catatan `sukses` yang
+ * sudah punya lokasi berkas beserta ukurannya — jadi backup yang gagal (yang
+ * lokasinya bisa ikut terisi) dan yang masih berjalan tidak muncul sebagai
+ * kandidat. Jumlahnya bisa dibatasi, dan hanya akun berizin baca pengaturan
+ * yang boleh membukanya karena isinya menyebut path berkas di server.
+ */
+test("endpoint berkas siap diuji menyaring catatan sukses berberkas", async ({
+  request,
+}) => {
+  const email = await daftar(request, "Owner Berkas Uji");
+  await setRole(email, "owner");
+  await masuk(request, email);
+
+  const penanda = randomUUID().slice(0, 8);
+  const siap = `/srv/backup/siap-${penanda}.dump`;
+  const gagal = `/srv/backup/gagal-${penanda}.dump`;
+  const db = new Pool({
+    connectionString: process.env.STARTER_TEST_DATABASE_URL,
+    max: 1,
+  });
+  try {
+    await db.query(
+      "INSERT INTO backup_runs (mulai, selesai, status, ukuran_byte, lokasi) VALUES (now() - interval '2 hours', now() - interval '119 minutes', 'sukses', $1, $2)",
+      [8192, siap],
+    );
+    await db.query(
+      "INSERT INTO backup_runs (mulai, selesai, status, lokasi, pesan) VALUES (now() - interval '1 hour', now() - interval '59 minutes', 'gagal', $1, $2)",
+      [gagal, `Gagal menyalin (${penanda})`],
+    );
+    await db.query(
+      "INSERT INTO backup_runs (mulai, status, pesan) VALUES (now() - interval '5 minutes', 'berjalan', $1)",
+      [`Sedang berjalan (${penanda})`],
+    );
+
+    const jawaban = await request.get("/api/pengaturan/backup/berkas", {
+      headers,
+    });
+    expect(jawaban.status()).toBe(200);
+    const { berkas } = (await jawaban.json()).data;
+    expect(Array.isArray(berkas)).toBe(true);
+
+    const milikUji = berkas.filter((satu: { lokasi: string }) =>
+      satu.lokasi.includes(penanda),
+    );
+    expect(milikUji).toHaveLength(1);
+    expect(milikUji[0].lokasi).toBe(siap);
+    expect(milikUji[0].ukuranByte).toBe(8192);
+    expect(typeof milikUji[0].dibuat).toBe("string");
+    // Backup yang gagal tidak pernah jadi kandidat walau lokasinya terisi.
+    expect(
+      berkas.some((satu: { lokasi: string }) => satu.lokasi === gagal),
+    ).toBe(false);
+    // Setiap baris yang dijawab memang punya berkas dan ukurannya.
+    for (const satu of berkas as { lokasi: string; ukuranByte: number }[]) {
+      expect(satu.lokasi).not.toBe(null);
+      expect(satu.ukuranByte).not.toBe(null);
+    }
+
+    // Yang paling baru lebih dulu, dan batas jumlahnya dihormati.
+    const waktu = berkas.map((satu: { dibuat: string }) =>
+      Date.parse(satu.dibuat),
+    );
+    expect(waktu).toEqual([...waktu].sort((a, b) => b - a));
+    const satuSaja = await request.get(
+      "/api/pengaturan/backup/berkas?limit=1",
+      { headers },
+    );
+    expect(satuSaja.status()).toBe(200);
+    const { berkas: berkasDibatasi } = (await satuSaja.json()).data;
+    expect(berkasDibatasi).toHaveLength(1);
+    expect(berkasDibatasi[0].id).toBe(berkas[0].id);
+
+    // Batasnya dijaga dua arah: 1–100 diterima, di luarnya ditolak dengan
+    // bentuk galat validasi yang sama seperti endpoint riwayat backup.
+    expect(
+      (
+        await request.get("/api/pengaturan/backup/berkas?limit=100", {
+          headers,
+        })
+      ).status(),
+    ).toBe(200);
+    for (const batasAneh of ["0", "101", "abc"]) {
+      const ditolak = await request.get(
+        `/api/pengaturan/backup/berkas?limit=${batasAneh}`,
+        { headers },
+      );
+      expect(ditolak.status()).toBe(422);
+      expect((await ditolak.json()).error.code).toBe("VALIDATION_ERROR");
+    }
+  } finally {
+    await db.query("DELETE FROM backup_runs WHERE position($1 in lokasi) > 0", [
+      penanda,
+    ]);
+    await db.query("DELETE FROM backup_runs WHERE pesan = $1", [
+      `Sedang berjalan (${penanda})`,
+    ]);
+    await db.end();
+  }
+
+  // Guru tidak boleh membuka halaman pengaturan, jadi daftar berkas backup pun
+  // bukan untuknya.
+  const emailGuru = await daftar(request, "Guru Berkas Uji");
+  await setRole(emailGuru, "user");
+  await masuk(request, emailGuru);
+  expect(
+    (await request.get("/api/pengaturan/backup/berkas", { headers })).status(),
+  ).toBe(403);
+});

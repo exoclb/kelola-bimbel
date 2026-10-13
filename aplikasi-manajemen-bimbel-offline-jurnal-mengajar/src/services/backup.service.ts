@@ -2,11 +2,12 @@ import "server-only";
 import { spawn } from "node:child_process";
 import { createWriteStream, mkdirSync, statSync } from "node:fs";
 import { resolve } from "node:path";
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, isNotNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { backupRuns, backupSettings } from "@/db/schema";
 import { pelanggaranUnik } from "@/lib/db-error";
 import { JADWAL_BACKUP_BAWAAN, type JadwalBackup } from "@/lib/jadwal-backup";
+import type { BerkasBackupUji } from "@/lib/uji-pemulihan";
 import type { JadwalBackupInput } from "@/validators/pengaturan";
 
 /** Satu catatan backup seperti yang dikirim ke halaman monitoring. */
@@ -97,6 +98,50 @@ export async function ambilCatatanTerakhir(): Promise<BackupTersimpan | null> {
     .orderBy(desc(backupRuns.mulai))
     .limit(1);
   return terakhir ?? null;
+}
+
+/**
+ * Berkas backup yang siap dipulihkan pada uji pemulihan, yang paling baru lebih
+ * dulu: catatan `sukses` yang sudah punya lokasi berkas beserta ukurannya.
+ *
+ * Yang dianggap "tersedia" adalah catatannya, bukan hasil memeriksa direktori
+ * backup: `scripts/backup.mjs` bisa dijalankan di mesin lain daripada proses
+ * aplikasi, jadi berkasnya belum tentu terlihat dari sini. Baris `berjalan` dan
+ * `gagal` tidak ikut — keduanya tidak meninggalkan salinan utuh untuk diuji.
+ */
+export async function ambilBerkasBackupUji(
+  limit = 20,
+): Promise<BerkasBackupUji[]> {
+  const baris = await db
+    .select({
+      id: backupRuns.id,
+      lokasi: backupRuns.lokasi,
+      dibuat: backupRuns.mulai,
+      ukuranByte: backupRuns.ukuranByte,
+    })
+    .from(backupRuns)
+    .where(
+      and(
+        eq(backupRuns.status, "sukses"),
+        isNotNull(backupRuns.lokasi),
+        isNotNull(backupRuns.ukuranByte),
+      ),
+    )
+    .orderBy(desc(backupRuns.mulai))
+    .limit(limit);
+
+  // Saringan di atas sudah menyisihkan baris tanpa berkas; penyaringan ulang di
+  // sini yang memberi TypeScript bentuk `BerkasBackupUji` tanpa perlu `!`.
+  return baris.filter(
+    (
+      satu,
+    ): satu is {
+      id: string;
+      lokasi: string;
+      dibuat: Date;
+      ukuranByte: number;
+    } => satu.lokasi !== null && satu.ukuranByte !== null,
+  );
 }
 
 // --- Menjalankan backup -----------------------------------------------------

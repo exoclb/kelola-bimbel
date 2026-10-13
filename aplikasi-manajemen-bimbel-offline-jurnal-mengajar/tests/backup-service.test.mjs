@@ -1,6 +1,7 @@
 // Uji penjalanan backup di lapisan layanan (src/services/backup.service.ts):
 // pembacaan pengaturannya, urutan pencatatannya (`berjalan` ditulis lebih dulu),
-// dan penutupan baris itu menjadi `sukses` atau `gagal` beserta alasannya.
+// penutupan baris itu menjadi `sukses` atau `gagal` beserta alasannya, dan
+// penyaringan berkas yang siap diuji pemulihan (`ambilBerkasBackupUji`).
 // Pelaksana perintah diganti di sebagian tes supaya pengujian tidak menuntut
 // `pg_dump` terpasang; dua tes terakhir memakai pelaksana sungguhannya dengan
 // perintah Node kecil sebagai pengganti dump.
@@ -26,6 +27,7 @@ import { pasangImporTs } from "./dukungan/impor-ts.mjs";
 pasangImporTs();
 
 const {
+  ambilBerkasBackupUji,
   bacaKonfigurasiBackup,
   jalankanBackupDanCatat,
   jalankanPerintahDump,
@@ -294,4 +296,66 @@ test("perintah yang menulis sendiri ke {file} tidak disalurkan ulang", async () 
   assert.equal(hasil.galat, null);
   assert.equal(hasil.ukuranByte, 14);
   assert.equal(readFileSync(berkas, "utf8"), "salinan-berkas");
+});
+
+/**
+ * Daftar berkas yang siap diuji pemulihan: hanya catatan `sukses` yang sudah
+ * punya lokasi berkas dan ukurannya, yang paling baru lebih dulu, dan bisa
+ * dibatasi jumlahnya. Baris `gagal` — yang lokasinya bisa ikut terisi — dan
+ * baris `berjalan` tidak pernah ikut jadi kandidat.
+ */
+test("daftar berkas uji pemulihan hanya memuat catatan sukses yang punya berkas", async () => {
+  await bersihkan();
+  const penanda = "daftar-berkas";
+  const suksesLama = berkasUji(`${penanda}-lama.dump`);
+  const suksesBaru = berkasUji(`${penanda}-baru.dump`);
+  const gagal = berkasUji(`${penanda}-gagal.dump`);
+
+  await pool.query(
+    "INSERT INTO backup_runs (mulai, selesai, status, ukuran_byte, lokasi) VALUES (now() - interval '3 hours', now() - interval '179 minutes', 'sukses', $1, $2)",
+    [1024, suksesLama],
+  );
+  await pool.query(
+    "INSERT INTO backup_runs (mulai, selesai, status, ukuran_byte, lokasi) VALUES (now() - interval '1 hour', now() - interval '59 minutes', 'sukses', $1, $2)",
+    [2048, suksesBaru],
+  );
+  await pool.query(
+    "INSERT INTO backup_runs (mulai, selesai, status, lokasi, pesan) VALUES (now() - interval '2 hours', now() - interval '119 minutes', 'gagal', $1, $2)",
+    [gagal, `Gagal menyalin (${penanda})`],
+  );
+  await pool.query(
+    "INSERT INTO backup_runs (mulai, status) VALUES (now() - interval '30 minutes', 'berjalan')",
+  );
+  // Salinan lama dari versi sebelum `lokasi` selalu ikut terisi: statusnya
+  // sukses tetapi berkasnya tidak diketahui, jadi tidak layak diuji.
+  await pool.query(
+    "INSERT INTO backup_runs (mulai, selesai, status) VALUES (now() - interval '4 hours', now() - interval '239 minutes', 'sukses')",
+  );
+
+  const berkas = await ambilBerkasBackupUji(50);
+  const milikUji = berkas.filter((satu) => satu.lokasi.includes(penanda));
+  assert.deepEqual(
+    milikUji.map((satu) => satu.lokasi),
+    [suksesBaru, suksesLama],
+    "hanya yang sukses dan berberkas, yang paling baru lebih dulu",
+  );
+  assert.equal(milikUji[0].ukuranByte, 2048);
+  assert.ok(
+    milikUji[0].dibuat instanceof Date,
+    "waktu pembuatan berkasnya ikut dikembalikan",
+  );
+  assert.equal(
+    berkas.some((satu) => satu.lokasi === gagal),
+    false,
+    "berkas dari backup yang gagal bukan kandidat uji",
+  );
+
+  // Batas jumlahnya dihormati dan yang tersisa tetap yang paling baru.
+  const dibatasi = await ambilBerkasBackupUji(1);
+  assert.equal(dibatasi.length, 1);
+  assert.equal(dibatasi[0].lokasi, suksesBaru);
+
+  // Baris tanpa lokasi itu satu-satunya yang tidak tersentuh `bersihkan()`
+  // (penghapusnya menyaring lewat `lokasi`), jadi dibuang di sini.
+  await pool.query("DELETE FROM backup_runs WHERE lokasi IS NULL");
 });
