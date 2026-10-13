@@ -134,3 +134,24 @@ test("MODE_RILIS didokumentasikan agar operator tahu cara mengisinya", () => {
   );
   assert.match(berkasRepo(".env.example"), /^MODE_RILIS=/m);
 });
+
+test("panduan deploy menjelaskan mode rilis dan cara memeriksanya", () => {
+  // Yang membaca panduan deploy bukan pengembang aplikasi, jadi variabel ini
+  // harus dijelaskan di sana juga — lengkap dengan cara membuktikan halaman
+  // contoh benar-benar tertutup setelah deploy.
+  for (const dokumen of ["docs/deploy-coolify.md", "docs/deployment.md"]) {
+    const isi = berkasRepo(dokumen);
+    assert.match(isi, /MODE_RILIS/, `${dokumen} belum menyebut MODE_RILIS.`);
+    assert.match(
+      isi,
+      /contoh-status/,
+      `${dokumen} tidak menyebut alamat yang dipakai memeriksa halaman contoh.`,
+    );
+  }
+
+  // Panduan Coolify dipakai operator di lapangan: di produksi variabelnya
+  // dibiarkan kosong, dan `false` hanya untuk meninjau build rilis.
+  const coolify = berkasRepo("docs/deploy-coolify.md");
+  assert.match(coolify, /di produksi biarkan kosong/i);
+  assert.match(coolify, /jangan biarkan nilai itu tertinggal/i);
+});

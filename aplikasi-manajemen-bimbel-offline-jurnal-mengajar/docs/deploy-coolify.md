@@ -101,7 +101,7 @@ sandi di resource Coolify — jangan menyalin nilainya ke berkas repo.
 
 ## Fase 2 — Rahasia & Deploy Aplikasi dari Dockerfile
 
-### 1. Daftar variabel wajib
+### 1. Daftar variabel
 
 | Variabel                 | Isi                                             | Catatan                                                                       |
 | ------------------------ | ----------------------------------------------- | ----------------------------------------------------------------------------- |
@@ -109,9 +109,27 @@ sandi di resource Coolify — jangan menyalin nilainya ke berkas repo.
 | `BETTER_AUTH_SECRET`     | teks acak minimal 32 karakter                   | dipakai Better Auth untuk menandatangani sesi                                 |
 | `BETTER_AUTH_URL`        | origin publik, mis. `https://bimbel.contoh.com` | **harus** sama dengan alamat yang dibuka browser, tanpa garis miring di akhir |
 | `MIGRATION_DATABASE_URL` | opsional                                        | hanya bila `DATABASE_URL` melewati pooler; migrasi memakai koneksi langsung   |
+| `MODE_RILIS`             | opsional                                        | penanda mode rilis; di produksi biarkan kosong (lihat catatan di bawah)       |
 
 Nilai `PORT` dan `HOSTNAME` tidak perlu diisi: image sudah memakai `3000` dan
 `0.0.0.0`.
+
+**`MODE_RILIS` — halaman contoh starter.** Halaman acuan tampilan bawaan
+(`/app/contoh-status`) tidak untuk pengguna bimbel. Saklarnya bernama
+`MODE_RILIS`: kalau dikosongkan, nilainya mengikuti `NODE_ENV`, dan container
+rilis sudah jalan dengan `NODE_ENV=production` — jadi **di produksi tidak ada
+yang perlu diisi**. Isi `true` hanya kalau ingin menutupnya lebih tegas, dan
+isi `false` **hanya sementara** saat meninjau hasil build rilis dengan halaman
+contoh tetap terbuka; jangan biarkan nilai itu tertinggal di environment
+produksi. Nilai yang sah: `true/1/ya/yes/on` dan `false/0/tidak/no/off` (huruf
+besar-kecil tidak berpengaruh). Salah tulis tidak membuat aplikasi gagal
+start — nilainya diabaikan dan saklar kembali mengikuti `NODE_ENV`.
+
+Saat mode rilis menyala, tautan halaman contoh hilang dari menu dan alamatnya
+diputus di server (`src/proxy.ts`), jadi jawabannya sama dengan alamat yang
+memang tidak ada. Verifikasi setelah deploy: buka `/app/contoh-status` — yang
+muncul halaman **Halaman ini tidak tersedia**, bukan halaman contoh. Status
+setiap variabel bisa dilihat owner di **Pengaturan → Lingkungan**.
 
 ### 2. Penyimpanan rahasia dan pemisahan lingkungan
 
@@ -121,7 +139,7 @@ Nilai `PORT` dan `HOSTNAME` tidak perlu diisi: image sudah memakai `3000` dan
 - Buat environment `production` terpisah dari `staging`/`development` di Coolify
   supaya nilai produksi tidak tertukar saat uji coba.
 - Verifikasi kelengkapan **tanpa menampilkan isinya**: cukup pastikan keempat
-  nama variabel ada, lalu jalankan `npm run doctor` untuk membuktikan
+  nama variabel wajib ada, lalu jalankan `npm run doctor` untuk membuktikan
   koneksinya benar-benar bisa dipakai.
 
 ### 3. Membuat resource aplikasi
@@ -333,6 +351,9 @@ Jalankan berurutan dengan data uji, lalu rapikan datanya:
 - [ ] Migrasi terakhir sudah dijalankan dan lognya tersimpan.
 - [ ] Domain + HTTPS aktif; `BETTER_AUTH_URL` sama persis dengan domain itu.
 - [ ] Login guru & owner dari domain asli berhasil; cookie sesi bertahan.
+- [ ] Halaman contoh tertutup: `/app/contoh-status` menjawab **Halaman ini tidak
+      tersedia** dan tidak ada tautan contoh di menu; `MODE_RILIS` tidak
+      tertinggal bernilai `false`.
 - [ ] Auto-deploy dari `master` teruji; notifikasi deploy aktif.
 - [ ] Backup terjadwal jalan, salinan tersimpan terpisah, retensi ditulis.
 - [ ] Uji pemulihan pernah berhasil.
@@ -349,6 +370,7 @@ Jalankan berurutan dengan data uji, lalu rapikan datanya:
 | Aplikasi jalan tapi tabel tidak ada       | migrasi belum dijalankan                               | jalankan resource migrator, lihat log `PostgreSQL migrations applied.`             |
 | Migrasi gagal saat deploy                 | perintah pre-deployment gagal                          | perbaiki penyebabnya di lingkungan uji dulu; migrasi tidak boleh di-skip           |
 | Rollback tidak mengembalikan data         | rollback hanya menukar image                           | pulihkan database dari backup (Fase 4)                                             |
+| Halaman contoh masih terbuka di produksi  | `MODE_RILIS=false` tertinggal di environment produksi  | hapus variabelnya (atau isi `true`), deploy ulang, lalu uji ulang rutenya          |
 
 Referensi Coolify: [Rollback](https://coolify.io/docs/applications/deployments/rollbacks) ·
 [Dockerfile build](https://coolify.io/docs/applications/builds/dockerfile)

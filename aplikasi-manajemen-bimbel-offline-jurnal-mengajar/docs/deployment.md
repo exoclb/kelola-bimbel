@@ -12,9 +12,14 @@ BETTER_AUTH_SECRET=your-random-secret-at-least-32-characters
 BETTER_AUTH_URL=https://your-app.example
 # Optional direct connection when the runtime URL uses a pooler:
 MIGRATION_DATABASE_URL=postgresql://user:password@direct-host:5432/app
+# Optional: mark this deployment as a release, which hides the starter showcase
+# pages. Leave blank and NODE_ENV decides — a production build is a release.
+MODE_RILIS=
 ```
 
 Keep provider-required TLS settings. Do not disable certificate verification. The example credentials are placeholders, not defaults.
+
+Leave `MODE_RILIS` blank in production: the release container runs with `NODE_ENV=production`, which already marks the deployment as a release. Release mode drops the starter showcase links from the menu and answers `/app/contoh-status` like a route that never existed, instead of redirecting a visitor to sign-in (`src/proxy.ts`). Set the variable only to override `NODE_ENV` — `true` to close the showcase in a local or review build, `false` to keep it reachable in a release build; a `false` left behind in production reopens those routes. `docs/deploy-coolify.md` documents the same switch for operators, in Indonesian.
 
 ```sh
 npm ci
