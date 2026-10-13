@@ -36,9 +36,17 @@ test("PostgreSQL migrations preserve rows on rerun and enforce auth constraints"
       encoding: "utf8",
     });
     assert.equal(result.status, 0, result.stderr);
+    // Baris yang dipasang sebelum migrasi diulang harus tetap ada. Yang
+    // diperiksa barisnya sendiri, bukan jumlah seluruh tabel: berkas uji lain
+    // berjalan berbarengan di basis data uji yang sama dan ikut menulis
+    // `user`, jadi hitungan globalnya bisa berubah kapan saja.
     assert.equal(
-      (await db.query('SELECT count(*)::int AS count FROM "user"')).rows[0]
-        .count,
+      (
+        await db.query(
+          'SELECT count(*)::int AS count FROM "user" WHERE id = $1',
+          ["one"],
+        )
+      ).rows[0].count,
       1,
     );
     const row = (
@@ -82,13 +90,21 @@ test("PostgreSQL migrations preserve rows on rerun and enforce auth constraints"
     );
     await db.query('DELETE FROM "user" WHERE id = $1', ["one"]);
     assert.equal(
-      (await db.query("SELECT count(*)::int AS count FROM notes")).rows[0]
-        .count,
+      (
+        await db.query(
+          "SELECT count(*)::int AS count FROM notes WHERE user_id = $1",
+          ["one"],
+        )
+      ).rows[0].count,
       0,
     );
     assert.equal(
-      (await db.query("SELECT count(*)::int AS count FROM session")).rows[0]
-        .count,
+      (
+        await db.query(
+          "SELECT count(*)::int AS count FROM session WHERE user_id = $1",
+          ["one"],
+        )
+      ).rows[0].count,
       0,
     );
   } finally {
@@ -103,7 +119,7 @@ test("PostgreSQL migrations preserve rows on rerun and enforce auth constraints"
  * pilihan `on delete` tiap relasi harus benar.
  *
  * Datanya disiapkan saat tes pertama dijalankan (bukan di `before`), supaya
- * jumlah baris `user` yang diperiksa tes di atas tetap utuh.
+ * pemeriksaan di tes atas tidak ikut melihat baris yang dibuat di sini.
  */
 let dbJurnal;
 let dataJurnal;
