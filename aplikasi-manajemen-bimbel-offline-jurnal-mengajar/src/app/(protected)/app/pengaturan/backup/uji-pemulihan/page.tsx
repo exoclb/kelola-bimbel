@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { RincianKartu } from "@/components/rincian-kartu";
 import { PesanKosong } from "@/components/status-antarmuka";
+import { StatusPemulihanBackup } from "@/components/status-pemulihan-backup";
 import {
   getBerkasBackupUji,
   getRiwayatUjiPemulihan,
@@ -22,6 +23,7 @@ import {
   kesegaranUjiPemulihan,
   namaBerkasUji,
   ringkasanPemeriksaan,
+  ujiSedangBerjalan,
   ujiTerakhirBerhasil,
 } from "@/lib/uji-pemulihan";
 
@@ -81,6 +83,11 @@ export default async function UjiPemulihanBackupPage() {
   const berkas = getBerkasBackupUji();
   const terakhir = ujiTerakhirBerhasil(riwayat);
   const kesegaran = kesegaranUjiPemulihan(terakhir?.mulai ?? null);
+  // Satu waktu acuan untuk seluruh halaman: status proses, ringkasan, dan
+  // riwayatnya dinilai dari saat halaman ini dirender, bukan dari jam masing-
+  // masing bagian.
+  const sekarang = new Date();
+  const berjalan = ujiSedangBerjalan(riwayat);
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -100,19 +107,23 @@ export default async function UjiPemulihanBackupPage() {
       <p className="mt-3 text-base leading-7 text-muted-foreground">
         Backup yang belum pernah dipulihkan belum bisa diandalkan: berkas yang
         bertambah tiap hari tidak membuktikan datanya masih bisa dibuka. Halaman
-        ini menampung berkas yang siap diuji, ringkasan uji terakhir, dan
-        riwayatnya sebagai bukti kesiapan rilis.
+        ini menampung proses yang sedang berjalan, berkas yang siap diuji,
+        ringkasan uji terakhir, dan riwayatnya sebagai bukti kesiapan rilis.
       </p>
 
       {/* Bagian ini belum tersambung ke server; penandanya dibuat mencolok
           supaya catatan contoh tidak terbaca sebagai bukti uji sungguhan. */}
       <p className="mt-6 rounded-xl border border-dashed px-4 py-3 text-sm leading-6 text-muted-foreground">
         Uji pemulihan masih dijalankan manual di server mengikuti langkah di
-        bawah, dan catatannya belum punya tabelnya sendiri. Berkas, ringkasan,
-        serta riwayat di halaman ini masih{" "}
+        bawah, dan catatannya belum punya tabelnya sendiri. Berkas, proses yang
+        berjalan, ringkasan, serta riwayat di halaman ini masih{" "}
         <strong className="font-medium text-foreground">contoh bentuk</strong> —
         jangan dibaca sebagai bukti bahwa uji pemulihan sudah pernah berhasil.
       </p>
+
+      {/* Proses yang sedang berjalan paling atas: itu yang paling perlu
+          diketahui pemilik bimbel saat membuka halaman ini. */}
+      {berjalan && <StatusPemulihanBackup uji={berjalan} sekarang={sekarang} />}
 
       <Card className="mt-6">
         <CardHeader>

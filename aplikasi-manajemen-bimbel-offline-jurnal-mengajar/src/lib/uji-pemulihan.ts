@@ -83,11 +83,110 @@ export function semuaPemeriksaanLulus(uji: UjiPemulihan) {
  * mengulang uji, bukan pengganti bukti bahwa salinannya bisa dipulihkan.
  */
 export function ujiTerakhirBerhasil(riwayat: UjiPemulihan[]) {
-  const berhasil = riwayat.filter((uji) => uji.status === "berhasil");
-  if (berhasil.length === 0) return null;
-  return berhasil.reduce((terbaru, uji) =>
+  return palingBaru(riwayat.filter((uji) => uji.status === "berhasil"));
+}
+
+/**
+ * Tahap baku satu proses pemulihan, berurutan dari persiapan sampai
+ * pencatatan hasil. Dipakai layar untuk menunjukkan prosesnya sedang di mana.
+ */
+export type KunciTahapPemulihan =
+  "siapkan-database" | "pulihkan-berkas" | "periksa-data" | "catat-hasil";
+
+export type TahapPemulihan = {
+  kunci: KunciTahapPemulihan;
+  label: string;
+  keterangan: string;
+};
+
+export const TAHAP_PEMULIHAN: TahapPemulihan[] = [
+  {
+    kunci: "siapkan-database",
+    label: "Siapkan database percobaan",
+    keterangan: "Membuat database kosong khusus uji, terpisah dari produksi.",
+  },
+  {
+    kunci: "pulihkan-berkas",
+    label: "Pulihkan berkas backup",
+    keterangan: "Memasukkan seluruh isi berkas salinan ke database percobaan.",
+  },
+  {
+    kunci: "periksa-data",
+    label: "Periksa keutuhan data",
+    keterangan:
+      "Membandingkan jumlah murid, jurnal, dan tagihan dengan produksi saat backup dibuat.",
+  },
+  {
+    kunci: "catat-hasil",
+    label: "Catat hasil uji",
+    keterangan:
+      "Menyimpan hasilnya ke riwayat supaya jadi bukti yang bisa ditelusuri.",
+  },
+];
+
+/**
+ * Taksiran lama satu tahap, dipakai untuk menebak tahap mana yang sedang
+ * berjalan. Catatan ujinya hanya menyimpan waktu mulai dan selesai, jadi
+ * tahapnya dihitung dari umur prosesnya; angkanya mengikuti lama pemulihan di
+ * `docs/deploy-coolify.md` — puluhan detik per tahap, tergantung ukuran basis
+ * datanya.
+ */
+export const DETIK_PER_TAHAP = 45;
+
+/** Indeks tahap yang sedang berjalan pada sebuah waktu. */
+export function indeksTahapBerjalan(mulai: Date, sekarang: Date) {
+  const detik = Math.max(0, (sekarang.getTime() - mulai.getTime()) / 1000);
+  return Math.min(
+    TAHAP_PEMULIHAN.length - 1,
+    Math.floor(detik / DETIK_PER_TAHAP),
+  );
+}
+
+/** Kemajuan seluruh proses, 0–100. */
+export function persenPemulihan(mulai: Date, sekarang: Date) {
+  const seluruhDetik = TAHAP_PEMULIHAN.length * DETIK_PER_TAHAP;
+  const detik = Math.max(0, (sekarang.getTime() - mulai.getTime()) / 1000);
+  return Math.min(100, Math.floor((detik / seluruhDetik) * 100));
+}
+
+/** Perkiraan waktu seluruh tahapnya selesai. */
+export function perkiraanSelesai(mulai: Date) {
+  return new Date(
+    mulai.getTime() + TAHAP_PEMULIHAN.length * DETIK_PER_TAHAP * 1000,
+  );
+}
+
+/** Keadaan satu tahap saat prosesnya dilihat. */
+export type StatusTahap = "selesai" | "berjalan" | "menunggu" | "gagal";
+
+/**
+ * Keadaan tahap ke-`urutan`: yang sudah dilewati selesai, tahap yang sedang
+ * berjalan menyandang keadaan ujinya (berjalan atau gagal — uji yang gagal
+ * berhenti di tahap itu), dan sisanya masih menunggu. Uji yang berhasil
+ * melewati seluruh tahapnya.
+ */
+export function statusTahap(
+  urutan: number,
+  indeksBerjalan: number,
+  statusUji: StatusUjiPemulihan,
+): StatusTahap {
+  if (statusUji === "berhasil") return "selesai";
+  if (urutan < indeksBerjalan) return "selesai";
+  if (urutan > indeksBerjalan) return "menunggu";
+  return statusUji === "gagal" ? "gagal" : "berjalan";
+}
+
+/** Catatan paling baru dari sebuah daftar, atau `null` kalau daftarnya kosong. */
+function palingBaru(daftar: UjiPemulihan[]) {
+  if (daftar.length === 0) return null;
+  return daftar.reduce((terbaru, uji) =>
     uji.mulai.getTime() > terbaru.mulai.getTime() ? uji : terbaru,
   );
+}
+
+/** Uji pemulihan yang masih berjalan, atau `null` kalau tidak ada yang jalan. */
+export function ujiSedangBerjalan(riwayat: UjiPemulihan[]) {
+  return palingBaru(riwayat.filter((uji) => uji.status === "berjalan"));
 }
 
 export type KesegaranUjiPemulihan = {

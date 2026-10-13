@@ -53,12 +53,12 @@ async function masukLewatLayar(
 }
 
 /**
- * Halaman uji pemulihan: isinya bentuk lengkap modulnya — ringkasan uji
- * terakhir yang berhasil, berkas backup yang siap diuji, langkah pemulihan,
- * dan riwayatnya. Karena catatannya belum tersambung ke server, halaman ini
- * juga wajib mengaku bahwa isinya masih contoh.
+ * Halaman uji pemulihan: isinya bentuk lengkap modulnya — proses yang sedang
+ * berjalan, ringkasan uji terakhir yang berhasil, berkas backup yang siap
+ * diuji, langkah pemulihan, dan riwayatnya. Karena catatannya belum tersambung
+ * ke server, halaman ini juga wajib mengaku bahwa isinya masih contoh.
  */
-test("halaman uji pemulihan menampilkan ringkasan, berkas, langkah, dan riwayat", async ({
+test("halaman uji pemulihan menampilkan status, ringkasan, berkas, langkah, dan riwayat", async ({
   page,
   request,
 }) => {
@@ -77,6 +77,37 @@ test("halaman uji pemulihan menampilkan ringkasan, berkas, langkah, dan riwayat"
   await expect(
     page.getByText("contoh bentuk", { exact: true }).first(),
   ).toBeVisible();
+
+  // Proses yang sedang berjalan: tahapnya berurutan, tahap aktifnya ditandai,
+  // dan kemajuannya bukan 0% maupun 100%.
+  const status = page.locator('[data-slot="card"]').filter({
+    has: page.getByText("Pemulihan sedang berjalan", { exact: true }),
+  });
+  await expect(status).toHaveCount(1);
+  // Status tahapnya dibacakan sebagai teks status, jadi pembaca layar pun tahu.
+  const barisStatus = status.getByRole("status");
+  await expect(barisStatus).toContainText("Tahap 3 dari 4");
+  await expect(barisStatus).toContainText("Periksa keutuhan data");
+  await expect(
+    status.getByText("Sedang berjalan", { exact: true }),
+  ).toBeVisible();
+  await expect(status.getByText("Menunggu", { exact: true })).toBeVisible();
+  await expect(
+    status.locator('[data-tahap="siapkan-database"]'),
+  ).toHaveAttribute("data-keadaan", "selesai");
+  await expect(
+    status.locator('[data-tahap="pulihkan-berkas"]'),
+  ).toHaveAttribute("data-keadaan", "selesai");
+  await expect(status.locator('[data-tahap="catat-hasil"]')).toHaveAttribute(
+    "data-keadaan",
+    "menunggu",
+  );
+  const kemajuan = status.getByRole("progressbar", {
+    name: "Kemajuan pemulihan",
+  });
+  const persen = Number(await kemajuan.getAttribute("aria-valuenow"));
+  expect(persen).toBeGreaterThan(0);
+  expect(persen).toBeLessThan(100);
 
   // Ringkasan uji terakhir yang berhasil: hasil pemeriksaan, lama ujinya, dan
   // penilaian kesegaran bukti pulihnya.
@@ -124,18 +155,74 @@ test("halaman uji pemulihan menampilkan ringkasan, berkas, langkah, dan riwayat"
     }),
   ).toBeVisible();
 
-  // Riwayatnya memuat uji yang berhasil maupun yang gagal, dengan alasannya.
+  // Riwayatnya memuat uji yang berhasil, yang gagal, dan yang masih berjalan,
+  // lengkap dengan alasan kegagalannya.
   const riwayat = page.locator('[data-slot="card"]').filter({
     has: page.getByText("Riwayat uji pemulihan", { exact: true }),
   });
   await expect(riwayat.getByText("berhasil", { exact: true })).toHaveCount(2);
   await expect(riwayat.getByText("gagal", { exact: true })).toHaveCount(1);
+  await expect(riwayat.getByText("berjalan", { exact: true })).toHaveCount(1);
+  await expect(riwayat.getByText(/· masih berjalan/)).toBeVisible();
   await expect(riwayat.getByText("0 dari 1 pemeriksaan lulus")).toBeVisible();
   // Tiap barisnya ditandai contoh, jadi tidak ada yang bisa dikira uji sungguhan.
-  await expect(riwayat.getByText("contoh", { exact: true })).toHaveCount(3);
+  await expect(riwayat.getByText("contoh", { exact: true })).toHaveCount(4);
   await expect(
     riwayat.getByText(/server percobaan kehabisan ruang disk/),
   ).toBeVisible();
+});
+
+/**
+ * Proses yang masih berjalan tampil paling atas, di kartu status tersendiri:
+ * yang sedang berjalan menyandang tahap aktifnya, sisanya menunggu, dan seluruh
+ * tahapnya sudah terlihat sejak awal.
+ */
+test("status proses pemulihan menunjukkan tahap yang sedang berjalan", async ({
+  page,
+  request,
+}) => {
+  const email = await daftar(request, "Owner Status Pemulihan");
+  await setRole(email, "owner");
+  await masuk(request, email);
+  await masukLewatLayar(page, email);
+
+  await page.goto("/app/pengaturan/backup/uji-pemulihan");
+
+  const status = page.locator('[data-slot="card"]').filter({
+    has: page.getByText("Pemulihan sedang berjalan", { exact: true }),
+  });
+  await expect(status).toHaveCount(1);
+  await expect(status).toContainText("20261013-020000.dump");
+  await expect(status).toContainText("dipulihkan ke kelola_restore");
+  // Kejujuran: proses tiruan ini pun ditandai contoh.
+  await expect(status.getByText("contoh", { exact: true })).toBeVisible();
+
+  // Seluruh tahap pemulihannya terdaftar berurutan, tidak ada yang disembunyikan.
+  await expect(status.locator("[data-tahap]")).toHaveCount(4);
+  await expect(
+    status
+      .locator("[data-tahap]")
+      .nth(0)
+      .getByText("Siapkan database percobaan"),
+  ).toBeVisible();
+  await expect(
+    status.locator("[data-tahap]").nth(3).getByText("Catat hasil uji"),
+  ).toBeVisible();
+
+  // Tepat satu tahap berjalan, sisanya sudah lewat atau belum sampai.
+  await expect(status.locator('[data-keadaan="berjalan"]')).toHaveCount(1);
+  await expect(status.locator('[data-keadaan="gagal"]')).toHaveCount(0);
+
+  // Statusnya hidup: umur prosesnya ikut dibaca, jadi angkanya bergerak.
+  await expect(status.getByRole("status")).toContainText(/berjalan \d+ menit/);
+
+  // Kartu status duduk di atas ringkasan: yang sedang berjalan lebih dulu.
+  const urutanKartu = await page
+    .locator('[data-slot="card"]')
+    .evaluateAll((kartu) =>
+      kartu.map((satu) => satu.textContent?.slice(0, 60) ?? ""),
+    );
+  expect(urutanKartu[0]).toContain("Pemulihan sedang berjalan");
 });
 
 /**

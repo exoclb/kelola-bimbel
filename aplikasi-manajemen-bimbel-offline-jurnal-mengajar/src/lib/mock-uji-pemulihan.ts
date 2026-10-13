@@ -1,10 +1,10 @@
 // Data contoh modul uji pemulihan backup (Pengaturan → Backup → Uji Pemulihan).
 //
 // Sampai catatan uji pemulihan punya tabelnya sendiri, halaman itu menggambar
-// bentuk lengkapnya dari berkas ini: berkas backup yang siap diuji, ringkasan
-// uji terakhir, dan riwayatnya. Uji pemulihannya sendiri masih dijalankan
-// manual di server mengikuti `docs/deploy-coolify.md`; halaman ini belum
-// memicu apa pun.
+// bentuk lengkapnya dari berkas ini: proses yang sedang berjalan, berkas backup
+// yang siap diuji, ringkasan uji terakhir, dan riwayatnya. Uji pemulihannya
+// sendiri masih dijalankan manual di server mengikuti `docs/deploy-coolify.md`;
+// halaman ini belum memicu apa pun.
 //
 // Karena itu isinya sengaja ditandai "contoh" di layar — jangan sampai terbaca
 // sebagai bukti uji pemulihan yang sungguh sudah dilakukan. Bentuk catatannya
@@ -40,8 +40,9 @@ const BERKAS_TIRUAN: BerkasBackupUji[] = [
 
 /**
  * Riwayat uji pemulihan contoh, yang paling baru lebih dulu. Sengaja memuat
- * satu uji yang gagal di tengah dan satu uji berhasil yang umurnya sudah lewat
- * selang uji ulang, supaya dua keadaan itu terlihat bentuknya di layar.
+ * satu proses yang masih berjalan, satu uji yang gagal di tengah, dan satu uji
+ * berhasil yang umurnya sudah lewat selang uji ulang, supaya tiga keadaan itu
+ * terlihat bentuknya di layar.
  */
 const RIWAYAT_TIRUAN: UjiPemulihan[] = [
   {
@@ -93,11 +94,40 @@ function salin(uji: UjiPemulihan): UjiPemulihan {
   return { ...uji, pemeriksaan: uji.pemeriksaan.map((p) => ({ ...p })) };
 }
 
+/**
+ * Umur proses tiruan yang sedang berjalan, dalam detik. Umurnya dihitung dari
+ * waktu halamannya dibuka — bukan tanggal tetap seperti catatan lain — supaya
+ * tahap yang tersorot di layar memang tampak berjalan saat dilhat. Nanti
+ * catatan ini diisi proses pemulihan sungguhan dari basis datanya.
+ */
+const DETIK_BERJALAN_TIRUAN = 95;
+
+/** Proses pemulihan tiruan yang belum selesai, memakai salinan paling baru. */
+function ujiBerjalanTiruan(): UjiPemulihan {
+  return {
+    id: "uji-berjalan",
+    berkas: BERKAS_TIRUAN[0].lokasi,
+    lingkungan: "kelola_restore",
+    mulai: new Date(Date.now() - DETIK_BERJALAN_TIRUAN * 1000),
+    selesai: null,
+    status: "berjalan",
+    pemeriksaan: [],
+    catatan: null,
+  };
+}
+
 /** Riwayat uji pemulihan contoh, yang paling baru lebih dulu. */
 export function getRiwayatUjiPemulihan(): UjiPemulihan[] {
-  return [...RIWAYAT_TIRUAN]
+  return [ujiBerjalanTiruan(), ...RIWAYAT_TIRUAN]
     .map(salin)
     .sort((a, b) => b.mulai.getTime() - a.mulai.getTime());
+}
+
+/** Proses pemulihan contoh yang sedang berjalan, atau `null` kalau tidak ada. */
+export function getUjiPemulihanBerjalan(): UjiPemulihan | null {
+  return (
+    getRiwayatUjiPemulihan().find((uji) => uji.status === "berjalan") ?? null
+  );
 }
 
 /** Berkas backup contoh yang siap diuji, yang paling baru lebih dulu. */
