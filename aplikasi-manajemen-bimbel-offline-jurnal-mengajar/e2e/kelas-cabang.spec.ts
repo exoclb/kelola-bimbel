@@ -1402,7 +1402,9 @@ test("halaman cabang hanya untuk owner", async ({ page }) => {
   await aturPeran("user");
   await masukPeramban(page);
   await page.goto("/app/cabang");
-  await expect(page.getByText(/This page isn.t here/)).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Halaman ini tidak tersedia" }),
+  ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Daftar Cabang" }),
   ).toHaveCount(0);
@@ -1417,7 +1419,9 @@ test("halaman cabang hanya untuk owner", async ({ page }) => {
   // seperti sebelumnya.
   await aturPeran("user");
   await page.goto("/app/cabang");
-  await expect(page.getByText(/This page isn.t here/)).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Halaman ini tidak tersedia" }),
+  ).toBeVisible();
   await aturPeran("owner");
 });
 

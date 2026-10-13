@@ -167,7 +167,9 @@ test("menu dan halaman pemantauan serta rekap gaji hanya untuk owner", async ({
 
   for (const halaman of ["/app/pemantauan", "/app/gaji"]) {
     await page.goto(halaman);
-    await expect(page.getByText(/This page isn.t here/)).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Halaman ini tidak tersedia" }),
+    ).toBeVisible();
   }
   await expect(
     page.getByRole("heading", { name: "Pemantauan Harian" }),
@@ -205,7 +207,9 @@ test("proteksi rute dan pengalihan setelah masuk mengikuti peran", async ({
   await page.goto("/sign-in");
   await expect(page).toHaveURL(/\/app\/jurnal$/);
   await page.goto("/app/pemantauan");
-  await expect(page.getByText(/This page isn.t here/)).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Halaman ini tidak tersedia" }),
+  ).toBeVisible();
 
   // Owner mendarat di pemantauan harian.
   await setRole("owner");
@@ -231,7 +235,9 @@ test("kontrol akses peran berlaku di halaman, bukan cuma di API", async ({
   // Peran tanpa izin itu tidak bisa membuka halamannya maupun API-nya.
   await setRole("kasir");
   await page.reload();
-  await expect(page.getByText(/This page isn.t here/)).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Halaman ini tidak tersedia" }),
+  ).toBeVisible();
   expect(
     (await page.request.get("/api/perkembangan", { headers })).status(),
   ).toBe(403);
@@ -266,11 +272,15 @@ test("pengaturan menampilkan bagian sesuai izin akunnya", async ({ page }) => {
 
   // Halaman monitoring backup pun hanya untuk owner.
   await page.goto("/app/pengaturan/backup");
-  await expect(page.getByText(/This page isn.t here/)).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Halaman ini tidak tersedia" }),
+  ).toBeVisible();
 
   // Halaman khusus owner tetap tidak bisa dibuka walaupun alamatnya diketik.
   await page.goto("/app/pengaturan/guru");
-  await expect(page.getByText(/This page isn.t here/)).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Halaman ini tidak tersedia" }),
+  ).toBeVisible();
 
   // Owner melihat semua bagian.
   await setRole("owner");
@@ -586,6 +596,9 @@ test("owner bisa menambah guru lalu menonaktifkan dan mengaktifkannya lagi", asy
 });
 
 test("preferensi notifikasi tersimpan per akun", async ({ request }) => {
+  // Daftar jenisnya dibaca dari sumbernya, bukan disalin: menambah jenis baru
+  // di `src/lib/notifikasi.ts` tidak boleh membuat uji ini merah.
+  const { DAFTAR_JENIS_NOTIFIKASI } = await import("../src/lib/notifikasi");
   await setRole("user");
   await masuk(request);
 
@@ -599,14 +612,10 @@ test("preferensi notifikasi tersimpan per akun", async ({ request }) => {
   const nilai = (daftar: { jenis: string; aktif: boolean }[], jenis: string) =>
     daftar.find((item) => item.jenis === jenis)?.aktif;
 
-  // Semua jenis yang dikenal aplikasi muncul, lengkap dengan judulnya.
+  // Semua jenis yang dikenal aplikasi muncul, dengan urutan yang sama seperti
+  // daftarnya di `src/lib/notifikasi.ts`.
   const awal = await ambil();
-  expect(awal.map((item) => item.jenis)).toEqual([
-    "jurnal_baru",
-    "kelas_kosong",
-    "gaji_dibayar",
-    "laporan_bulanan",
-  ]);
+  expect(awal.map((item) => item.jenis)).toEqual(DAFTAR_JENIS_NOTIFIKASI);
 
   // Nilainya bisa dimatikan lalu dinyalakan lagi, dan menetap di antara
   // permintaan (dites dua arah supaya tidak bergantung keadaan awal).

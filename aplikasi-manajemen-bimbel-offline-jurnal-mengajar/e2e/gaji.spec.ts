@@ -366,7 +366,9 @@ test("halaman rekap gaji semua guru hanya untuk owner", async ({ page }) => {
     page.getByRole("link", { name: "Gaji", exact: true }),
   ).toHaveCount(0);
   await page.goto("/app/gaji");
-  await expect(page.getByText(/This page isn.t here/)).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Halaman ini tidak tersedia" }),
+  ).toBeVisible();
 
   await page.goto("/app/gaji/saya");
   await expect(
