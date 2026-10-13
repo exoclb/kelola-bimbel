@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "5232c6d0cf9daafb5cf9e1a346f14ccdb182fff3",
+  "generatedForCommit": "afecf32441df6874b36b60b3080328a660f9ab7d",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -168,61 +168,67 @@
       "path": "docs/ai-workflow.md",
       "reason": "needs_summary",
       "language": "markdown",
-      "size": 4683
+      "size": 4637
     },
     {
       "path": "docs/architecture.md",
       "reason": "needs_summary",
       "language": "markdown",
-      "size": 34166
+      "size": 34049
+    },
+    {
+      "path": "docs/backend.md",
+      "reason": "changed",
+      "language": "markdown",
+      "size": 98310
     },
     {
       "path": "docs/deploy-coolify.md",
       "reason": "needs_summary",
       "language": "markdown",
-      "size": 18444
+      "size": 19761
     },
     {
       "path": "docs/deployment.md",
       "reason": "needs_summary",
       "language": "markdown",
-      "size": 4385
+      "size": 5112
     },
     {
       "path": "docs/derivatives.md",
       "reason": "needs_summary",
       "language": "markdown",
-      "size": 2297
+      "size": 2270
     },
     {
       "path": "docs/local-development.md",
       "reason": "needs_summary",
       "language": "markdown",
-      "size": 5635
+      "size": 5581
     },
     {
       "path": "docs/penempatan-murid.md",
       "reason": "needs_summary",
       "language": "markdown",
-      "size": 6181
+      "size": 6102
     },
     {
       "path": "docs/peta-data-tiruan.md",
       "reason": "needs_summary",
       "language": "markdown",
-      "size": 24689
+      "size": 24525
     },
     {
       "path": "docs/prompts.md",
       "reason": "needs_summary",
       "language": "markdown",
-      "size": 1720
+      "size": 1691
     },
     {
       "path": "docs/variant.md",
       "reason": "needs_summary",
       "language": "markdown",
-      "size": 1239
+      "size": 1220
     },
     {
       "path": "drizzle/0000_auth.sql",
@@ -646,7 +652,7 @@
     },
     {
       "path": "e2e/halaman-contoh.spec.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 6518
     },
@@ -2860,15 +2866,15 @@
     },
     {
       "path": "src/proxy.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1933
     },
     {
       "path": "src/services/backup.service.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 2224
+      "size": 11811
     },
     {
       "path": "src/services/cabang.service.ts",
@@ -3117,6 +3123,12 @@
       "size": 4633
     },
     {
+      "path": "tests/backup-service.test.mjs",
+      "reason": "new",
+      "language": "javascript",
+      "size": 9981
+    },
+    {
       "path": "tests/beda-hari.test.mjs",
       "reason": "needs_summary",
       "language": "javascript",
@@ -3154,7 +3166,7 @@
     },
     {
       "path": "tests/halaman-contoh.test.mjs",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 7993
     },
@@ -3186,7 +3198,7 @@
       "path": "tests/mode-rilis.test.mjs",
       "reason": "needs_summary",
       "language": "javascript",
-      "size": 4741
+      "size": 5685
     },
     {
       "path": "tests/nav-portal.test.mjs",
