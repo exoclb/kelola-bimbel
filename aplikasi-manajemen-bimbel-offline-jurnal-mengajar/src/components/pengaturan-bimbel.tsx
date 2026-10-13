@@ -8,6 +8,7 @@ import {
   ServerCog,
   Users,
   Wallet,
+  Workflow,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +23,8 @@ import {
   getDaftarGuru,
   getPreferensiNotifikasi,
 } from "@/lib/mock-pengaturan";
+import { getRiwayatCi } from "@/lib/mock-ci-otomatis";
+import { jalanTerbaru, ringkasJalanCi } from "@/lib/ci-otomatis";
 import { labelPeran } from "@/lib/peran";
 import { getDaftarWali, ringkasPenautan } from "@/lib/mock-wali";
 import { ambilStatusBackup } from "@/services/backup.service";
@@ -57,6 +60,9 @@ export async function PengaturanBimbel({ bolehKelola }: PengaturanBimbelProps) {
   const aturanGaji = getAturanGaji();
   const guru = getDaftarGuru();
   const preferensi = getPreferensiNotifikasi();
+  // Kartu CI hanya untuk owner/admin, sama seperti kartu backup: hasil
+  // pemeriksaan menyangkut seluruh penerapan.
+  const jalanCi = bolehKelola ? jalanTerbaru(getRiwayatCi()) : null;
 
   const guruAktif = guru.filter((akun) => akun.statusAktif).length;
   const preferensiAktif = preferensi.filter((item) => item.aktif).length;
@@ -121,6 +127,19 @@ export async function PengaturanBimbel({ bolehKelola }: PengaturanBimbelProps) {
         "Hanya status ada/tidak — nilai variabelnya tidak pernah ditampilkan.",
       tombol: "Lihat status",
     },
+    ...(jalanCi
+      ? [
+          {
+            href: "/app/pengaturan/ci",
+            ikon: Workflow,
+            judul: "Status CI Otomatis",
+            ringkasan: `${ringkasJalanCi(jalanCi)} Terakhir ${formatTanggalLengkap(jalanCi.mulai)}.`,
+            keterangan:
+              "Pemeriksaan yang jalan tiap perubahan kode: lint, tipe, uji, build, dan uji peramban.",
+            tombol: "Lihat status CI",
+          },
+        ]
+      : []),
   ];
 
   const bagianBackup = statusBackup
