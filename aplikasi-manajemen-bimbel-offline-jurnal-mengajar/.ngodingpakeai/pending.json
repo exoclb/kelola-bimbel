@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "a26248ad3ae418d4a2519dfabd23623a3c535ad4",
+  "generatedForCommit": "9f5994a42502cc72aafcf511111c638ce712b31d",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -210,7 +210,7 @@
       "path": "docs/peta-data-tiruan.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 25583
+      "size": 30736
     },
     {
       "path": "docs/prompts.md",
@@ -771,8 +771,14 @@
       "size": 1347
     },
     {
+      "path": "e2e/status-ci.spec.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 8266
+    },
+    {
       "path": "e2e/uji-pemulihan.spec.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 12603
     },
@@ -1162,15 +1168,21 @@
     },
     {
       "path": "src/app/(protected)/app/pengaturan/backup/page.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 6825
     },
     {
       "path": "src/app/(protected)/app/pengaturan/backup/uji-pemulihan/page.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 10323
+    },
+    {
+      "path": "src/app/(protected)/app/pengaturan/ci/page.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 4428
     },
     {
       "path": "src/app/(protected)/app/pengaturan/ekspor/page.tsx",
@@ -1941,6 +1953,12 @@
       "size": 3851
     },
     {
+      "path": "src/components/daftar-pemeriksaan-ci.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 3063
+    },
+    {
       "path": "src/components/daftar-penempatan.tsx",
       "reason": "needs_summary",
       "language": "typescript",
@@ -1963,6 +1981,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 3664
+    },
+    {
+      "path": "src/components/daftar-riwayat-ci.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 2971
     },
     {
       "path": "src/components/daftar-riwayat-jurnal.tsx",
@@ -2187,6 +2211,12 @@
       "size": 824
     },
     {
+      "path": "src/components/lencana-status-ci.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 2386
+    },
+    {
       "path": "src/components/panel-jurnal.tsx",
       "reason": "needs_summary",
       "language": "typescript",
@@ -2239,6 +2269,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 2082
+    },
+    {
+      "path": "src/components/pengaturan-bimbel.tsx",
+      "reason": "changed",
+      "language": "typescript",
+      "size": 9170
     },
     {
       "path": "src/components/penjaga-izin.tsx",
@@ -2307,6 +2343,12 @@
       "size": 3328
     },
     {
+      "path": "src/components/ringkasan-ci-terakhir.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 3884
+    },
+    {
       "path": "src/components/riwayat-gaji.tsx",
       "reason": "needs_summary",
       "language": "typescript",
@@ -2326,7 +2368,7 @@
     },
     {
       "path": "src/components/riwayat-uji-pemulihan.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 3428
     },
@@ -2365,6 +2407,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 4251
+    },
+    {
+      "path": "src/components/status-ci-berjalan.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 4149
     },
     {
       "path": "src/components/status-guru-hari-ini.tsx",
@@ -2661,6 +2709,12 @@
       "size": 6096
     },
     {
+      "path": "src/lib/ci-otomatis.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 7634
+    },
+    {
       "path": "src/lib/db-error.ts",
       "reason": "needs_summary",
       "language": "typescript",
@@ -2737,6 +2791,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 2314
+    },
+    {
+      "path": "src/lib/mock-ci-otomatis.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 7208
     },
     {
       "path": "src/lib/mock-gaji.ts",
@@ -3205,6 +3265,12 @@
       "reason": "needs_summary",
       "language": "javascript",
       "size": 805
+    },
+    {
+      "path": "tests/ci-otomatis.test.mjs",
+      "reason": "new",
+      "language": "javascript",
+      "size": 8985
     },
     {
       "path": "tests/data-cabang.test.mjs",
