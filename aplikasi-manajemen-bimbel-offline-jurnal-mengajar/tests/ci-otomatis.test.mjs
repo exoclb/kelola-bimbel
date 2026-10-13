@@ -150,6 +150,42 @@ test("berkas ci.yml dipicu push dan pull request dengan pengamanannya", () => {
   assert.ok(nomorBaris(isi, "retention-days: 7") > nomorUjiPeramban);
 });
 
+test("berkas ci.yml menyimpan dependensi yang diunduh di antara jalan", () => {
+  const isi = berkasRepo(".github/workflows/ci.yml");
+
+  // Paket npm datang dari cache bernama, bukan diunduh dari awal tiap jalan.
+  for (const nama of ["check", "e2e"]) {
+    const blok = blokJob(isi, nama);
+    assert.ok(
+      blok.some((satu) => satu.includes("actions/setup-node@v4")),
+      `job ${nama} memasang Node`,
+    );
+    assert.ok(
+      blok.some((satu) => satu.trim() === "cache: npm"),
+      `job ${nama} memakai cache npm`,
+    );
+  }
+
+  // Perambannya bukan paket npm, jadi cache-nya sendiri: dipulihkan sebelum
+  // `playwright install` supaya unduhan Chromium dilewati kalau sudah ada.
+  const peramban = blokJob(isi, "e2e");
+  const pemulihan = peramban.findIndex((satu) =>
+    satu.includes("actions/cache@v4"),
+  );
+  assert.ok(pemulihan > 0, "job e2e memakai actions/cache");
+  const setelahnya = peramban.slice(pemulihan);
+  assert.ok(
+    setelahnya.some((satu) => satu.trim() === "path: ~/.cache/ms-playwright"),
+  );
+  assert.ok(
+    setelahnya.some((satu) => satu.includes("hashFiles('package-lock.json')")),
+  );
+  assert.ok(
+    pemulihan <
+      peramban.findIndex((satu) => satu.includes("npx playwright install")),
+  );
+});
+
 test("berkas ci.yml memisahkan uji peramban ke jobnya sendiri", () => {
   const isi = berkasRepo(".github/workflows/ci.yml");
   const pemeriksaan = blokJob(isi, "check");

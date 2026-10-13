@@ -10,6 +10,10 @@
 #     hasil kelima langkah ke halaman jalan, lalu menggagalkan pipa kalau ada
 #     job yang tidak lulus.
 #
+# Yang diunduh tidak diunduh ulang tiap jalan: `setup-node` menyimpan cache npm
+# dari `package-lock.json`, dan job peramban menyimpan peramban Playwright-nya
+# di `~/.cache/ms-playwright`.
+#
 # Urutan dan perintah langkahnya sengaja sama dengan `PEMERIKSAAN_CI` di
 # `src/lib/ci-otomatis.ts`: halaman Pengaturan → Status CI membacakan daftar itu,
 # dan `tests/ci-otomatis.test.mjs` menjaga kedua berkas tetap sejalan. Menambah
@@ -45,6 +49,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
+          # Cache npm dari package-lock.json: `npm ci` di langkah penyiapan
+          # membuang node_modules tiap kali, jadi yang mempercepatnya adalah
+          # paket yang tidak perlu diunduh ulang.
           cache: npm
       - run: npm run setup
 
@@ -77,8 +84,16 @@ jobs:
       # Hasil build inilah yang dilayani `next start` pada uji peramban.
       - run: npm run build
 
-      # Skenario peramban di atas basis data uji sekali pakai. Runner belum
-      # punya perambannya, jadi Chromium dipasang lebih dulu.
+      # Skenario peramban di atas basis data uji sekali pakai. Perambannya bukan
+      # paket npm, jadi cache-nya terpisah: Chromium hanya diunduh ulang kalau
+      # `package-lock.json` berubah, sebab versi Playwright di dalamnya yang
+      # menentukan versi peramban yang dipakai. Paket sistem dari `--with-deps`
+      # tidak ikut di-cache karena hidup di luar direktori ini.
+      - name: Cache peramban Playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
 
