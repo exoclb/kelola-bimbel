@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "dd849166abdd3d697890f817b40b5cdd77b24689",
+  "generatedForCommit": "e85a07ae8e80bf538fca550d7ebe25904b9bf852",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -180,19 +180,19 @@
       "path": "docs/backend.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 100569
+      "size": 103395
     },
     {
       "path": "docs/deploy-coolify.md",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "markdown",
-      "size": 19761
+      "size": 22852
     },
     {
       "path": "docs/deployment.md",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "markdown",
-      "size": 5112
+      "size": 6072
     },
     {
       "path": "docs/derivatives.md",
@@ -214,9 +214,9 @@
     },
     {
       "path": "docs/peta-data-tiruan.md",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "markdown",
-      "size": 24525
+      "size": 23002
     },
     {
       "path": "docs/prompts.md",
@@ -412,7 +412,7 @@
     },
     {
       "path": "drizzle/0031_tabel_pengaturan_backup.sql",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "sql",
       "size": 933
     },
@@ -604,13 +604,13 @@
     },
     {
       "path": "drizzle/meta/0031_snapshot.json",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "json",
       "size": 78229
     },
     {
       "path": "drizzle/meta/_journal.json",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "json",
       "size": 4698
     },
@@ -646,15 +646,15 @@
     },
     {
       "path": "e2e/backup-jalankan.spec.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 3950
+      "size": 5384
     },
     {
       "path": "e2e/backup-riwayat.spec.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 18077
+      "size": 23560
     },
     {
       "path": "e2e/gaji.spec.ts",
@@ -814,9 +814,9 @@
     },
     {
       "path": "playwright.config.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 1567
+      "size": 1980
     },
     {
       "path": "postcss.config.mjs",
@@ -1162,9 +1162,9 @@
     },
     {
       "path": "src/app/(protected)/app/pengaturan/backup/page.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 4477
+      "size": 4350
     },
     {
       "path": "src/app/(protected)/app/pengaturan/ekspor/page.tsx",
@@ -1545,6 +1545,12 @@
       "size": 785
     },
     {
+      "path": "src/app/api/pengaturan/backup/jadwal/route.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1361
+    },
+    {
       "path": "src/app/api/pengaturan/backup/route.ts",
       "reason": "needs_summary",
       "language": "typescript",
@@ -1816,9 +1822,9 @@
     },
     {
       "path": "src/components/aksi-jalankan-backup.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 3528
+      "size": 4509
     },
     {
       "path": "src/components/aksi-lepas-tautan-wali.tsx",
@@ -2014,9 +2020,9 @@
     },
     {
       "path": "src/components/form-jadwal-backup.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 10851
+      "size": 12368
     },
     {
       "path": "src/components/form-jadwal-kelas.tsx",
@@ -2284,9 +2290,9 @@
     },
     {
       "path": "src/components/ringkasan-backup-terakhir.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 3326
+      "size": 3231
     },
     {
       "path": "src/components/riwayat-gaji.tsx",
@@ -2452,7 +2458,7 @@
     },
     {
       "path": "src/db/schema/backup-settings.ts",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2613
     },
@@ -2488,7 +2494,7 @@
     },
     {
       "path": "src/db/schema/index.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 944
     },
@@ -2601,6 +2607,12 @@
       "size": 1403
     },
     {
+      "path": "src/instrumentation.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1139
+    },
+    {
       "path": "src/lib/api.ts",
       "reason": "needs_summary",
       "language": "typescript",
@@ -2674,9 +2686,9 @@
     },
     {
       "path": "src/lib/jadwal-backup.ts",
-      "reason": "new",
+      "reason": "changed",
       "language": "typescript",
-      "size": 1360
+      "size": 5103
     },
     {
       "path": "src/lib/jejak-baca-portal-store.ts",
@@ -2695,12 +2707,6 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 2573
-    },
-    {
-      "path": "src/lib/mock-backup.ts",
-      "reason": "changed",
-      "language": "typescript",
-      "size": 3942
     },
     {
       "path": "src/lib/mock-cabang.ts",
@@ -2884,9 +2890,9 @@
     },
     {
       "path": "src/lib/variabel-lingkungan.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 7220
+      "size": 8096
     },
     {
       "path": "src/proxy.ts",
@@ -2898,7 +2904,7 @@
       "path": "src/services/backup.service.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 14655
+      "size": 15107
     },
     {
       "path": "src/services/cabang.service.ts",
@@ -2977,6 +2983,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 6425
+    },
+    {
+      "path": "src/services/penjadwal-backup.service.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 8277
     },
     {
       "path": "src/services/perkembangan.service.ts",
@@ -3076,7 +3088,7 @@
     },
     {
       "path": "src/validators/pengaturan.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 5557
     },
@@ -3202,9 +3214,9 @@
     },
     {
       "path": "tests/jadwal-backup.test.mjs",
-      "reason": "new",
+      "reason": "changed",
       "language": "javascript",
-      "size": 7230
+      "size": 12734
     },
     {
       "path": "tests/lembar-laporan.test.mjs",
@@ -3219,12 +3231,6 @@
       "size": 6871
     },
     {
-      "path": "tests/mock-backup.test.mjs",
-      "reason": "changed",
-      "language": "javascript",
-      "size": 3454
-    },
-    {
       "path": "tests/mode-rilis.test.mjs",
       "reason": "needs_summary",
       "language": "javascript",
@@ -3235,6 +3241,12 @@
       "reason": "needs_summary",
       "language": "javascript",
       "size": 1371
+    },
+    {
+      "path": "tests/penjadwal-backup.test.mjs",
+      "reason": "new",
+      "language": "javascript",
+      "size": 10534
     },
     {
       "path": "tests/setup.test.mjs",
