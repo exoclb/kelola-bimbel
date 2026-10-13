@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "4df0b229f7ebd2ed63fc4ab79c555284a7e8e046",
+  "generatedForCommit": "dd849166abdd3d697890f817b40b5cdd77b24689",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -175,6 +175,12 @@
       "reason": "needs_summary",
       "language": "markdown",
       "size": 34049
+    },
+    {
+      "path": "docs/backend.md",
+      "reason": "changed",
+      "language": "markdown",
+      "size": 100569
     },
     {
       "path": "docs/deploy-coolify.md",
@@ -405,6 +411,12 @@
       "size": 70
     },
     {
+      "path": "drizzle/0031_tabel_pengaturan_backup.sql",
+      "reason": "new",
+      "language": "sql",
+      "size": 933
+    },
+    {
       "path": "drizzle/meta/0000_snapshot.json",
       "reason": "needs_summary",
       "language": "json",
@@ -591,10 +603,16 @@
       "size": 78314
     },
     {
-      "path": "drizzle/meta/_journal.json",
-      "reason": "needs_summary",
+      "path": "drizzle/meta/0031_snapshot.json",
+      "reason": "new",
       "language": "json",
-      "size": 4768
+      "size": 78229
+    },
+    {
+      "path": "drizzle/meta/_journal.json",
+      "reason": "changed",
+      "language": "json",
+      "size": 4698
     },
     {
       "path": "drizzle.config.ts",
@@ -634,7 +652,7 @@
     },
     {
       "path": "e2e/backup-riwayat.spec.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 18077
     },
@@ -2433,6 +2451,12 @@
       "size": 1821
     },
     {
+      "path": "src/db/schema/backup-settings.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 2613
+    },
+    {
       "path": "src/db/schema/bimbel-profile.ts",
       "reason": "needs_summary",
       "language": "typescript",
@@ -2464,9 +2488,9 @@
     },
     {
       "path": "src/db/schema/index.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 935
+      "size": 944
     },
     {
       "path": "src/db/schema/jejak-baca-portal.ts",
@@ -2649,6 +2673,12 @@
       "size": 1251
     },
     {
+      "path": "src/lib/jadwal-backup.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1360
+    },
+    {
       "path": "src/lib/jejak-baca-portal-store.ts",
       "reason": "needs_summary",
       "language": "typescript",
@@ -2668,9 +2698,9 @@
     },
     {
       "path": "src/lib/mock-backup.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 4352
+      "size": 3942
     },
     {
       "path": "src/lib/mock-cabang.ts",
@@ -2866,9 +2896,9 @@
     },
     {
       "path": "src/services/backup.service.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 11851
+      "size": 14655
     },
     {
       "path": "src/services/cabang.service.ts",
@@ -3046,9 +3076,9 @@
     },
     {
       "path": "src/validators/pengaturan.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 4346
+      "size": 5557
     },
     {
       "path": "src/validators/pengeluaran.ts",
@@ -3171,6 +3201,12 @@
       "size": 2497
     },
     {
+      "path": "tests/jadwal-backup.test.mjs",
+      "reason": "new",
+      "language": "javascript",
+      "size": 7230
+    },
+    {
       "path": "tests/lembar-laporan.test.mjs",
       "reason": "needs_summary",
       "language": "javascript",
@@ -3184,9 +3220,9 @@
     },
     {
       "path": "tests/mock-backup.test.mjs",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "javascript",
-      "size": 3056
+      "size": 3454
     },
     {
       "path": "tests/mode-rilis.test.mjs",
