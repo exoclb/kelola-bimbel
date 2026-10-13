@@ -33,7 +33,9 @@ export default defineConfig({
       DATABASE_URL: testUrl,
       MIGRATION_DATABASE_URL: testUrl,
       BACKUP_DIR: testBackupDir,
-      BACKUP_COMMAND: `"${process.execPath}" -e "process.stdout.write('dump-uji-e2e')"`,
+      // Dump tiruannya sengaja memakan waktu sesaat seperti dump sungguhan,
+      // supaya keadaan "sedang berjalan" di tombol backup bisa diperiksa uji.
+      BACKUP_COMMAND: `"${process.execPath}" -e "setTimeout(() => process.stdout.write('dump-uji-e2e'), 800)"`,
       // Penjadwal di dalam aplikasi dimatikan selama uji: kalau hidup, ia bisa
       // menjalankan backup di tengah uji dan mengacaukan jumlah serta urutan
       // catatan yang sedang diperiksa.

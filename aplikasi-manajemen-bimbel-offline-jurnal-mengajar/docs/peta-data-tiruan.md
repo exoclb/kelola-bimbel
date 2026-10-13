@@ -140,14 +140,12 @@ sesudah perubahan, dan aturan `@typescript-eslint/no-unused-vars` aktif
 
 ## Aksi yang belum tersambung ke server
 
-Di luar kedua tabel di atas, ada aksi antarmuka yang sudah tampil tetapi belum
-memanggil server, sehingga tidak punya berkas data contoh:
-
-- `src/components/aksi-jalankan-backup.tsx` — tombol "Jalankan backup sekarang"
-  di halaman Pengaturan → Backup Database. Fungsi `jalankanBackup()` di berkas
-  itu masih menirukan prosesnya di layar; proses sungguhannya berjalan lewat
-  `npm run db:backup` di server dan catatannya belum bertambah di riwayat
-  (`backup_runs`). Sambungkan fungsi itu ke endpoint backup saat sudah ada.
+Tidak ada lagi per pemetaan terakhir: dua aksi di halaman Pengaturan → Backup
+Database sudah memanggil server — tombol “Jalankan backup sekarang” memakai
+`POST /api/pengaturan/backup` (`src/components/aksi-jalankan-backup.tsx`) dan
+formulir jadwal memakai `PUT /api/pengaturan/backup/jadwal`
+(`src/components/form-jadwal-backup.tsx`). Bagian ini dipertahankan sebagai
+tempat mencatat aksi baru yang sudah tampil tetapi belum memanggil server.
 
 ## Rekomendasi lanjutan (belum dikerjakan)
 

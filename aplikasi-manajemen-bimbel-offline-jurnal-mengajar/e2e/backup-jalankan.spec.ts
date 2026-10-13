@@ -90,34 +90,78 @@ test("tombol jalankan backup meminta konfirmasi lebih dulu", async ({
 });
 
 /**
- * Setelah dikonfirmasi, aksinya melaporkan bahwa prosesnya sedang berjalan lalu
- * menutup dengan keterangan apa adanya: penyambungan ke proses backup di server
- * belum ada, jadi riwayat belum bertambah. Proses sungguhannya masih dijalankan
- * penjadwal di server.
+ * Setelah dikonfirmasi, aksinya meminta backup sungguhan ke server: selama
+ * prosesnya berjalan kedua tombol dinonaktifkan, hasilnya dilaporkan lengkap
+ * dengan tempat salinannya, dan catatan barunya muncul di riwayat di halaman
+ * yang sama. Dump tiruan di playwright.config.ts sengaja memakan waktu sesaat
+ * supaya keadaan "sedang berjalan" itu sempat diperiksa.
  */
-test("jalankan backup melaporkan keadaan berjalan lalu hasilnya", async ({
+test("jalankan backup mencatat prosesnya sampai selesai", async ({
   page,
   request,
 }) => {
   await bukaSebagaiOwner(page, request);
 
-  await page
-    .getByRole("button", { name: "Jalankan backup sekarang", exact: true })
-    .click();
-  await page.getByRole("button", { name: "Ya, jalankan", exact: true }).click();
+  const db = new Pool({
+    connectionString: process.env.STARTER_TEST_DATABASE_URL,
+    max: 1,
+  });
+  try {
+    const { rows } = await db.query(
+      "SELECT count(*)::int AS jumlah FROM backup_runs",
+    );
+    const sebelum: number = rows[0].jumlah;
 
-  // Kedua tombol dinonaktifkan selama permintaannya berjalan.
-  await expect(page.getByRole("status")).toHaveText("Menjalankan backup…");
-  await expect(page.getByRole("button", { name: "Batal" })).toBeDisabled();
+    await page
+      .getByRole("button", { name: "Jalankan backup sekarang", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "Ya, jalankan", exact: true })
+      .click();
 
-  await expect(page.getByRole("status")).toContainText(
-    "Belum tersambung ke proses backup di server",
-  );
-  // Kembali ke keadaan awal supaya backup bisa diminta lagi.
-  await expect(
-    page.getByRole("button", { name: "Jalankan backup sekarang", exact: true }),
-  ).toBeEnabled();
-  await expect(page.getByRole("button", { name: "Ya, jalankan" })).toHaveCount(
-    0,
-  );
+    // Kedua tombol dinonaktifkan selama permintaannya berjalan.
+    await expect(page.getByRole("button", { name: "Batal" })).toBeDisabled();
+    await expect(page.getByRole("status")).toHaveText("Menjalankan backup…");
+
+    // Hasilnya dilaporkan apa adanya beserta ukuran dan lokasi salinannya.
+    await expect(page.getByRole("status")).toContainText("Backup selesai");
+    await expect(page.getByRole("status")).toContainText("12 B");
+    await expect(page.getByRole("status")).toContainText(".dump");
+
+    // Satu baris baru yang berhasil, berisi keluaran perintah uji di
+    // playwright.config.ts.
+    const { rows: terbaru } = await db.query(
+      "SELECT status, ukuran_byte::int AS ukuran_byte, lokasi, selesai FROM backup_runs ORDER BY mulai DESC LIMIT 1",
+    );
+    expect(terbaru).toHaveLength(1);
+    expect(terbaru[0].status).toBe("sukses");
+    expect(terbaru[0].ukuran_byte).toBe("dump-uji-e2e".length);
+    expect(terbaru[0].selesai).not.toBe(null);
+
+    const { rows: jumlah } = await db.query(
+      "SELECT count(*)::int AS jumlah FROM backup_runs",
+    );
+    expect(jumlah[0].jumlah).toBe(sebelum + 1);
+
+    // Halaman yang sudah disegarkan menampilkan catatan itu di riwayatnya.
+    const riwayat = page.locator('[data-slot="card"]').filter({
+      has: page.getByText("Riwayat backup", { exact: true }),
+    });
+    await expect(
+      riwayat.getByText(`dari ${sebelum + 1} catatan`),
+    ).toBeVisible();
+
+    // Kembali ke keadaan awal supaya backup bisa diminta lagi.
+    await expect(
+      page.getByRole("button", {
+        name: "Jalankan backup sekarang",
+        exact: true,
+      }),
+    ).toBeEnabled();
+    await expect(
+      page.getByRole("button", { name: "Ya, jalankan" }),
+    ).toHaveCount(0);
+  } finally {
+    await db.end();
+  }
 });

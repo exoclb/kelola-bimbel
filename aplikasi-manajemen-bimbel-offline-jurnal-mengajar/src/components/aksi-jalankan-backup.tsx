@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,18 +11,23 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { pesanGalatApi } from "@/lib/pesan-api";
+import { ukuranTeks } from "@/lib/tampilan-backup";
+import type { HasilBackup } from "@/services/backup.service";
 
 /**
- * Meminta backup berjalan. Masih tiruan: proses sungguhannya dijalankan skrip
- * `npm run db:backup` di server (`docs/deploy-coolify.md`), dan endpoint untuk
- * memicunya dari halaman ini belum ada. Isi fungsi ini yang perlu diganti
- * dengan permintaan ke endpoint tersebut saat tersedia — keadaan tombolnya
- * (konfirmasi, sedang berjalan, hasilnya) tidak perlu berubah.
+ * Pesan hasil satu proses backup yang sudah dicatat server. Yang gagal pun
+ * dilaporkan apa adanya beserta alasan yang dicatat prosesnya, karena itu yang
+ * membedakan "backup tidak jalan" dari "backup jalan tapi galat".
  */
-function jalankanBackup() {
-  return new Promise<void>((selesai) => {
-    setTimeout(selesai, 1500);
-  });
+function pesanHasil(hasil: HasilBackup) {
+  if (hasil.status !== "sukses")
+    return `Backup dicatat gagal${hasil.pesan ? `: ${hasil.pesan}` : ""}. Alasannya tersimpan di riwayat di bawah.`;
+
+  const tersimpan = hasil.lokasi
+    ? ` Salinannya ${ukuranTeks(hasil.ukuranByte)} tersimpan di ${hasil.lokasi}.`
+    : "";
+  return `Backup selesai.${tersimpan} Catatannya sudah masuk riwayat di bawah.`;
 }
 
 /**
@@ -32,8 +38,14 @@ function jalankanBackup() {
  * permintaannya berjalan kedua tombol dinonaktifkan supaya backup tidak
  * dijalankan dua kali, dan hasilnya dilaporkan lewat `role="status"` tepat di
  * bawah tombolnya.
+ *
+ * Permintaannya menunggu proses dump selesai (`POST /api/pengaturan/backup`),
+ * jadi lama menunggunya sepandan dengan lamanya menyalin database; setelah itu
+ * halaman disegarkan supaya riwayat dan kartu ringkasannya menampilkan catatan
+ * barunya.
  */
 export function AksiJalankanBackup() {
+  const router = useRouter();
   const [konfirmasi, setKonfirmasi] = useState(false);
   const [berjalan, setBerjalan] = useState(false);
   const [pesan, setPesan] = useState("");
@@ -41,12 +53,32 @@ export function AksiJalankanBackup() {
   async function jalankan() {
     setBerjalan(true);
     setPesan("");
-    await jalankanBackup();
-    setPesan(
-      "Belum tersambung ke proses backup di server, jadi backup baru diminta di layar ini — riwayat di bawah belum bertambah. Proses sungguhannya masih dijalankan penjadwal di server.",
-    );
-    setBerjalan(false);
-    setKonfirmasi(false);
+    try {
+      const jawaban = await fetch("/api/pengaturan/backup", {
+        method: "POST",
+      });
+
+      if (!jawaban.ok) {
+        setPesan(
+          await pesanGalatApi(
+            jawaban,
+            "Backup belum bisa dijalankan. Coba lagi sebentar lagi.",
+          ),
+        );
+        return;
+      }
+
+      const isi = (await jawaban.json()) as { data: HasilBackup };
+      setPesan(pesanHasil(isi.data));
+      // Riwayat dan kartu ringkasan dibaca di server, jadi keduanya disegarkan
+      // supaya catatan yang baru itu ikut tampil.
+      router.refresh();
+    } catch {
+      setPesan("Backup belum bisa dijalankan. Periksa koneksinya.");
+    } finally {
+      setBerjalan(false);
+      setKonfirmasi(false);
+    }
   }
 
   return (
