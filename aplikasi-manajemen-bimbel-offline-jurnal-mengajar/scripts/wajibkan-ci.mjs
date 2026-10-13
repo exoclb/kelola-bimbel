@@ -87,6 +87,11 @@ export function repoDariRemote(url) {
  * supaya yang lulus itu memang kode terbaru. `enforce_admins: false` menyisakan
  * jalan darurat untuk pemilik repo — naikkan ke `true` kalau itu pun tidak
  * diinginkan.
+ *
+ * `null` di dua kolom terakhir berarti "tidak ada syarat tinjauan pull request"
+ * dan "tidak ada pembatasan siapa yang boleh push": bentuk itu memang yang
+ * dibaca GitHub, dan sudah terbukti diterima — lihat catatan `--input -` di
+ * `perintahGh` soal kenapa kiriman yang gagal dulu menyesatkan.
  */
 export function muatanProteksi(namaCheck) {
   return {
@@ -99,12 +104,19 @@ export function muatanProteksi(namaCheck) {
 
 /** Argumen `gh api` yang dipakai, tanpa efek samping apa pun. */
 export function perintahGh({ owner, repo, cabang, hapus = false }) {
-  return [
+  const args = [
     "api",
     "--method",
     hapus ? "DELETE" : "PUT",
     `repos/${owner}/${repo}/branches/${cabang}/protection`,
   ];
+  // Badannya dikirim lewat stdin, dan `gh api` tidak membacanya sendiri:
+  // tanpa `--input -` muatannya tidak pernah terkirim, dan GitHub menjawab 422
+  // dengan pesan yang menyesatkan seolah kolomnya berisi null
+  // ("For 'links/0/schema', nil is not an object") — padahal masalahnya
+  // justru badan yang kosong.
+  if (!hapus) args.push("--input", "-");
+  return args;
 }
 
 /** Argumen CLI yang dikenali; sisanya diabaikan supaya `--` npm tetap aman. */
@@ -120,6 +132,26 @@ export function bacaArgumen(argv) {
     repo: nilai("--repo"),
     cabang: nilai("--cabang"),
   };
+}
+
+/**
+ * Setelan branch protection yang berlaku sekarang, atau `null` kalau cabangnya
+ * belum dilindungi (atau jawabannya tidak terbaca). Dipakai untuk memastikan
+ * kewajibannya benar-benar terpasang sesudah disetel, bukan hanya karena
+ * perintahnya tidak melaporkan galat.
+ */
+function proteksiSekarang({ owner, repo, cabang }) {
+  const hasil = spawnSync(
+    "gh",
+    ["api", `repos/${owner}/${repo}/branches/${cabang}/protection`],
+    { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
+  );
+  if (hasil.status !== 0 || !hasil.stdout.trim()) return null;
+  try {
+    return JSON.parse(hasil.stdout);
+  } catch {
+    return null;
+  }
 }
 
 function jalankanGh(args, masukan) {
@@ -212,11 +244,30 @@ export function main(argv = process.argv.slice(2)) {
     opsi.hapus ? undefined : JSON.stringify(muatan),
   );
   if (kode !== 0) return kode;
-  console.log(
-    opsi.hapus
-      ? `\nKewajiban status check dicabut dari cabang ${cabang}.`
-      : `\nCabang ${cabang} sekarang menuntut status check "${namaCheck}" lulus sebelum digabung.`,
-  );
+
+  if (!opsi.hapus) {
+    // Diperiksa ulang dari GitHub: yang penting bukan perintahnya selesai,
+    // melainkan kewajibannya benar-benar terbaca di cabang itu.
+    const sesudah = proteksiSekarang({ owner, repo, cabang });
+    const terpasang =
+      sesudah?.required_status_checks?.contexts?.includes(namaCheck) ?? false;
+    if (!terpasang) {
+      console.error(
+        `\nKewajiban itu belum terbaca di cabang ${cabang}. Periksa setelan cabangnya di GitHub.`,
+      );
+      return 1;
+    }
+    const strict = sesudah.required_status_checks.strict ? "ya" : "tidak";
+    console.log(
+      [
+        `\nCabang ${cabang} sekarang menuntut status check "${namaCheck}" lulus sebelum digabung.`,
+        `Terpasang: strict=${strict}, syarat tinjauan pull request=${sesudah.required_pull_request_reviews ? "ada" : "tidak ada"}, enforce_admins=${sesudah.enforce_admins?.enabled ? "ya" : "tidak"}.`,
+      ].join("\n"),
+    );
+    return 0;
+  }
+
+  console.log(`\nKewajiban status check dicabut dari cabang ${cabang}.`);
   return 0;
 }
 

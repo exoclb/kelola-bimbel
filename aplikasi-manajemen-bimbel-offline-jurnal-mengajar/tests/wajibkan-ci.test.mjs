@@ -80,6 +80,9 @@ test("wajibkan-ci hanya mewajibkan check itu, tanpa mengubah aturan lain", () =>
     required_pull_request_reviews: null,
     restrictions: null,
   });
+  // Muatannya dikirim lewat stdin, dan `gh api` tidak membacanya sendiri:
+  // tanpa `--input -` isi muatannya tidak pernah terkirim sama sekali, dan
+  // GitHub menjawab 422 dengan pesan yang menyesatkan seolah kolomnya null.
   assert.deepEqual(
     perintahGh({ owner: "exoclb", repo: "kelola-bimbel", cabang: "master" }),
     [
@@ -87,16 +90,23 @@ test("wajibkan-ci hanya mewajibkan check itu, tanpa mengubah aturan lain", () =>
       "--method",
       "PUT",
       "repos/exoclb/kelola-bimbel/branches/master/protection",
+      "--input",
+      "-",
     ],
   );
-  assert.equal(
+  assert.deepEqual(
     perintahGh({
       owner: "exoclb",
       repo: "kelola-bimbel",
       cabang: "master",
       hapus: true,
-    })[2],
-    "DELETE",
+    }),
+    [
+      "api",
+      "--method",
+      "DELETE",
+      "repos/exoclb/kelola-bimbel/branches/master/protection",
+    ],
   );
 });
 
@@ -142,5 +152,9 @@ test("wajibkan-ci --kering mencetak perintahnya tanpa menghubungi GitHub", () =>
   );
   assert.match(hasil.stdout, /Check {2}: Ringkasan hasil CI/);
   assert.match(hasil.stdout, /"contexts":\["Ringkasan hasil CI"\]/);
+  assert.match(
+    hasil.stdout,
+    /gh api --method PUT repos\/contoh\/bimbel\/branches\/utama\/protection --input -/,
+  );
   assert.match(hasil.stdout, /tidak ada setelan GitHub yang diubah/);
 });
