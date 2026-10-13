@@ -105,12 +105,13 @@ for (const { peran, email, menuWajib } of akun) {
       await expect(page.locator(`a[href="${alamatContoh}"]`)).toHaveCount(0);
     }
 
-    // Alamatnya pun tidak terbuka walau diketik langsung: permintaannya
-    // berakhir di tampilan penolakan bersama, bukan halaman acuan tampilan.
-    // Status HTTP-nya tetap 200 karena cangkang halaman sudah terkirim lebih
-    // dulu (perilaku yang sama dipakai penjaga izin di src/lib/session.ts),
-    // jadi yang menentukan di sini isi halamannya.
-    await page.goto(alamatContoh);
+    // Alamatnya pun tidak terbuka walau diketik langsung: permintaannya sudah
+    // diputus di server, sebelum cangkang aplikasi memeriksa sesi
+    // (`src/proxy.ts`), jadi jawabannya sama dengan alamat yang memang tidak
+    // ada — tampilan penolakan bersama berstatus 404, bukan halaman acuan
+    // tampilan dan bukan pengalihan ke halaman masuk.
+    const balasanContoh = await page.goto(alamatContoh);
+    expect(balasanContoh?.status()).toBe(404);
     await expect(
       page.getByRole("heading", { name: "Halaman ini tidak tersedia" }),
     ).toBeVisible();
@@ -143,4 +144,24 @@ test("alamat asing ditolak dengan tampilan yang sama dan tanpa pesan teknis", as
     page.getByRole("link", { name: "Kembali ke beranda" }),
   ).toBeVisible();
   expect(await page.locator("body").innerText()).not.toContain("404");
+});
+
+test("rute contoh tak terbedakan dari alamat asing bagi tamu", async ({
+  request,
+}) => {
+  // Sebelum pembatasan di server dipasang, tamu yang mengetik alamat contoh
+  // diarahkan ke halaman masuk — beda dari alamat yang tidak ada, sehingga
+  // keberadaan rute contoh masih bisa dipetakan dari luar. Sekarang keduanya
+  // harus menjawab sama: penolakan bersama berstatus 404, tanpa pengalihan.
+  const [contoh, asing] = await Promise.all([
+    request.get(alamatContoh, { maxRedirects: 0 }),
+    request.get("/alamat-yang-tidak-ada", { maxRedirects: 0 }),
+  ]);
+
+  expect(contoh.status()).toBe(404);
+  expect(contoh.status()).toBe(asing.status());
+  expect(contoh.headers()["location"]).toBeUndefined();
+  const isi = await contoh.text();
+  expect(isi).toContain("Halaman ini tidak tersedia");
+  expect(isi).not.toContain(alamatContoh);
 });

@@ -61,6 +61,36 @@ test("setiap halaman contoh ada dan dijaga saklar yang sama", () => {
   }
 });
 
+test("rute contoh dibatasi di server sebelum sesi diperiksa", () => {
+  // Penjaga di halaman baru berjalan setelah cangkang aplikasi memeriksa sesi,
+  // jadi rute contoh masih bisa dipetakan dari luar (tamu diarahkan ke halaman
+  // masuk). src/proxy.ts menutup celah itu di server; uji di sini menjaga
+  // kaitannya dengan daftar halaman contoh dan saklarnya.
+  const berkas = resolve(akarRepo, "src/proxy.ts");
+  assert.ok(existsSync(berkas), "src/proxy.ts belum dipasang.");
+  const isi = readFileSync(berkas, "utf8");
+
+  // Next mensyaratkan matcher berupa tulisan langsung, bukan rujukan ke
+  // variabel impor, jadi kesamaannya dengan HALAMAN_CONTOH dijaga di sini.
+  const matcher = /matcher:\s*\[([^\]]*)\]/.exec(isi);
+  assert.ok(matcher, "src/proxy.ts tidak menetapkan matcher.");
+  const terjaga = [...matcher[1].matchAll(/"([^"]+)"/g)].map(
+    ([, alamat]) => alamat,
+  );
+  assert.deepEqual(terjaga, [...HALAMAN_CONTOH]);
+
+  // Menyalakan saklarnya bukan lewat halaman, melainkan saklar yang sama, dan
+  // permintaannya ditulis ulang ke alamat yang tidak punya rute sendiri
+  // sehingga yang terlukis hanyalah halaman penolakan bersama.
+  assert.match(isi, /halamanContohAktif/);
+  const tujuan = /rewrite\(\s*new URL\("([^"]+)"/.exec(isi);
+  assert.ok(tujuan, "src/proxy.ts tidak menulis ulang permintaan.");
+  assert.ok(
+    !existsSync(resolve(akarRepo, "src/app", `.${tujuan[1]}`)),
+    `Alamat penolakan ${tujuan[1]} punya rutenya sendiri.`,
+  );
+});
+
 test("menu staf menampilkan tautan contoh selama saklar menyala", () => {
   for (const peran of ["guru", "owner"]) {
     const menu = menuUntukPeran(peran, { tautanContoh: true });
