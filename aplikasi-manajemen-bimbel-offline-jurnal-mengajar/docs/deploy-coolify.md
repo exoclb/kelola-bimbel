@@ -378,6 +378,47 @@ memanggil Docker), lalu uji sekali lewat tombol **Jalankan backup sekarang** di
 halaman Backup: hasilnya harus muncul sebagai catatan `sukses` di riwayat, dan
 berkasnya ada di direktori tujuan yang tertulis di halaman itu.
 
+#### c. Membaca status dan riwayatnya
+
+Semua hasilnya terbaca di halaman **Pengaturan → Backup Database**; log
+container hanya perlu dibuka kalau mencari sebab kegagalan yang tidak ditulis
+prosesnya.
+
+- **Dua kartu hitungan di atas**: “Total catatan backup” (jumlah seluruh baris
+  `backup_runs`, lengkap dengan berapa yang berhasil dan berapa yang gagal) dan
+  “Sedang berjalan”. Kalau angka “Sedang berjalan” tidak kembali ke nol, ada
+  proses yang menggantung: catatannya tetap `berjalan` karena prosesnya berhenti
+  sebelum menutup barisnya.
+- **Ringkasan backup terakhir berhasil**: waktu salinan terakhir yang sukses
+  beserta umurnya (“hari ini”, “kemarin”, “3 hari lalu”), lama prosesnya, ukuran
+  berkasnya, dan lokasinya. Bagian ini yang menjawab “salinan terakhir masih
+  layak dipakai atau tidak” tanpa menelusuri riwayat; kartunya kosong sampai
+  backup pertama selesai.
+- **Kesegaran** di ringkasan itu menilai umur salinan terhadap jadwal yang
+  berlaku — inilah tanda peringatan dini yang paling cepat terbaca:
+  - **Sesuai jadwal** — masih dalam jadwal ditambah tenggang dua jam (proses
+    backup boleh telat sedikit tanpa berarti penjadwalnya rusak).
+  - **Terlambat** — jadwal berikutnya seharusnya sudah membuat salinan baru.
+    Periksa penjadwal dan log backup di server.
+  - **Lewat retensi** — umurnya sudah melewati angka **Retensi**. Berkasnya bisa
+    jadi masih ada (aplikasi tidak menghapusnya, lihat §5), tetapi salinan
+    sesegar itu tidak lagi cukup untuk pemulihan, jadi jadwalnya harus
+    dibetulkan.
+- **Riwayat backup**: 20 catatan terbaru, yang paling baru di atas. Tiap baris
+  memuat waktu mulai, ukuran · lama proses · lokasi berkas, dan lencana status
+  `sukses`/`gagal`/`berjalan`. Baris `gagal` menampilkan alasan yang ditulis
+  prosesnya; kalau alasannya kosong, prosesnya berhenti sebelum sempat menulis
+  pesan — cari sebabnya di log container pada jam itu. Tabel `backup_runs`
+  menyimpan **semua** catatan dan halaman hanya menampilkan 20 terbaru, jadi
+  jumlah totalnya tetap terbaca dari kartu hitungan.
+- **Riwayat uji pemulihan**: tiga catatan uji terbaru sebagai pengingat, dengan
+  sisanya di halaman Uji Pemulihan. Selama halaman itu masih memakai contoh,
+  isinya ditandai “contoh bentuk” dan belum bisa dipakai sebagai bukti.
+
+Halaman ini menunjukkan apa yang **sudah** terjadi: ia tidak menandai jadwal yang
+terlewat di luar label Kesegaran di atas, dan barisnya baru muncul setelah
+prosesnya benar-benar mulai — dari tombol, penjadwal di aplikasi, atau cron.
+
 ### 4. Uji pemulihan
 
 Uji **minimal satu kali sebulan** — dan setiap kali perintah/pengaturan backup
