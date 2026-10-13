@@ -329,7 +329,7 @@ Backup, dan berlaku tanpa menyalakan ulang server):
 | Status             | Aktif                 | Penjadwal memeriksa jadwalnya tiap menit selama aplikasi hidup                               |
 | Jam mulai          | `02:00`               | Dini hari, di luar jam mengajar                                                              |
 | Zona waktu         | `Asia/Jakarta` (WIB)  | Pilihan lain: WITA (`Asia/Makassar`) dan WIT (`Asia/Jayapura`)                               |
-| Retensi            | 30 hari               | Dipakai menilai kesegaran salinan terakhir; lihat §5 soal siapa yang menghapus berkas        |
+| Retensi            | 30 hari               | Dipakai menilai kesegaran salinan terakhir; lihat §6 soal siapa yang menghapus berkas        |
 | Tempat penyimpanan | `/var/backups/kelola` | Harus path absolut di server; **wajib disalin lagi** ke penyimpanan terpisah (§b, langkah 4) |
 
 Langkah cron (di server/Coolify, memakai container database yang sama):
@@ -401,7 +401,7 @@ prosesnya.
   - **Terlambat** — jadwal berikutnya seharusnya sudah membuat salinan baru.
     Periksa penjadwal dan log backup di server.
   - **Lewat retensi** — umurnya sudah melewati angka **Retensi**. Berkasnya bisa
-    jadi masih ada (aplikasi tidak menghapusnya, lihat §5), tetapi salinan
+    jadi masih ada (aplikasi tidak menghapusnya, lihat §6), tetapi salinan
     sesegar itu tidak lagi cukup untuk pemulihan, jadi jadwalnya harus
     dibetulkan.
 - **Riwayat backup**: 20 catatan terbaru, yang paling baru di atas. Tiap baris
@@ -421,8 +421,9 @@ prosesnya benar-benar mulai — dari tombol, penjadwal di aplikasi, atau cron.
 
 ### 4. Uji pemulihan
 
-Uji **minimal satu kali sebulan** — dan setiap kali perintah/pengaturan backup
-berubah — di lingkungan percobaan, bukan produksi:
+Uji **minimal sekali per kuartal (90 hari)** — angka yang dianjurkan halaman Uji
+Pemulihan — dan lebih sering setiap kali skema datanya berubah, di lingkungan
+percobaan, bukan produksi:
 
 ```bash
 createdb kelola_restore
@@ -454,14 +455,49 @@ ke database percobaan yang sama. Penahan itu ada di dalam satu proses aplikasi �
 kalau container-nya dijalankan lebih dari satu replika, jalankan uji pemulihan
 dari satu replika saja atau tunggu sampai uji sebelumnya selesai.
 
-Sesudah pemulihannya selesai, aplikasi memeriksa sendiri isi database percobaan:
-jumlah murid, jurnal mengajar, tagihan, dan akun owner yang masih bisa masuk
-dihitung di kedua sisi lalu dibandingkan dengan **produksi sekarang** — jumlah
-saat backup dibuat tidak tersimpan di mana pun. Salinan yang isinya lebih sedikit
-itu wajar (jurnal dan tagihan bertambah terus), tapi kosong atau justru lebih
-banyak daripada produksi dilaporkan gagal. Database percobaan yang tidak bisa
-dihubungi — mis. `RESTORE_DATABASE_URL` salah tulis — juga gagal semua, jadi uji
-yang tidak benar-benar memeriksa apa pun tidak pernah terbaca lulus.
+Sesudah pemulihannya selesai, aplikasi memeriksa sendiri isi database percobaan
+(`periksaHasilPemulihan`). Empat pemeriksaan bakunya:
+
+| Pemeriksaan                   | Lulus kalau                                                                           |
+| ----------------------------- | ------------------------------------------------------------------------------------- |
+| Jumlah murid sesuai           | ada isinya dan tidak melebihi jumlah murid di produksi sekarang                       |
+| Jumlah jurnal mengajar sesuai | ada isinya dan tidak melebihi jumlah jurnal di produksi sekarang                      |
+| Jumlah tagihan sesuai         | ada isinya dan tidak melebihi jumlah tagihan di produksi sekarang                     |
+| Akun owner bisa masuk         | di salinan itu masih ada akun owner/admin yang belum di-ban dan punya sandi tersimpan |
+
+Tiga pemeriksaan pertama membandingkan jumlah di salinan dengan **produksi
+sekarang** — jumlah saat backup dibuat tidak tersimpan di mana pun. Salinan yang
+isinya lebih sedikit itu wajar (jurnal dan tagihan bertambah terus, dan salinan
+selalu dibuat lebih dulu), tapi **kosong** atau justru **lebih banyak** daripada
+produksi dilaporkan gagal: yang pertama berarti berkasnya tidak benar-benar ikut
+pulih, yang kedua tanda ada data yang terhapus setelah backup dibuat. Pemeriksaan
+keempat hanya melihat salinannya — produksinya tidak ikut dihitung — karena yang
+perlu dibuktikan adalah “masih bisa masuk ke bimbel ini” setelah dipulihkan.
+
+Database percobaan yang tidak bisa dihubungi — mis. `RESTORE_DATABASE_URL` salah
+tulis — juga gagal semua, jadi uji yang tidak benar-benar memeriksa apa pun tidak
+pernah terbaca lulus. Hasil keempatnya dirangkum jadi satu penilaian:
+**terverifikasi** (semua pemeriksaan lulus), **belum lengkap** (yang dijalankan
+lulus semua, tetapi ada pemeriksaan baku yang tidak dijalankan), **bermasalah**
+(ada yang tidak lulus), atau **belum ada** yang diperiksa.
+
+#### Membaca halaman Uji Pemulihan
+
+Halaman **Pengaturan → Backup → Uji Pemulihan**
+(`/app/pengaturan/backup/uji-pemulihan`) menampilkan hasilnya untuk operator:
+proses yang sedang berjalan beserta tahapnya (siapkan database percobaan,
+pulihkan berkas, periksa keutuhan data, catat hasil), ringkasan uji terakhir yang
+berhasil beserta label kesegarannya (**Masih berlaku** / **Perlu diuji ulang** /
+**Belum pernah diuji**), panel verifikasi (mana dari empat pemeriksaan baku yang
+lulus, gagal, atau belum dijalankan, lengkap dengan angka kedua sisi di
+catatannya), daftar berkas backup yang siap diuji, langkah bakunya, dan riwayat
+ujinya.
+
+Selama halaman itu **belum tersambung ke server**, berkas, proses yang berjalan,
+ringkasan, verifikasi, dan riwayatnya masih **contoh bentuk** dan tidak boleh
+dibaca sebagai bukti uji pemulihan yang sungguh sudah dilakukan — ujinya sendiri
+tetap dijalankan manual di server mengikuti langkah di atas, dan buktinya adalah
+catatan yang tertulis di riwayat backup (lihat paragraf berikutnya).
 
 Hasil setiap uji ikut dicatat ke riwayat backup: catatan berkas yang diuji
 menyimpan rangkuman kapan berkas itu terakhir diuji, di database mana, berapa
@@ -471,7 +507,56 @@ lalu hilang — dan berkas yang belum pernah diuji terlihat dari catatan yang
 masih kosong. Riwayat tiap percobaan tidak disimpan; yang tersisa adalah keadaan
 terakhir berkas itu diuji, termasuk kalau ujinya gagal.
 
-### 5. Siapa yang menjalankan, seberapa sering, dan di mana buktinya
+### 5. Memulihkan data sungguhan (kalau salinan itu benar-benar dipakai)
+
+Uji pemulihan di atas sengaja **tidak bisa** menyentuh database produksi:
+perintahnya dibatalkan begitu nama database tujuannya sama dengan database yang
+sedang dipakai aplikasi. Jadi pada kejadian sungguhan — data rusak, tabel
+terhapus, server mati — pemulihannya dikerjakan manual, dan urutannya begini:
+
+1. **Amankan keadaan sekarang dulu.** Ambil satu salinan database yang sedang
+   berjalan (mis. `pg_dump -Fc` ke berkas baru) sebelum apa pun ditimpa. Kalau
+   tidak, satu-satunya bukti tentang apa yang terjadi juga hilang.
+2. **Pulihkan ke database baru**, jangan ke yang sedang dipakai:
+   `createdb kelola_pulih` lalu `pg_restore -d kelola_pulih <berkas>.dump`.
+3. **Periksa isinya sebelum diarahkan** (bagian uji pemulihan di atas): jumlah
+   murid, jurnal, dan tagihan harus ada isinya dan tidak melebihi produksi
+   sekarang, dan harus ada akun owner/admin yang bisa masuk. Percobaan login
+   benar-benar penting di sini — inilah bedanya memakai salinan sungguhan dengan
+   lulus pemeriksaan angka.
+
+   ```bash
+   # jumlah di salinan (bandingkan dengan produksi sekarang)
+   psql "$DATABASE_PULIH" -c "SELECT
+     (SELECT count(*) FROM students) AS murid,
+     (SELECT count(*) FROM teaching_journals) AS jurnal,
+     (SELECT count(*) FROM student_invoices) AS tagihan"
+   ```
+
+4. **Arahkan aplikasi ke database itu**: ubah `DATABASE_URL` (dan
+   `MIGRATION_DATABASE_URL` kalau dipakai) di environment ke database baru, lalu
+   deploy ulang — aplikasi membaca `DATABASE_URL` saat start, jadi tanpa deploy
+   ulang perubahannya tidak berlaku. Kalau salinannya lebih tua daripada kode
+   yang berjalan, jalankan `npm run db:migrate` dulu supaya skemanya sejajar,
+   lalu `npm run doctor` untuk memastikan aplikasinya benar-benar tersambung ke
+   database itu.
+5. **Jangan hapus database lama sampai bimbel memastikan datanya benar.** Hapus
+   setelah satu-dua hari pemakaian normal; selama itu database lamanya jadi jalur
+   mundur kalau ternyata ada yang kurang.
+6. **Beri tahu penggunanya.** Sesi login tersimpan di tabel `session`, jadi sesi
+   yang dibuat setelah tanggal backup tidak ada lagi di salinan — guru dan owner
+   yang masuk setelah itu akan diminta masuk ulang, memakai sandi yang berlaku
+   **saat backup dibuat**. Siapa pun yang mengganti sandinya sesudah itu perlu
+   memakai sandi lamanya, atau lewat tautan lupa sandi.
+
+Pemulihan data seperti ini juga **mengembalikan pengaturan**, bukan cuma data
+bimbel: jadwal backup, retensi, dan tujuan salinan di tabel `backup_settings`
+ikut kembali ke nilai saat backup dibuat, begitu juga riwayat `backup_runs`.
+Periksa halamannya lagi sesudah dipulihkan, dan betulkan jadwalnya kalau sejak
+dulu sudah pernah diubah — kalau tidak, penjadwalnya menjalankan setelan lama
+(catatan `berjalan`/`gagal` sebelum tanggal itu juga muncul lagi di riwayat).
+
+### 6. Siapa yang menjalankan, seberapa sering, dan di mana buktinya
 
 - **Pemiliknya owner bimbel.** Jadwal backup dan uji pemulihan diatur di halaman
   **Pengaturan → Backup Database**, dan hanya owner/admin yang bisa mengubahnya.
@@ -484,8 +569,10 @@ terakhir berkas itu diuji, termasuk kalau ujinya gagal.
   minimal sekali seminggu** — yang dilihat bukan cuma ada/tiadanya baris, tetapi
   status baris terakhir. Satu baris `gagal` harus dibetulkan sebelum minggu
   berikutnya, karena salinan yang gagal tidak bisa dipulihkan.
-- **Uji pemulihan: minimal sekali sebulan** (§4), supaya salinan yang rusak atau
-  perintah pemulihan yang melenceng ketahuan sebelum bencana sungguhan.
+- **Uji pemulihan: minimal sekali per kuartal** (§4), atau lebih sering kalau
+  skema datanya berubah — supaya salinan yang rusak atau perintah pemulihan yang
+  melenceng ketahuan sebelum bencana sungguhan. Kalau salinannya benar-benar
+  perlu dipakai, ikuti urutan di §5, bukan menimpa database yang sedang jalan.
 - **Buktinya ada di aplikasi, bukan catatan terpisah.** Semua proses — tombol di
   halaman, penjadwal di aplikasi, maupun `npm run db:backup` dari cron — menulis
   baris ke tabel `backup_runs`, dan halaman **Pengaturan → Backup** menampilkan
@@ -553,9 +640,9 @@ Jalankan berurutan dengan data uji, lalu rapikan datanya:
 - [ ] Auto-deploy dari `master` teruji; notifikasi deploy aktif.
 - [ ] Backup terjadwal jalan; baris terakhir di riwayat berstatus `sukses`;
       salinannya juga tersimpan di penyimpanan terpisah; aturan retensi berkas
-      ditulis (Fase 4 §5).
+      ditulis (Fase 4 §6).
 - [ ] Uji pemulihan pernah berhasil, dan catatannya terbaca di riwayat backup
-      (Fase 4 §4–§5).
+      (Fase 4 §4–§6).
 - [ ] Akun uji dibersihkan; hanya akun sungguhan yang tersisa.
 
 > **Perlu bukti (audit deploy):** klaim “0 temuan” pada butir di atas belum bisa
