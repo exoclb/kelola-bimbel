@@ -1,9 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, DatabaseBackup, Timer } from "lucide-react";
+import { ArrowLeft, DatabaseBackup, ShieldCheck, Timer } from "lucide-react";
 import { AksiJalankanBackup } from "@/components/aksi-jalankan-backup";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { DaftarRiwayatBackup } from "@/components/daftar-riwayat-backup";
 import { FormJadwalBackup } from "@/components/form-jadwal-backup";
 import { RingkasanBackupTerakhir } from "@/components/ringkasan-backup-terakhir";
@@ -102,13 +108,32 @@ export default async function BackupDatabasePage() {
         />
       )}
 
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle className="text-base">Uji pemulihan</CardTitle>
+          <CardDescription>
+            Backup yang belum pernah dipulihkan belum bisa diandalkan. Berkas
+            yang siap diuji, langkah pemulihannya, dan riwayat uji terakhir ada
+            di halaman tersendiri.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button asChild size="sm" variant="outline">
+            <Link href="/app/pengaturan/backup/uji-pemulihan">
+              <ShieldCheck aria-hidden="true" />
+              Buka uji pemulihan
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
+
       <p className="mt-6 text-xs leading-5 text-muted-foreground">
         Catatan: aplikasi menjalankan backup menurut jadwal di atas, dan tiap
         prosesnya menulis satu baris di riwayat ini. Tempat penyimpanan
-        terpisah, retensi berkas, dan uji pemulihan tetap diatur di sisi server
-        (lihat <code>docs/deploy-coolify.md</code>); kalau backup dijadwalkan
-        cron di luar aplikasi, penjadwal di dalamnya dimatikan lewat variabel
-        <code>PENJADWAL_BACKUP</code>.
+        terpisah, retensi berkas, dan uji pemulihannya dijelaskan di halaman Uji
+        Pemulihan serta <code>docs/deploy-coolify.md</code>; kalau backup
+        dijadwalkan cron di luar aplikasi, penjadwal di dalamnya dimatikan lewat
+        variabel <code>PENJADWAL_BACKUP</code>.
       </p>
     </div>
   );
