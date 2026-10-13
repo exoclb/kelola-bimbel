@@ -218,6 +218,13 @@
       "when": 1791500377203,
       "tag": "0030_indeks_cabang_kelas",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1791896373298,
+      "tag": "0031_tabel_pengaturan_backup",
+      "breakpoints": true
     }
   ]
 }

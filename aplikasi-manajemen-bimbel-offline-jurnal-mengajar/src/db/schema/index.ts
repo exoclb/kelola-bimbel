@@ -17,6 +17,7 @@ export * from "./notification-preferences";
 export * from "./salary-settings";
 export * from "./salary-recaps";
 export * from "./backup-runs";
+export * from "./backup-settings";
 export * from "./student-invoices";
 export * from "./expense-categories";
 export * from "./expenses";

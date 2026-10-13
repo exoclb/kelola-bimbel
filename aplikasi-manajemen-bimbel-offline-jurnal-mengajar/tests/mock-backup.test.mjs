@@ -3,9 +3,15 @@
 // jadwal harian itu jalan berikutnya.
 import test from "node:test";
 import assert from "node:assert/strict";
+import { pasangImporTs } from "./dukungan/impor-ts.mjs";
+
+// `src/lib/mock-backup.ts` memakai bentuk jadwal dari `@/lib/jadwal-backup`,
+// jadi alias tsconfig-nya perlu diterjemahkan di sini juga.
+pasangImporTs();
 
 const { getJadwalBackup, jadwalBerikutnya, labelZona, ringkasanJadwal } =
   await import("../src/lib/mock-backup.ts");
+const { JADWAL_BACKUP_BAWAAN } = await import("../src/lib/jadwal-backup.ts");
 
 const JADWAL = {
   aktif: true,
@@ -17,6 +23,9 @@ const JADWAL = {
 
 test("jadwal tiruan berbentuk jadwal harian yang masuk akal", () => {
   const jadwal = getJadwalBackup();
+  // Nilainya sama dengan jadwal bawaan yang dipakai layanan dan tabel
+  // `backup_settings`, supaya pengaturan yang belum disimpan terbaca sama.
+  assert.deepEqual(jadwal, JADWAL_BACKUP_BAWAAN);
   assert.equal(jadwal.aktif, true);
   assert.match(jadwal.jam, /^\d{2}:\d{2}$/);
   assert.ok(jadwal.retensiHari > 0);

@@ -4,7 +4,10 @@ import { createWriteStream, mkdirSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { backupRuns } from "@/db/schema";
+import { backupRuns, backupSettings } from "@/db/schema";
+import { pelanggaranUnik } from "@/lib/db-error";
+import { JADWAL_BACKUP_BAWAAN, type JadwalBackup } from "@/lib/jadwal-backup";
+import type { JadwalBackupInput } from "@/validators/pengaturan";
 
 /** Satu catatan backup seperti yang dikirim ke halaman monitoring. */
 export type BackupTersimpan = {
@@ -333,4 +336,83 @@ export async function jalankanBackupDanCatat(
     .returning(fields);
 
   return tersimpan;
+}
+
+/** Kolom pengaturan jadwal seperti yang dipakai penjadwal dan halaman.
+ *
+ * Bentuknya sengaja sama dengan `JadwalBackup` supaya layar tidak perlu
+ * menerjemahkan apa pun; yang disimpan cuma satu baris.
+ */
+const fieldsJadwal = {
+  aktif: backupSettings.aktif,
+  jam: backupSettings.jam,
+  zonaWaktu: backupSettings.zonaWaktu,
+  retensiHari: backupSettings.retensiHari,
+  tujuan: backupSettings.tujuan,
+};
+
+/**
+ * Jadwal backup yang sedang berlaku. Barisnya cuma satu dan baru dibuat saat
+ * pengaturan pertama kali disimpan, jadi selama belum pernah diubah yang
+ * dikembalikan adalah `JADWAL_BACKUP_BAWAAN` — bukan pengaturan kosong.
+ */
+export async function ambilJadwalBackup(): Promise<JadwalBackup> {
+  const [baris] = await db.select(fieldsJadwal).from(backupSettings).limit(1);
+  return baris ?? { ...JADWAL_BACKUP_BAWAAN };
+}
+
+/**
+ * Menyimpan pengaturan jadwal backup. Tabelnya hanya boleh berisi satu baris
+ * (dijaga indeks unik `(true)`), jadi barisnya dicari dulu: diperbarui kalau
+ * sudah ada, dibuat kalau belum. Kalau dua permintaan pertama datang hampir
+ * bersamaan, yang kalah balapan gagal di indeks unik lalu dicoba lagi sebagai
+ * pembaruan — pola yang sama dengan `simpanProfilBimbel`.
+ *
+ * Nilai yang masuk sudah divalidasi `jadwalBackupSchema`, termasuk zona waktu
+ * yang harus dikenal runtime Node; batasan tabelnya menjaga bentuk jam, retensi,
+ * dan path absolutnya sebagai jaring pengaman terakhir.
+ */
+export async function simpanJadwalBackup(
+  input: JadwalBackupInput,
+): Promise<JadwalBackup> {
+  const nilai = {
+    aktif: input.aktif,
+    jam: input.jam,
+    zonaWaktu: input.zonaWaktu,
+    retensiHari: input.retensiHari,
+    tujuan: input.tujuan,
+  };
+
+  const simpan = () =>
+    db.transaction(async (tx) => {
+      const [ada] = await tx
+        .select({ id: backupSettings.id })
+        .from(backupSettings)
+        .limit(1);
+
+      if (!ada) {
+        const [dibuat] = await tx
+          .insert(backupSettings)
+          .values(nilai)
+          .returning(fieldsJadwal);
+        return dibuat ?? null;
+      }
+
+      const [diperbarui] = await tx
+        .update(backupSettings)
+        .set({ ...nilai, updatedAt: new Date() })
+        .where(eq(backupSettings.id, ada.id))
+        .returning(fieldsJadwal);
+      return diperbarui ?? null;
+    });
+
+  try {
+    const baris = await simpan();
+    if (baris) return baris;
+  } catch (error) {
+    // Barisnya baru saja dibuat pemanggil lain: ulangi sebagai pembaruan.
+    if (!pelanggaranUnik(error)) throw error;
+  }
+
+  return simpan().then((baris) => baris ?? ambilJadwalBackup());
 }

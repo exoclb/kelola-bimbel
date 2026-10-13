@@ -34,6 +34,48 @@ export const listBackupSchema = z.object({ limit: skemaLimit(20) }).strict();
 
 export type ListBackupInput = z.infer<typeof listBackupSchema>;
 
+/** Jam 24 jam "HH:MM", bentuk yang juga dijaga kolom `backup_settings.jam`. */
+const POLA_JAM = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+/** Zona waktu harus dikenal runtime Node, bukan sekadar teks bebas. */
+function zonaDikenal(zona: string) {
+  try {
+    new Intl.DateTimeFormat("id-ID", { timeZone: zona });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Pengaturan jadwal backup. Aturannya sengaja ketat — dan sama dengan yang
+// diperiksa formulir di layar — karena penjadwal memakai jam serta zona waktu
+// di sini untuk menghitung kapan backup berikutnya jalan.
+export const jadwalBackupSchema = z
+  .object({
+    aktif: z.boolean(),
+    jam: z.string().regex(POLA_JAM, "Jam mulai ditulis 24 jam, mis. 02:00."),
+    zonaWaktu: z
+      .string()
+      .trim()
+      .min(1, "Zona waktu wajib dipilih.")
+      .max(64)
+      .refine(zonaDikenal, "Zona waktu tidak dikenal."),
+    retensiHari: z
+      .number()
+      .int("Retensi ditulis dalam angka bulat.")
+      .min(1, "Retensi minimal 1 hari.")
+      .max(365, "Retensi paling banyak 365 hari."),
+    tujuan: z
+      .string()
+      .trim()
+      .min(1, "Tempat penyimpanan wajib diisi.")
+      .max(240)
+      .regex(/^\//, "Tulis path lengkap di server, mis. /var/backups/kelola."),
+  })
+  .strict();
+
+export type JadwalBackupInput = z.infer<typeof jadwalBackupSchema>;
+
 // Skema yang dikenal aplikasi; kolomnya varchar supaya bisa ditambah tanpa
 // migrasi, tetapi yang boleh masuk lewat API hanya yang benar-benar dipakai
 // perhitungan gaji.

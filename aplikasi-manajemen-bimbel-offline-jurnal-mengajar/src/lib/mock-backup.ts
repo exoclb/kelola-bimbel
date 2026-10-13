@@ -2,32 +2,17 @@
 //
 // Backup sungguhan dijalankan penjadwal di server lewat `npm run db:backup`,
 // dan catatan hasilnya sudah tersimpan di tabel `backup_runs` — riwayat di
-// halaman itu dibaca langsung dari basis data. Yang belum punya padanannya di
-// aplikasi adalah pengaturan jadwalnya, jadi bagian itu masih tiruan di sini.
-// Bentuk `JadwalBackup` mengikuti kolom yang akan dipakai penyimpanan jadwal
-// (aktif, jam, zona waktu, retensi hari, tujuan) supaya nanti tinggal diganti
-// sumbernya.
+// halaman itu dibaca langsung dari basis data. Pengaturan jadwalnya kini juga
+// punya penyimpanan sungguhan di tabel `backup_settings`
+// (`ambilJadwalBackup`/`simpanJadwalBackup` di `src/services/backup.service.ts`);
+// berkas ini menyimpan bentuk `JadwalBackup`, perhitungan waktu, dan jadwal
+// cadangan yang masih dibaca halaman sampai halamannya dipindahkan ke layanan.
 
-export type JadwalBackup = {
-  /** Penjadwal menjalankan backup sesuai jadwal, atau tidak. */
-  aktif: boolean;
-  /** Jam mulai "HH:MM" menurut `zonaWaktu`. */
-  jam: string;
-  /** Zona waktu IANA; backup dipilih jalan dini hari saat bimbel sepi. */
-  zonaWaktu: string;
-  /** Umur berkas backup sebelum dihapus penjadwal, dalam hari. */
-  retensiHari: number;
-  /** Tempat salinan terakhir disimpan di server. */
-  tujuan: string;
-};
+import { JADWAL_BACKUP_BAWAAN, type JadwalBackup } from "@/lib/jadwal-backup";
 
-const JADWAL_BACKUP_TIRUAN: JadwalBackup = {
-  aktif: true,
-  jam: "02:00",
-  zonaWaktu: "Asia/Jakarta",
-  retensiHari: 30,
-  tujuan: "/var/backups/kelola",
-};
+// Bentuk pengaturan jadwal tinggal satu di `src/lib/jadwal-backup.ts` supaya
+// layanan, validator, dan layar tidak punya salinan yang bisa berbeda.
+export type { JadwalBackup };
 
 /**
  * Jarak antar-jadwal backup, dalam jam. Jadwal tiruannya harian, sama seperti
@@ -39,7 +24,7 @@ export const JEDA_JADWAL_JAM = 24;
 
 /** Jadwal backup yang sedang berlaku. Salinan, bukan objek bersama. */
 export function getJadwalBackup(): JadwalBackup {
-  return { ...JADWAL_BACKUP_TIRUAN };
+  return { ...JADWAL_BACKUP_BAWAAN };
 }
 
 /** Nama pendek zona waktu yang akrab bagi pembaca Indonesia, mis. "WIB". */
