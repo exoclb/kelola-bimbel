@@ -21,7 +21,10 @@ const ISI = {
 };
 
 test("subjek email menyebut nama bimbel", () => {
-  assert.equal(subjekEmailTautanReset("Bimbel Contoh"), "Atur ulang sandi Bimbel Contoh");
+  assert.equal(
+    subjekEmailTautanReset("Bimbel Contoh"),
+    "Atur ulang sandi Bimbel Contoh",
+  );
 });
 
 test("versi teks memuat tautan, alamat tujuan, dan masa berlaku", () => {
@@ -29,7 +32,10 @@ test("versi teks memuat tautan, alamat tujuan, dan masa berlaku", () => {
   assert.match(teks, /Halo Bu Sri,/);
   assert.ok(teks.includes(TAUTAN), "tautan harus ada apa adanya");
   assert.ok(teks.includes("guru@contoh.id"), "alamat tujuan ikut disebut");
-  assert.ok(teks.includes("Bimbel Contoh"), "nama bimbel dipakai di salam & tanda tangan");
+  assert.ok(
+    teks.includes("Bimbel Contoh"),
+    "nama bimbel dipakai di salam & tanda tangan",
+  );
   assert.match(teks, new RegExp(`${MASA_BERLAKU_MENIT_BAWAAN} menit`));
   assert.match(teks, /abaikan saja email ini/);
 });

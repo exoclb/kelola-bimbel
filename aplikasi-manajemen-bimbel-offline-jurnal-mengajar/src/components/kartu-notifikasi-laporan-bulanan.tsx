@@ -42,8 +42,7 @@ type KartuNotifikasiLaporanBulananProps = {
 export function KartuNotifikasiLaporanBulanan({
   data = NOTIFIKASI_LAPORAN_BULANAN_TIRUAN,
 }: KartuNotifikasiLaporanBulananProps) {
-  const [daftar, setDaftar] =
-    useState<NotifikasiLaporanBulananTiruan[]>(data);
+  const [daftar, setDaftar] = useState<NotifikasiLaporanBulananTiruan[]>(data);
 
   const belumDibaca = daftar.filter((baris) => !baris.sudahDibaca).length;
 

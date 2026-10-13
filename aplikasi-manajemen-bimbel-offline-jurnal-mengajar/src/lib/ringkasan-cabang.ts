@@ -65,33 +65,35 @@ export async function ringkasanPerCabang(): Promise<RingkasanCabang[]> {
   // query akan menggandakan hitungannya. Jumlah kelasnya memakai query yang
   // sama dengan halaman pengaturan cabang (`jumlahKelasPerCabang`), jadi
   // angkanya tidak bisa berbeda antara kedua halaman itu.
-  const [daftarCabang, kelasPerCabang, perMurid, perJurnal] = await Promise.all([
-    listCabang(),
-    jumlahKelasPerCabang(),
-    db
-      .select({
-        cabang: classes.cabang,
-        jumlahMurid:
-          sql<number>`count(distinct ${studentEnrollments.studentId})::int`.as(
-            "jumlah_murid",
+  const [daftarCabang, kelasPerCabang, perMurid, perJurnal] = await Promise.all(
+    [
+      listCabang(),
+      jumlahKelasPerCabang(),
+      db
+        .select({
+          cabang: classes.cabang,
+          jumlahMurid:
+            sql<number>`count(distinct ${studentEnrollments.studentId})::int`.as(
+              "jumlah_murid",
+            ),
+        })
+        .from(studentEnrollments)
+        .innerJoin(classes, eq(studentEnrollments.classId, classes.id))
+        .where(eq(studentEnrollments.status, "aktif"))
+        .groupBy(classes.cabang),
+      db
+        .select({
+          cabang: classes.cabang,
+          jurnalTerisi: sql<number>`count(*)::int`.as("jurnal_terisi"),
+          kelasBerjurnal: sql<number>`count(distinct ${classes.id})::int`.as(
+            "kelas_berjurnal",
           ),
-      })
-      .from(studentEnrollments)
-      .innerJoin(classes, eq(studentEnrollments.classId, classes.id))
-      .where(eq(studentEnrollments.status, "aktif"))
-      .groupBy(classes.cabang),
-    db
-      .select({
-        cabang: classes.cabang,
-        jurnalTerisi: sql<number>`count(*)::int`.as("jurnal_terisi"),
-        kelasBerjurnal: sql<number>`count(distinct ${classes.id})::int`.as(
-          "kelas_berjurnal",
-        ),
-      })
-      .from(teachingJournals)
-      .innerJoin(classes, eq(teachingJournals.classId, classes.id))
-      .groupBy(classes.cabang),
-  ]);
+        })
+        .from(teachingJournals)
+        .innerJoin(classes, eq(teachingJournals.classId, classes.id))
+        .groupBy(classes.cabang),
+    ],
+  );
 
   const angka = new Map<string, AngkaCabang>();
   const wadah = (nama: string) => {
