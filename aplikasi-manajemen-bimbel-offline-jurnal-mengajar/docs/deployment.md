@@ -1,4 +1,4 @@
-# Hosting the PostgreSQL starter
+# Hosting Kelola Bimbel on a Node.js host
 
 Run the app on a Node.js-compatible host connected to a persistent PostgreSQL service. The application's filesystem does not hold your database.
 
@@ -102,4 +102,4 @@ Account emails are not verified by the base. Add an email provider for verificat
 
 References: [Drizzle PostgreSQL](https://orm.drizzle.team/docs/get-started-postgresql), [node-postgres pooling](https://node-postgres.com/features/pooling), [Better Auth Drizzle adapter](https://better-auth.com/docs/adapters/drizzle), [PostgreSQL Docker image](https://hub.docker.com/_/postgres).
 
-Perubahan aturan penempatan murid (multi-kelas) beserta migrasinya dirangkum di `docs/penempatan-murid.md`.
+The multi-class student-placement rules and their migration are summarized in `docs/penempatan-murid.md` (Indonesian).

@@ -149,16 +149,17 @@ setiap variabel bisa dilihat owner di **Pengaturan → Lingkungan**.
   dan bukan di `.env.example` (berkas contoh hanya memuat placeholder).
 - Buat environment `production` terpisah dari `staging`/`development` di Coolify
   supaya nilai produksi tidak tertukar saat uji coba.
-- Verifikasi kelengkapan **tanpa menampilkan isinya**: cukup pastikan keempat
-  nama variabel wajib ada, lalu jalankan `npm run doctor` untuk membuktikan
-  koneksinya benar-benar bisa dipakai.
-
-> **Usang (audit deploy):** “keempat nama variabel wajib” sekarang keliru —
-> yang berkategori wajib hanya **tiga**: `BETTER_AUTH_SECRET`,
-> `BETTER_AUTH_URL`, dan `DATABASE_URL`
-> (`src/lib/variabel-lingkungan.ts`, tampil juga di Pengaturan → Lingkungan).
-> `MIGRATION_DATABASE_URL` opsional. Angka yang sama salahnya muncul lagi di
-> checklist Fase 5. Rinciannya di `docs/audit-deploy-usang.md` (butir 2).
+- Verifikasi kelengkapan **tanpa menampilkan isinya**: cukup pastikan **ketiga**
+  nama variabel wajib ada — `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, dan
+  `DATABASE_URL` — lalu jalankan `npm run doctor` untuk membuktikan koneksinya
+  benar-benar bisa dipakai. Daftar resminya ada di
+  `src/lib/variabel-lingkungan.ts`, dan halaman **Pengaturan → Lingkungan**
+  membacakan kategori tiap nama ke owner tanpa menampilkan nilainya; di situ
+  akan terlihat tiga baris bertanda wajib.
+- Variabel lain **tidak wajib**: `MIGRATION_DATABASE_URL` diisi hanya bila
+  `DATABASE_URL` melewati pooler, dan kelompok backup, pemulihan, serta SMTP
+  boleh dikosongkan — aplikasinya tetap jalan, hanya fiturnya yang mati
+  (mis. tanpa `SMTP_*` email tautan atur ulang sandi hanya masuk log server).
 
 ### 3. Membuat resource aplikasi
 
@@ -445,7 +446,8 @@ Jalankan berurutan dengan data uji, lalu rapikan datanya:
 ### 3. Checklist go-live
 
 - [ ] Database produksi jalan, port tidak terbuka ke internet, `npm run doctor` hijau.
-- [ ] Keempat variabel ada di secret Coolify; tidak ada **nilai** rahasia di
+- [ ] Ketiga variabel wajib (`BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`,
+      `DATABASE_URL`) ada di secret Coolify; tidak ada **nilai** rahasia di
       repo — hanya nama variabel yang muncul (di `.env.example`, `docs/`, dan
       `scripts/`), dan pemindaian nilai dari `.env.local` atas semua berkas
       terlacak menghasilkan 0 temuan.
@@ -461,11 +463,9 @@ Jalankan berurutan dengan data uji, lalu rapikan datanya:
 - [ ] Uji pemulihan pernah berhasil.
 - [ ] Akun uji dibersihkan; hanya akun sungguhan yang tersisa.
 
-> **Perlu dibaca (audit deploy):** dua butir di atas tidak bisa dijalankan apa
-> adanya. “Keempat variabel” seharusnya tiga (lihat catatan di Fase 2 §2), dan
-> klaim “0 temuan” dari pemindaian `.env.local` tidak menyertakan perintah yang
-> bisa diulang — tidak ada skripnya di `package.json` maupun `tests/`.
-> Rinciannya di `docs/audit-deploy-usang.md` (butir 2 dan 6).
+> **Perlu bukti (audit deploy):** klaim “0 temuan” pada butir di atas belum bisa
+> diulang pembaca — tidak ada perintah, skrip, maupun ujinya di repo.
+> Rinciannya di `docs/audit-deploy-usang.md` (butir 6).
 
 ## Masalah yang sering muncul
 
