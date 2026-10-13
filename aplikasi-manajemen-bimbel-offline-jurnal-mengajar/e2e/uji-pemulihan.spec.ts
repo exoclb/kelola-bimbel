@@ -245,10 +245,11 @@ test("status proses pemulihan menunjukkan tahap yang sedang berjalan", async ({
 });
 
 /**
- * Halaman backup menunjuk ke uji pemulihan, dan tautannya benar-benar membuka
- * halaman itu — bukan tautan menggantung.
+ * Halaman backup menampilkan riwayat uji pemulihannya sendiri — supaya bukti
+ * pulih yang masih segar terlihat tanpa berpindah halaman — dan tautannya ke
+ * halaman uji pemulihan benar-benar membuka halaman itu.
  */
-test("halaman backup menautkan ke halaman uji pemulihan", async ({
+test("halaman backup menampilkan riwayat uji pemulihan dan menautkannya", async ({
   page,
   request,
 }) => {
@@ -258,11 +259,37 @@ test("halaman backup menautkan ke halaman uji pemulihan", async ({
   await masukLewatLayar(page, email);
 
   await page.goto("/app/pengaturan/backup");
+
+  const riwayatUji = page.locator('[data-slot="card"]').filter({
+    has: page.getByText("Riwayat uji pemulihan", { exact: true }),
+  });
+  await expect(riwayatUji).toHaveCount(1);
+  // Yang tampil hanya beberapa catatan terbaru, dan itu disebutkan apa adanya.
+  await expect(
+    riwayatUji.getByText(/Menampilkan 3 dari 4 catatan/),
+  ).toBeVisible();
+  await expect(riwayatUji.getByText("contoh", { exact: true })).toHaveCount(3);
+  await expect(riwayatUji.getByText("berhasil", { exact: true })).toHaveCount(
+    1,
+  );
+  await expect(riwayatUji.getByText("gagal", { exact: true })).toHaveCount(1);
+  await expect(riwayatUji.getByText("berjalan", { exact: true })).toHaveCount(
+    1,
+  );
+  await expect(riwayatUji.getByText(/· masih berjalan/)).toBeVisible();
+  // Uji yang paling lama tidak ikut tampil di sini.
+  await expect(riwayatUji.getByText("20260302-020000.dump")).toHaveCount(0);
+
   await page.getByRole("link", { name: "Buka uji pemulihan" }).click();
   await page.waitForURL("**/app/pengaturan/backup/uji-pemulihan");
   await expect(
     page.getByRole("heading", { name: "Uji Pemulihan Backup", level: 1 }),
   ).toBeVisible();
+  // Seluruh catatannya ada di sana, termasuk yang tidak tampil di halaman backup.
+  const riwayatLengkap = page.locator('[data-slot="card"]').filter({
+    has: page.getByText("Riwayat uji pemulihan", { exact: true }),
+  });
+  await expect(riwayatLengkap.getByText("20260302-020000.dump")).toBeVisible();
 
   // Tombol kembalinya mengembalikan ke halaman backup.
   await page.getByRole("link", { name: "Kembali ke backup" }).click();

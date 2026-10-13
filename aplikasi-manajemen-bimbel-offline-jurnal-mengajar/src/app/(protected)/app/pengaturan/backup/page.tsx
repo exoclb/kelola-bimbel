@@ -5,15 +5,18 @@ import { AksiJalankanBackup } from "@/components/aksi-jalankan-backup";
 import { Button } from "@/components/ui/button";
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { DaftarRiwayatBackup } from "@/components/daftar-riwayat-backup";
+import { DaftarRiwayatUjiPemulihan } from "@/components/riwayat-uji-pemulihan";
 import { FormJadwalBackup } from "@/components/form-jadwal-backup";
 import { RingkasanBackupTerakhir } from "@/components/ringkasan-backup-terakhir";
 import { PesanKosong } from "@/components/status-antarmuka";
+import { getRiwayatUjiPemulihan } from "@/lib/mock-uji-pemulihan";
 import { requirePermission } from "@/lib/session";
 import {
   ambilJadwalBackup,
@@ -21,6 +24,13 @@ import {
 } from "@/services/backup.service";
 
 export const metadata: Metadata = { title: "Backup Database" };
+
+/**
+ * Berapa catatan uji pemulihan yang ditampilkan di halaman ini. Sisanya ada di
+ * halaman Uji Pemulihan — halaman backup cukup jadi pengingat apakah bukti
+ * pulihnya masih segar atau sudah waktunya diulang.
+ */
+const BATAS_RIWAYAT = 3;
 
 export default async function BackupDatabasePage() {
   // Status backup menyangkut seluruh bimbel, jadi hanya owner/admin. Izin yang
@@ -30,6 +40,9 @@ export default async function BackupDatabasePage() {
     ambilStatusBackup(),
     ambilJadwalBackup(),
   ]);
+  // Catatan uji pemulihan belum punya tabelnya sendiri; sementara ini contoh,
+  // dan halaman menandainya begitu.
+  const riwayatUji = getRiwayatUjiPemulihan();
 
   const kartu = [
     {
@@ -110,20 +123,44 @@ export default async function BackupDatabasePage() {
 
       <Card className="mt-6">
         <CardHeader>
-          <CardTitle className="text-base">Uji pemulihan</CardTitle>
+          <CardTitle className="text-base">Riwayat uji pemulihan</CardTitle>
+          <CardAction>
+            <Button asChild size="sm" variant="outline">
+              <Link href="/app/pengaturan/backup/uji-pemulihan">
+                <ShieldCheck aria-hidden="true" />
+                Buka uji pemulihan
+              </Link>
+            </Button>
+          </CardAction>
           <CardDescription>
-            Backup yang belum pernah dipulihkan belum bisa diandalkan. Berkas
-            yang siap diuji, langkah pemulihannya, dan riwayat uji terakhir ada
-            di halaman tersendiri.
+            Backup yang belum pernah dipulihkan belum bisa diandalkan: berkas
+            yang bertambah tiap hari tidak membuktikan datanya masih bisa
+            dibuka. Berikut catatan uji terbarunya.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button asChild size="sm" variant="outline">
-            <Link href="/app/pengaturan/backup/uji-pemulihan">
-              <ShieldCheck aria-hidden="true" />
-              Buka uji pemulihan
-            </Link>
-          </Button>
+          {riwayatUji.length === 0 ? (
+            <PesanKosong
+              judul="Belum ada uji pemulihan"
+              keterangan="Belum ada bukti bahwa salinan backup bisa dibuka kembali. Jalankan uji pemulihannya, lalu catat hasilnya di halaman Uji Pemulihan."
+            />
+          ) : (
+            <>
+              <DaftarRiwayatUjiPemulihan
+                baris={riwayatUji.slice(0, BATAS_RIWAYAT)}
+              />
+              <p className="mt-4 text-xs leading-5 text-muted-foreground">
+                Menampilkan {Math.min(riwayatUji.length, BATAS_RIWAYAT)} dari{" "}
+                {riwayatUji.length} catatan terbaru. Berkas yang siap diuji,
+                langkah pemulihannya, dan verifikasi hasil pulihnya ada di
+                halaman Uji Pemulihan. Isinya masih{" "}
+                <strong className="font-medium text-foreground">
+                  contoh bentuk
+                </strong>{" "}
+                — bukan bukti uji pemulihan yang sungguh sudah dilakukan.
+              </p>
+            </>
+          )}
         </CardContent>
       </Card>
 

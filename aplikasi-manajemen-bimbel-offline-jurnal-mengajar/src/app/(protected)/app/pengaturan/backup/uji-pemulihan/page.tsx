@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, TriangleAlert } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,6 +13,7 @@ import { RincianKartu } from "@/components/rincian-kartu";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { PanelVerifikasiPemulihan } from "@/components/panel-verifikasi-pemulihan";
 import { StatusPemulihanBackup } from "@/components/status-pemulihan-backup";
+import { DaftarRiwayatUjiPemulihan } from "@/components/riwayat-uji-pemulihan";
 import {
   getBerkasBackupUji,
   getRiwayatUjiPemulihan,
@@ -58,23 +59,6 @@ const LANGKAH = [
       "Tulis berkas yang dipakai, lingkungan ujinya, dan hasil pemeriksaannya — inilah bukti kesiapan rilis yang bisa ditelusuri.",
   },
 ];
-
-/** Lencana status satu uji pemulihan, warnanya mengikuti keadaannya. */
-function LencanaStatus({ status }: { status: string }) {
-  const warna =
-    status === "berhasil"
-      ? "border-primary/30 bg-primary/10 text-primary"
-      : status === "gagal"
-        ? "border-destructive/30 bg-destructive/10 text-destructive"
-        : "border bg-muted text-muted-foreground";
-  return (
-    <span
-      className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${warna}`}
-    >
-      {status}
-    </span>
-  );
-}
 
 export default async function UjiPemulihanBackupPage() {
   // Halaman ini menyangkut seluruh bimbel, jadi izinnya sama dengan halaman
@@ -258,52 +242,8 @@ export default async function UjiPemulihanBackupPage() {
             Isinya masih contoh bentuk.
           </CardDescription>
         </CardHeader>
-        <CardContent className="divide-y">
-          {riwayat.map((uji) => (
-            <div
-              key={uji.id}
-              className="flex flex-wrap items-start justify-between gap-3 py-4 first:pt-0 last:pb-0"
-            >
-              <div className="min-w-0 space-y-1">
-                <p className="font-medium">{waktuLengkap.format(uji.mulai)}</p>
-                <p className="text-sm text-muted-foreground">
-                  {namaBerkasUji(uji.berkas)} · {uji.lingkungan}
-                  {lamaProses(uji.mulai, uji.selesai)
-                    ? ` · ${lamaProses(uji.mulai, uji.selesai)}`
-                    : " · masih berjalan"}
-                </p>
-                {uji.pemeriksaan.length > 0 && (
-                  <p className="text-sm leading-6 text-muted-foreground">
-                    {ringkasanPemeriksaan(uji)}
-                  </p>
-                )}
-                {uji.status === "gagal" ? (
-                  <p className="border-destructive/20 bg-destructive/5 text-destructive flex items-start gap-2 rounded-lg border px-3 py-2 text-sm leading-6">
-                    <TriangleAlert
-                      className="mt-0.5 size-4 shrink-0"
-                      aria-hidden="true"
-                    />
-                    <span>
-                      {uji.catatan?.trim() ||
-                        "Uji berhenti tanpa catatan. Periksa log server untuk sebabnya."}
-                    </span>
-                  </p>
-                ) : (
-                  uji.catatan && (
-                    <p className="text-sm leading-6 text-muted-foreground">
-                      {uji.catatan}
-                    </p>
-                  )
-                )}
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <LencanaStatus status={uji.status} />
-                <span className="rounded-full border border-dashed px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-                  contoh
-                </span>
-              </div>
-            </div>
-          ))}
+        <CardContent>
+          <DaftarRiwayatUjiPemulihan baris={riwayat} />
         </CardContent>
       </Card>
 
