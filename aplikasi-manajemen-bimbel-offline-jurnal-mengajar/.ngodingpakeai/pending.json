@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "9f5994a42502cc72aafcf511111c638ce712b31d",
+  "generatedForCommit": "90ecde94550f256fea100c01e274483237089f9c",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -210,7 +210,7 @@
       "path": "docs/peta-data-tiruan.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 30736
+      "size": 32528
     },
     {
       "path": "docs/prompts.md",
@@ -772,9 +772,9 @@
     },
     {
       "path": "e2e/status-ci.spec.ts",
-      "reason": "new",
+      "reason": "changed",
       "language": "typescript",
-      "size": 8266
+      "size": 9678
     },
     {
       "path": "e2e/uji-pemulihan.spec.ts",
@@ -1180,9 +1180,9 @@
     },
     {
       "path": "src/app/(protected)/app/pengaturan/ci/page.tsx",
-      "reason": "new",
+      "reason": "changed",
       "language": "typescript",
-      "size": 4428
+      "size": 4935
     },
     {
       "path": "src/app/(protected)/app/pengaturan/ekspor/page.tsx",
@@ -1954,7 +1954,7 @@
     },
     {
       "path": "src/components/daftar-pemeriksaan-ci.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 3063
     },
@@ -1984,7 +1984,7 @@
     },
     {
       "path": "src/components/daftar-riwayat-ci.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2971
     },
@@ -2212,7 +2212,7 @@
     },
     {
       "path": "src/components/lencana-status-ci.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 2386
     },
@@ -2269,12 +2269,6 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 2082
-    },
-    {
-      "path": "src/components/pengaturan-bimbel.tsx",
-      "reason": "changed",
-      "language": "typescript",
-      "size": 9170
     },
     {
       "path": "src/components/penjaga-izin.tsx",
@@ -2337,6 +2331,12 @@
       "size": 655
     },
     {
+      "path": "src/components/rincian-kegagalan-ci.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 4475
+    },
+    {
       "path": "src/components/ringkasan-backup-terakhir.tsx",
       "reason": "needs_summary",
       "language": "typescript",
@@ -2344,7 +2344,7 @@
     },
     {
       "path": "src/components/ringkasan-ci-terakhir.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 3884
     },
@@ -2410,7 +2410,7 @@
     },
     {
       "path": "src/components/status-ci-berjalan.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 4149
     },
@@ -2710,9 +2710,9 @@
     },
     {
       "path": "src/lib/ci-otomatis.ts",
-      "reason": "new",
+      "reason": "changed",
       "language": "typescript",
-      "size": 7634
+      "size": 10049
     },
     {
       "path": "src/lib/db-error.ts",
@@ -2794,9 +2794,9 @@
     },
     {
       "path": "src/lib/mock-ci-otomatis.ts",
-      "reason": "new",
+      "reason": "changed",
       "language": "typescript",
-      "size": 7208
+      "size": 8588
     },
     {
       "path": "src/lib/mock-gaji.ts",
@@ -3268,9 +3268,9 @@
     },
     {
       "path": "tests/ci-otomatis.test.mjs",
-      "reason": "new",
+      "reason": "changed",
       "language": "javascript",
-      "size": 8985
+      "size": 11648
     },
     {
       "path": "tests/data-cabang.test.mjs",
