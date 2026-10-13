@@ -657,6 +657,47 @@ Di server produksi, uji dengan akun nyata (bukan akun uji):
 
 - Pastikan akun yang dinonaktifkan tidak bisa masuk.
 
+#### Membuktikan email reset benar-benar terkirim
+
+Kotak surat penerima hanya membuktikan satu email. Yang perlu dijawab sebelum
+rilis adalah “kalau guru lupa sandinya, emailnya keluar?” — dan buktinya ada di
+empat tempat berbeda:
+
+| Bukti                  | Di mana                                                                    | Yang dibuktikan                                                                                                    |
+| ---------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Uji otomatis           | `npm test` — `tests/lupa-sandi-email.test.mjs` dan tiga berkas uji lainnya | rantai penuhnya: permintaan lupa sandi dari Better Auth berakhir sebagai email yang benar-benar dikirim SMTP       |
+| Kotak surat penerima   | folder masuk dan folder spam akun uji                                      | emailnya sampai, isinya bisa dibaca, dan tautannya bekerja                                                         |
+| Log penyedia SMTP      | dasbor penyedia (istilahnya biasanya accepted / delivered / bounce)        | server emailnya menerima dan meneruskan pesannya — satu-satunya yang bisa membedakan “kita mengirim” dari “sampai” |
+| Log container aplikasi | log service aplikasi di Coolify                                            | kalau gagal: baris `[email] gagal mengirim tautan atur ulang sandi …` beserta alasannya                            |
+
+Uji otomatisnya tidak butuh penyedia email sungguhan maupun jaringan luar: tes
+menjalankan **server SMTP seadanya** di dalam dirinya sendiri
+(`tests/dukungan/smtp-palsu.mjs`) lalu memeriksa isi pesannya, dan mencocokkan
+token di tautan dengan baris yang tersimpan di tabel `verification`. Jadi bukti
+ini bisa diulang kapan saja — termasuk saat menyelidiki keluhan “emailnya tidak
+pernah datang”. Empat berkasnya berbagi tugas: `tests/smtp.test.mjs` (aturan
+isian variabel), `tests/email-service.test.mjs` (layanannya benar-benar bicara
+protokol SMTP), `tests/lupa-sandi-email.test.mjs` (sambungan akhir ke akhir di
+atas basis data sungguhan), dan `tests/email-tautan-reset.test.mjs` (isi surat:
+tautan, versi HTML, masa berlaku). Dua di antaranya — `tests/smtp.test.mjs` dan
+`tests/email-tautan-reset.test.mjs` — tidak menyentuh basis data sama sekali,
+jadi bisa dijalankan cepat saat menyelidiki isian SMTP yang mencurigakan.
+
+**Aplikasi tidak menyimpan riwayat pengiriman email.** Tidak ada tabel maupun
+halaman “email terkirim” — yang tertinggal hanya catatan kegagalan di log
+container. Jadi kalau ada guru yang bilang tautannya tidak sampai, urutan
+pemeriksaannya: kotak suratnya (termasuk spam) → dasbor penyedia SMTP → log
+container. Tiga-tiganya bisa kosong tanpa berarti aplikasinya rusak: alamat yang
+salah ketik, atau pengirim yang belum di-verifikasi penyedianya, sudah cukup
+membuat emailnya hilang setelah diterima server SMTP.
+
+Tautan atur ulang sandi berlaku **60 menit** dan hanya bisa dipakai sekali;
+sesudah sandinya diganti, semua sesi lama dicabut. Yang aktif sekarang baru
+**pemulihan sandi**: verifikasi alamat email saat mendaftar masih belum menyala
+(`requireEmailVerification` mati di `src/lib/auth.ts`), jadi tidak ada email
+“verifikasi alamat” yang dikirim dan tidak perlu diuji di rilis ini. Kalau nanti
+dinyalakan, kanal `SMTP_*`-nya sudah siap dan itu jadi perubahan tersendiri.
+
 ### 2. Uji alur inti di produksi
 
 Jalankan berurutan dengan data uji, lalu rapikan datanya:
