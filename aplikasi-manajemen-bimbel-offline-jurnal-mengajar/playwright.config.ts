@@ -34,6 +34,10 @@ export default defineConfig({
       MIGRATION_DATABASE_URL: testUrl,
       BACKUP_DIR: testBackupDir,
       BACKUP_COMMAND: `"${process.execPath}" -e "process.stdout.write('dump-uji-e2e')"`,
+      // Penjadwal di dalam aplikasi dimatikan selama uji: kalau hidup, ia bisa
+      // menjalankan backup di tengah uji dan mengacaukan jumlah serta urutan
+      // catatan yang sedang diperiksa.
+      PENJADWAL_BACKUP: "nonaktif",
     },
     gracefulShutdown: { signal: "SIGTERM", timeout: 5000 },
   },

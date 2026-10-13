@@ -85,6 +85,20 @@ export async function ambilStatusBackup(limit = 20): Promise<StatusBackup> {
   };
 }
 
+/**
+ * Catatan backup terbaru (status apa pun), atau `null` kalau belum ada sama
+ * sekali. Dipakai penjadwal untuk tahu apakah jadwal terakhir sudah dikerjakan
+ * dan apakah masih ada proses yang sedang berjalan.
+ */
+export async function ambilCatatanTerakhir(): Promise<BackupTersimpan | null> {
+  const [terakhir] = await db
+    .select(fields)
+    .from(backupRuns)
+    .orderBy(desc(backupRuns.mulai))
+    .limit(1);
+  return terakhir ?? null;
+}
+
 // --- Menjalankan backup -----------------------------------------------------
 //
 // Sampai di sini berkas ini hanya membaca catatan. Bagian di bawah yang

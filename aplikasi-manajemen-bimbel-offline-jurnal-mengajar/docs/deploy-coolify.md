@@ -103,13 +103,16 @@ sandi di resource Coolify — jangan menyalin nilainya ke berkas repo.
 
 ### 1. Daftar variabel
 
-| Variabel                 | Isi                                             | Catatan                                                                       |
-| ------------------------ | ----------------------------------------------- | ----------------------------------------------------------------------------- |
-| `DATABASE_URL`           | connection string **internal** dari Fase 1      | dipakai aplikasi saat melayani permintaan                                     |
-| `BETTER_AUTH_SECRET`     | teks acak minimal 32 karakter                   | dipakai Better Auth untuk menandatangani sesi                                 |
-| `BETTER_AUTH_URL`        | origin publik, mis. `https://bimbel.contoh.com` | **harus** sama dengan alamat yang dibuka browser, tanpa garis miring di akhir |
-| `MIGRATION_DATABASE_URL` | opsional                                        | hanya bila `DATABASE_URL` melewati pooler; migrasi memakai koneksi langsung   |
-| `MODE_RILIS`             | opsional                                        | penanda mode rilis; di produksi biarkan kosong (lihat catatan di bawah)       |
+| Variabel                 | Isi                                             | Catatan                                                                              |
+| ------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `DATABASE_URL`           | connection string **internal** dari Fase 1      | dipakai aplikasi saat melayani permintaan                                            |
+| `BETTER_AUTH_SECRET`     | teks acak minimal 32 karakter                   | dipakai Better Auth untuk menandatangani sesi                                        |
+| `BETTER_AUTH_URL`        | origin publik, mis. `https://bimbel.contoh.com` | **harus** sama dengan alamat yang dibuka browser, tanpa garis miring di akhir        |
+| `MIGRATION_DATABASE_URL` | opsional                                        | hanya bila `DATABASE_URL` melewati pooler; migrasi memakai koneksi langsung          |
+| `MODE_RILIS`             | opsional                                        | penanda mode rilis; di produksi biarkan kosong (lihat catatan di bawah)              |
+| `PENJADWAL_BACKUP`       | opsional                                        | `nonaktif` mematikan penjadwal backup di dalam aplikasi (lihat “Backup terjadwal”)   |
+| `BACKUP_DIR`             | opsional                                        | direktori salinan backup di dalam container; bawaannya `backups` di samping aplikasi |
+| `BACKUP_COMMAND`         | opsional                                        | perintah dump untuk tombol backup manual dan penjadwal, mis. `pg_dump -Fc`           |
 
 Nilai `PORT` dan `HOSTNAME` tidak perlu diisi: image sudah memakai `3000` dan
 `0.0.0.0`.
@@ -260,15 +263,30 @@ ini** dengan image lama, jadi ia **tidak** membatalkan migrasi database,
 
 ### 3. Backup terjadwal
 
-Aplikasi hanya bisa **memantau**, bukan menjadwalkan: setiap proses backup
-(yang dijalankan `npm run db:backup`, lihat di bawah) menulis satu baris ke tabel
-`backup_runs`, dan owner melihatnya di
-**Pengaturan → Backup Database** (`/app/pengaturan/backup`) — kapan backup
-terakhir berhasil, berapa catatan yang gagal, dan di mana salinannya disimpan.
+Ada dua cara menjadwalkan backup, dan pilih salah satu supaya salinannya tidak
+dobel:
 
-Menjadwalkan backup (di server/Coolify, memakai container database yang sama):
+- **Penjadwal di dalam aplikasi** (bawaan: hidup). Jam, zona waktu, retensi, dan
+  tempat simpannya diatur owner di **Pengaturan → Backup Database**
+  (`/app/pengaturan/backup`). Jadwalnya disimpan di tabel `backup_settings`, dan
+  aplikasi menjalankan dump sendiri tiap kali jam itu lewat — termasuk menyusul
+  slot yang terlewat saat container sempat mati. Perintah dumpnya dibaca dari
+  `BACKUP_COMMAND`, jadi **aplikasi harus bisa memanggil `pg_dump`**: image bawaan
+  belum memuatnya, dan versi `pg_dump` tidak boleh lebih tua daripada server
+  PostgreSQL-nya. Kalau di deployment ini itu merepotkan, matikan penjadwalnya
+  dengan `PENJADWAL_BACKUP=nonaktif` (lihat tabel variabel di atas) dan pakai cron.
+- **Cron di luar aplikasi** (paling aman untuk Coolify, karena container
+  database-nya sudah punya `pg_dump` yang versinya cocok). Aplikasi tidak perlu
+  tahu siapa yang menjalankannya: setiap proses backup menulis satu baris ke
+  tabel `backup_runs`, dan owner melihatnya di halaman yang sama — kapan backup
+  terakhir berhasil, berapa catatan yang gagal, dan di mana salinannya disimpan.
 
-1. Buat skrip kecil di server, mis. `/opt/kelola/backup.sh`. Pencatatannya
+Langkah cron (di server/Coolify, memakai container database yang sama):
+
+1. Tambahkan `PENJADWAL_BACKUP=nonaktif` ke environment aplikasi supaya tidak
+   ada dua penjadwal yang menulis catatan (dan supaya pemanggilan `pg_dump`
+   yang gagal tidak menumpuk sebagai catatan `gagal` tiap hari).
+2. Buat skrip kecil di server, mis. `/opt/kelola/backup.sh`. Pencatatannya
    dilakukan `npm run db:backup`: ia menulis baris `berjalan` lebih dulu,
    menjalankan dump, lalu menutup barisnya sebagai `sukses` (lengkap dengan
    ukuran dan lokasi berkas) atau `gagal` beserta alasan kegagalannya — dan
@@ -294,12 +312,20 @@ Menjadwalkan backup (di server/Coolify, memakai container database yang sama):
    Nama container database diambil dari dashboard Coolify; jangan menulis sandi
    di skrip — cukup `docker exec` ke container yang sudah punya env-nya.
 
-2. Jadwalkan lewat **Scheduled Task** pada resource database di Coolify (format
+3. Jadwalkan lewat **Scheduled Task** pada resource database di Coolify (format
    cron, mis. `0 2 * * *`) atau `crontab -e` di server. Pastikan jadwalnya di
-   luar jam sibuk.
-3. **Penyimpanan terpisah** wajib: salinan di server yang sama bukan backup.
-4. **Aturan retensi** ditulis eksplisit (contoh di atas 30 hari) dan diperiksa
+   luar jam sibuk, dan samakan jamnya dengan yang tertulis di halaman
+   Pengaturan supaya tidak membingungkan operator.
+4. **Penyimpanan terpisah** wajib: salinan di server yang sama bukan backup.
+5. **Aturan retensi** ditulis eksplisit (contoh di atas 30 hari) dan diperiksa
    berkala agar disk tidak penuh.
+
+Kalau memakai penjadwal aplikasi, isi `BACKUP_COMMAND` dengan perintah dump yang
+berjalan dari container aplikasi (mis. `pg_dump -Fc` setelah
+`postgresql-client` dipasang di image, atau `{file}` kalau aplikasinya bisa
+memanggil Docker), lalu uji sekali lewat tombol **Jalankan backup** di halaman
+Backup: hasilnya harus muncul sebagai catatan `sukses` di riwayat, dan berkasnya
+ada di `/var/backups/kelola`.
 
 ### 4. Uji pemulihan
 
@@ -361,16 +387,18 @@ Jalankan berurutan dengan data uji, lalu rapikan datanya:
 
 ## Masalah yang sering muncul
 
-| Gejala                                    | Kemungkinan sebab                                      | Tindakan                                                                           |
-| ----------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------------------------------------- |
-| Build gagal `ECONNREFUSED 127.0.0.1:5432` | halaman terproteksi ikut di-prerender saat build       | pastikan `dynamic = "force-dynamic"` di `src/app/(protected)/layout.tsx` tetap ada |
-| Deploy sukses tapi halaman 502            | container mati setelah start (env salah)               | cek log container: `DATABASE_URL`/`BETTER_AUTH_SECRET` kosong atau salah bentuk    |
-| Login berhasil lalu langsung keluar       | `BETTER_AUTH_URL` tidak sama dengan origin yang dibuka | samakan dengan domain publik (termasuk skema/port), deploy ulang                   |
-| `Invalid origin` saat mengirim data       | domain lain/proxy mengubah origin                      | akses lewat domain resmi; jangan menambah origin lain tanpa alasan                 |
-| Aplikasi jalan tapi tabel tidak ada       | migrasi belum dijalankan                               | jalankan resource migrator, lihat log `PostgreSQL migrations applied.`             |
-| Migrasi gagal saat deploy                 | perintah pre-deployment gagal                          | perbaiki penyebabnya di lingkungan uji dulu; migrasi tidak boleh di-skip           |
-| Rollback tidak mengembalikan data         | rollback hanya menukar image                           | pulihkan database dari backup (Fase 4)                                             |
-| Halaman contoh masih terbuka di produksi  | `MODE_RILIS=false` tertinggal di environment produksi  | hapus variabelnya (atau isi `true`), deploy ulang, lalu uji ulang rutenya          |
+| Gejala                                    | Kemungkinan sebab                                                             | Tindakan                                                                                                      |
+| ----------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Build gagal `ECONNREFUSED 127.0.0.1:5432` | halaman terproteksi ikut di-prerender saat build                              | pastikan `dynamic = "force-dynamic"` di `src/app/(protected)/layout.tsx` tetap ada                            |
+| Deploy sukses tapi halaman 502            | container mati setelah start (env salah)                                      | cek log container: `DATABASE_URL`/`BETTER_AUTH_SECRET` kosong atau salah bentuk                               |
+| Login berhasil lalu langsung keluar       | `BETTER_AUTH_URL` tidak sama dengan origin yang dibuka                        | samakan dengan domain publik (termasuk skema/port), deploy ulang                                              |
+| `Invalid origin` saat mengirim data       | domain lain/proxy mengubah origin                                             | akses lewat domain resmi; jangan menambah origin lain tanpa alasan                                            |
+| Aplikasi jalan tapi tabel tidak ada       | migrasi belum dijalankan                                                      | jalankan resource migrator, lihat log `PostgreSQL migrations applied.`                                        |
+| Migrasi gagal saat deploy                 | perintah pre-deployment gagal                                                 | perbaiki penyebabnya di lingkungan uji dulu; migrasi tidak boleh di-skip                                      |
+| Rollback tidak mengembalikan data         | rollback hanya menukar image                                                  | pulihkan database dari backup (Fase 4)                                                                        |
+| Halaman contoh masih terbuka di produksi  | `MODE_RILIS=false` tertinggal di environment produksi                         | hapus variabelnya (atau isi `true`), deploy ulang, lalu uji ulang rutenya                                     |
+| Backup terjadwal tidak pernah jalan       | `PENJADWAL_BACKUP=nonaktif` tertinggal, atau `pg_dump` tidak ada di container | cek environment aplikasi dan log container; jalankan tombol **Jalankan backup** untuk membuktikan perintahnya |
+| Catatan backup `gagal` setiap hari        | perintah dumpnya tidak bisa dipanggil dari container aplikasi                 | uji lewat tombol manual, betulkan `BACKUP_COMMAND`, atau pindahkan jadwalnya ke cron                          |
 
 Referensi Coolify: [Rollback](https://coolify.io/docs/applications/deployments/rollbacks) ·
 [Dockerfile build](https://coolify.io/docs/applications/builds/dockerfile)

@@ -131,6 +131,27 @@ export const VARIABEL_LINGKUNGAN: readonly MetadataVariabelLingkungan[] = [
     keterangan:
       "Penanda mode rilis: true menyembunyikan halaman contoh, false menampilkannya. Kalau kosong, mengikuti NODE_ENV (production berarti rilis).",
   },
+  // Saklar penjadwal backup (Fase 2 roadmap). Opsional: bawaannya penjadwal
+  // hidup dan diperiksa src/services/penjadwal-backup.service.ts. Halaman
+  // status hanya menampilkan terpasang/belum, tidak nilainya.
+  {
+    nama: "PENJADWAL_BACKUP",
+    kategori: "opsional",
+    keterangan:
+      "Saklar penjadwal backup di dalam aplikasi: nonaktif mematikannya (mis. kalau backup dijadwalkan cron dari luar). Kalau kosong, penjadwalnya hidup.",
+  },
+  {
+    nama: "BACKUP_DIR",
+    kategori: "opsional",
+    keterangan:
+      "Direktori tempat salinan backup disimpan. Kalau kosong, dipakai direktori `backups` di samping aplikasi.",
+  },
+  {
+    nama: "BACKUP_COMMAND",
+    kategori: "opsional",
+    keterangan:
+      "Perintah dump backup, mis. pg_dump -Fc. Kalau kosong, salinan diambil dari DATABASE_URL; pakai {file} kalau perintahnya menulis sendiri ke berkas.",
+  },
   {
     nama: "NODE_ENV",
     kategori: "otomatis",

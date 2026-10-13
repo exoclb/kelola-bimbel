@@ -4,7 +4,9 @@
 // tunggal itu (bukan menumpuk baris baru), dan batasan tabelnya yang menahan
 // jam, retensi, serta tempat penyimpanan yang tidak masuk akal. Aturan
 // validator `jadwalBackupSchema` diuji di sini juga karena formulir dan
-// penjadwal memakai aturan yang sama.
+// penjadwal memakai aturan yang sama. Penentuan slot mana yang sedang
+// ditunggu penjadwal (`jadwalTerakhir`) diuji di sini juga karena ia hanya
+// perhitungan waktu, tanpa basis data.
 //
 // Alias "@/..." milik tsconfig diterjemahkan penerjemah bersama di
 // tests/dukungan/impor-ts.mjs. `npm test` mengaktifkan kondisi `react-server`
@@ -19,7 +21,8 @@ pasangImporTs();
 
 const { ambilJadwalBackup, simpanJadwalBackup } =
   await import("../src/services/backup.service.ts");
-const { JADWAL_BACKUP_BAWAAN } = await import("../src/lib/jadwal-backup.ts");
+const { JADWAL_BACKUP_BAWAAN, jadwalTerakhir } =
+  await import("../src/lib/jadwal-backup.ts");
 const { jadwalBackupSchema } = await import("../src/validators/pengaturan.ts");
 
 const pool = new Pool({
@@ -218,5 +221,84 @@ test("validator jadwal menerima isian lengkap dan menolak yang salah", () => {
   assert.equal(
     jadwalBackupSchema.safeParse({ ...JADWAL_UJI, cron: "0 2 * * *" }).success,
     false,
+  );
+});
+
+// --- Slot jadwal yang sedang ditunggu penjadwal -----------------------------
+
+/** Jadwal harian pukul 02.00 WIB, sama dengan bawaan aplikasi. */
+const JADWAL_HARIAN = JADWAL_BACKUP_BAWAAN;
+
+test("jadwal terakhir menunjuk slot kemarin selama jamnya belum lewat", () => {
+  // 13 Okt 2026, 01.00 WIB — jadwal hari ini belum tiba.
+  assert.equal(
+    jadwalTerakhir(
+      JADWAL_HARIAN,
+      new Date("2026-10-12T18:00:00Z"),
+    ).toISOString(),
+    "2026-10-11T19:00:00.000Z", // 12 Okt 02.00 WIB
+  );
+});
+
+test("jadwal terakhir menunjuk slot hari ini setelah jamnya lewat", () => {
+  // 13 Okt 2026, 03.00 WIB.
+  assert.equal(
+    jadwalTerakhir(
+      JADWAL_HARIAN,
+      new Date("2026-10-12T20:00:00Z"),
+    ).toISOString(),
+    "2026-10-12T19:00:00.000Z", // 13 Okt 02.00 WIB
+  );
+});
+
+test("tepat pada jamnya, slot hari ini sudah dianggap jatuh tempo", () => {
+  // 13 Okt 2026, sedetik sebelum pukul 02.00 WIB: slot kemarin yang ditunggu.
+  assert.equal(
+    jadwalTerakhir(
+      JADWAL_HARIAN,
+      new Date("2026-10-12T18:59:59Z"),
+    ).toISOString(),
+    "2026-10-11T19:00:00.000Z",
+  );
+  // Tepat pukul 02.00 WIB jadwalnya sudah boleh dijalankan — sama seperti
+  // `jadwalBerikutnya` yang pada jam itu sudah menunjuk besok, bukan sekarang.
+  for (const waktu of ["2026-10-12T19:00:00Z", "2026-10-12T19:00:01Z"])
+    assert.equal(
+      jadwalTerakhir(JADWAL_HARIAN, new Date(waktu)).toISOString(),
+      "2026-10-12T19:00:00.000Z",
+      `${waktu} seharusnya mengacu ke jadwal 13 Okt 02.00 WIB`,
+    );
+});
+
+test("jadwal terakhir selalu tepat pada atau sebelum waktunya", () => {
+  // Sifat yang dipakai penjadwal: satu slot hanya dicoba sekali, jadi acuannya
+  // tidak boleh berada di masa depan.
+  for (const menit of [0, 1, 30, 59]) {
+    for (const jam of [0, 1, 2, 3, 12, 23]) {
+      const sekarang = new Date(Date.UTC(2026, 9, 12, jam, menit, 0));
+      const terakhir = jadwalTerakhir(JADWAL_HARIAN, sekarang);
+      assert.ok(
+        terakhir <= sekarang,
+        `${terakhir.toISOString()} seharusnya tidak melewati ${sekarang.toISOString()}`,
+      );
+      assert.equal(
+        terakhir.getUTCMinutes(),
+        0,
+        "waktunya harus tepat pada jam jadwalnya",
+      );
+    }
+  }
+});
+
+test("perhitungan slot mengikuti zona waktu jadwalnya", () => {
+  // 13 Okt 2026, 01.00 WIB: di Makassar sudah lewat pukul 02.00, jadi slot hari
+  // ini yang jatuh tempo — bukan slot kemarin.
+  const sekarang = new Date("2026-10-12T18:00:00Z");
+  assert.equal(
+    jadwalTerakhir(
+      { ...JADWAL_HARIAN, zonaWaktu: "Asia/Makassar" },
+      sekarang,
+    ).toISOString(),
+    "2026-10-12T18:00:00.000Z", // 13 Okt 02.00 WITA
   );
 });

@@ -15,11 +15,22 @@ MIGRATION_DATABASE_URL=postgresql://user:password@direct-host:5432/app
 # Optional: mark this deployment as a release, which hides the starter showcase
 # pages. Leave blank and NODE_ENV decides — a production build is a release.
 MODE_RILIS=
+# Optional: the app schedules backups itself using the schedule owners set in
+# Settings -> Backup (stored in `backup_settings`). Set `nonaktif` to hand that
+# job to an external cron job instead; see docs/deploy-coolify.md.
+PENJADWAL_BACKUP=
+# Optional: where backup copies live and which dump command produces them. The
+# dump command must be reachable from the app container; the default image ships
+# no `pg_dump`.
+BACKUP_DIR=
+BACKUP_COMMAND=
 ```
 
 Keep provider-required TLS settings. Do not disable certificate verification. The example credentials are placeholders, not defaults.
 
 Leave `MODE_RILIS` blank in production: the release container runs with `NODE_ENV=production`, which already marks the deployment as a release. Release mode drops the starter showcase links from the menu and answers `/app/contoh-status` like a route that never existed, instead of redirecting a visitor to sign-in (`src/proxy.ts`). Set the variable only to override `NODE_ENV` — `true` to close the showcase in a local or review build, `false` to keep it reachable in a release build; a `false` left behind in production reopens those routes. `docs/deploy-coolify.md` documents the same switch for operators, in Indonesian.
+
+`PENJADWAL_BACKUP` only decides whether the in-app scheduler runs; anything other than `nonaktif`/`off`/`false`/`0`/`tidak`/`no` leaves it on, so a typo never silences scheduled backups. Each scheduled run writes a row to `backup_runs` exactly like `npm run db:backup` and the manual **Run backup** button, and the app catches up a slot it missed while the container was down — so pick one scheduler, in-app or cron, not both. The due-time rules and the switch are tested in `tests/penjadwal-backup.test.mjs`.
 
 ```sh
 npm ci
