@@ -115,15 +115,54 @@ sandi di resource Coolify — jangan menyalin nilainya ke berkas repo.
 | `BACKUP_COMMAND`         | opsional                                        | perintah dump untuk tombol backup manual dan penjadwal, mis. `pg_dump -Fc`                            |
 | `RESTORE_DATABASE_URL`   | opsional                                        | connection string database **percobaan** untuk uji pemulihan, mis. `kelola_restore`                   |
 | `RESTORE_COMMAND`        | opsional                                        | perintah pemulihan, mis. `pg_restore`; bawaannya `pg_restore` ke `RESTORE_DATABASE_URL`               |
+| `SMTP_HOST`              | opsional                                        | alamat server email pengirim; **saklar** fitur email — selama kosong, emailnya tidak dikirim          |
+| `SMTP_PORT`              | opsional                                        | port server SMTP; bawaannya `587` (STARTTLS), port `465` memakai TLS sejak awal                       |
+| `SMTP_SECURE`            | opsional                                        | `true`/`false` untuk memaksa TLS; kosong berarti mengikuti port                                       |
+| `SMTP_USER`              | opsional                                        | nama pengguna autentikasi; harus diisi bersama `SMTP_PASSWORD`                                        |
+| `SMTP_PASSWORD`          | opsional                                        | sandi autentikasi — rahasia, hanya di secret Coolify                                                  |
+| `SMTP_FROM`              | opsional                                        | alamat pengirim pada email; kalau kosong memakai `SMTP_USER`                                          |
+| `SMTP_FROM_NAME`         | opsional                                        | nama tampilan pengirim di kotak masuk penerima                                                        |
 
 Nilai `PORT` dan `HOSTNAME` tidak perlu diisi: image sudah memakai `3000` dan
 `0.0.0.0`.
 
-> **Belum lengkap (audit deploy):** tabel ini belum memuat kelompok `SMTP_*`
-> (`SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`,
-> `SMTP_FROM`, `SMTP_FROM_NAME`) dari `src/lib/smtp.ts`. Semuanya opsional,
-> tetapi tanpa diisi email tautan atur ulang sandi tidak pernah keluar dari
-> server. Rinciannya di `docs/audit-deploy-usang.md` (butir 1).
+#### Kanal email (`SMTP_*`)
+
+Tujuh variabel `SMTP_*` semuanya **opsional**: bimbel tetap bisa jalan penuh
+walau belum punya penyedia email, termasuk fitur lupa sandi — tautannya dicatat
+ke log container. Aturan isiannya:
+
+| Variabel         | Bawaan                  | Aturan                                                                                           |
+| ---------------- | ----------------------- | ------------------------------------------------------------------------------------------------ |
+| `SMTP_HOST`      | —                       | wajib sebelum fitur email dianggap aktif                                                         |
+| `SMTP_PORT`      | `587`                   | nomor port 1–65535; `465` memakai TLS sejak awal                                                 |
+| `SMTP_SECURE`    | diturunkan dari port    | `true` = TLS sejak awal, `false` = STARTTLS; kosong berarti mengikuti port                       |
+| `SMTP_USER`      | —                       | harus diisi **bersama** `SMTP_PASSWORD`; keduanya boleh kosong kalau servernya tanpa autentikasi |
+| `SMTP_PASSWORD`  | —                       | rahasia; jangan pernah ditulis di berkas repo                                                    |
+| `SMTP_FROM`      | sama dengan `SMTP_USER` | harus alamat email yang sah                                                                      |
+| `SMTP_FROM_NAME` | —                       | nama tampilan di kotak masuk penerima                                                            |
+
+**Salah tulis tidak membuat aplikasi gagal start** — sama seperti variabel
+opsional lain. Yang terjadi: pengiriman emailnya dimatikan, dan sebabnya terbaca
+di **Pengaturan → Lingkungan** (`/app/pengaturan/lingkungan`), halaman yang
+menampilkan tiap variabel terpasang atau belum **tanpa membocorkan nilainya**.
+Halaman itu hanya membedakan terpasang/belum, jadi “`SMTP_HOST` terpasang” belum
+berarti emailnya benar-benar terkirim; yang membuktikan itu uji lupa sandi di
+Fase 5.
+
+**Kapan tautan atur ulang sandi dicatat ke log.** Tautan itu berisi token yang
+bisa dipakai siapa pun yang membacanya, jadi ia sengaja tidak menumpuk di log
+produksi:
+
+| Keadaan                                                                                  | Tautan ditulis ke log?                                                                                                                                         |
+| ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Aplikasi dev/uji (`NODE_ENV` bukan `production`, atau uji e2e dengan `STARTER_TEST_RUN`) | ya — lognya cuma ada di mesin pengembang, dan uji e2e memang membacanya dari sana                                                                              |
+| Produksi, `SMTP_*` belum diatur (atau belum lengkap)                                     | ya — bimbel yang memilih belum menyiapkan penyedia email tetap bisa memulihkan akun lewat log operator                                                         |
+| Produksi, `SMTP_*` siap                                                                  | **tidak** — tautannya dikirim sebagai email. Kalau server SMTP menolak, yang dicatat hanya kegagalannya tanpa tautannya, supaya tokennya tidak menumpuk di log |
+
+Kegagalan pengiriman tidak pernah membuat permintaan lupa sandi gagal —
+jawabannya sama untuk semua alamat email, supaya halaman itu tidak membocorkan
+akun mana yang ada (`src/lib/auth.ts` + `src/services/email.service.ts`).
 
 **`MODE_RILIS` — halaman contoh starter.** Halaman acuan tampilan bawaan
 (`/app/contoh-status`) tidak untuk pengguna bimbel. Saklarnya bernama
@@ -599,15 +638,24 @@ Di server produksi, uji dengan akun nyata (bukan akun uji):
   "Gaji saya" terlihat, menu owner tidak.
 - **Owner**: masuk → halaman pemantauan → menu Pemantauan, Gaji, Guru, Akun,
   Backup terlihat.
-- Uji juga **lupa sandi** dan **atur ulang sandi** dari domain asli.
-- Pastikan akun yang dinonaktifkan tidak bisa masuk.
+- Uji juga **lupa sandi** dan **atur ulang sandi** dari domain asli, dengan kotak
+  surat sungguhan:
+  1. Pastikan `SMTP_*` sudah terisi di secret Coolify dan tertulis “terpasang” di
+     **Pengaturan → Lingkungan**. Isian yang setengah lengkap — mis. `SMTP_USER`
+     tanpa `SMTP_PASSWORD` — dilaporkan di situ, dan emailnya dimatikan sampai
+     diperbaiki.
+  2. Minta tautan lupa sandi dari akun uji, lalu pastikan **emailnya benar-benar
+     masuk** (periksa juga folder spam) dan tautannya bisa dipakai mengganti
+     sandi.
+  3. Sesudah sandinya diganti, sesi lama harus tidak berlaku lagi: buka aplikasi
+     dari peramban yang masih memakai sesi lama, dan harus diminta masuk ulang.
 
-> **Belum lengkap (audit deploy):** uji lupa sandi di atas baru berjalan seperti
-> yang diharapkan kalau penyedia emailnya sudah diatur. Tanpa `SMTP_*`, tautan
-> atur ulang sandi **tetap** dibuat tetapi hanya dicatat ke log container
-> (`src/lib/smtp.ts`: `pakaiCadanganLogTautan`), jadi tidak ada email yang
-> masuk. Pastikan dulu kanal emailnya, lalu ujilah dari domain asli. Rinciannya
-> di `docs/audit-deploy-usang.md` (butir 4).
+  Kalau `SMTP_*` sengaja belum diisi, alur ini **tidak mengirim email**:
+  tautannya hanya muncul di log container dengan awalan `[lupa-sandi]`. Itu
+  perilaku yang benar untuk bimbel tanpa penyedia email, jadi ujinya dibaca dari
+  log — bukan dari kotak surat (rinciannya di Fase 2 §1).
+
+- Pastikan akun yang dinonaktifkan tidak bisa masuk.
 
 ### 2. Uji alur inti di produksi
 
@@ -634,6 +682,10 @@ Jalankan berurutan dengan data uji, lalu rapikan datanya:
 - [ ] Migrasi terakhir sudah dijalankan dan lognya tersimpan.
 - [ ] Domain + HTTPS aktif; `BETTER_AUTH_URL` sama persis dengan domain itu.
 - [ ] Login guru & owner dari domain asli berhasil; cookie sesi bertahan.
+- [ ] Kanal email diputuskan: `SMTP_*` terisi dan email lupa sandi benar-benar
+      masuk ke kotak surat (periksa spam), **atau** sengaja belum diisi dan
+      tautannya terbaca di log container dengan awalan `[lupa-sandi]`
+      (Fase 2 §1).
 - [ ] Halaman contoh tertutup: `/app/contoh-status` menjawab **Halaman ini tidak
       tersedia** dan tidak ada tautan contoh di menu; `MODE_RILIS` tidak
       tertinggal bernilai `false`.
