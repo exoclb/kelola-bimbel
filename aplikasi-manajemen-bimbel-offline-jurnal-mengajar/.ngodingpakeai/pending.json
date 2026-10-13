@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "ae0086962ecb8581ec8f0683f8901f9f28dd049f",
+  "generatedForCommit": "a26248ad3ae418d4a2519dfabd23623a3c535ad4",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -210,7 +210,7 @@
       "path": "docs/peta-data-tiruan.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 25338
+      "size": 25583
     },
     {
       "path": "docs/prompts.md",
@@ -774,7 +774,7 @@
       "path": "e2e/uji-pemulihan.spec.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 11288
+      "size": 12603
     },
     {
       "path": "eslint.config.mjs",
@@ -1162,15 +1162,15 @@
     },
     {
       "path": "src/app/(protected)/app/pengaturan/backup/page.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 5128
+      "size": 6825
     },
     {
       "path": "src/app/(protected)/app/pengaturan/backup/uji-pemulihan/page.tsx",
       "reason": "changed",
       "language": "typescript",
-      "size": 12765
+      "size": 10323
     },
     {
       "path": "src/app/(protected)/app/pengaturan/ekspor/page.tsx",
@@ -2212,7 +2212,7 @@
     },
     {
       "path": "src/components/panel-verifikasi-pemulihan.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 7009
     },
@@ -2323,6 +2323,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 4204
+    },
+    {
+      "path": "src/components/riwayat-uji-pemulihan.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 3428
     },
     {
       "path": "src/components/saklar-akses-portal-wali.tsx",
@@ -2908,7 +2914,7 @@
     },
     {
       "path": "src/lib/uji-pemulihan.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 11612
     },
@@ -3298,7 +3304,7 @@
     },
     {
       "path": "tests/uji-pemulihan.test.mjs",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 17266
     },
