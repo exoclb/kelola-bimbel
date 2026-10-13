@@ -100,6 +100,37 @@ export async function ambilCatatanTerakhir(): Promise<BackupTersimpan | null> {
   return terakhir ?? null;
 }
 
+/** Syarat catatan backup yang berkasnya layak dipulihkan pada uji pemulihan. */
+const syaratBerkasUji = and(
+  eq(backupRuns.status, "sukses"),
+  isNotNull(backupRuns.lokasi),
+  isNotNull(backupRuns.ukuranByte),
+);
+
+/**
+ * Saringan di SQL sudah menyisihkan baris tanpa berkas; penyaringan ulang di
+ * sini yang memberi TypeScript bentuk `BerkasBackupUji` tanpa perlu `!`.
+ */
+function rapikanBerkasUji(
+  baris: {
+    id: string;
+    lokasi: string | null;
+    dibuat: Date;
+    ukuranByte: number | null;
+  }[],
+): BerkasBackupUji[] {
+  return baris.filter(
+    (
+      satu,
+    ): satu is {
+      id: string;
+      lokasi: string;
+      dibuat: Date;
+      ukuranByte: number;
+    } => satu.lokasi !== null && satu.ukuranByte !== null,
+  );
+}
+
 /**
  * Berkas backup yang siap dipulihkan pada uji pemulihan, yang paling baru lebih
  * dulu: catatan `sukses` yang sudah punya lokasi berkas beserta ukurannya.
@@ -120,28 +151,38 @@ export async function ambilBerkasBackupUji(
       ukuranByte: backupRuns.ukuranByte,
     })
     .from(backupRuns)
-    .where(
-      and(
-        eq(backupRuns.status, "sukses"),
-        isNotNull(backupRuns.lokasi),
-        isNotNull(backupRuns.ukuranByte),
-      ),
-    )
+    .where(syaratBerkasUji)
     .orderBy(desc(backupRuns.mulai))
     .limit(limit);
 
-  // Saringan di atas sudah menyisihkan baris tanpa berkas; penyaringan ulang di
-  // sini yang memberi TypeScript bentuk `BerkasBackupUji` tanpa perlu `!`.
-  return baris.filter(
-    (
-      satu,
-    ): satu is {
-      id: string;
-      lokasi: string;
-      dibuat: Date;
-      ukuranByte: number;
-    } => satu.lokasi !== null && satu.ukuranByte !== null,
-  );
+  return rapikanBerkasUji(baris);
+}
+
+/**
+ * Satu berkas backup yang layak diuji, dipilih lewat id catatannya.
+ *
+ * Endpoint pemulihan sengaja memilih berkas dari id catatan ini, bukan dari path
+ * yang dikirim pemanggil: dengan begitu yang bisa dipulihkan hanya berkas yang
+ * memang pernah dicatat sukses oleh proses backup, bukan file sembarang di
+ * server. `null` berarti id itu tidak ada, bukan salinan sukses, atau belum
+ * punya lokasi berkas.
+ */
+export async function ambilBerkasBackupUjiById(
+  id: string,
+): Promise<BerkasBackupUji | null> {
+  const baris = await db
+    .select({
+      id: backupRuns.id,
+      lokasi: backupRuns.lokasi,
+      dibuat: backupRuns.mulai,
+      ukuranByte: backupRuns.ukuranByte,
+    })
+    .from(backupRuns)
+    .where(and(syaratBerkasUji, eq(backupRuns.id, id)))
+    .limit(1);
+
+  const [satu] = rapikanBerkasUji(baris);
+  return satu ?? null;
 }
 
 // --- Menjalankan backup -----------------------------------------------------
@@ -535,8 +576,8 @@ export type HasilPemulihanData = {
   pesan: string | null;
   /** Nama database percobaan tempat berkasnya dipulihkan. */
   databaseTujuan: string | null;
-  /** Perintah yang dipakai; berkas sumbernya belum tentu tertulis di sini. */
-  perintah: string;
+  /** Lama prosesnya berjalan, dalam milidetik. */
+  lamaMs: number;
 };
 
 export type OpsiPemulihanData = {
@@ -549,25 +590,45 @@ export type OpsiPemulihanData = {
 };
 
 /**
+ * Penanda satu pemulihan sedang berjalan di proses ini.
+ *
+ * Uji pemulihan menuangkan seluruh isi salinan ke satu database percobaan yang
+ * sama, jadi dua uji yang berbarengan akan saling menimpa dan hasil
+ * pemeriksaannya tidak lagi bisa dipercaya — yang kedua ditolak dulu. Penanda
+ * ini hanya berlaku di dalam satu proses aplikasi: penerapan dengan beberapa
+ * replika masih bisa menjalankan dua uji sekaligus, dan itu disebut apa adanya
+ * di `docs/deploy-coolify.md`.
+ */
+let pemulihanBerjalan = false;
+
+/** true selagi ada uji pemulihan yang sedang dijalankan proses ini. */
+export function adaPemulihanBerjalan() {
+  return pemulihanBerjalan;
+}
+
+/**
  * Memulihkan satu berkas backup ke database percobaan.
  *
  * Seperti `jalankanBackupDanCatat`, fungsi ini tidak melempar galat: pengaturan
- * yang belum lengkap, tujuan yang menunjuk database aplikasi, dan perintah yang
- * gagal sama-sama berakhir sebagai hasil `berhasil: false` beserta alasannya —
- * supaya uji pemulihan di layar bisa melaporkan sebabnya, bukan cuma gagal
- * diam-diam. Yang dicatat ke riwayat uji bukan urusan fungsi ini.
+ * yang belum lengkap, tujuan yang menunjuk database aplikasi, uji lain yang
+ * masih berjalan, dan perintah yang gagal sama-sama berakhir sebagai hasil
+ * `berhasil: false` beserta alasannya — supaya uji pemulihan di layar bisa
+ * melaporkan sebabnya, bukan cuma gagal diam-diam. Yang dicatat ke riwayat uji
+ * bukan urusan fungsi ini, dan perintah yang dipakai sengaja **tidak** ikut pada
+ * hasilnya: perintah bawaan memuat connection string tujuan beserta sandinya.
  */
 export async function pulihkanBerkasBackup(
   opsi: OpsiPemulihanData,
 ): Promise<HasilPemulihanData> {
   const konfigurasi = opsi.konfigurasi ?? bacaKonfigurasiPemulihan();
   const pelaksana = opsi.pelaksana ?? jalankanPerintahPemulihan;
+  const mulai = Date.now();
 
   const gagal = (pesan: string): HasilPemulihanData => ({
     berhasil: false,
     pesan: pesanGalatDari(pesan),
     databaseTujuan: konfigurasi.databaseTujuan,
-    perintah: konfigurasi.perintah,
+    lamaMs: Date.now() - mulai,
   });
 
   if (konfigurasi.variabelBermasalah.length)
@@ -575,7 +636,14 @@ export async function pulihkanBerkasBackup(
       `${konfigurasi.variabelBermasalah.join(", ")} belum diisi, jadi perintah pemulihan tidak lengkap.`,
     );
   if (konfigurasi.bahaya) return gagal(konfigurasi.bahaya);
+  if (pemulihanBerjalan)
+    return gagal(
+      "Masih ada uji pemulihan yang berjalan; tunggu sampai selesai sebelum menjalankan uji berikutnya.",
+    );
 
+  // Penanda diambil setelah semua penolakan di atas: pengaturan yang kurang
+  // tidak boleh mengunci uji berikutnya.
+  pemulihanBerjalan = true;
   let galat: string | null = null;
   try {
     const keluaran = await pelaksana(konfigurasi.perintah, opsi.lokasi);
@@ -584,13 +652,15 @@ export async function pulihkanBerkasBackup(
     galat = pesanGalatDari(
       kesalahan instanceof Error ? kesalahan.message : String(kesalahan),
     );
+  } finally {
+    pemulihanBerjalan = false;
   }
 
   return {
     berhasil: galat === null,
     pesan: galat,
     databaseTujuan: konfigurasi.databaseTujuan,
-    perintah: konfigurasi.perintah,
+    lamaMs: Date.now() - mulai,
   };
 }
 

@@ -754,3 +754,93 @@ test("endpoint berkas siap diuji menyaring catatan sukses berberkas", async ({
     (await request.get("/api/pengaturan/backup/berkas", { headers })).status(),
   ).toBe(403);
 });
+
+/**
+ * Endpoint uji pemulihan: owner memulihkan satu berkas backup yang layak diuji,
+ * dan seluruh pengamanannya menahan sebelum perintah apa pun dijalankan —
+ * berkasnya dipilih lewat id catatan (bukan path kiriman pemanggil), id yang
+ * tidak layak dijawab 404, isian tidak sah 422, dan akun di luar owner/admin
+ * 403. Perintah pemulihannya diganti perintah Node kecil di
+ * `playwright.config.ts`, seperti perintah dump pada pemicu backup manual.
+ */
+test("endpoint uji pemulihan memulihkan berkas terpilih dan menjaga pengamanannya", async ({
+  request,
+}) => {
+  const email = await daftar(request, "Owner Uji Pemulihan");
+  await setRole(email, "owner");
+  await masuk(request, email);
+
+  const penanda = randomUUID().slice(0, 8);
+  const layak = `/srv/backup/layak-${penanda}.dump`;
+  const gagal = `/srv/backup/gagal-${penanda}.dump`;
+  const db = new Pool({
+    connectionString: process.env.STARTER_TEST_DATABASE_URL,
+    max: 1,
+  });
+  try {
+    const sukses = await db.query(
+      "INSERT INTO backup_runs (mulai, selesai, status, ukuran_byte, lokasi) VALUES (now() - interval '2 hours', now() - interval '119 minutes', 'sukses', $1, $2) RETURNING id",
+      [16384, layak],
+    );
+    const gagalBaris = await db.query(
+      "INSERT INTO backup_runs (mulai, selesai, status, lokasi, pesan) VALUES (now() - interval '1 hour', now() - interval '59 minutes', 'gagal', $1, $2) RETURNING id",
+      [gagal, `Gagal menyalin (${penanda})`],
+    );
+
+    const jawaban = await request.post("/api/pengaturan/backup/uji-pemulihan", {
+      headers,
+      data: { backupId: sukses.rows[0].id },
+    });
+    expect(jawaban.status()).toBe(200);
+    const { data } = await jawaban.json();
+    expect(data.berhasil).toBe(true);
+    expect(data.pesan).toBe(null);
+    // Tujuan pemulihannya database percobaan, bukan database aplikasi.
+    expect(data.databaseTujuan).toBe("kelola_restore");
+    expect(typeof data.lamaMs).toBe("number");
+    // Hasilnya menyebut berkas mana yang diuji, lengkap dengan pathnya.
+    expect(data.berkas.id).toBe(sukses.rows[0].id);
+    expect(data.berkas.lokasi).toBe(layak);
+    expect(data.berkas.ukuranByte).toBe(16384);
+    // Perintah pemulihannya tidak ikut dijawab: memuat connection string.
+    expect(data.perintah).toBeUndefined();
+
+    // Berkas yang tidak layak diuji dan id asing tidak pernah dijalankan.
+    for (const id of [gagalBaris.rows[0].id, randomUUID()]) {
+      const ditolak = await request.post(
+        "/api/pengaturan/backup/uji-pemulihan",
+        { headers, data: { backupId: id } },
+      );
+      expect(ditolak.status()).toBe(404);
+      expect((await ditolak.json()).error.code).toBe("NOT_FOUND");
+    }
+
+    // Isian yang tidak sah ditolak sebelum menyentuh basis data.
+    for (const badan of [{}, { backupId: "bukan-uuid" }, { backupId: 12 }]) {
+      const ditolak = await request.post(
+        "/api/pengaturan/backup/uji-pemulihan",
+        { headers, data: badan },
+      );
+      expect(ditolak.status()).toBe(422);
+      expect((await ditolak.json()).error.code).toBe("VALIDATION_ERROR");
+    }
+  } finally {
+    await db.query("DELETE FROM backup_runs WHERE position($1 in lokasi) > 0", [
+      penanda,
+    ]);
+    await db.end();
+  }
+
+  // Guru tidak boleh membuka halaman pengaturan, jadi tidak boleh menjalankan uji.
+  const emailGuru = await daftar(request, "Guru Uji Pemulihan");
+  await setRole(emailGuru, "user");
+  await masuk(request, emailGuru);
+  expect(
+    (
+      await request.post("/api/pengaturan/backup/uji-pemulihan", {
+        headers,
+        data: { backupId: randomUUID() },
+      })
+    ).status(),
+  ).toBe(403);
+});

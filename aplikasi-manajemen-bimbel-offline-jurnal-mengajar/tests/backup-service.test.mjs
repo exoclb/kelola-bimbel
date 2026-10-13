@@ -30,7 +30,9 @@ import { pasangImporTs } from "./dukungan/impor-ts.mjs";
 pasangImporTs();
 
 const {
+  adaPemulihanBerjalan,
   ambilBerkasBackupUji,
+  ambilBerkasBackupUjiById,
   bacaKonfigurasiBackup,
   bacaKonfigurasiPemulihan,
   jalankanBackupDanCatat,
@@ -83,6 +85,18 @@ function konfigurasiUji(direktori, tambahan = {}) {
     direktori,
     pakaiBerkas: false,
     variabelBermasalah: [],
+    ...tambahan,
+  };
+}
+
+/** Pengaturan uji pemulihan yang sudah lengkap dan menunjuk database percobaan. */
+function konfigurasiPemulihanUji(tambahan = {}) {
+  return {
+    perintah: "pg_restore -d kelola_restore",
+    databaseTujuan: "kelola_restore",
+    pakaiBerkas: false,
+    variabelBermasalah: [],
+    bahaya: null,
     ...tambahan,
   };
 }
@@ -430,25 +444,18 @@ test("pemulihan menolak tujuan yang menunjuk database aplikasi", async () => {
     dipanggil.push({ perintah, berkas });
     return null;
   };
-  const siap = (tambahan = {}) => ({
-    perintah: "pg_restore -d kelola_restore",
-    databaseTujuan: "kelola_restore",
-    pakaiBerkas: false,
-    variabelBermasalah: [],
-    bahaya: null,
-    ...tambahan,
-  });
 
   // Jalur normal: berkas yang diminta diteruskan ke perintahnya apa adanya.
   const lokasi = berkasUji("pulih-berhasil.dump");
   const berhasil = await pulihkanBerkasBackup({
     lokasi,
     pelaksana,
-    konfigurasi: siap(),
+    konfigurasi: konfigurasiPemulihanUji(),
   });
   assert.equal(berhasil.berhasil, true);
   assert.equal(berhasil.pesan, null);
   assert.equal(berhasil.databaseTujuan, "kelola_restore");
+  assert.equal(typeof berhasil.lamaMs, "number");
   assert.deepEqual(dipanggil, [
     { perintah: "pg_restore -d kelola_restore", berkas: lokasi },
   ]);
@@ -458,7 +465,7 @@ test("pemulihan menolak tujuan yang menunjuk database aplikasi", async () => {
   const ditolak = await pulihkanBerkasBackup({
     lokasi: berkasUji("pulih-produksi.dump"),
     pelaksana,
-    konfigurasi: siap({
+    konfigurasi: konfigurasiPemulihanUji({
       bahaya:
         "Database tujuan pemulihan (kelola) sama dengan database yang dipakai aplikasi; pemulihan dibatalkan.",
     }),
@@ -470,7 +477,9 @@ test("pemulihan menolak tujuan yang menunjuk database aplikasi", async () => {
   const belumLengkap = await pulihkanBerkasBackup({
     lokasi: berkasUji("pulih-kosong.dump"),
     pelaksana,
-    konfigurasi: siap({ variabelBermasalah: ["RESTORE_DATABASE_URL"] }),
+    konfigurasi: konfigurasiPemulihanUji({
+      variabelBermasalah: ["RESTORE_DATABASE_URL"],
+    }),
   });
   assert.equal(belumLengkap.berhasil, false);
   assert.match(belumLengkap.pesan, /RESTORE_DATABASE_URL belum diisi/);
@@ -481,7 +490,7 @@ test("pemulihan menolak tujuan yang menunjuk database aplikasi", async () => {
   const melaporkan = await pulihkanBerkasBackup({
     lokasi: berkasUji("pulih-gagal.dump"),
     pelaksana: async () => "hubungan ke database percobaan ditolak",
-    konfigurasi: siap(),
+    konfigurasi: konfigurasiPemulihanUji(),
   });
   assert.equal(melaporkan.berhasil, false);
   assert.match(melaporkan.pesan, /hubungan ke database percobaan ditolak/);
@@ -491,10 +500,98 @@ test("pemulihan menolak tujuan yang menunjuk database aplikasi", async () => {
     pelaksana: async () => {
       throw new Error("pg_restore tidak ditemukan");
     },
-    konfigurasi: siap(),
+    konfigurasi: konfigurasiPemulihanUji(),
   });
   assert.equal(melempar.berhasil, false);
   assert.match(melempar.pesan, /pg_restore tidak ditemukan/);
+});
+
+test("hanya satu uji pemulihan yang berjalan sekaligus", async () => {
+  let lepaskan;
+  const ditahan = new Promise((selesai) => {
+    lepaskan = selesai;
+  });
+  const pelaksana = () => ditahan.then(() => null);
+
+  const pertama = pulihkanBerkasBackup({
+    lokasi: berkasUji("pulih-berbarengan-1.dump"),
+    pelaksana,
+    konfigurasi: konfigurasiPemulihanUji(),
+  });
+  // Beri kesempatan uji pertama mengambil penandanya sebelum yang kedua datang.
+  await new Promise((selesai) => setImmediate(selesai));
+  assert.equal(adaPemulihanBerjalan(), true);
+
+  const kedua = await pulihkanBerkasBackup({
+    lokasi: berkasUji("pulih-berbarengan-2.dump"),
+    pelaksana,
+    konfigurasi: konfigurasiPemulihanUji(),
+  });
+  assert.equal(kedua.berhasil, false);
+  assert.match(kedua.pesan, /masih ada uji pemulihan yang berjalan/i);
+
+  lepaskan();
+  assert.equal((await pertama).berhasil, true);
+  assert.equal(
+    adaPemulihanBerjalan(),
+    false,
+    "penandanya dilepas supaya uji berikutnya tidak tertahan",
+  );
+
+  const berikutnya = await pulihkanBerkasBackup({
+    lokasi: berkasUji("pulih-berbarengan-3.dump"),
+    pelaksana: async () => null,
+    konfigurasi: konfigurasiPemulihanUji(),
+  });
+  assert.equal(berikutnya.berhasil, true);
+});
+
+test("berkas uji dipilih lewat id catatan backup, bukan path kiriman pemanggil", async () => {
+  await bersihkan();
+  const penanda = "pilih-berkas";
+  const layak = berkasUji(`${penanda}-layak.dump`);
+  const gagal = berkasUji(`${penanda}-gagal.dump`);
+
+  const sukses = await pool.query(
+    "INSERT INTO backup_runs (mulai, selesai, status, ukuran_byte, lokasi) VALUES (now() - interval '1 hour', now() - interval '59 minutes', 'sukses', $1, $2) RETURNING id",
+    [4096, layak],
+  );
+  const gagalBaris = await pool.query(
+    "INSERT INTO backup_runs (mulai, selesai, status, lokasi, pesan) VALUES (now() - interval '2 hours', now() - interval '119 minutes', 'gagal', $1, $2) RETURNING id",
+    [gagal, `Gagal menyalin (${penanda})`],
+  );
+  const berjalan = await pool.query(
+    "INSERT INTO backup_runs (mulai, status) VALUES (now() - interval '5 minutes', 'berjalan') RETURNING id",
+  );
+  // Salinan sukses dari versi lama: lokasinya tidak diketahui, jadi tidak layak.
+  const tanpaLokasi = await pool.query(
+    "INSERT INTO backup_runs (mulai, selesai, status) VALUES (now() - interval '3 hours', now() - interval '179 minutes', 'sukses') RETURNING id",
+  );
+
+  const dipilih = await ambilBerkasBackupUjiById(sukses.rows[0].id);
+  assert.deepEqual(dipilih, {
+    id: sukses.rows[0].id,
+    lokasi: layak,
+    dibuat: dipilih.dibuat,
+    ukuranByte: 4096,
+  });
+  assert.ok(dipilih.dibuat instanceof Date);
+
+  // Id yang tidak layak diuji maupun id asing tidak mengembalikan apa pun.
+  for (const [sebutan, id] of [
+    ["catatan gagal", gagalBaris.rows[0].id],
+    ["catatan berjalan", berjalan.rows[0].id],
+    ["catatan sukses tanpa lokasi", tanpaLokasi.rows[0].id],
+    ["id asing", "00000000-0000-4000-8000-000000000000"],
+  ]) {
+    assert.equal(
+      await ambilBerkasBackupUjiById(id),
+      null,
+      `${sebutan} tidak boleh jadi kandidat uji pemulihan`,
+    );
+  }
+
+  await pool.query("DELETE FROM backup_runs WHERE lokasi IS NULL");
 });
 
 test("pemulihan sungguhan membaca berkas sumber dan melaporkan kegagalannya", async () => {

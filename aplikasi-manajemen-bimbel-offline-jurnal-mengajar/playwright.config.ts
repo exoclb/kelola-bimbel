@@ -13,6 +13,16 @@ if (!testUrl || !process.env.STARTER_TEST_RUN?.startsWith("starter-pg-test-")) {
 // `-f` — supaya pemicu backup manual bisa diuji tanpa PostgreSQL client di PATH
 // maupun ton dump sungguhan.
 const testBackupDir = join(tmpdir(), `${process.env.STARTER_TEST_RUN}-backup`);
+// Uji pemulihan menuntut database tujuan yang berbeda dari database aplikasi,
+// jadi yang dipakai nama lain di server uji yang sama. Perintahnya diganti
+// perintah Node kecil seperti perintah dump di atas: berguna untuk membuktikan
+// endpointnya benar-benar menjalankan pemulihan, tanpa menuntut `pg_restore`
+// terpasang di mesin uji.
+const testRestoreUrl = (() => {
+  const url = new URL(testUrl);
+  url.pathname = "/kelola_restore";
+  return url.toString();
+})();
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
@@ -36,6 +46,8 @@ export default defineConfig({
       // Dump tiruannya sengaja memakan waktu sesaat seperti dump sungguhan,
       // supaya keadaan "sedang berjalan" di tombol backup bisa diperiksa uji.
       BACKUP_COMMAND: `"${process.execPath}" -e "setTimeout(() => process.stdout.write('dump-uji-e2e'), 800)"`,
+      RESTORE_DATABASE_URL: testRestoreUrl,
+      RESTORE_COMMAND: `"${process.execPath}" -e "process.stdout.write('pulih-uji-e2e')" "{file}"`,
       // Penjadwal di dalam aplikasi dimatikan selama uji: kalau hidup, ia bisa
       // menjalankan backup di tengah uji dan mengacaukan jumlah serta urutan
       // catatan yang sedang diperiksa.

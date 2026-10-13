@@ -34,6 +34,18 @@ export const listBackupSchema = z.object({ limit: skemaLimit(20) }).strict();
 
 export type ListBackupInput = z.infer<typeof listBackupSchema>;
 
+// Menjalankan uji pemulihan untuk satu berkas backup. Yang dikirim pemanggil
+// hanya id catatan backup-nya, bukan path berkas: path yang bisa dipulihkan
+// ditentukan server dari catatan `sukses` yang memang punya lokasi berkas, jadi
+// endpoint ini tidak bisa disuruh membaca file lain di server.
+export const jalankanUjiPemulihanSchema = z
+  .object({ backupId: z.string().uuid() })
+  .strict();
+
+export type JalankanUjiPemulihanInput = z.infer<
+  typeof jalankanUjiPemulihanSchema
+>;
+
 /** Jam 24 jam "HH:MM", bentuk yang juga dijaga kolom `backup_settings.jam`. */
 const POLA_JAM = /^([01]\d|2[0-3]):[0-5]\d$/;
 

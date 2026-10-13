@@ -358,6 +358,11 @@ percobaan yang salah tulis jangan sampai menimpa data produksi. Isi `{file}` pad
 `RESTORE_COMMAND` kalau perintahnya sudah menyebut berkas salinannya sendiri;
 kalau tidak, path berkas itu ditambahkan di belakang perintah.
 
+Aplikasi hanya menjalankan satu uji sekaligus, karena semuanya menuangkan isinya
+ke database percobaan yang sama. Penahan itu ada di dalam satu proses aplikasi —
+kalau container-nya dijalankan lebih dari satu replika, jalankan uji pemulihan
+dari satu replika saja atau tunggu sampai uji sebelumnya selesai.
+
 ## Fase 5 — Panduan & Uji Coba Go-live
 
 ### 1. Uji masuk per peran
