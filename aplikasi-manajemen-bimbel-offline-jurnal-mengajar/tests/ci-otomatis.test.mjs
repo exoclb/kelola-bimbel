@@ -8,6 +8,9 @@
 // tests/dukungan/impor-ts.mjs.
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { pasangImporTs } from "./dukungan/impor-ts.mjs";
 
 pasangImporTs();
@@ -67,6 +70,69 @@ test("langkah baku pipa CI mengikuti urutan berkas ci.yml", () => {
     );
     assert.ok(item.keterangan.length > 10, `${item.kunci} punya keterangan`);
   }
+});
+
+const akarRepo = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const berkasRepo = (jalur) => readFileSync(resolve(akarRepo, jalur), "utf8");
+
+/** Nomor baris pertama yang memuat teksnya, atau -1 kalau tidak ada. */
+function nomorBaris(isi, teks) {
+  return isi.split("\n").findIndex((baris) => baris.includes(teks));
+}
+
+/** Baris-baris di dalam blok `on:` (pemicu pipa), tanpa baris kuncinya. */
+function blokPemicu(isi) {
+  const baris = isi.split("\n");
+  const mulai = baris.findIndex((satu) => /^on:\s*$/.test(satu));
+  if (mulai < 0) return [];
+  const akhir = baris.findIndex(
+    (satu, indeks) => indeks > mulai && /^[^#\s]/.test(satu),
+  );
+  return baris.slice(mulai + 1, akhir < 0 ? undefined : akhir);
+}
+
+// Berkas pipanya sungguhan, bukan cuma daftar di atas kertas: uji ini membaca
+// `.github/workflows/ci.yml` supaya langkah yang dijanjikan halaman Status CI
+// tidak bisa menghilang diam-diam dari pipa yang benar-benar dijalankan.
+test("berkas ci.yml menjalankan langkah baku itu berurutan", () => {
+  const isi = berkasRepo(".github/workflows/ci.yml");
+
+  let sebelumnya = -1;
+  for (const langkah of PEMERIKSAAN_CI) {
+    const posisi = nomorBaris(isi, `run: ${langkah.perintah}`);
+    assert.ok(posisi >= 0, `ci.yml menjalankan ${langkah.perintah}`);
+    assert.ok(
+      posisi > sebelumnya,
+      `${langkah.perintah} dijalankan setelah langkah sebelumnya`,
+    );
+    sebelumnya = posisi;
+  }
+});
+
+test("berkas ci.yml dipicu push dan pull request dengan pengamanannya", () => {
+  const isi = berkasRepo(".github/workflows/ci.yml");
+  const pemicu = blokPemicu(isi);
+
+  // Pemicunya sama dengan yang disebut halaman Status CI: setiap push dan PR.
+  assert.deepEqual(
+    pemicu
+      .filter((satu) => /^\s{2}[a-z_]+:\s*$/.test(satu))
+      .map((satu) => satu.trim()),
+    ["push:", "pull_request:"],
+  );
+  // Hanya membaca isi repositori; tidak ada rahasia yang perlu ditulis.
+  assert.match(isi, /^permissions:\n  contents: read$/m);
+  // Versi Node mengikuti .nvmrc, sama seperti yang disarankan saran kegagalan
+  // langkah penyiapan di src/lib/ci-otomatis.ts.
+  assert.ok(nomorBaris(isi, "node-version-file: .nvmrc") > 0);
+  // Hasil uji peramban diunggah setelah ujinya jalan, dan disimpan 7 hari
+  // seperti yang dijanjikan halaman Status CI.
+  assert.ok(
+    nomorBaris(isi, "path: test-results/") >
+      nomorBaris(isi, "run: npm run test:e2e"),
+  );
+  assert.ok(nomorBaris(isi, "if: failure()") > 0);
+  assert.ok(nomorBaris(isi, "retention-days: 7") > 0);
 });
 
 test("definisiPemeriksaan mencari langkah dari kuncinya", () => {

@@ -1,4 +1,15 @@
-name: PostgreSQL starter checks
+# Pipa CI otomatis: setiap push dan pull request diperiksa di sini, supaya yang
+# rusak ketahuan sebelum rilis — bukan sesudah pengguna menemukannya.
+#
+# Urutan langkahnya sengaja sama dengan `PEMERIKSAAN_CI` di
+# `src/lib/ci-otomatis.ts`: halaman Pengaturan → Status CI membacakan daftar itu,
+# dan `tests/ci-otomatis.test.mjs` menjaga kedua berkas tetap sejalan. Menambah
+# langkah di sini berarti menambahkannya di sana juga.
+#
+# Uji unit dan uji peramban sama-sama menjalankan PostgreSQL sekali pakai dari
+# `compose.test.yaml` (`scripts/test.mjs`), jadi tidak ada uji yang menyentuh
+# database aplikasi.
+name: CI otomatis
 
 on:
   push:
@@ -7,21 +18,45 @@ on:
 permissions:
   contents: read
 
+# Push yang menyusul tidak perlu mengantre di belakang jalan yang sudah usang:
+# yang sedang berjalan dibatalkan supaya hasilnya selalu tentang commit terbaru.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check:
+    name: Pemeriksaan kode & uji otomatis
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
+      # Penyiapan: dependensi terkunci, berkas lingkungan dan kunci auth, lalu
+      # database diperiksa `npm run doctor` sebelum langkah berikutnya jalan.
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
           cache: npm
       - run: npm run setup
+
+      # Lint, pemeriksaan tipe, lalu seluruh uji unit dan integrasi. Langkah
+      # terlama dan yang paling sering menangkap kesalahan.
       - run: npm run check
+
+      # Tata tulisan seluruh berkas menurut Prettier.
       - run: npm run format:check
+
+      # Build produksi: impor atau tipe yang belum tersentuh uji ikut ketahuan.
+      # Hasil build inilah yang dilayani pada langkah uji peramban.
       - run: npm run build
+
+      # Skenario peramban (Playwright) di atas basis data uji sekali pakai.
+      # Runner belum punya perambannya, jadi Chromium dipasang lebih dulu.
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+
+      # Kalau ada yang gagal, hasil uji peramban disimpan 7 hari supaya bisa
+      # diperiksa tanpa menjalankan ulang pipanya.
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
