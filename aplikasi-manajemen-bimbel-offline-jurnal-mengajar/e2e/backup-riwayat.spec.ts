@@ -392,10 +392,22 @@ test("endpoint riwayat backup mengembalikan status dan batas jumlahnya", async (
   expect(dibatasi.status()).toBe(200);
   expect((await dibatasi.json()).data.terbaru).toHaveLength(1);
 
-  const batasAneh = await request.get("/api/pengaturan/backup?limit=0", {
+  // Batas jumlahnya dijaga dua arah: 100 masih diterima, 101 dan 0 ditolak
+  // dengan bentuk galat validasi yang sama seperti endpoint lain.
+  const batasAtas = await request.get("/api/pengaturan/backup?limit=100", {
     headers,
   });
-  expect(batasAneh.status()).toBe(422);
+  expect(batasAtas.status()).toBe(200);
+  expect((await batasAtas.json()).data.terbaru.length).toBeLessThanOrEqual(100);
+
+  for (const batasAneh of ["0", "101", "abc"]) {
+    const ditolak = await request.get(
+      `/api/pengaturan/backup?limit=${batasAneh}`,
+      { headers },
+    );
+    expect(ditolak.status()).toBe(422);
+    expect((await ditolak.json()).error.code).toBe("VALIDATION_ERROR");
+  }
 
   const emailGuru = await daftar(request, "Guru Endpoint Backup");
   await setRole(emailGuru, "user");
