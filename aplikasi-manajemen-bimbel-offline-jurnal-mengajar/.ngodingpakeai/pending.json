@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "addc6103efe74ebc977f1325847f544e297a636c",
+  "generatedForCommit": "ae0086962ecb8581ec8f0683f8901f9f28dd049f",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -210,7 +210,7 @@
       "path": "docs/peta-data-tiruan.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 24363
+      "size": 25338
     },
     {
       "path": "docs/prompts.md",
@@ -774,7 +774,7 @@
       "path": "e2e/uji-pemulihan.spec.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 10417
+      "size": 11288
     },
     {
       "path": "eslint.config.mjs",
@@ -1170,7 +1170,7 @@
       "path": "src/app/(protected)/app/pengaturan/backup/uji-pemulihan/page.tsx",
       "reason": "changed",
       "language": "typescript",
-      "size": 12336
+      "size": 12765
     },
     {
       "path": "src/app/(protected)/app/pengaturan/ekspor/page.tsx",
@@ -2211,6 +2211,12 @@
       "size": 2876
     },
     {
+      "path": "src/components/panel-verifikasi-pemulihan.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 7009
+    },
+    {
       "path": "src/components/pemilih-anak.tsx",
       "reason": "needs_summary",
       "language": "typescript",
@@ -2362,7 +2368,7 @@
     },
     {
       "path": "src/components/status-pemulihan-backup.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 5099
     },
@@ -2782,7 +2788,7 @@
     },
     {
       "path": "src/lib/mock-uji-pemulihan.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 5252
     },
@@ -2904,7 +2910,7 @@
       "path": "src/lib/uji-pemulihan.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 8273
+      "size": 11612
     },
     {
       "path": "src/lib/utils.ts",
@@ -3294,7 +3300,7 @@
       "path": "tests/uji-pemulihan.test.mjs",
       "reason": "changed",
       "language": "javascript",
-      "size": 12351
+      "size": 17266
     },
     {
       "path": "tests/variant.test.mjs",
