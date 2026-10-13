@@ -192,6 +192,60 @@ export function pemeriksaanGagalCi(jalan: JalanCi): BarisPemeriksaanCi | null {
   );
 }
 
+/**
+ * Saran perbaikan per langkah. Isinya sengaja tidak menyebut berkas atau nilai
+ * apa pun dari mesin ini: yang dibaca orang dari CI merah adalah langkah mana
+ * yang berhenti dan apa yang harus dijalankannya sendiri di komputer.
+ */
+export const SARAN_KEGAGALAN_CI: Record<string, string> = {
+  penyiapan:
+    "Periksa versi Node di .nvmrc dan berkas kunci package-lock.json: penyiapan gagal biasanya karena versinya tidak cocok atau berkas kuncinya tidak sinkron.",
+  "pemeriksaan-kode":
+    "Jalankan “npm run check” di komputer sendiri lalu perbaiki yang merah dulu. Uji yang gagal di sini akan gagal sama di server.",
+  format: "Jalankan “npm run format”, lalu commit hasil rapikannya.",
+  build:
+    "Jalankan “npm run build” dengan variabel lingkungan seperti di server; galatnya biasanya impor atau tipe yang belum dipakai.",
+  "uji-end-to-end":
+    "Jalankan berkas ujinya sendiri, mis. “npm run test:e2e -- e2e/<berkas>.spec.ts”. Artefak test-results berisi potret dan jejak langkah saat gagal.",
+};
+
+/** Saran perbaikan satu langkah; langkah asing dapat saran umum. */
+export function saranPerbaikan(kunci: string): string {
+  return (
+    SARAN_KEGAGALAN_CI[kunci] ??
+    "Jalankan langkah itu di komputer sendiri untuk melihat pesan galatnya, perbaiki penyebabnya, lalu push lagi."
+  );
+}
+
+/** Rincian satu kegagalan: apa yang berhenti, apa yang ikut batal, dan saran. */
+export type RincianKegagalanCi = {
+  /** Langkah yang berhenti, lengkap dengan hasilnya. */
+  pemeriksaan: BarisPemeriksaanCi;
+  /** Langkah sesudahnya yang tidak sempat dijalankan. */
+  dilewati: BarisPemeriksaanCi[];
+  /** Apa yang perlu dikerjakan supaya jalan berikutnya lulus. */
+  saran: string;
+};
+
+/**
+ * Rincian langkah yang menghentikan satu jalan, atau null kalau jalan itu tidak
+ * gagal. Langkah sesudahnya ikut dibawa karena itu bagian dari akibatnya:
+ * kegagalan di langkah ketiga berarti dua langkah terakhir tidak diperiksa.
+ */
+export function rincianKegagalanCi(jalan: JalanCi): RincianKegagalanCi | null {
+  const pemeriksaan = pemeriksaanGagalCi(jalan);
+  if (!pemeriksaan) return null;
+  const baris = barisPemeriksaanCi(jalan);
+  const indeks = baris.findIndex((item) => item.kunci === pemeriksaan.kunci);
+  return {
+    pemeriksaan,
+    dilewati: baris
+      .slice(indeks + 1)
+      .filter((item) => item.status === "dilewati"),
+    saran: saranPerbaikan(pemeriksaan.kunci),
+  };
+}
+
 /** Lama satu langkah dalam detik, mis. "18 detik" atau "3 menit 2 detik". */
 export function lamaDetik(detik: number | null): string | null {
   if (detik === null) return null;

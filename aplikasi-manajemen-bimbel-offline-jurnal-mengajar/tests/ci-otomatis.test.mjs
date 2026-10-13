@@ -14,6 +14,7 @@ pasangImporTs();
 
 const {
   PEMERIKSAAN_CI,
+  SARAN_KEGAGALAN_CI,
   barisPemeriksaanCi,
   ciSedangBerjalan,
   definisiPemeriksaan,
@@ -22,11 +23,16 @@ const {
   jalanTerbaru,
   lamaDetik,
   pemeriksaanGagalCi,
+  rincianKegagalanCi,
   ringkasJalanCi,
+  saranPerbaikan,
 } = await import("../src/lib/ci-otomatis.ts");
-const { DETIK_BERJALAN_TIRUAN, getJalanCiBerjalan, getRiwayatCi } = await import(
-  "../src/lib/mock-ci-otomatis.ts"
-);
+const {
+  DETIK_BERJALAN_TIRUAN,
+  getJalanCiBerjalan,
+  getRiwayatCi,
+  logKegagalanTiruan,
+} = await import("../src/lib/mock-ci-otomatis.ts");
 
 /** Satu jalan CI lengkap; tiap tes menimpanya seperlunya. */
 function jalan(ubah = {}) {
@@ -51,17 +57,14 @@ function hasil(kunci, status, durasiDetik = 30, catatan = null) {
 test("langkah baku pipa CI mengikuti urutan berkas ci.yml", () => {
   assert.deepEqual(
     PEMERIKSAAN_CI.map((item) => item.kunci),
-    [
-      "penyiapan",
-      "pemeriksaan-kode",
-      "format",
-      "build",
-      "uji-end-to-end",
-    ],
+    ["penyiapan", "pemeriksaan-kode", "format", "build", "uji-end-to-end"],
   );
   for (const item of PEMERIKSAAN_CI) {
     assert.ok(item.nama.length > 0, `${item.kunci} punya nama`);
-    assert.ok(item.perintah.startsWith("npm run "), `${item.kunci} punya perintah`);
+    assert.ok(
+      item.perintah.startsWith("npm run "),
+      `${item.kunci} punya perintah`,
+    );
     assert.ok(item.keterangan.length > 10, `${item.kunci} punya keterangan`);
   }
 });
@@ -150,7 +153,10 @@ test("pemeriksaanGagalCi mengambil langkah pertama yang gagal", () => {
 });
 
 test("jalanTerbaru dan jalanTerakhirSelesai memilih dari waktu mulainya", () => {
-  const lama = jalan({ id: "ci-lama", mulai: new Date("2026-10-10T10:15:00+07:00") });
+  const lama = jalan({
+    id: "ci-lama",
+    mulai: new Date("2026-10-10T10:15:00+07:00"),
+  });
   const berjalan = jalan({
     id: "ci-berjalan",
     mulai: new Date("2026-10-13T09:41:00+07:00"),
@@ -258,7 +264,10 @@ test("jalan contoh yang lulus tidak pernah lebih cepat daripada langkahnya", () 
       0,
     );
     // Lama satu jalan selalu lebih panjang daripada jumlah lama langkahnya.
-    assert.ok(lama > jumlahLangkah * 1000, `${item.id} lama jalannya masuk akal`);
+    assert.ok(
+      lama > jumlahLangkah * 1000,
+      `${item.id} lama jalannya masuk akal`,
+    );
   }
 });
 
@@ -269,10 +278,7 @@ test("jalan contoh terakhir yang selesai berhenti di pemeriksaan kode", () => {
 
   assert.equal(terakhir.status, "gagal");
   assert.equal(pemeriksaanGagalCi(terakhir).kunci, "pemeriksaan-kode");
-  assert.equal(
-    hitungPemeriksaanCi(barisPemeriksaanCi(terakhir)).dilewati,
-    3,
-  );
+  assert.equal(hitungPemeriksaanCi(barisPemeriksaanCi(terakhir)).dilewati, 3);
 });
 
 test("riwayat contoh memuat jalan yang gagal di uji peramban", () => {
@@ -283,4 +289,70 @@ test("riwayat contoh memuat jalan yang gagal di uji peramban", () => {
   assert.equal(peramban.status, "gagal");
   assert.equal(pemeriksaanGagalCi(peramban).kunci, "uji-end-to-end");
   assert.match(pemeriksaanGagalCi(peramban).catatan, /artefak test-results/);
+});
+
+test("saran perbaikan ada untuk tiap langkah baku dan punya cadangan", () => {
+  for (const langkah of PEMERIKSAAN_CI) {
+    const saran = saranPerbaikan(langkah.kunci);
+    assert.equal(SARAN_KEGAGALAN_CI[langkah.kunci], saran);
+    assert.ok(saran.length > 20, `saran ${langkah.kunci} cukup jelas`);
+  }
+
+  // Langkah asing tetap dapat arahan, bukan kalimat kosong.
+  assert.match(saranPerbaikan("langkah-baru"), /Jalankan langkah itu/);
+});
+
+test("rincian kegagalan menyebut langkah, akibatnya, dan sarannya", () => {
+  const terakhir = jalanTerakhirSelesai(
+    getRiwayatCi(new Date("2026-10-14T08:00:00+07:00")),
+  );
+  const rincian = rincianKegagalanCi(terakhir);
+
+  assert.equal(rincian.pemeriksaan.kunci, "pemeriksaan-kode");
+  assert.equal(rincian.pemeriksaan.perintah, "npm run check");
+  assert.equal(rincian.pemeriksaan.durasiDetik, 96);
+  assert.match(rincian.pemeriksaan.catatan, /2 dari 183 uji gagal/);
+  // Langkah sesudahnya batal, dan itu ikut dilaporkan.
+  assert.deepEqual(
+    rincian.dilewati.map((langkah) => langkah.kunci),
+    ["format", "build", "uji-end-to-end"],
+  );
+  assert.equal(rincian.saran, SARAN_KEGAGALAN_CI["pemeriksaan-kode"]);
+});
+
+test("jalan yang lulus atau masih berjalan tidak punya rincian kegagalan", () => {
+  const riwayat = getRiwayatCi(new Date("2026-10-14T08:00:00+07:00"));
+
+  assert.equal(rincianKegagalanCi(jalan({ status: "lulus" })), null);
+  assert.equal(
+    rincianKegagalanCi(jalan({ status: "berjalan", selesai: null })),
+    null,
+  );
+  assert.equal(
+    rincianKegagalanCi(riwayat.find((item) => item.id === "ci-20261012-2015")),
+    null,
+  );
+});
+
+test("kegagalan di uji peramban membawa log contoh yang menyebut artefaknya", () => {
+  const peramban = getRiwayatCi(new Date("2026-10-14T08:00:00+07:00")).find(
+    (jalan) => jalan.id === "ci-20261010-1015",
+  );
+  const rincian = rincianKegagalanCi(peramban);
+
+  assert.equal(rincian.pemeriksaan.kunci, "uji-end-to-end");
+  assert.equal(rincian.dilewati.length, 0);
+  // Uji peramban adalah langkah terakhir, jadi tidak ada yang batal sesudahnya.
+  const log = logKegagalanTiruan(rincian.pemeriksaan.kunci);
+  assert.ok(log.length > 0);
+  assert.match(log.join("\n"), /test-results/);
+});
+
+test("log kegagalan contoh disalin, bukan dibagikan", () => {
+  const log = logKegagalanTiruan("pemeriksaan-kode");
+  log.push("baris tambahan");
+
+  assert.notEqual(logKegagalanTiruan("pemeriksaan-kode").length, log.length);
+  // Langkah yang belum punya contoh mengembalikan daftar kosong, bukan error.
+  assert.deepEqual(logKegagalanTiruan("penyiapan"), []);
 });

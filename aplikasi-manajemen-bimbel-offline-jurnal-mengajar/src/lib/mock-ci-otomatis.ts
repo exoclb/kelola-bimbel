@@ -148,6 +148,46 @@ const RIWAYAT_TIRUAN: JalanCiTiruan[] = [
 /** Sudah berapa lama jalan contoh yang berjalan ini berjalan, dalam detik. */
 export const DETIK_BERJALAN_TIRUAN = 130;
 
+/**
+ * Potongan log contoh untuk langkah yang gagal, per langkah. Isinya mengikuti
+ * bentuk keluaran sungguhannya (uji `node --test` dan Playwright), tetapi tetap
+ * contoh: halaman menandainya begitu supaya tidak terbaca sebagai keluaran
+ * sungguhan dari server.
+ */
+const LOG_KEGAGALAN_TIRUAN: Record<string, string[]> = {
+  "pemeriksaan-kode": [
+    "ℹ tests 183",
+    "ℹ pass 181",
+    "ℹ fail 2",
+    "",
+    "✖ uji unit tidak lulus: 2 dari 183 uji gagal",
+    "  ✖ tarif honor dibulatkan ke rupiah terdekat di batas bulan",
+    "    Diharapkan: 1750000",
+    "    Diterima:   1749000",
+    "  ↳ src/lib/perhitungan-honor.ts:64",
+    "",
+    "npm run check gagal: uji unit tidak lulus.",
+  ],
+  "uji-end-to-end": [
+    "Running 12 tests using 1 worker",
+    "",
+    "  1) e2e/presensi.spec.ts:104 › guru membetulkan presensi hari itu",
+    "     Timed out 15000ms waiting for expect(locator).toBeVisible()",
+    '     Locator: getByText("Presensi hari ini tersimpan")',
+    "",
+    "  1 failed",
+    "  11 passed (2.1m)",
+    "",
+    "To open last HTML report: npx playwright show-report",
+    "Hasil ujinya diunggah sebagai artefak: test-results/",
+  ],
+};
+
+/** Potongan log contoh satu langkah; langkah yang belum punya contoh kosong. */
+export function logKegagalanTiruan(kunci: string): string[] {
+  return (LOG_KEGAGALAN_TIRUAN[kunci] ?? []).slice();
+}
+
 /** Satu jalan yang sedang berjalan: baru sampai pemeriksaan kedua. */
 const DETIK_PENYIAPAN_TIRUAN = 38;
 

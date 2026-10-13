@@ -117,6 +117,40 @@ test("halaman status CI menampilkan proses berjalan, hasil terakhir, dan riwayat
   await expect(hasil.getByText("1 dari 5 lulus, 3 dilewati")).toBeVisible();
   await expect(hasil.getByText("7c2a91f")).toBeVisible();
 
+  // Rincian tahap yang gagal: langkah mana, perintahnya, akibatnya pada langkah
+  // sesudahnya, saran perbaikannya, dan potongan log terakhirnya.
+  const tahapGagal = page.locator('[data-slot="card"]').filter({
+    has: page.getByText("Tahap yang gagal", { exact: true }),
+  });
+  await expect(tahapGagal).toHaveCount(1);
+  await expect(tahapGagal.locator("[data-tahap-gagal]")).toHaveAttribute(
+    "data-tahap-gagal",
+    "pemeriksaan-kode",
+  );
+  await expect(
+    tahapGagal.getByText("Pemeriksaan kode & uji otomatis").first(),
+  ).toBeVisible();
+  await expect(
+    tahapGagal.getByText("npm run check", { exact: true }),
+  ).toBeVisible();
+  await expect(tahapGagal.getByText("1 menit 36 detik")).toBeVisible();
+  await expect(
+    tahapGagal.getByText("3 langkah", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    tahapGagal.getByText(/Tidak dijalankan: Format berkas, Build produksi/),
+  ).toBeVisible();
+  await expect(
+    tahapGagal.getByText(/2 dari 183 uji gagal/).first(),
+  ).toBeVisible();
+  await expect(
+    tahapGagal.getByText(/Jalankan “npm run check” di komputer sendiri/),
+  ).toBeVisible();
+  const logGagal = tahapGagal.locator('[data-log-gagal="pemeriksaan-kode"]');
+  await expect(logGagal).toContainText(/ℹ fail 2/);
+  await expect(logGagal).toContainText(/perhitungan-honor\.ts:64/);
+  await expect(tahapGagal.getByText("contoh", { exact: true })).toHaveCount(1);
+
   // Daftar langkahnya mengikuti urutan ci.yml, dan langkah setelah kegagalan
   // tertulis "dilewati" — bukan dihilangkan.
   const langkah = page.locator('[data-slot="card"]').filter({

@@ -5,10 +5,15 @@ import { Button } from "@/components/ui/button";
 import { PesanKosong } from "@/components/status-antarmuka";
 import { DaftarPemeriksaanCi } from "@/components/daftar-pemeriksaan-ci";
 import { DaftarRiwayatCi } from "@/components/daftar-riwayat-ci";
+import { RincianKegagalanCi } from "@/components/rincian-kegagalan-ci";
 import { RingkasanCiTerakhir } from "@/components/ringkasan-ci-terakhir";
 import { StatusCiBerjalan } from "@/components/status-ci-berjalan";
-import { getRiwayatCi } from "@/lib/mock-ci-otomatis";
-import { ciSedangBerjalan, jalanTerakhirSelesai } from "@/lib/ci-otomatis";
+import { getRiwayatCi, logKegagalanTiruan } from "@/lib/mock-ci-otomatis";
+import {
+  ciSedangBerjalan,
+  jalanTerakhirSelesai,
+  rincianKegagalanCi,
+} from "@/lib/ci-otomatis";
 import { requirePermission } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Status CI" };
@@ -31,6 +36,9 @@ export default async function StatusCiPage() {
   const riwayat = getRiwayatCi(sekarang);
   const berjalan = ciSedangBerjalan(riwayat);
   const terakhir = jalanTerakhirSelesai(riwayat);
+  // Kalau jalan terakhir gagal, rincian langkah yang menghentikannya dibuka
+  // lebih dulu: itulah bagian yang dicari saat CI merah.
+  const kegagalan = terakhir ? rincianKegagalanCi(terakhir) : null;
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -72,6 +80,12 @@ export default async function StatusCiPage() {
 
       {terakhir ? (
         <>
+          {kegagalan && (
+            <RincianKegagalanCi
+              jalan={terakhir}
+              log={logKegagalanTiruan(kegagalan.pemeriksaan.kunci)}
+            />
+          )}
           <RingkasanCiTerakhir jalan={terakhir} />
           <DaftarPemeriksaanCi jalan={terakhir} />
         </>
