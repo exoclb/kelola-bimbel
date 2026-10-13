@@ -103,18 +103,18 @@ sandi di resource Coolify — jangan menyalin nilainya ke berkas repo.
 
 ### 1. Daftar variabel
 
-| Variabel                 | Isi                                             | Catatan                                                                                 |
-| ------------------------ | ----------------------------------------------- | --------------------------------------------------------------------------------------- |
-| `DATABASE_URL`           | connection string **internal** dari Fase 1      | dipakai aplikasi saat melayani permintaan                                               |
-| `BETTER_AUTH_SECRET`     | teks acak minimal 32 karakter                   | dipakai Better Auth untuk menandatangani sesi                                           |
-| `BETTER_AUTH_URL`        | origin publik, mis. `https://bimbel.contoh.com` | **harus** sama dengan alamat yang dibuka browser, tanpa garis miring di akhir           |
-| `MIGRATION_DATABASE_URL` | opsional                                        | hanya bila `DATABASE_URL` melewati pooler; migrasi memakai koneksi langsung             |
-| `MODE_RILIS`             | opsional                                        | penanda mode rilis; di produksi biarkan kosong (lihat catatan di bawah)                 |
-| `PENJADWAL_BACKUP`       | opsional                                        | `nonaktif` mematikan penjadwal backup di dalam aplikasi (lihat “Backup terjadwal”)      |
-| `BACKUP_DIR`             | opsional                                        | direktori salinan backup di dalam container; bawaannya `backups` di samping aplikasi    |
-| `BACKUP_COMMAND`         | opsional                                        | perintah dump untuk tombol backup manual dan penjadwal, mis. `pg_dump -Fc`              |
-| `RESTORE_DATABASE_URL`   | opsional                                        | connection string database **percobaan** untuk uji pemulihan, mis. `kelola_restore`     |
-| `RESTORE_COMMAND`        | opsional                                        | perintah pemulihan, mis. `pg_restore`; bawaannya `pg_restore` ke `RESTORE_DATABASE_URL` |
+| Variabel                 | Isi                                             | Catatan                                                                                               |
+| ------------------------ | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`           | connection string **internal** dari Fase 1      | dipakai aplikasi saat melayani permintaan                                                             |
+| `BETTER_AUTH_SECRET`     | teks acak minimal 32 karakter                   | dipakai Better Auth untuk menandatangani sesi                                                         |
+| `BETTER_AUTH_URL`        | origin publik, mis. `https://bimbel.contoh.com` | **harus** sama dengan alamat yang dibuka browser, tanpa garis miring di akhir                         |
+| `MIGRATION_DATABASE_URL` | opsional                                        | hanya bila `DATABASE_URL` melewati pooler; migrasi memakai koneksi langsung                           |
+| `MODE_RILIS`             | opsional                                        | penanda mode rilis; di produksi biarkan kosong (lihat catatan di bawah)                               |
+| `PENJADWAL_BACKUP`       | opsional                                        | `nonaktif` mematikan penjadwal backup di dalam aplikasi (lihat “Menjalankan dan menjadwalkan backup”) |
+| `BACKUP_DIR`             | opsional                                        | direktori salinan backup di dalam container; bawaannya `backups` di samping aplikasi                  |
+| `BACKUP_COMMAND`         | opsional                                        | perintah dump untuk tombol backup manual dan penjadwal, mis. `pg_dump -Fc`                            |
+| `RESTORE_DATABASE_URL`   | opsional                                        | connection string database **percobaan** untuk uji pemulihan, mis. `kelola_restore`                   |
+| `RESTORE_COMMAND`        | opsional                                        | perintah pemulihan, mis. `pg_restore`; bawaannya `pg_restore` ke `RESTORE_DATABASE_URL`               |
 
 Nilai `PORT` dan `HOSTNAME` tidak perlu diisi: image sudah memakai `3000` dan
 `0.0.0.0`.
@@ -286,9 +286,24 @@ periksa aplikasinya. Perlu diingat: rollback memakai **konfigurasi runtime saat
 ini** dengan image lama, jadi ia **tidak** membatalkan migrasi database,
 **tidak** memulihkan berkas, dan **tidak** mengembalikan layanan lain.
 
-### 3. Backup terjadwal
+### 3. Menjalankan dan menjadwalkan backup
 
-Ada dua cara menjadwalkan backup, dan pilih salah satu supaya salinannya tidak
+#### a. Backup manual (sekali jalan)
+
+Tombol **Jalankan backup sekarang** di **Pengaturan → Backup Database**
+(`/app/pengaturan/backup`) mengambil salinan saat itu juga, memakai layanan yang
+sama dengan penjadwal. Hasilnya langsung tampil di riwayat halaman itu: baris
+`berjalan` selagi prosesnya jalan, lalu `sukses` beserta ukuran berkas dan
+lokasinya, atau `gagal` beserta alasannya.
+
+Dari terminal, perintah yang sama dijalankan `npm run db:backup` — itulah yang
+dipakai cron di bawah. **Uji satu kali manual setiap kali `BACKUP_COMMAND` atau
+`BACKUP_DIR` berubah**, supaya salah tulisnya ketahuan di situ, bukan lewat
+catatan `gagal` yang menumpuk tiap hari.
+
+#### b. Backup otomatis
+
+Ada dua cara menjadwalkannya, dan pilih salah satu supaya salinannya tidak
 dobel:
 
 - **Penjadwal di dalam aplikasi** (bawaan: hidup). Jam, zona waktu, retensi, dan
@@ -305,6 +320,17 @@ dobel:
   tahu siapa yang menjalankannya: setiap proses backup menulis satu baris ke
   tabel `backup_runs`, dan owner melihatnya di halaman yang sama — kapan backup
   terakhir berhasil, berapa catatan yang gagal, dan di mana salinannya disimpan.
+
+Setelan bawaan penjadwal di aplikasi (semuanya bisa diubah owner di halaman
+Backup, dan berlaku tanpa menyalakan ulang server):
+
+| Setelan            | Bawaan                | Artinya                                                                                      |
+| ------------------ | --------------------- | -------------------------------------------------------------------------------------------- |
+| Status             | Aktif                 | Penjadwal memeriksa jadwalnya tiap menit selama aplikasi hidup                               |
+| Jam mulai          | `02:00`               | Dini hari, di luar jam mengajar                                                              |
+| Zona waktu         | `Asia/Jakarta` (WIB)  | Pilihan lain: WITA (`Asia/Makassar`) dan WIT (`Asia/Jayapura`)                               |
+| Retensi            | 30 hari               | Dipakai menilai kesegaran salinan terakhir; lihat §5 soal siapa yang menghapus berkas        |
+| Tempat penyimpanan | `/var/backups/kelola` | Harus path absolut di server; **wajib disalin lagi** ke penyimpanan terpisah (§b, langkah 4) |
 
 Langkah cron (di server/Coolify, memakai container database yang sama):
 
@@ -348,13 +374,14 @@ Langkah cron (di server/Coolify, memakai container database yang sama):
 Kalau memakai penjadwal aplikasi, isi `BACKUP_COMMAND` dengan perintah dump yang
 berjalan dari container aplikasi (mis. `pg_dump -Fc` setelah
 `postgresql-client` dipasang di image, atau `{file}` kalau aplikasinya bisa
-memanggil Docker), lalu uji sekali lewat tombol **Jalankan backup** di halaman
-Backup: hasilnya harus muncul sebagai catatan `sukses` di riwayat, dan berkasnya
-ada di `/var/backups/kelola`.
+memanggil Docker), lalu uji sekali lewat tombol **Jalankan backup sekarang** di
+halaman Backup: hasilnya harus muncul sebagai catatan `sukses` di riwayat, dan
+berkasnya ada di direktori tujuan yang tertulis di halaman itu.
 
 ### 4. Uji pemulihan
 
-Uji minimal satu kali per periode, di lingkungan percobaan — bukan produksi:
+Uji **minimal satu kali sebulan** — dan setiap kali perintah/pengaturan backup
+berubah — di lingkungan percobaan, bukan produksi:
 
 ```bash
 createdb kelola_restore
@@ -403,12 +430,36 @@ lalu hilang — dan berkas yang belum pernah diuji terlihat dari catatan yang
 masih kosong. Riwayat tiap percobaan tidak disimpan; yang tersisa adalah keadaan
 terakhir berkas itu diuji, termasuk kalau ujinya gagal.
 
-> **Belum lengkap (audit deploy):** cara menjalankan backup dan uji pemulihan
-> sudah lengkap, tetapi jangka waktunya belum ditulis (dokumen hanya menyebut
-> “minimal satu kali per periode”), begitu juga siapa yang menjalankannya dan
-> di mana buktinya disimpan — padahal riwayatnya sudah ada di tabel
-> `backup_runs` dan halaman Pengaturan → Backup. Rinciannya di
-> `docs/audit-deploy-usang.md` (butir 5).
+### 5. Siapa yang menjalankan, seberapa sering, dan di mana buktinya
+
+- **Pemiliknya owner bimbel.** Jadwal backup dan uji pemulihan diatur di halaman
+  **Pengaturan → Backup Database**, dan hanya owner/admin yang bisa mengubahnya.
+  Kalau backup diserahkan ke cron, pelaksananya operator server yang memegang
+  `crontab`/Scheduled Task, sementara owner tetap pemilik hasilnya — dia yang
+  membuka halamannya. Tentukan satu nama sejak awal; jadwal tanpa pemilik
+  biasanya baru ketahuan salah saat salinannya dibutuhkan.
+- **Backup: harian.** Bawaannya 02.00 WIB, di luar jam mengajar. Jangan lebih
+  jarang dari sehari: jurnal dan tagihan berubah tiap hari. **Periksa riwayatnya
+  minimal sekali seminggu** — yang dilihat bukan cuma ada/tiadanya baris, tetapi
+  status baris terakhir. Satu baris `gagal` harus dibetulkan sebelum minggu
+  berikutnya, karena salinan yang gagal tidak bisa dipulihkan.
+- **Uji pemulihan: minimal sekali sebulan** (§4), supaya salinan yang rusak atau
+  perintah pemulihan yang melenceng ketahuan sebelum bencana sungguhan.
+- **Buktinya ada di aplikasi, bukan catatan terpisah.** Semua proses — tombol di
+  halaman, penjadwal di aplikasi, maupun `npm run db:backup` dari cron — menulis
+  baris ke tabel `backup_runs`, dan halaman **Pengaturan → Backup** menampilkan
+  20 catatan terbaru (waktu mulai, status, ukuran, lokasi berkas, alasan
+  kegagalan), backup terakhir yang berhasil, dan rangkuman uji pemulihan tiap
+  berkas. Jadi untuk membuktikan kesiapan rilis: buka halaman itu dan tunjukkan
+  baris `sukses` terakhir beserta catatan uji pemulihannya. Kalau bimbel butuh
+  jejak untuk pemeriksaan berkala, simpan tautan halaman itu (atau tangkapan
+  layarnya) di catatan rilis — tidak perlu membuat buku catatan backup manual.
+- **Retensi berkas diatur di sisi server.** Angka **Retensi** di formulir
+  (bawaan 30 hari) dipakai aplikasi untuk menilai kesegaran salinan terakhir,
+  tetapi **aplikasi tidak menghapus berkas backup**. Yang memutuskan kapan
+  berkas lama hilang adalah cron/skrip di server — contoh perintah retensinya ada
+  di langkah 5 pada daftar cron di atas — atau layanan penyimpanan objeknya.
+  Tulis aturannya di catatan rilis, dan periksa kapasitas disknya berkala.
 
 ## Fase 5 — Panduan & Uji Coba Go-live
 
@@ -459,8 +510,11 @@ Jalankan berurutan dengan data uji, lalu rapikan datanya:
       tersedia** dan tidak ada tautan contoh di menu; `MODE_RILIS` tidak
       tertinggal bernilai `false`.
 - [ ] Auto-deploy dari `master` teruji; notifikasi deploy aktif.
-- [ ] Backup terjadwal jalan, salinan tersimpan terpisah, retensi ditulis.
-- [ ] Uji pemulihan pernah berhasil.
+- [ ] Backup terjadwal jalan; baris terakhir di riwayat berstatus `sukses`;
+      salinannya juga tersimpan di penyimpanan terpisah; aturan retensi berkas
+      ditulis (Fase 4 §5).
+- [ ] Uji pemulihan pernah berhasil, dan catatannya terbaca di riwayat backup
+      (Fase 4 §4–§5).
 - [ ] Akun uji dibersihkan; hanya akun sungguhan yang tersisa.
 
 > **Perlu bukti (audit deploy):** klaim “0 temuan” pada butir di atas belum bisa
@@ -469,18 +523,18 @@ Jalankan berurutan dengan data uji, lalu rapikan datanya:
 
 ## Masalah yang sering muncul
 
-| Gejala                                    | Kemungkinan sebab                                                             | Tindakan                                                                                                      |
-| ----------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Build gagal `ECONNREFUSED 127.0.0.1:5432` | halaman terproteksi ikut di-prerender saat build                              | pastikan `dynamic = "force-dynamic"` di `src/app/(protected)/layout.tsx` tetap ada                            |
-| Deploy sukses tapi halaman 502            | container mati setelah start (env salah)                                      | cek log container: `DATABASE_URL`/`BETTER_AUTH_SECRET` kosong atau salah bentuk                               |
-| Login berhasil lalu langsung keluar       | `BETTER_AUTH_URL` tidak sama dengan origin yang dibuka                        | samakan dengan domain publik (termasuk skema/port), deploy ulang                                              |
-| `Invalid origin` saat mengirim data       | domain lain/proxy mengubah origin                                             | akses lewat domain resmi; jangan menambah origin lain tanpa alasan                                            |
-| Aplikasi jalan tapi tabel tidak ada       | migrasi belum dijalankan                                                      | jalankan resource migrator, lihat log `PostgreSQL migrations applied.`                                        |
-| Migrasi gagal saat deploy                 | perintah pre-deployment gagal                                                 | perbaiki penyebabnya di lingkungan uji dulu; migrasi tidak boleh di-skip                                      |
-| Rollback tidak mengembalikan data         | rollback hanya menukar image                                                  | pulihkan database dari backup (Fase 4)                                                                        |
-| Halaman contoh masih terbuka di produksi  | `MODE_RILIS=false` tertinggal di environment produksi                         | hapus variabelnya (atau isi `true`), deploy ulang, lalu uji ulang rutenya                                     |
-| Backup terjadwal tidak pernah jalan       | `PENJADWAL_BACKUP=nonaktif` tertinggal, atau `pg_dump` tidak ada di container | cek environment aplikasi dan log container; jalankan tombol **Jalankan backup** untuk membuktikan perintahnya |
-| Catatan backup `gagal` setiap hari        | perintah dumpnya tidak bisa dipanggil dari container aplikasi                 | uji lewat tombol manual, betulkan `BACKUP_COMMAND`, atau pindahkan jadwalnya ke cron                          |
+| Gejala                                    | Kemungkinan sebab                                                             | Tindakan                                                                                                               |
+| ----------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Build gagal `ECONNREFUSED 127.0.0.1:5432` | halaman terproteksi ikut di-prerender saat build                              | pastikan `dynamic = "force-dynamic"` di `src/app/(protected)/layout.tsx` tetap ada                                     |
+| Deploy sukses tapi halaman 502            | container mati setelah start (env salah)                                      | cek log container: `DATABASE_URL`/`BETTER_AUTH_SECRET` kosong atau salah bentuk                                        |
+| Login berhasil lalu langsung keluar       | `BETTER_AUTH_URL` tidak sama dengan origin yang dibuka                        | samakan dengan domain publik (termasuk skema/port), deploy ulang                                                       |
+| `Invalid origin` saat mengirim data       | domain lain/proxy mengubah origin                                             | akses lewat domain resmi; jangan menambah origin lain tanpa alasan                                                     |
+| Aplikasi jalan tapi tabel tidak ada       | migrasi belum dijalankan                                                      | jalankan resource migrator, lihat log `PostgreSQL migrations applied.`                                                 |
+| Migrasi gagal saat deploy                 | perintah pre-deployment gagal                                                 | perbaiki penyebabnya di lingkungan uji dulu; migrasi tidak boleh di-skip                                               |
+| Rollback tidak mengembalikan data         | rollback hanya menukar image                                                  | pulihkan database dari backup (Fase 4)                                                                                 |
+| Halaman contoh masih terbuka di produksi  | `MODE_RILIS=false` tertinggal di environment produksi                         | hapus variabelnya (atau isi `true`), deploy ulang, lalu uji ulang rutenya                                              |
+| Backup terjadwal tidak pernah jalan       | `PENJADWAL_BACKUP=nonaktif` tertinggal, atau `pg_dump` tidak ada di container | cek environment aplikasi dan log container; jalankan tombol **Jalankan backup sekarang** untuk membuktikan perintahnya |
+| Catatan backup `gagal` setiap hari        | perintah dumpnya tidak bisa dipanggil dari container aplikasi                 | uji lewat tombol manual, betulkan `BACKUP_COMMAND`, atau pindahkan jadwalnya ke cron                                   |
 
 Referensi Coolify: [Rollback](https://coolify.io/docs/applications/deployments/rollbacks) ·
 [Dockerfile build](https://coolify.io/docs/applications/builds/dockerfile)

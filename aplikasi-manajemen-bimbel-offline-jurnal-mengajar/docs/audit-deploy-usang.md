@@ -19,16 +19,16 @@ Cara membaca istilah di bawah:
 
 ## Ringkasan temuan
 
-| #   | Lokasi                                     | Keadaan                                                                                            | Jenis         | Ditangani oleh         |
-| --- | ------------------------------------------ | -------------------------------------------------------------------------------------------------- | ------------- | ---------------------- |
-| 1   | `deploy-coolify.md` Fase 2 §1 (tabel)      | Tabel variabel belum memuat kelompok `SMTP_*`                                                      | Belum lengkap | Catatan SMTP & CI      |
-| 2   | `deploy-coolify.md` Fase 2 §2 dan Fase 5   | Menyebut “keempat variabel **wajib**”, padahal yang wajib tiga                                     | Usang         | Panduan Deploy Terbaru |
-| 3   | `deploy-coolify.md` Fase 4 §1              | “Push ke `master` → Coolify otomatis deploy”, tanpa langkah CI maupun syarat status check          | Usang         | Catatan SMTP & CI      |
-| 4   | `deploy-coolify.md` Fase 5 §1              | “Uji lupa sandi dari domain asli” mengandaikan email benar-benar terkirim tanpa menyiapkan SMTP    | Belum lengkap | Catatan SMTP & CI      |
-| 5   | `deploy-coolify.md` Fase 4 §3–§4           | Cara menjalankan backup dan uji pemulihan sudah ada, tetapi tanpa jangka waktu, pemilik, dan bukti | Belum lengkap | Catatan Backup & Pulih |
-| 6   | `deploy-coolify.md` Fase 5 (checklist)     | “pemindaian nilai dari `.env.local` … menghasilkan 0 temuan” tanpa perintah yang bisa dijalankan   | Perlu bukti   | Panduan Deploy Terbaru |
-| 7   | `deployment.md` (blok `dotenv` + paragraf) | Blok variabel minim dan pernyataannya bahwa email hanya bisa ditambahkan “when needed”             | Usang         | Catatan SMTP & CI      |
-| 8   | `deployment.md` (judul + kalimat terakhir) | Judul masih “PostgreSQL starter” dan satu kalimat terakhir berbahasa Indonesia di dokumen Inggris  | Perlu dibaca  | Panduan Deploy Terbaru |
+| #   | Lokasi                                     | Keadaan                                                                                                                       | Jenis         | Ditangani oleh         |
+| --- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | ------------- | ---------------------- |
+| 1   | `deploy-coolify.md` Fase 2 §1 (tabel)      | Tabel variabel belum memuat kelompok `SMTP_*`                                                                                 | Belum lengkap | Catatan SMTP & CI      |
+| 2   | `deploy-coolify.md` Fase 2 §2 dan Fase 5   | Menyebut “keempat variabel **wajib**”, padahal yang wajib tiga                                                                | Usang         | Panduan Deploy Terbaru |
+| 3   | `deploy-coolify.md` Fase 4 §1              | “Push ke `master` → Coolify otomatis deploy”, tanpa langkah CI maupun syarat status check                                     | Usang         | Catatan SMTP & CI      |
+| 4   | `deploy-coolify.md` Fase 5 §1              | “Uji lupa sandi dari domain asli” mengandaikan email benar-benar terkirim tanpa menyiapkan SMTP                               | Belum lengkap | Catatan SMTP & CI      |
+| 5   | `deploy-coolify.md` Fase 4 §3–§4           | Cara menjalankan backup dan uji pemulihan sudah ada, tetapi tanpa jangka waktu, pemilik, dan bukti; klaim retensi juga keliru | Belum lengkap | Catatan Backup & Pulih |
+| 6   | `deploy-coolify.md` Fase 5 (checklist)     | “pemindaian nilai dari `.env.local` … menghasilkan 0 temuan” tanpa perintah yang bisa dijalankan                              | Perlu bukti   | Panduan Deploy Terbaru |
+| 7   | `deployment.md` (blok `dotenv` + paragraf) | Blok variabel minim dan pernyataannya bahwa email hanya bisa ditambahkan “when needed”                                        | Usang         | Catatan SMTP & CI      |
+| 8   | `deployment.md` (judul + kalimat terakhir) | Judul masih “PostgreSQL starter” dan satu kalimat terakhir berbahasa Indonesia di dokumen Inggris                             | Perlu dibaca  | Panduan Deploy Terbaru |
 
 ## Rincian
 
@@ -95,6 +95,18 @@ disimpan. Riwayatnya sendiri sudah tersedia di aplikasi — `backup_runs`
 menyimpan hasil tiap backup, dan uji pemulihan menuliskan rangkuman terakhir
 per berkas (`src/services/backup.service.ts`), jadi bagian operasionalnya bisa
 menunjuk ke halaman itu alih-alih meminta catatan terpisah.
+
+Temuan tambahan pada butir yang sama — **klaim retensi yang keliru**: dokumen
+(lewat tabel `/var/backups/kelola`) dan kode menyebut retensi sebagai “umur
+berkas backup sebelum dihapus penjadwal”
+(`src/db/schema/backup-settings.ts`, `src/lib/jadwal-backup.ts`), dan kartu
+ringkasan backup terakhir menulis “berkasnya mungkin sudah dihapus penjadwal”
+(`src/lib/tampilan-backup.ts`). Yang benar: **tidak ada satu pun kode yang
+menghapus berkas backup** — `retensiHari` dipakai `kesegaranBackup` hanya untuk
+menilai kesegaran salinan terakhir, dan pembersihan berkas lama memang tugas
+cron/skrip di server (contoh `find … -mtime +30 -delete` di langkah cron) atau
+layanan penyimpanan objeknya. Owner yang percaya aplikasi menghapus sendiri
+berkas lamanya bisa kehabisan disk tanpa sadar.
 
 ### 6. Klaim “0 temuan” tanpa perintah
 

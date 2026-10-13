@@ -31,7 +31,9 @@ export const backupSettings = pgTable(
     zonaWaktu: varchar("zona_waktu", { length: 64 })
       .default("Asia/Jakarta")
       .notNull(),
-    // Umur berkas backup sebelum dihapus penjadwal, dalam hari.
+    // Umur salinan sebelum dianggap kadaluarsa, dalam hari. Aplikasi tidak
+    // menghapus berkas lama — hanya menilai kesegaran salinan terakhir; yang
+    // menghapusnya cron/layanan penyimpanan di server (docs/deploy-coolify.md).
     retensiHari: integer("retensi_hari").default(30).notNull(),
     // Direktori salinan di server, ditulis sebagai path lengkap.
     tujuan: varchar("tujuan", { length: 240 })

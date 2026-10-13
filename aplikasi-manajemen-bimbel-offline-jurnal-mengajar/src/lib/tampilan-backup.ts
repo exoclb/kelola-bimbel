@@ -59,9 +59,9 @@ export type KesegaranBackup = {
 
 /**
  * Menilai kesegaran backup terakhir yang berhasil terhadap jadwalnya: masih
- * dalam tenggang jadwal, terlambat, atau sudah lewat retensi sehingga berkasnya
- * mungkin sudah dihapus penjadwal. Dipakai kartu ringkasan backup terakhir;
- * `jedaJam` 24 berarti jadwalnya harian.
+ * dalam tenggang jadwal, terlambat, atau sudah lewat retensi sehingga salinan
+ * itu seharusnya sudah tidak dipakai lagi. Dipakai kartu ringkasan backup
+ * terakhir; `jedaJam` 24 berarti jadwalnya harian.
  */
 export function kesegaranBackup(
   mulai: Date,
@@ -73,7 +73,7 @@ export function kesegaranBackup(
     return {
       tingkat: "kadaluarsa",
       label: "Lewat retensi",
-      keterangan: `Salinan inilah yang terakhir berhasil, dan umurnya sudah lewat retensi ${retensiHari} hari — berkasnya mungkin sudah dihapus penjadwal.`,
+      keterangan: `Salinan inilah yang terakhir berhasil, dan umurnya sudah lewat retensi ${retensiHari} hari — salinan sesegar ini tidak lagi cukup untuk pemulihan. Aplikasi tidak menghapus berkas lama; periksa apakah berkasnya masih ada dan pastikan jadwal backup berjalan lagi.`,
     };
   if (umurJam > jedaJam + TENGGANG_JAM)
     return {

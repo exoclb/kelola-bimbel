@@ -19,7 +19,11 @@ export type JadwalBackup = {
   jam: string;
   /** Zona waktu IANA; backup dipilih jalan dini hari saat bimbel sepi. */
   zonaWaktu: string;
-  /** Umur berkas backup sebelum dihapus penjadwal, dalam hari. */
+  /**
+   * Umur salinan sebelum dianggap kadaluarsa, dalam hari. Aplikasi hanya
+   * memakainya untuk menilai kesegaran salinan terakhir — menghapus berkas lama
+   * diatur cron/layanan penyimpanan di server, lihat docs/deploy-coolify.md.
+   */
   retensiHari: number;
   /** Tempat salinan terakhir disimpan di server. */
   tujuan: string;
