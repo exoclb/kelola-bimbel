@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { RincianKartu } from "@/components/rincian-kartu";
 import { PesanKosong } from "@/components/status-antarmuka";
+import { PanelVerifikasiPemulihan } from "@/components/panel-verifikasi-pemulihan";
 import { StatusPemulihanBackup } from "@/components/status-pemulihan-backup";
 import {
   getBerkasBackupUji,
@@ -25,6 +26,7 @@ import {
   ringkasanPemeriksaan,
   ujiSedangBerjalan,
   ujiTerakhirBerhasil,
+  ujiTerakhirSelesai,
 } from "@/lib/uji-pemulihan";
 
 export const metadata: Metadata = { title: "Uji Pemulihan Backup" };
@@ -88,6 +90,7 @@ export default async function UjiPemulihanBackupPage() {
   // masing bagian.
   const sekarang = new Date();
   const berjalan = ujiSedangBerjalan(riwayat);
+  const terakhirSelesai = ujiTerakhirSelesai(riwayat);
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -108,7 +111,8 @@ export default async function UjiPemulihanBackupPage() {
         Backup yang belum pernah dipulihkan belum bisa diandalkan: berkas yang
         bertambah tiap hari tidak membuktikan datanya masih bisa dibuka. Halaman
         ini menampung proses yang sedang berjalan, berkas yang siap diuji,
-        ringkasan uji terakhir, dan riwayatnya sebagai bukti kesiapan rilis.
+        ringkasan dan verifikasi uji terakhir, serta riwayatnya sebagai bukti
+        kesiapan rilis.
       </p>
 
       {/* Bagian ini belum tersambung ke server; penandanya dibuat mencolok
@@ -116,7 +120,7 @@ export default async function UjiPemulihanBackupPage() {
       <p className="mt-6 rounded-xl border border-dashed px-4 py-3 text-sm leading-6 text-muted-foreground">
         Uji pemulihan masih dijalankan manual di server mengikuti langkah di
         bawah, dan catatannya belum punya tabelnya sendiri. Berkas, proses yang
-        berjalan, ringkasan, serta riwayat di halaman ini masih{" "}
+        berjalan, ringkasan, verifikasi, serta riwayat di halaman ini masih{" "}
         <strong className="font-medium text-foreground">contoh bentuk</strong> —
         jangan dibaca sebagai bukti bahwa uji pemulihan sudah pernah berhasil.
       </p>
@@ -181,6 +185,10 @@ export default async function UjiPemulihanBackupPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Verifikasinya memakai uji terakhir yang sudah selesai — termasuk yang
+          gagal, supaya yang tidak lulus pun terlihat apa adanya. */}
+      {terakhirSelesai && <PanelVerifikasiPemulihan uji={terakhirSelesai} />}
 
       <Card className="mt-6">
         <CardHeader>

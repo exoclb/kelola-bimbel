@@ -77,6 +77,94 @@ export function semuaPemeriksaanLulus(uji: UjiPemulihan) {
   return uji.pemeriksaan.length > 0 && uji.pemeriksaan.every((p) => p.lulus);
 }
 
+/** Satu pemeriksaan baku beserta artinya bagi pemilik bimbel. */
+export type PemeriksaanBaku = {
+  nama: string;
+  keterangan: string;
+};
+
+/**
+ * Pemeriksaan yang harus dicocokkan tiap kali uji pemulihan, dipakai untuk
+ * menilai apakah sebuah uji benar-benar memverifikasi datanya: uji yang hanya
+ * memeriksa satu hal belum membuktikan sisanya ikut selamat.
+ */
+export const PEMERIKSAAN_BAKU: PemeriksaanBaku[] = [
+  {
+    nama: "Jumlah murid sesuai",
+    keterangan:
+      "Jumlah murid di database percobaan sama dengan produksi saat backup dibuat.",
+  },
+  {
+    nama: "Jumlah jurnal mengajar sesuai",
+    keterangan:
+      "Catatan jurnal mengajar ikut pulih, bukan cuma tabelnya yang terbentuk kosong.",
+  },
+  {
+    nama: "Jumlah tagihan sesuai",
+    keterangan:
+      "Tagihan dan pembayarannya utuh, jadi tidak ada angka keuangan yang hilang.",
+  },
+  {
+    nama: "Akun owner bisa masuk",
+    keterangan:
+      "Akun pemilik bimbel masih bisa dipakai masuk setelah pemulihan.",
+  },
+];
+
+/** Hasil satu pemeriksaan pada sebuah catatan uji. */
+export type HasilPemeriksaan = "lulus" | "gagal" | "belum-diperiksa";
+
+/**
+ * Hasil satu pemeriksaan bernama `nama` pada catatan uji; `belum-diperiksa`
+ * kalau pemeriksaan itu tidak dijalankan sama sekali.
+ */
+export function hasilPemeriksaan(
+  uji: UjiPemulihan,
+  nama: string,
+): HasilPemeriksaan {
+  const ditemukan = uji.pemeriksaan.find(
+    (pemeriksaan) => pemeriksaan.nama === nama,
+  );
+  if (!ditemukan) return "belum-diperiksa";
+  return ditemukan.lulus ? "lulus" : "gagal";
+}
+
+/** Pemeriksaan yang dijalankan tapi tidak ada di daftar baku. */
+export function pemeriksaanTambahan(uji: UjiPemulihan) {
+  const baku = new Set(PEMERIKSAAN_BAKU.map((pemeriksaan) => pemeriksaan.nama));
+  return uji.pemeriksaan.filter((pemeriksaan) => !baku.has(pemeriksaan.nama));
+}
+
+/** Hitungan pemeriksaan: berapa yang dicatat, berapa lulus, berapa gagal. */
+export function hitungPemeriksaan(pemeriksaan: PemeriksaanPemulihan[]) {
+  const lulus = pemeriksaan.filter((satu) => satu.lulus).length;
+  return {
+    total: pemeriksaan.length,
+    lulus,
+    gagal: pemeriksaan.length - lulus,
+  };
+}
+
+/** Penilaian keutuhan data sebuah catatan uji. */
+export type TingkatVerifikasi =
+  "terverifikasi" | "bermasalah" | "belum-lengkap" | "belum-ada";
+
+/**
+ * Menilai verifikasi sebuah catatan uji: ada pemeriksaan yang tidak lulus →
+ * bermasalah; semuanya lulus tapi daftar bakunya belum lengkap → belum
+ * lengkap; seluruh daftar baku lulus → terverifikasi; tanpa pemeriksaan sama
+ * sekali → belum ada yang diverifikasi.
+ */
+export function tingkatVerifikasi(uji: UjiPemulihan): TingkatVerifikasi {
+  if (uji.pemeriksaan.length === 0) return "belum-ada";
+  if (uji.pemeriksaan.some((pemeriksaan) => !pemeriksaan.lulus))
+    return "bermasalah";
+  const belum = PEMERIKSAAN_BAKU.filter(
+    (baku) => hasilPemeriksaan(uji, baku.nama) === "belum-diperiksa",
+  );
+  return belum.length === 0 ? "terverifikasi" : "belum-lengkap";
+}
+
 /**
  * Uji pemulihan terakhir yang berhasil, atau `null` kalau belum pernah ada.
  * Yang dihitung hanya catatan `berhasil`: uji yang gagal justru alasan untuk
@@ -84,6 +172,15 @@ export function semuaPemeriksaanLulus(uji: UjiPemulihan) {
  */
 export function ujiTerakhirBerhasil(riwayat: UjiPemulihan[]) {
   return palingBaru(riwayat.filter((uji) => uji.status === "berhasil"));
+}
+
+/**
+ * Uji pemulihan terakhir yang sudah selesai — berhasil maupun gagal. Dipakai
+ * menampilkan verifikasi hasil pulih: uji yang gagal pun perlu diperlihatkan
+ * apa yang sudah dicocokkan dan apa yang tidak lulus.
+ */
+export function ujiTerakhirSelesai(riwayat: UjiPemulihan[]) {
+  return palingBaru(riwayat.filter((uji) => uji.selesai !== null));
 }
 
 /**

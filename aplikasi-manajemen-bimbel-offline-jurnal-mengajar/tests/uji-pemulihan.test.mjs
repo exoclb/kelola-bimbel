@@ -15,17 +15,23 @@ pasangImporTs();
 const {
   DETIK_PER_TAHAP,
   JEDA_UJI_HARI,
+  PEMERIKSAAN_BAKU,
   TAHAP_PEMULIHAN,
+  hasilPemeriksaan,
+  hitungPemeriksaan,
   indeksTahapBerjalan,
   kesegaranUjiPemulihan,
   namaBerkasUji,
+  pemeriksaanTambahan,
   perkiraanSelesai,
   persenPemulihan,
   ringkasanPemeriksaan,
   semuaPemeriksaanLulus,
   statusTahap,
+  tingkatVerifikasi,
   ujiSedangBerjalan,
   ujiTerakhirBerhasil,
+  ujiTerakhirSelesai,
 } = await import("../src/lib/uji-pemulihan.ts");
 const { getBerkasBackupUji, getRiwayatUjiPemulihan, getUjiPemulihanBerjalan } =
   await import("../src/lib/mock-uji-pemulihan.ts");
@@ -364,4 +370,152 @@ test("data tiruan menyediakan proses yang sedang berjalan", () => {
     getRiwayatUjiPemulihan().some((catatan) => catatan.status === "berjalan"),
     "proses yang berjalan ikut terbaca di riwayat",
   );
+});
+
+/** Empat pemeriksaan baku, semuanya lulus — bentuk uji yang terverifikasi. */
+function semuaLulus() {
+  return PEMERIKSAAN_BAKU.map((baku) => ({ nama: baku.nama, lulus: true }));
+}
+
+test("daftar pemeriksaan baku memuat pemeriksaan yang wajib dicocokkan", () => {
+  assert.equal(PEMERIKSAAN_BAKU.length, 4);
+  for (const baku of PEMERIKSAAN_BAKU) {
+    assert.ok(baku.nama.length > 0);
+    assert.ok(baku.keterangan.length > 0);
+  }
+  // Nama bakunya unik: hasil pemeriksaan dicari berdasarkan namanya.
+  assert.equal(new Set(PEMERIKSAAN_BAKU.map((b) => b.nama)).size, 4);
+});
+
+test("hasilPemeriksaan membaca lulus, gagal, dan yang tidak dijalankan", () => {
+  const lengkap = uji({ pemeriksaan: semuaLulus() });
+  assert.equal(hasilPemeriksaan(lengkap, "Jumlah murid sesuai"), "lulus");
+  assert.equal(
+    hasilPemeriksaan(
+      uji({ pemeriksaan: [{ nama: "Jumlah tagihan sesuai", lulus: false }] }),
+      "Jumlah tagihan sesuai",
+    ),
+    "gagal",
+  );
+  assert.equal(hasilPemeriksaan(lengkap, "Akun owner bisa masuk"), "lulus");
+  assert.equal(
+    hasilPemeriksaan(lengkap, "Jumlah pengeluaran sesuai"),
+    "belum-diperiksa",
+  );
+  assert.equal(
+    hasilPemeriksaan(uji({ pemeriksaan: [] }), "Jumlah murid sesuai"),
+    "belum-diperiksa",
+  );
+});
+
+test("pemeriksaanTambahan hanya menyisakan yang di luar daftar baku", () => {
+  assert.deepEqual(pemeriksaanTambahan(uji({ pemeriksaan: semuaLulus() })), []);
+  const tambahan = pemeriksaanTambahan(
+    uji({
+      pemeriksaan: [
+        { nama: "Jumlah murid sesuai", lulus: true },
+        { nama: "Jumlah pengeluaran sesuai", lulus: false },
+      ],
+    }),
+  );
+  assert.equal(tambahan.length, 1);
+  assert.equal(tambahan[0].nama, "Jumlah pengeluaran sesuai");
+});
+
+test("hitungPemeriksaan menjumlah yang dicatat, lulus, dan gagal", () => {
+  assert.deepEqual(hitungPemeriksaan([]), { total: 0, lulus: 0, gagal: 0 });
+  assert.deepEqual(
+    hitungPemeriksaan([
+      { nama: "a", lulus: true },
+      { nama: "b", lulus: false },
+      { nama: "c", lulus: true },
+    ]),
+    { total: 3, lulus: 2, gagal: 1 },
+  );
+});
+
+test("tingkatVerifikasi menilai empat keadaan catatan uji", () => {
+  // Seluruh daftar baku dijalankan dan lulus.
+  assert.equal(
+    tingkatVerifikasi(uji({ pemeriksaan: semuaLulus() })),
+    "terverifikasi",
+  );
+  // Ada yang tidak lulus: ujinya belum membuktikan datanya bisa dipulihkan.
+  assert.equal(
+    tingkatVerifikasi(
+      uji({
+        pemeriksaan: [
+          { nama: "Jumlah murid sesuai", lulus: false },
+          { nama: "Jumlah jurnal mengajar sesuai", lulus: true },
+        ],
+      }),
+    ),
+    "bermasalah",
+  );
+  // Semua yang dicatat lulus, tapi daftar bakunya belum lengkap.
+  assert.equal(
+    tingkatVerifikasi(
+      uji({ pemeriksaan: [{ nama: "Jumlah murid sesuai", lulus: true }] }),
+    ),
+    "belum-lengkap",
+  );
+  // Catatan yang belum diperiksa sama sekali bukan bukti apa-apa.
+  assert.equal(tingkatVerifikasi(uji({ pemeriksaan: [] })), "belum-ada");
+  // Pemeriksaan tambahan yang lulus tidak menghalangi status terverifikasi.
+  assert.equal(
+    tingkatVerifikasi(
+      uji({
+        pemeriksaan: [
+          ...semuaLulus(),
+          { nama: "Jumlah pengeluaran sesuai", lulus: true },
+        ],
+      }),
+    ),
+    "terverifikasi",
+  );
+});
+
+test("ujiTerakhirSelesai mengambil catatan selesai paling baru apa pun hasilnya", () => {
+  const berjalan = uji({
+    id: "uji-jalan",
+    mulai: new Date("2026-07-06T09:00:00+07:00"),
+    selesai: null,
+    status: "berjalan",
+    pemeriksaan: [],
+  });
+  const gagal = uji({
+    id: "uji-gagal",
+    mulai: new Date("2026-07-05T09:00:00+07:00"),
+    selesai: new Date("2026-07-05T09:03:00+07:00"),
+    status: "gagal",
+    pemeriksaan: [{ nama: "Jumlah murid sesuai", lulus: false }],
+  });
+  const berhasil = uji({
+    id: "uji-berhasil",
+    mulai: new Date("2026-06-14T09:00:00+07:00"),
+    selesai: new Date("2026-06-14T09:04:00+07:00"),
+  });
+
+  // Yang masih berjalan belum punya hasil, jadi tidak ikut dipilih. Yang dipilih
+  // adalah yang selesai paling baru — meski hasilnya gagal.
+  assert.equal(
+    ujiTerakhirSelesai([berjalan, gagal, berhasil])?.id,
+    "uji-gagal",
+  );
+  assert.equal(ujiTerakhirSelesai([berjalan]), null);
+  assert.equal(ujiTerakhirSelesai([]), null);
+  assert.equal(ujiTerakhirSelesai([berhasil])?.id, "uji-berhasil");
+});
+
+test("verifikasi data tiruan terakhir terverifikasi seluruhnya", () => {
+  const terakhir = ujiTerakhirSelesai(getRiwayatUjiPemulihan());
+  assert.ok(terakhir);
+  assert.equal(terakhir.status, "berhasil");
+  assert.equal(tingkatVerifikasi(terakhir), "terverifikasi");
+  assert.deepEqual(hitungPemeriksaan(terakhir.pemeriksaan), {
+    total: 4,
+    lulus: 4,
+    gagal: 0,
+  });
+  assert.deepEqual(pemeriksaanTambahan(terakhir), []);
 });

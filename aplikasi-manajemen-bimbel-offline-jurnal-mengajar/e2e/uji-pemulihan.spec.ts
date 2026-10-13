@@ -131,6 +131,25 @@ test("halaman uji pemulihan menampilkan status, ringkasan, berkas, langkah, dan 
     ringkasan.getByText("/var/backups/kelola/20260614-020000.dump"),
   ).toHaveCount(0);
 
+  // Panel verifikasi: seluruh pemeriksaan bakunya dilaporkan lulus, jadi
+  // kesimpulannya terverifikasi — dan tidak ada yang tinggal “belum diperiksa”.
+  const verifikasi = page.locator('[data-slot="card"]').filter({
+    has: page.getByText("Verifikasi hasil pulih", { exact: true }),
+  });
+  await expect(verifikasi).toHaveCount(1);
+  await expect(
+    verifikasi.locator('[data-verifikasi="terverifikasi"]'),
+  ).toHaveCount(1);
+  await expect(verifikasi.getByText("Lulus", { exact: true })).toHaveCount(4);
+  await expect(
+    verifikasi.locator('[data-hasil="belum-diperiksa"]'),
+  ).toHaveCount(0);
+  await expect(verifikasi.locator('[data-hasil="gagal"]')).toHaveCount(0);
+  await expect(
+    verifikasi.getByText("Akun owner bisa masuk", { exact: true }),
+  ).toBeVisible();
+  await expect(verifikasi.getByText("contoh", { exact: true })).toBeVisible();
+
   // Berkas yang siap diuji: nama berkasnya, waktu pembuatannya, ukurannya.
   const berkas = page.locator('[data-slot="card"]').filter({
     has: page.getByText("Berkas backup siap diuji", { exact: true }),
