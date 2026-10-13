@@ -2,6 +2,7 @@ import { ApiError, readJson, withApiPermission } from "@/lib/api";
 import {
   adaPemulihanBerjalan,
   ambilBerkasBackupUjiById,
+  catatHasilUjiPemulihan,
   jalankanUjiPemulihan,
 } from "@/services/backup.service";
 import { jalankanUjiPemulihanSchema } from "@/validators/pengaturan";
@@ -44,7 +45,25 @@ export function POST(request: Request) {
       );
 
     const hasil = await jalankanUjiPemulihan({ lokasi: berkas.lokasi });
-    return Response.json({ data: { ...hasil, berkas } });
+
+    // Hasilnya dicatat ke baris backup yang diuji supaya jadi bukti yang bisa
+    // ditelusuri dari riwayat backup. Baris yang keburu hilang tidak menghalangi
+    // jawabannya: ujinya toh sudah jalan, dan yang perlu diketahui pemanggil
+    // adalah hasilnya — `tercatat: null` berarti catatannya tidak tersimpan.
+    const tercatat = await catatHasilUjiPemulihan(berkas.id, hasil);
+
+    return Response.json({
+      data: {
+        ...hasil,
+        berkas,
+        tercatat: tercatat
+          ? {
+              id: tercatat.id,
+              catatanUjiPemulihan: tercatat.catatanUjiPemulihan,
+            }
+          : null,
+      },
+    });
   });
 }
 

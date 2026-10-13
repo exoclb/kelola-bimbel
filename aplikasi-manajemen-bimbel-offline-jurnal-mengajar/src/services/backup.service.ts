@@ -26,6 +26,11 @@ export type BackupTersimpan = {
   ukuranByte: number | null;
   lokasi: string | null;
   pesan: string | null;
+  /**
+   * Hasil uji pemulihan berkas itu, atau `null` kalau belum pernah diuji.
+   * Terpisah dari `pesan` — itu alasan kegagalan backup-nya sendiri.
+   */
+  catatanUjiPemulihan: string | null;
 };
 
 const fields = {
@@ -36,6 +41,7 @@ const fields = {
   ukuranByte: backupRuns.ukuranByte,
   lokasi: backupRuns.lokasi,
   pesan: backupRuns.pesan,
+  catatanUjiPemulihan: backupRuns.catatanUjiPemulihan,
 };
 
 export type StatusBackup = {
@@ -843,6 +849,116 @@ export async function jalankanUjiPemulihan(
     hitung: opsi.hitung,
   });
   return { ...hasil, pemeriksaan, catatan };
+}
+
+// --- Mencatat hasil uji ke riwayat backup -----------------------------------
+//
+// Hasil uji pemulihan disimpan pada baris backup yang diuji
+// (`backup_runs.catatan_uji_pemulihan`), bukan di tabel terpisah: yang diuji
+// memang berkas itu, dan riwayat backup yang sudah ada jadi sekaligus riwayat
+// ujinya. Kolomnya sengaja cuma satu teks, jadi seluruh hasilnya dirangkum ke
+// satu kalimat panjang yang menyebut waktu, lingkungan, hasil pemeriksaannya,
+// dan angka yang dibandingkan.
+
+/**
+ * Waktu uji dalam teks panjang berbahasa Indonesia, mis.
+ * "13 Oktober 2026 pukul 09.15 WIB".
+ *
+ * Zona waktunya disebut terus terang supaya catatannya tidak ambigu bagi yang
+ * membacanya beberapa bulan kemudian. Zona yang tidak dikenal runtime (mis.
+ * dari baris pengaturan lama) jatuh kembali ke zona server, bukan menggagalkan
+ * pencatatannya.
+ */
+export function waktuUjiTeks(waktu: Date, zona: string) {
+  const pilihan: Intl.DateTimeFormatOptions = {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZoneName: "short",
+  };
+  try {
+    return new Intl.DateTimeFormat("id-ID", {
+      ...pilihan,
+      timeZone: zona,
+    }).format(waktu);
+  } catch {
+    return new Intl.DateTimeFormat("id-ID", pilihan).format(waktu);
+  }
+}
+
+/**
+ * Batas kolom `catatan_uji_pemulihan`; catatan yang lebih panjang dipotong di
+ * sini supaya pencatatannya tidak pernah ditolak database dan hasil ujinya tetap
+ * sampai ke pemanggil.
+ */
+export const MAKS_CATATAN_UJI = 2000;
+
+/**
+ * Merangkum satu hasil uji pemulihan menjadi catatan yang dibaca kembali di
+ * riwayat backup: kapan, di database mana, berapa pemeriksaan yang lulus, dan
+ * angka yang dibandingkan.
+ *
+ * Pemulihan yang gagal tetap dicatat sebagai catatan — justru itu yang perlu
+ * terlihat saat menilai kesiapan rilis — dan pemeriksaan yang tidak bisa
+ * dijalankan tidak pernah terbaca lulus.
+ */
+export function susunCatatanUjiPemulihan(
+  hasil: HasilUjiPemulihan,
+  { waktu, zona }: { waktu: Date; zona: string },
+) {
+  const kapan = `Uji pemulihan ${waktuUjiTeks(waktu, zona)}`;
+  const di = hasil.databaseTujuan ? ` di ${hasil.databaseTujuan}` : "";
+
+  if (!hasil.berhasil)
+    return `${kapan}: pemulihan berkas ini gagal, jadi isinya belum bisa diperiksa. ${hasil.pesan ?? ""}`.trim();
+
+  const lulus = hasil.pemeriksaan.filter((satu) => satu.lulus).length;
+  const gagal = hasil.pemeriksaan
+    .filter((satu) => !satu.lulus)
+    .map((satu) => satu.nama);
+  const jumlah = `${lulus} dari ${hasil.pemeriksaan.length} pemeriksaan lulus`;
+  const pemeriksaan = !hasil.pemeriksaan.length
+    ? "belum ada pemeriksaan isi yang dijalankan"
+    : gagal.length
+      ? `pemulihan berhasil tetapi ${gagal.length} dari ${hasil.pemeriksaan.length} pemeriksaan gagal (${gagal.join(", ")})`
+      : `pemulihan berhasil dan ${jumlah}`;
+  const catatan = `${kapan}${di}: ${pemeriksaan}. ${hasil.catatan}`.trim();
+  return catatan.length > MAKS_CATATAN_UJI
+    ? `${catatan.slice(0, MAKS_CATATAN_UJI - 1)}…`
+    : catatan;
+}
+
+/**
+ * Menyimpan hasil uji pemulihan pada catatan backup yang diuji, supaya buktinya
+ * ikut terbaca di riwayat backup. Yang dikembalikan baris yang sudah diperbarui,
+ * atau `null` kalau barisnya sudah tidak ada lagi.
+ *
+ * Hasil panggilan terakhir yang menang: catatan ini menyebut keadaan terakhir
+ * berkas itu diuji, bukan tumpukan percobaan sebelumnya — riwayat tiap percobaan
+ * tidak disimpan.
+ */
+export async function catatHasilUjiPemulihan(
+  backupId: string,
+  hasil: HasilUjiPemulihan,
+  sekarang = new Date(),
+): Promise<BackupTersimpan | null> {
+  // Waktu ujinya ditulis menurut zona waktu yang dipakai bimbel untuk
+  // jadwalnya — itulah jam yang dikenali pemilik bimbel.
+  const jadwal = await ambilJadwalBackup();
+  const [tersimpan] = await db
+    .update(backupRuns)
+    .set({
+      catatanUjiPemulihan: susunCatatanUjiPemulihan(hasil, {
+        waktu: sekarang,
+        zona: jadwal.zonaWaktu,
+      }),
+    })
+    .where(eq(backupRuns.id, backupId))
+    .returning(fields);
+
+  return tersimpan ?? null;
 }
 
 /** Kolom pengaturan jadwal seperti yang dipakai penjadwal dan halaman.

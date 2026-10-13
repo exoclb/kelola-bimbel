@@ -372,6 +372,14 @@ banyak daripada produksi dilaporkan gagal. Database percobaan yang tidak bisa
 dihubungi — mis. `RESTORE_DATABASE_URL` salah tulis — juga gagal semua, jadi uji
 yang tidak benar-benar memeriksa apa pun tidak pernah terbaca lulus.
 
+Hasil setiap uji ikut dicatat ke riwayat backup: catatan berkas yang diuji
+menyimpan rangkuman kapan berkas itu terakhir diuji, di database mana, berapa
+pemeriksaan yang lulus, dan angka yang dibandingkan. Jadi bukti uji pemulihan
+tertinggal di halaman Pengaturan → Backup — bukan cuma muncul sekali di layar
+lalu hilang — dan berkas yang belum pernah diuji terlihat dari catatan yang
+masih kosong. Riwayat tiap percobaan tidak disimpan; yang tersisa adalah keadaan
+terakhir berkas itu diuji, termasuk kalau ujinya gagal.
+
 ## Fase 5 — Panduan & Uji Coba Go-live
 
 ### 1. Uji masuk per peran

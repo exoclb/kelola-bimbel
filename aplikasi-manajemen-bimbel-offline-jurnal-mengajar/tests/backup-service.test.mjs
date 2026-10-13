@@ -34,8 +34,10 @@ const {
   adaPemulihanBerjalan,
   ambilBerkasBackupUji,
   ambilBerkasBackupUjiById,
+  ambilStatusBackup,
   bacaKonfigurasiBackup,
   bacaKonfigurasiPemulihan,
+  catatHasilUjiPemulihan,
   jalankanBackupDanCatat,
   jalankanPerintahDump,
   jalankanPerintahPemulihan,
@@ -45,8 +47,10 @@ const {
   namaDatabase,
   periksaHasilPemulihan,
   pulihkanBerkasBackup,
+  susunCatatanUjiPemulihan,
   VARIABEL_BACKUP,
   VARIABEL_PEMULIHAN,
+  waktuUjiTeks,
 } = await import("../src/services/backup.service.ts");
 
 const pool = new Pool({
@@ -789,5 +793,165 @@ test("uji pemulihan menjalankan pemeriksaan isi sesudah pemulihannya berhasil", 
     hitungSetelahGagal,
     0,
     "isi tidak diperiksa kalau pemulihannya gagal",
+  );
+});
+
+/** Hasil uji pemulihan tiruan untuk uji pencatatannya. */
+function hasilUji(tambahan = {}) {
+  return {
+    berhasil: true,
+    pesan: null,
+    databaseTujuan: "kelola_restore",
+    lamaMs: 1200,
+    pemeriksaan: [
+      { nama: "Jumlah murid sesuai", lulus: true, keterangan: "sesuai" },
+      {
+        nama: "Jumlah jurnal mengajar sesuai",
+        lulus: true,
+        keterangan: "sesuai",
+      },
+      { nama: "Jumlah tagihan sesuai", lulus: true, keterangan: "sesuai" },
+      { nama: "Akun owner bisa masuk", lulus: true, keterangan: "sesuai" },
+    ],
+    catatan:
+      "Isi database percobaan kelola_restore: 42 murid, 318 jurnal mengajar, 96 tagihan. Produksi sekarang: 42 murid, 318 jurnal mengajar, 96 tagihan.",
+    ...tambahan,
+  };
+}
+
+test("catatan hasil uji dirangkum untuk riwayat backup", () => {
+  const waktu = new Date("2026-10-13T02:15:30Z");
+  assert.equal(
+    waktuUjiTeks(waktu, "Asia/Jakarta"),
+    "13 Oktober 2026 pukul 09.15 WIB",
+    "waktunya ditulis dengan zona yang dikenali pembacanya",
+  );
+  // Zona yang tidak dikenal runtime (mis. dari pengaturan lama) tidak
+  // menggagalkan pencatatannya: jatuh kembali ke zona server.
+  assert.match(waktuUjiTeks(waktu, "Bukan/Zona"), /13 Oktober 2026/);
+
+  const lulus = susunCatatanUjiPemulihan(hasilUji(), {
+    waktu,
+    zona: "Asia/Jakarta",
+  });
+  assert.match(
+    lulus,
+    /^Uji pemulihan 13 Oktober 2026 pukul 09.15 WIB di kelola_restore: /,
+  );
+  assert.match(lulus, /pemulihan berhasil dan 4 dari 4 pemeriksaan lulus/);
+  assert.match(lulus, /42 murid, 318 jurnal mengajar, 96 tagihan/);
+  assert.ok(lulus.length <= 2000, "muat di kolom catatannya");
+
+  // Pemeriksaan yang gagal disebut namanya supaya yang membacanya tahu apa yang
+  // belum beres tanpa membuka halaman ujinya.
+  const sebagian = susunCatatanUjiPemulihan(
+    hasilUji({
+      pemeriksaan: hasilUji().pemeriksaan.map((satu) =>
+        satu.nama === "Jumlah tagihan sesuai"
+          ? { ...satu, lulus: false }
+          : satu,
+      ),
+    }),
+    { waktu, zona: "Asia/Jakarta" },
+  );
+  assert.match(
+    sebagian,
+    /pemulihan berhasil tetapi 1 dari 4 pemeriksaan gagal \(Jumlah tagihan sesuai\)/,
+  );
+
+  // Pemulihan yang gagal tetap dicatat: justru itu bukti yang dicari.
+  const gagal = susunCatatanUjiPemulihan(
+    hasilUji({
+      berhasil: false,
+      pesan: "pg_restore: error: unexpected EOF",
+      pemeriksaan: [],
+      catatan: "pg_restore: error: unexpected EOF",
+    }),
+    { waktu, zona: "Asia/Jakarta" },
+  );
+  assert.match(
+    gagal,
+    /pemulihan berkas ini gagal, jadi isinya belum bisa diperiksa/,
+  );
+  assert.match(gagal, /unexpected EOF/);
+
+  // Pemulihan yang berhasil tanpa pemeriksaan apa pun tidak boleh terbaca
+  // seolah empat pemeriksaannya lulus.
+  const tanpaPemeriksaan = susunCatatanUjiPemulihan(
+    hasilUji({ pemeriksaan: [] }),
+    { waktu, zona: "Asia/Jakarta" },
+  );
+  assert.match(tanpaPemeriksaan, /belum ada pemeriksaan isi yang dijalankan/);
+  assert.doesNotMatch(tanpaPemeriksaan, /pemeriksaan lulus/);
+
+  // Pesan galat yang sangat panjang dipotong, bukan ditolak kolomnya.
+  const panjang = susunCatatanUjiPemulihan(
+    hasilUji({ catatan: "x".repeat(4000) }),
+    { waktu, zona: "Asia/Jakarta" },
+  );
+  assert.equal(panjang.length, 2000);
+});
+
+test("hasil uji pemulihan tersimpan di catatan backup yang diuji", async () => {
+  const lokasi = berkasUji("uji-catat-hasil.dump");
+  const { rows } = await pool.query(
+    "INSERT INTO backup_runs (mulai, selesai, status, ukuran_byte, lokasi, pesan) VALUES (now() - interval '2 hours', now() - interval '119 minutes', 'sukses', 8192, $1, $2) RETURNING id",
+    [lokasi, "dump-nya sendiri berhasil"],
+  );
+  const id = rows[0].id;
+  const waktu = new Date("2026-10-13T02:15:30Z");
+
+  const tercatat = await catatHasilUjiPemulihan(id, hasilUji(), waktu);
+  assert.equal(tercatat.id, id);
+  assert.match(tercatat.catatanUjiPemulihan, /^Uji pemulihan 13 Oktober 2026/);
+  assert.equal(
+    "catatanUjiPemulihan" in tercatat,
+    true,
+    "baris riwayat backuplah yang membawa hasilnya",
+  );
+
+  // Tersimpan sungguhan di barisnya, bukan hanya dijawab sekali lalu hilang.
+  const {
+    rows: [disimpan],
+  } = await pool.query(
+    "SELECT catatan_uji_pemulihan FROM backup_runs WHERE id = $1",
+    [id],
+  );
+  assert.equal(disimpan.catatan_uji_pemulihan, tercatat.catatanUjiPemulihan);
+
+  // Kolom itu ikut dibaca riwayat backup, jadi halaman bisa menampilkannya.
+  const status = await ambilStatusBackup(5);
+  for (const baris of status.terbaru)
+    assert.ok(
+      "catatanUjiPemulihan" in baris,
+      "riwayat backup membawa catatan ujinya",
+    );
+
+  // Uji ulang menimpa catatan sebelumnya (yang dibaca keadaan terakhir), tetapi
+  // tidak menyentuh `pesan` yang mencatat hasil backup-nya sendiri.
+  const ulang = await catatHasilUjiPemulihan(
+    id,
+    hasilUji({
+      berhasil: false,
+      pesan: "pg_restore: error: unexpected EOF",
+      pemeriksaan: [],
+      catatan: "pg_restore: error: unexpected EOF",
+    }),
+    waktu,
+  );
+  assert.match(ulang.catatanUjiPemulihan, /pemulihan berkas ini gagal/);
+  const {
+    rows: [sesudah],
+  } = await pool.query(
+    "SELECT pesan, catatan_uji_pemulihan FROM backup_runs WHERE id = $1",
+    [id],
+  );
+  assert.equal(sesudah.pesan, "dump-nya sendiri berhasil");
+  assert.equal(sesudah.catatan_uji_pemulihan, ulang.catatanUjiPemulihan);
+
+  // Baris yang sudah tidak ada bukan galat: ujinya toh sudah jalan.
+  assert.equal(
+    await catatHasilUjiPemulihan(randomUUID(), hasilUji(), waktu),
+    null,
   );
 });

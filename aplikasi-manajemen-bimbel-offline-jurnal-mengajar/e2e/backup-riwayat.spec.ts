@@ -815,6 +815,40 @@ test("endpoint uji pemulihan memulihkan berkas terpilih dan menjaga pengamananny
     ).toEqual([false, false, false, false]);
     expect(data.catatan).toMatch(/tidak bisa diperiksa/);
 
+    // Hasilnya ikut dicatat ke baris backup yang diuji, jadi riwayat backup
+    // menyimpan bukti uji terakhirnya — bukan cuma dijawab sekali lalu hilang.
+    expect(data.tercatat.id).toBe(sukses.rows[0].id);
+    expect(data.tercatat.catatanUjiPemulihan).toMatch(/^Uji pemulihan /);
+    expect(data.tercatat.catatanUjiPemulihan).toMatch(
+      /pemulihan berhasil tetapi 4 dari 4 pemeriksaan gagal/,
+    );
+    const {
+      rows: [tersimpan],
+    } = await db.query(
+      "SELECT catatan_uji_pemulihan FROM backup_runs WHERE id = $1",
+      [sukses.rows[0].id],
+    );
+    expect(tersimpan.catatan_uji_pemulihan).toBe(
+      data.tercatat.catatanUjiPemulihan,
+    );
+
+    // Riwayat backup membawa catatan itu juga, lengkap dengan bacaan yang
+    // bentuknya lama, jadi yang membacanya bisa membedakan "belum pernah diuji"
+    // (`null`) dari "sudah diuji dan hasilnya begini".
+    const riwayat = await request.get("/api/pengaturan/backup?limit=100", {
+      headers,
+    });
+    expect(riwayat.status()).toBe(200);
+    const { terbaru } = (await riwayat.json()).data;
+    for (const satu of terbaru)
+      expect(satu).toHaveProperty("catatanUjiPemulihan");
+    const barisUji = terbaru.find(
+      (satu: { id: string }) => satu.id === sukses.rows[0].id,
+    );
+    expect(barisUji.catatanUjiPemulihan).toBe(
+      data.tercatat.catatanUjiPemulihan,
+    );
+
     // Berkas yang tidak layak diuji dan id asing tidak pernah dijalankan.
     for (const id of [gagalBaris.rows[0].id, randomUUID()]) {
       const ditolak = await request.post(
