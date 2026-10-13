@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "90ecde94550f256fea100c01e274483237089f9c",
+  "generatedForCommit": "72f52e5aa32d6d6336e173643cae7d3343f2653c",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -210,7 +210,7 @@
       "path": "docs/peta-data-tiruan.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 32528
+      "size": 33984
     },
     {
       "path": "docs/prompts.md",
@@ -774,7 +774,7 @@
       "path": "e2e/status-ci.spec.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 9678
+      "size": 11235
     },
     {
       "path": "e2e/uji-pemulihan.spec.ts",
@@ -1182,7 +1182,7 @@
       "path": "src/app/(protected)/app/pengaturan/ci/page.tsx",
       "reason": "changed",
       "language": "typescript",
-      "size": 4935
+      "size": 5007
     },
     {
       "path": "src/app/(protected)/app/pengaturan/ekspor/page.tsx",
@@ -1984,9 +1984,9 @@
     },
     {
       "path": "src/components/daftar-riwayat-ci.tsx",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 2971
+      "size": 4052
     },
     {
       "path": "src/components/daftar-riwayat-jurnal.tsx",
@@ -2325,6 +2325,12 @@
       "size": 7725
     },
     {
+      "path": "src/components/rincian-jalan-ci.tsx",
+      "reason": "new",
+      "language": "typescript",
+      "size": 2896
+    },
+    {
       "path": "src/components/rincian-kartu.tsx",
       "reason": "needs_summary",
       "language": "typescript",
@@ -2332,7 +2338,7 @@
     },
     {
       "path": "src/components/rincian-kegagalan-ci.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 4475
     },
@@ -2710,7 +2716,7 @@
     },
     {
       "path": "src/lib/ci-otomatis.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 10049
     },
@@ -2794,7 +2800,7 @@
     },
     {
       "path": "src/lib/mock-ci-otomatis.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 8588
     },
@@ -3268,7 +3274,7 @@
     },
     {
       "path": "tests/ci-otomatis.test.mjs",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 11648
     },
