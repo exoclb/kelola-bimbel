@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "afecf32441df6874b36b60b3080328a660f9ab7d",
+  "generatedForCommit": "bf20a1a6e890224b229bb62e5848e72876dc31f5",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -180,7 +180,7 @@
       "path": "docs/backend.md",
       "reason": "changed",
       "language": "markdown",
-      "size": 98310
+      "size": 98615
     },
     {
       "path": "docs/deploy-coolify.md",
@@ -640,9 +640,9 @@
     },
     {
       "path": "e2e/backup-riwayat.spec.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 16210
+      "size": 17569
     },
     {
       "path": "e2e/gaji.spec.ts",
@@ -802,9 +802,9 @@
     },
     {
       "path": "playwright.config.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 1055
+      "size": 1567
     },
     {
       "path": "postcss.config.mjs",
@@ -1534,9 +1534,9 @@
     },
     {
       "path": "src/app/api/pengaturan/backup/route.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 743
+      "size": 1681
     },
     {
       "path": "src/app/api/pengaturan/gaji/route.ts",
@@ -2874,7 +2874,7 @@
       "path": "src/services/backup.service.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 11811
+      "size": 11851
     },
     {
       "path": "src/services/cabang.service.ts",
@@ -3124,9 +3124,9 @@
     },
     {
       "path": "tests/backup-service.test.mjs",
-      "reason": "new",
+      "reason": "changed",
       "language": "javascript",
-      "size": 9981
+      "size": 10235
     },
     {
       "path": "tests/beda-hari.test.mjs",
