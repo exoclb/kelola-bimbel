@@ -84,8 +84,7 @@ export const VARIABEL_LINGKUNGAN: readonly MetadataVariabelLingkungan[] = [
   {
     nama: "SMTP_FROM",
     kategori: "opsional",
-    keterangan:
-      "Alamat pengirim pada email; kalau kosong memakai SMTP_USER.",
+    keterangan: "Alamat pengirim pada email; kalau kosong memakai SMTP_USER.",
   },
   {
     nama: "SMTP_FROM_NAME",
@@ -121,6 +120,16 @@ export const VARIABEL_LINGKUNGAN: readonly MetadataVariabelLingkungan[] = [
     kategori: "opsional",
     keterangan:
       "Awalan nama container Docker Compose, supaya beberapa salinan proyek tidak bentrok.",
+  },
+  // Saklar mode rilis (Fase 2 roadmap). Opsional: kalau kosong, mode rilis
+  // mengikuti NODE_ENV. Dipakai src/lib/mode-rilis.ts — saklar halaman contoh
+  // di src/lib/halaman-contoh.ts membacanya lewat util itu. Halaman status
+  // hanya menampilkan terpasang/belum, tidak nilainya.
+  {
+    nama: "MODE_RILIS",
+    kategori: "opsional",
+    keterangan:
+      "Penanda mode rilis: true menyembunyikan halaman contoh, false menampilkannya. Kalau kosong, mengikuti NODE_ENV (production berarti rilis).",
   },
   {
     nama: "NODE_ENV",

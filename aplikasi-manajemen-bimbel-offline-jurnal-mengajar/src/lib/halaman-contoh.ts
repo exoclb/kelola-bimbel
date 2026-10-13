@@ -4,7 +4,8 @@
 // aplikasi bimbel — jadi rute maupun tautannya tidak boleh ikut terlihat di
 // penerapan rilis. Daftar dan saklarnya sengaja dikumpulkan di satu berkas
 // supaya menu (`src/lib/mock-menu.ts`) dan penjaga rutenya memakai sumber yang
-// sama: cukup satu tempat yang berubah saat saklar sungguhan datang.
+// sama: cukup satu tempat yang berubah kalau daftarnya bergeser.
+import { modeRilisAktif } from "@/lib/mode-rilis";
 
 /**
  * Rute halaman contoh, ditulis penuh seperti alamat di peramban. Menu memakai
@@ -14,17 +15,19 @@
 export const HALAMAN_CONTOH = ["/app/contoh-status"] as const;
 
 /**
- * Saklar halaman contoh — masih data tiruan.
+ * Saklar halaman contoh: menyala berarti halaman contoh (beserta tautan
+ * menunya) terjangkau.
  *
- * Nilai sungguhannya nanti dibaca dari pengaturan lingkungan rilis (task
- * "Saklar Mode Rilis"). Sementara itu penanda mode jalan yang sudah ada
- * dipakai lebih dulu: `npm run dev` membuka halaman contoh sebagai acuan
- * tampilan, sedangkan hasil rilis (`next build` + `next start`) menyembunyikan
- * tautan dan rutenya sekaligus — pengguna rilis tidak bisa tersesat ke sana
- * walau alamatnya diketik langsung.
+ * Nilainya ditentukan `src/lib/mode-rilis.ts` dari variabel `MODE_RILIS`, dan
+ * mengikuti `NODE_ENV` kalau variabel itu kosong — jadi `npm run dev` membuka
+ * halaman contoh sebagai acuan tampilan, sedangkan hasil rilis
+ * (`next build` + `next start`) menyembunyikan tautan dan rutenya sekaligus:
+ * pengguna rilis tidak bisa tersesat ke sana walau alamatnya diketik langsung.
+ * Operator bisa memaksa keadaan salah satunya lewat `MODE_RILIS` tanpa
+ * mengubah mode build (mis. `MODE_RILIS=false` saat meninjau hasil rilis).
  */
 export function halamanContohAktif(
   sumber: NodeJS.ProcessEnv = process.env,
 ): boolean {
-  return sumber.NODE_ENV !== "production";
+  return !modeRilisAktif(sumber);
 }

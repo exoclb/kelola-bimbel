@@ -9,9 +9,10 @@ import { expect, test, type APIResponse } from "@playwright/test";
 // rilis yang sama dengan penerapan sungguhan (`npm run build` + `next start`),
 // jadi yang diperiksa memang perilaku rilis.
 //
-// Saklarnya masih data tiruan (mode jalan, lihat `src/lib/halaman-contoh.ts`),
-// dan perilaku sisi pengembangan tidak bisa diperiksa dari sini — bagian itu
-// diuji di `tests/halaman-contoh.test.mjs`.
+// Saklarnya mengikuti mode rilis (`MODE_RILIS`, lihat `src/lib/mode-rilis.ts`);
+// berkas ini sengaja tidak mengubahnya, jadi yang berlaku adalah bawaan untuk
+// server rilis. Sisi pengembangannya diperiksa di `tests/mode-rilis.test.mjs`
+// dan `tests/halaman-contoh.test.mjs`.
 const origin = "http://localhost:3101";
 const headers = { Origin: origin };
 const sandi = "Halaman-contoh-test-123!";

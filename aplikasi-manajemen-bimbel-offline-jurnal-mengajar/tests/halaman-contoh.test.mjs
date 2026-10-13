@@ -7,8 +7,9 @@ import { pasangImporTs } from "./dukungan/impor-ts.mjs";
 
 // Halaman contoh (showcase) hanya boleh terjangkau selama aplikasi belum rilis:
 // pengguna bimbel tidak perlu halaman acuan tampilan. Uji di sini menjaga tiga
-// hal — saklar mock-nya menentukan, tautan menunya ikut tersaring, dan setiap
-// halaman contoh benar-benar dijaga saklar yang sama.
+// hal — saklar mode rilis menentukan, tautan menunya ikut tersaring, dan setiap
+// halaman contoh benar-benar dijaga saklar yang sama. Aturan pembacaan saklarnya
+// sendiri (variabel MODE_RILIS versus NODE_ENV) diuji di tests/mode-rilis.test.mjs.
 //
 // Alias "@/..." milik tsconfig diterjemahkan oleh penerjemah bersama di
 // tests/dukungan/impor-ts.mjs, supaya modul aplikasi bisa diimpor langsung.
