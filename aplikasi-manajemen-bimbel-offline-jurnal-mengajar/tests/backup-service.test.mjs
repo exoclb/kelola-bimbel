@@ -1,10 +1,13 @@
 // Uji penjalanan backup di lapisan layanan (src/services/backup.service.ts):
 // pembacaan pengaturannya, urutan pencatatannya (`berjalan` ditulis lebih dulu),
-// penutupan baris itu menjadi `sukses` atau `gagal` beserta alasannya, dan
-// penyaringan berkas yang siap diuji pemulihan (`ambilBerkasBackupUji`).
+// penutupan baris itu menjadi `sukses` atau `gagal` beserta alasannya,
+// penyaringan berkas yang siap diuji pemulihan (`ambilBerkasBackupUji`), dan
+// pemulihan berkas salinan ke database percobaan (`pulihkanBerkasBackup`) yang
+// menolak menyentuh database aplikasi.
 // Pelaksana perintah diganti di sebagian tes supaya pengujian tidak menuntut
-// `pg_dump` terpasang; dua tes terakhir memakai pelaksana sungguhannya dengan
-// perintah Node kecil sebagai pengganti dump.
+// `pg_dump` maupun `pg_restore` terpasang; tes terakhir bagian pemulihan serta
+// dua tes backup memakai pelaksana sungguhannya dengan perintah Node kecil
+// sebagai pengganti dump.
 //
 // Alias "@/..." milik tsconfig diterjemahkan penerjemah bersama di
 // tests/dukungan/impor-ts.mjs. `npm test` mengaktifkan kondisi `react-server`
@@ -29,10 +32,15 @@ pasangImporTs();
 const {
   ambilBerkasBackupUji,
   bacaKonfigurasiBackup,
+  bacaKonfigurasiPemulihan,
   jalankanBackupDanCatat,
   jalankanPerintahDump,
+  jalankanPerintahPemulihan,
   namaBerkasBackup,
+  namaDatabase,
+  pulihkanBerkasBackup,
   VARIABEL_BACKUP,
+  VARIABEL_PEMULIHAN,
 } = await import("../src/services/backup.service.ts");
 
 const pool = new Pool({
@@ -358,4 +366,164 @@ test("daftar berkas uji pemulihan hanya memuat catatan sukses yang punya berkas"
   // Baris tanpa lokasi itu satu-satunya yang tidak tersentuh `bersihkan()`
   // (penghapusnya menyaring lewat `lokasi`), jadi dibuang di sini.
   await pool.query("DELETE FROM backup_runs WHERE lokasi IS NULL");
+});
+
+test("pengaturan pemulihan dibaca dari lingkungan dan menjaga database aplikasi", () => {
+  const bawaan = bacaKonfigurasiPemulihan({
+    [VARIABEL_PEMULIHAN.database]: "postgres://kelola@db:5432/kelola_restore",
+    DATABASE_URL: "postgres://kelola@db:5432/kelola",
+  });
+  assert.equal(bawaan.databaseTujuan, "kelola_restore");
+  assert.equal(bawaan.pakaiBerkas, false);
+  assert.equal(
+    bawaan.perintah,
+    "pg_restore -d postgres://kelola@db:5432/kelola_restore",
+  );
+  assert.deepEqual(bawaan.variabelBermasalah, []);
+  assert.equal(bawaan.bahaya, null);
+
+  // Perintah yang menyebut berkas sumbernya sendiri dikenali, jadi pelaksana
+  // tidak menambahkan path-nya lagi di belakang.
+  const pakaiBerkas = bacaKonfigurasiPemulihan({
+    [VARIABEL_PEMULIHAN.database]: "postgres://db/kelola_restore",
+    [VARIABEL_PEMULIHAN.perintah]:
+      "docker exec -i db pg_restore -d kelola_restore {file}",
+  });
+  assert.equal(pakaiBerkas.pakaiBerkas, true);
+
+  // Tanpa RESTORE_DATABASE_URL perintahnya tidak lengkap: tujuannya tidak bisa
+  // dipastikan, dan DATABASE_URL produksi tidak boleh dipakai sebagai gantinya.
+  const kosong = bacaKonfigurasiPemulihan({
+    DATABASE_URL: "postgres://db/kelola",
+  });
+  assert.deepEqual(kosong.variabelBermasalah, ["RESTORE_DATABASE_URL"]);
+  assert.equal(kosong.databaseTujuan, null);
+
+  // Tujuan yang sama dengan database aplikasi ditolak sebelum perintahnya jalan.
+  const produksi = bacaKonfigurasiPemulihan({
+    [VARIABEL_PEMULIHAN.database]: "postgres://db/kelola",
+    DATABASE_URL: "postgres://db/kelola",
+  });
+  assert.match(produksi.bahaya, /sama dengan database yang dipakai aplikasi/);
+
+  // Connection string yang tidak terbaca tidak boleh diam-diam dianggap aman.
+  const rusak = bacaKonfigurasiPemulihan({
+    [VARIABEL_PEMULIHAN.database]: "bukan-url",
+  });
+  assert.equal(rusak.databaseTujuan, null);
+  assert.match(rusak.bahaya, /tidak terbaca sebagai connection string/);
+});
+
+test("nama database dibaca dari connection string", () => {
+  assert.equal(
+    namaDatabase("postgres://kelola:sandi@db:5432/kelola_restore"),
+    "kelola_restore",
+  );
+  assert.equal(namaDatabase("postgres://db/"), null);
+  assert.equal(namaDatabase(""), null);
+  assert.equal(namaDatabase("bukan-url"), null);
+});
+
+test("pemulihan menolak tujuan yang menunjuk database aplikasi", async () => {
+  const dipanggil = [];
+  const pelaksana = async (perintah, berkas) => {
+    dipanggil.push({ perintah, berkas });
+    return null;
+  };
+  const siap = (tambahan = {}) => ({
+    perintah: "pg_restore -d kelola_restore",
+    databaseTujuan: "kelola_restore",
+    pakaiBerkas: false,
+    variabelBermasalah: [],
+    bahaya: null,
+    ...tambahan,
+  });
+
+  // Jalur normal: berkas yang diminta diteruskan ke perintahnya apa adanya.
+  const lokasi = berkasUji("pulih-berhasil.dump");
+  const berhasil = await pulihkanBerkasBackup({
+    lokasi,
+    pelaksana,
+    konfigurasi: siap(),
+  });
+  assert.equal(berhasil.berhasil, true);
+  assert.equal(berhasil.pesan, null);
+  assert.equal(berhasil.databaseTujuan, "kelola_restore");
+  assert.deepEqual(dipanggil, [
+    { perintah: "pg_restore -d kelola_restore", berkas: lokasi },
+  ]);
+
+  // Tujuan yang sama dengan database aplikasi tidak pernah dijalankan.
+  dipanggil.length = 0;
+  const ditolak = await pulihkanBerkasBackup({
+    lokasi: berkasUji("pulih-produksi.dump"),
+    pelaksana,
+    konfigurasi: siap({
+      bahaya:
+        "Database tujuan pemulihan (kelola) sama dengan database yang dipakai aplikasi; pemulihan dibatalkan.",
+    }),
+  });
+  assert.equal(ditolak.berhasil, false);
+  assert.match(ditolak.pesan, /sama dengan database yang dipakai aplikasi/);
+
+  // Pengaturan yang belum lengkap pun tidak menjalankan apa pun.
+  const belumLengkap = await pulihkanBerkasBackup({
+    lokasi: berkasUji("pulih-kosong.dump"),
+    pelaksana,
+    konfigurasi: siap({ variabelBermasalah: ["RESTORE_DATABASE_URL"] }),
+  });
+  assert.equal(belumLengkap.berhasil, false);
+  assert.match(belumLengkap.pesan, /RESTORE_DATABASE_URL belum diisi/);
+  assert.deepEqual(dipanggil, [], "perintahnya tidak dijalankan sama sekali");
+
+  // Perintah yang melaporkan keluaran gagal dan perintah yang melempar galat
+  // sama-sama berakhir sebagai hasil gagal beserta alasannya.
+  const melaporkan = await pulihkanBerkasBackup({
+    lokasi: berkasUji("pulih-gagal.dump"),
+    pelaksana: async () => "hubungan ke database percobaan ditolak",
+    konfigurasi: siap(),
+  });
+  assert.equal(melaporkan.berhasil, false);
+  assert.match(melaporkan.pesan, /hubungan ke database percobaan ditolak/);
+
+  const melempar = await pulihkanBerkasBackup({
+    lokasi: berkasUji("pulih-melempar.dump"),
+    pelaksana: async () => {
+      throw new Error("pg_restore tidak ditemukan");
+    },
+    konfigurasi: siap(),
+  });
+  assert.equal(melempar.berhasil, false);
+  assert.match(melempar.pesan, /pg_restore tidak ditemukan/);
+});
+
+test("pemulihan sungguhan membaca berkas sumber dan melaporkan kegagalannya", async () => {
+  const sumber = berkasUji("pulih-sumber.dump");
+  const tujuan = berkasUji("pulih-hasil.txt");
+  writeFileSync(sumber, "isi-salinan");
+
+  // Perintah yang menyebut {file} menerima path berkas salinannya.
+  const berhasil = await jalankanPerintahPemulihan(
+    `"${process.execPath}" -e "require('node:fs').copyFileSync(process.argv[1], process.argv[2])" "{file}" "${tujuan}"`,
+    sumber,
+  );
+  assert.equal(berhasil, null);
+  assert.equal(readFileSync(tujuan, "utf8"), "isi-salinan");
+
+  // Perintah yang tidak menyebut {file} tetap diberi berkas sumbernya; tujuan
+  // hasilnya dikirim sebagai argumen supaya path Windows tidak masuk ke
+  // potongan skrip dan terbaca sebagai deret escape.
+  const tanpaPlaceholder = await jalankanPerintahPemulihan(
+    `"${process.execPath}" -e "require('node:fs').appendFileSync(process.argv[1], require('node:fs').readFileSync(process.argv[2], 'utf8').toUpperCase())" "${tujuan}"`,
+    sumber,
+  );
+  assert.equal(tanpaPlaceholder, null);
+  assert.match(readFileSync(tujuan, "utf8"), /isi-salinanISI-SALINAN$/);
+
+  // Perintah yang menolak berkasnya mengembalikan keluarannya sebagai alasan.
+  const ditolak = await jalankanPerintahPemulihan(
+    `"${process.execPath}" -e "process.stderr.write('database tujuan tidak ada');process.exit(1)" "{file}"`,
+    sumber,
+  );
+  assert.match(ditolak, /database tujuan tidak ada/);
 });

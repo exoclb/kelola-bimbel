@@ -152,6 +152,22 @@ export const VARIABEL_LINGKUNGAN: readonly MetadataVariabelLingkungan[] = [
     keterangan:
       "Perintah dump backup, mis. pg_dump -Fc. Kalau kosong, salinan diambil dari DATABASE_URL; pakai {file} kalau perintahnya menulis sendiri ke berkas.",
   },
+  // Variabel uji pemulihan (Fase 3 roadmap). Dipakai
+  // src/services/backup.service.ts saat berkas salinan dimasukkan kembali ke
+  // database percobaan. Halaman status hanya menampilkan terpasang/belum,
+  // tidak nilainya.
+  {
+    nama: "RESTORE_DATABASE_URL",
+    kategori: "opsional",
+    keterangan:
+      "Connection string database percobaan untuk uji pemulihan, mis. kelola_restore. Wajib diisi supaya tujuannya bisa diperiksa dan pemulihan tidak pernah menuju database produksi.",
+  },
+  {
+    nama: "RESTORE_COMMAND",
+    kategori: "opsional",
+    keterangan:
+      "Perintah pemulihan, mis. pg_restore. Kalau kosong, pg_restore dijalankan ke RESTORE_DATABASE_URL; pakai {file} kalau perintahnya membaca berkas salinannya sendiri.",
+  },
   {
     nama: "NODE_ENV",
     kategori: "otomatis",

@@ -24,6 +24,11 @@ PENJADWAL_BACKUP=
 # no `pg_dump`.
 BACKUP_DIR=
 BACKUP_COMMAND=
+# Optional: the recovery test (Settings -> Backup -> Uji Pemulihan) restores a
+# chosen copy into a throwaway database. Point these at that database only — the
+# app refuses when the target name matches the database it is running on.
+RESTORE_DATABASE_URL=
+RESTORE_COMMAND=
 ```
 
 Keep provider-required TLS settings. Do not disable certificate verification. The example credentials are placeholders, not defaults.

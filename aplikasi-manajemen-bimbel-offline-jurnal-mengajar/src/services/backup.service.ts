@@ -397,6 +397,203 @@ export async function jalankanBackupDanCatat(
   return tersimpan;
 }
 
+// --- Memulihkan berkas backup -----------------------------------------------
+//
+// Kebalikan dari penjalanan backup di atas: berkas salinan dimasukkan kembali
+// ke sebuah database percobaan supaya isinya bisa diperiksa. Tujuannya selalu
+// database lain daripada `DATABASE_URL` — memulihkan ke produksi akan menimpa
+// data yang justru mau diselamatkan — jadi perintahnya hanya dijalankan kalau
+// database tujuannya jelas dan berbeda dari database aplikasi.
+
+/** Variabel lingkungan yang mengatur pemulihan berkas backup. */
+export const VARIABEL_PEMULIHAN = {
+  perintah: "RESTORE_COMMAND",
+  database: "RESTORE_DATABASE_URL",
+} as const;
+
+/** Perintah pemulihan bawaan: `pg_restore` membaca salinan `-Fc` ke database. */
+const PERINTAH_PEMULIHAN_BAWAAN = "pg_restore";
+
+/**
+ * Nama database dari sebuah connection string, atau `null` kalau tidak terbaca.
+ * Dipakai hanya untuk membandingkan tujuan pemulihan dengan database aplikasi,
+ * jadi yang dibutuhkan cuma nama di belakang garis miring terakhir.
+ */
+export function namaDatabase(url: string): string | null {
+  try {
+    const nama = new URL(url).pathname.replace(/^\/+/, "");
+    return nama || null;
+  } catch {
+    return null;
+  }
+}
+
+/** Pengaturan pemulihan yang sedang berlaku. */
+export type KonfigurasiPemulihan = {
+  /** Perintah pemulihannya; `{file}` diganti berkas sumber saat dijalankan. */
+  perintah: string;
+  /** Nama database percobaan yang menjadi tujuan pemulihan. */
+  databaseTujuan: string | null;
+  /** true kalau perintahnya menyebut berkas sumbernya sendiri lewat `{file}`. */
+  pakaiBerkas: boolean;
+  /** Variabel yang kosong sehingga perintahnya belum lengkap. */
+  variabelBermasalah: string[];
+  /** Alasan tujuannya tidak boleh dipakai — mis. sama dengan database aplikasi. */
+  bahaya: string | null;
+};
+
+/**
+ * Membaca pengaturan pemulihan dari lingkungan saat dipanggil, bukan saat modul
+ * dimuat — sama seperti `bacaKonfigurasiBackup`.
+ *
+ * `RESTORE_DATABASE_URL` wajib diisi walau perintahnya ditulis sendiri: dari
+ * situlah database tujuannya dibaca untuk memastikan pemulihannya tidak menuju
+ * database yang sedang dipakai aplikasi. Perintah yang belum menyebut `{file}`
+ * diberi berkas sumbernya saat dijalankan.
+ */
+export function bacaKonfigurasiPemulihan(
+  sumber: NodeJS.ProcessEnv = process.env,
+): KonfigurasiPemulihan {
+  const tujuan = sumber[VARIABEL_PEMULIHAN.database]?.trim() ?? "";
+  const tertulis = sumber[VARIABEL_PEMULIHAN.perintah]?.trim() ?? "";
+  const variabelBermasalah: string[] = [];
+  if (!tujuan) variabelBermasalah.push(VARIABEL_PEMULIHAN.database);
+
+  const databaseTujuan = tujuan ? namaDatabase(tujuan) : null;
+  const databaseAplikasi = namaDatabase(sumber.DATABASE_URL?.trim() ?? "");
+
+  let bahaya: string | null = null;
+  if (tujuan && !databaseTujuan)
+    bahaya = `${VARIABEL_PEMULIHAN.database} tidak terbaca sebagai connection string, jadi tujuan pemulihannya tidak bisa dipastikan.`;
+  else if (databaseTujuan && databaseTujuan === databaseAplikasi)
+    bahaya = `Database tujuan pemulihan (${databaseTujuan}) sama dengan database yang dipakai aplikasi; pemulihan dibatalkan supaya data yang sedang jalan tidak tertimpa.`;
+
+  const perintah = tertulis || `${PERINTAH_PEMULIHAN_BAWAAN} -d ${tujuan}`;
+
+  return {
+    perintah,
+    databaseTujuan,
+    pakaiBerkas: perintah.includes("{file}"),
+    variabelBermasalah,
+    bahaya,
+  };
+}
+
+/**
+ * Cara menjalankan perintah pemulihan. Dipisah supaya bisa diganti uji dengan
+ * pelaksana palsu, sehingga pengujian tidak menuntut `pg_restore` terpasang.
+ * Yang dikembalikannya alasan kegagalan, atau `null` kalau berhasil.
+ */
+export type PelaksanaPemulihan = (
+  perintah: string,
+  berkas: string,
+) => Promise<string | null>;
+
+/**
+ * Pelaksana sungguhan: menjalankan perintahnya lewat shell dengan berkas sumber
+ * sebagai masukannya, lalu melaporkan keluarannya sebagai alasan kegagalan.
+ *
+ * Berbeda dari penjalanan backup, berkasnya dibaca perintah — bukan disalurkan
+ * aplikasi — jadi perintah yang belum menyebut `{file}` diberi path berkasnya
+ * di belakang (dikutip, supaya path berspasi tetap satu argumen). Keberadaan
+ * berkasnya sengaja tidak diperiksa lebih dulu: direktori backup bisa berada di
+ * mesin lain daripada proses aplikasi, dan perintah yang gagal sudah melaporkan
+ * alasannya sendiri.
+ */
+export function jalankanPerintahPemulihan(
+  perintah: string,
+  berkas: string,
+): Promise<string | null> {
+  return new Promise((selesai) => {
+    const lengkap = perintah.includes("{file}")
+      ? perintah.replaceAll("{file}", berkas)
+      : `${perintah} "${berkas}"`;
+    const anak = spawn(lengkap, {
+      shell: true,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+
+    const keluaran: string[] = [];
+    const tampung = (potongan: Buffer) => {
+      // Cukup untuk menyusun alasan kegagalan; keluaran pemulihan tidak dibaca.
+      if (keluaran.join("").length < 4000) keluaran.push(potongan.toString());
+    };
+    anak.stdout.on("data", tampung);
+    anak.stderr.on("data", tampung);
+
+    anak.on("error", (galat) => selesai(pesanGalatDari(galat.message)));
+    anak.on("close", (kode) =>
+      selesai(kode === 0 ? null : pesanGalatDari(keluaran.join(" "))),
+    );
+  });
+}
+
+/** Hasil satu kali pemulihan dari berkas backup. */
+export type HasilPemulihanData = {
+  berhasil: boolean;
+  /** Alasan kegagalan, `null` kalau berhasil. */
+  pesan: string | null;
+  /** Nama database percobaan tempat berkasnya dipulihkan. */
+  databaseTujuan: string | null;
+  /** Perintah yang dipakai; berkas sumbernya belum tentu tertulis di sini. */
+  perintah: string;
+};
+
+export type OpsiPemulihanData = {
+  /** Berkas salinan yang dipulihkan. */
+  lokasi: string;
+  /** Pengganti pelaksana perintah; uji memakainya supaya tidak butuh pg_restore. */
+  pelaksana?: PelaksanaPemulihan;
+  /** Pengganti pengaturan dari lingkungan. */
+  konfigurasi?: KonfigurasiPemulihan;
+};
+
+/**
+ * Memulihkan satu berkas backup ke database percobaan.
+ *
+ * Seperti `jalankanBackupDanCatat`, fungsi ini tidak melempar galat: pengaturan
+ * yang belum lengkap, tujuan yang menunjuk database aplikasi, dan perintah yang
+ * gagal sama-sama berakhir sebagai hasil `berhasil: false` beserta alasannya —
+ * supaya uji pemulihan di layar bisa melaporkan sebabnya, bukan cuma gagal
+ * diam-diam. Yang dicatat ke riwayat uji bukan urusan fungsi ini.
+ */
+export async function pulihkanBerkasBackup(
+  opsi: OpsiPemulihanData,
+): Promise<HasilPemulihanData> {
+  const konfigurasi = opsi.konfigurasi ?? bacaKonfigurasiPemulihan();
+  const pelaksana = opsi.pelaksana ?? jalankanPerintahPemulihan;
+
+  const gagal = (pesan: string): HasilPemulihanData => ({
+    berhasil: false,
+    pesan: pesanGalatDari(pesan),
+    databaseTujuan: konfigurasi.databaseTujuan,
+    perintah: konfigurasi.perintah,
+  });
+
+  if (konfigurasi.variabelBermasalah.length)
+    return gagal(
+      `${konfigurasi.variabelBermasalah.join(", ")} belum diisi, jadi perintah pemulihan tidak lengkap.`,
+    );
+  if (konfigurasi.bahaya) return gagal(konfigurasi.bahaya);
+
+  let galat: string | null = null;
+  try {
+    const keluaran = await pelaksana(konfigurasi.perintah, opsi.lokasi);
+    galat = keluaran ? pesanGalatDari(keluaran) : null;
+  } catch (kesalahan) {
+    galat = pesanGalatDari(
+      kesalahan instanceof Error ? kesalahan.message : String(kesalahan),
+    );
+  }
+
+  return {
+    berhasil: galat === null,
+    pesan: galat,
+    databaseTujuan: konfigurasi.databaseTujuan,
+    perintah: konfigurasi.perintah,
+  };
+}
+
 /** Kolom pengaturan jadwal seperti yang dipakai penjadwal dan halaman.
  *
  * Bentuknya sengaja sama dengan `JadwalBackup` supaya layar tidak perlu

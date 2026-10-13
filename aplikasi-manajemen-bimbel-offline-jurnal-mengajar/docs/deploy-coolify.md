@@ -103,16 +103,18 @@ sandi di resource Coolify — jangan menyalin nilainya ke berkas repo.
 
 ### 1. Daftar variabel
 
-| Variabel                 | Isi                                             | Catatan                                                                              |
-| ------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `DATABASE_URL`           | connection string **internal** dari Fase 1      | dipakai aplikasi saat melayani permintaan                                            |
-| `BETTER_AUTH_SECRET`     | teks acak minimal 32 karakter                   | dipakai Better Auth untuk menandatangani sesi                                        |
-| `BETTER_AUTH_URL`        | origin publik, mis. `https://bimbel.contoh.com` | **harus** sama dengan alamat yang dibuka browser, tanpa garis miring di akhir        |
-| `MIGRATION_DATABASE_URL` | opsional                                        | hanya bila `DATABASE_URL` melewati pooler; migrasi memakai koneksi langsung          |
-| `MODE_RILIS`             | opsional                                        | penanda mode rilis; di produksi biarkan kosong (lihat catatan di bawah)              |
-| `PENJADWAL_BACKUP`       | opsional                                        | `nonaktif` mematikan penjadwal backup di dalam aplikasi (lihat “Backup terjadwal”)   |
-| `BACKUP_DIR`             | opsional                                        | direktori salinan backup di dalam container; bawaannya `backups` di samping aplikasi |
-| `BACKUP_COMMAND`         | opsional                                        | perintah dump untuk tombol backup manual dan penjadwal, mis. `pg_dump -Fc`           |
+| Variabel                 | Isi                                             | Catatan                                                                                 |
+| ------------------------ | ----------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `DATABASE_URL`           | connection string **internal** dari Fase 1      | dipakai aplikasi saat melayani permintaan                                               |
+| `BETTER_AUTH_SECRET`     | teks acak minimal 32 karakter                   | dipakai Better Auth untuk menandatangani sesi                                           |
+| `BETTER_AUTH_URL`        | origin publik, mis. `https://bimbel.contoh.com` | **harus** sama dengan alamat yang dibuka browser, tanpa garis miring di akhir           |
+| `MIGRATION_DATABASE_URL` | opsional                                        | hanya bila `DATABASE_URL` melewati pooler; migrasi memakai koneksi langsung             |
+| `MODE_RILIS`             | opsional                                        | penanda mode rilis; di produksi biarkan kosong (lihat catatan di bawah)                 |
+| `PENJADWAL_BACKUP`       | opsional                                        | `nonaktif` mematikan penjadwal backup di dalam aplikasi (lihat “Backup terjadwal”)      |
+| `BACKUP_DIR`             | opsional                                        | direktori salinan backup di dalam container; bawaannya `backups` di samping aplikasi    |
+| `BACKUP_COMMAND`         | opsional                                        | perintah dump untuk tombol backup manual dan penjadwal, mis. `pg_dump -Fc`              |
+| `RESTORE_DATABASE_URL`   | opsional                                        | connection string database **percobaan** untuk uji pemulihan, mis. `kelola_restore`     |
+| `RESTORE_COMMAND`        | opsional                                        | perintah pemulihan, mis. `pg_restore`; bawaannya `pg_restore` ke `RESTORE_DATABASE_URL` |
 
 Nilai `PORT` dan `HOSTNAME` tidak perlu diisi: image sudah memakai `3000` dan
 `0.0.0.0`.
@@ -339,6 +341,22 @@ dropdb kelola_restore
 ```
 
 Backup yang belum pernah diuji pulih belum bisa diandalkan.
+
+Perintah yang sama bisa dijalankan aplikasi lewat halaman Pengaturan → Backup →
+Uji Pemulihan, tanpa perlu masuk ke container. Isi dua variabel berikut:
+
+```bash
+RESTORE_DATABASE_URL=postgres://<user>:<sandi>@<host>:5432/kelola_restore
+# opsional; kalau kosong dipakai `pg_restore -d $RESTORE_DATABASE_URL`
+RESTORE_COMMAND="docker exec -i <container> pg_restore -U $POSTGRES_USER -d kelola_restore {file}"
+```
+
+`RESTORE_DATABASE_URL` sengaja diwajibkan walau `RESTORE_COMMAND` ditulis sendiri:
+dari situlah aplikasi tahu nama database tujuannya, dan pemulihannya
+**dibatalkan** kalau namanya sama dengan database yang sedang dipakai aplikasi —
+percobaan yang salah tulis jangan sampai menimpa data produksi. Isi `{file}` pada
+`RESTORE_COMMAND` kalau perintahnya sudah menyebut berkas salinannya sendiri;
+kalau tidak, path berkas itu ditambahkan di belakang perintah.
 
 ## Fase 5 — Panduan & Uji Coba Go-live
 
