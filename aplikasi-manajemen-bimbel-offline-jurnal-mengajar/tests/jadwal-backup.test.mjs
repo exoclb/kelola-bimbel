@@ -21,8 +21,13 @@ pasangImporTs();
 
 const { ambilJadwalBackup, simpanJadwalBackup } =
   await import("../src/services/backup.service.ts");
-const { JADWAL_BACKUP_BAWAAN, jadwalTerakhir } =
-  await import("../src/lib/jadwal-backup.ts");
+const {
+  JADWAL_BACKUP_BAWAAN,
+  jadwalBerikutnya,
+  jadwalTerakhir,
+  labelZona,
+  ringkasanJadwal,
+} = await import("../src/lib/jadwal-backup.ts");
 const { jadwalBackupSchema } = await import("../src/validators/pengaturan.ts");
 
 const pool = new Pool({
@@ -227,6 +232,91 @@ test("validator jadwal menerima isian lengkap dan menolak yang salah", () => {
 // --- Slot jadwal yang sedang ditunggu penjadwal -----------------------------
 
 /** Jadwal harian pukul 02.00 WIB, sama dengan bawaan aplikasi. */
+// Ringkasan dan nama zona dipakai formulir jadwal serta kartu ringkasan di
+// halaman Backup; perhitungan "jadwal berikutnya" dipakai formulir untuk
+// menunjukkan kapan jadwal yang sedang diisi akan jalan. Ketiganya murni
+// perhitungan waktu, jadi diuji langsung — dulu diuji lewat berkas data tiruan
+// yang kini sudah tidak ada.
+test("ringkasan jadwal memakai jam dan nama zona waktunya", () => {
+  assert.equal(
+    ringkasanJadwal(JADWAL_BACKUP_BAWAAN),
+    "Setiap hari pukul 02.00 WIB",
+  );
+  assert.equal(
+    ringkasanJadwal({
+      ...JADWAL_BACKUP_BAWAAN,
+      jam: "23:30",
+      zonaWaktu: "Asia/Makassar",
+    }),
+    "Setiap hari pukul 23.30 WITA",
+  );
+});
+
+test("nama zona pendek dikenali pembaca Indonesia", () => {
+  assert.equal(labelZona("Asia/Jakarta"), "WIB");
+  assert.equal(labelZona("Asia/Makassar"), "WITA");
+  assert.equal(labelZona("Asia/Jayapura"), "WIT");
+});
+
+test("jadwal berikutnya masih hari ini kalau jamnya belum lewat", () => {
+  // 13 Okt 2026, 01.00 WIB — satu jam sebelum jadwalnya.
+  assert.equal(
+    jadwalBerikutnya(
+      JADWAL_BACKUP_BAWAAN,
+      new Date("2026-10-12T18:00:00Z"),
+    ).toISOString(),
+    "2026-10-12T19:00:00.000Z", // 13 Okt 02.00 WIB
+  );
+});
+
+test("jadwal berikutnya pindah ke besok kalau jamnya sudah lewat", () => {
+  // 13 Okt 2026, 03.00 WIB.
+  assert.equal(
+    jadwalBerikutnya(
+      JADWAL_BACKUP_BAWAAN,
+      new Date("2026-10-12T20:00:00Z"),
+    ).toISOString(),
+    "2026-10-13T19:00:00.000Z", // 14 Okt 02.00 WIB
+  );
+});
+
+test("jam yang pas dihitung sebagai jadwal besok, bukan sekarang", () => {
+  assert.equal(
+    jadwalBerikutnya(
+      JADWAL_BACKUP_BAWAAN,
+      new Date("2026-10-12T19:00:00Z"),
+    ).toISOString(),
+    "2026-10-13T19:00:00.000Z",
+  );
+});
+
+test("perhitungannya mengikuti zona waktu jadwal, bukan zona server", () => {
+  // Satu waktu yang sama: 13 Okt 01.00 WIB, tetapi sudah 02.00 WITA.
+  const sekarang = new Date("2026-10-12T18:00:00Z");
+  assert.equal(
+    jadwalBerikutnya(JADWAL_BACKUP_BAWAAN, sekarang).toISOString(),
+    "2026-10-12T19:00:00.000Z", // masih hari ini
+  );
+  assert.equal(
+    jadwalBerikutnya(
+      { ...JADWAL_BACKUP_BAWAAN, zonaWaktu: "Asia/Makassar" },
+      sekarang,
+    ).toISOString(),
+    "2026-10-13T18:00:00.000Z", // besok 02.00 WITA
+  );
+});
+
+test("lewat tengah malam tetap menunjuk dini hari berikutnya", () => {
+  // 12 Okt 2026, 23.30 WIB — dua setengah jam lagi.
+  assert.equal(
+    jadwalBerikutnya(
+      JADWAL_BACKUP_BAWAAN,
+      new Date("2026-10-12T16:30:00Z"),
+    ).toISOString(),
+    "2026-10-12T19:00:00.000Z", // 13 Okt 02.00 WIB
+  );
+});
+
 const JADWAL_HARIAN = JADWAL_BACKUP_BAWAAN;
 
 test("jadwal terakhir menunjuk slot kemarin selama jamnya belum lewat", () => {

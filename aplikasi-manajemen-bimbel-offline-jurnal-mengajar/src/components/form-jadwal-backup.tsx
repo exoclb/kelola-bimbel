@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { AlertTriangle, CalendarClock, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,7 +20,8 @@ import {
   jadwalBerikutnya,
   ringkasanJadwal,
   type JadwalBackup,
-} from "@/lib/mock-backup";
+} from "@/lib/jadwal-backup";
+import { pesanGalatApi } from "@/lib/pesan-api";
 
 /** Zona waktu Indonesia yang bisa dipilih penjadwal. */
 const ZONA_WAKTU = [
@@ -47,13 +49,17 @@ function waktuBerikutnya(jadwal: JadwalBackup) {
  * Formulir pengaturan jadwal backup: menyalakan/mematikan backup otomatis,
  * jam dan zona waktunya, retensi, serta tempat salinannya.
  *
- * Jadwalnya masih data tiruan (`src/lib/mock-backup.ts`): yang "disimpan" di
- * sini baru keadaan di layar, dan penjadwal sungguhan tetap dijalankan di
- * server. Selama diisi, ringkasan di atas formulir ikut berubah supaya jam
- * serta zona waktunya bisa dicek sebelum disimpan.
+ * Nilai awalnya datang dari server (`ambilJadwalBackup()` di
+ * `src/services/backup.service.ts`) dan simpanannya dikirim ke
+ * `PUT /api/pengaturan/backup/jadwal`. Selama diisi, ringkasan di atas
+ * formulir ikut berubah supaya jam serta zona waktunya bisa dicek sebelum
+ * disimpan; penjadwal di aplikasi membaca ulang barisnya pada pemeriksaan
+ * berikutnya (lihat `src/services/penjadwal-backup.service.ts`), jadi jadwal
+ * baru langsung berlaku tanpa menyalakan ulang server.
  */
 export function FormJadwalBackup({ jadwal }: { jadwal: JadwalBackup }) {
   const idForm = useId();
+  const router = useRouter();
   const [aktif, setAktif] = useState(jadwal.aktif);
   const [jam, setJam] = useState(jadwal.jam);
   const [zonaWaktu, setZonaWaktu] = useState(jadwal.zonaWaktu);
@@ -61,6 +67,8 @@ export function FormJadwalBackup({ jadwal }: { jadwal: JadwalBackup }) {
   const [tujuan, setTujuan] = useState(jadwal.tujuan);
   const [masalah, setMasalah] = useState<Masalah[]>([]);
   const [tersimpan, setTersimpan] = useState<JadwalBackup | null>(null);
+  const [menyimpan, setMenyimpan] = useState(false);
+  const [galat, setGalat] = useState("");
 
   // Rangka jadwal dari isian sekarang: dipakai ringkasan dan perkiraan jadwal
   // berikutnya, sedangkan penyimpanannya sendiri menunggu tombol simpan.
@@ -75,7 +83,7 @@ export function FormJadwalBackup({ jadwal }: { jadwal: JadwalBackup }) {
   const lengkap =
     jamTerbaca && Number.isInteger(Number(retensi)) && tujuan.trim() !== "";
 
-  function simpan(event: FormEvent<HTMLFormElement>) {
+  async function simpan(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     // Semua isian yang bermasalah ditampilkan sekaligus.
@@ -119,7 +127,36 @@ export function FormJadwalBackup({ jadwal }: { jadwal: JadwalBackup }) {
     }
 
     setMasalah([]);
-    setTersimpan({ ...rangka, retensiHari: angka });
+    setGalat("");
+    setMenyimpan(true);
+    try {
+      const jawaban = await fetch("/api/pengaturan/backup/jadwal", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...rangka, retensiHari: angka }),
+      });
+
+      if (!jawaban.ok) {
+        setGalat(
+          await pesanGalatApi(
+            jawaban,
+            "Jadwal backup belum bisa disimpan. Coba lagi sebentar lagi.",
+          ),
+        );
+        return;
+      }
+
+      // Yang ditampilkan di kartu konfirmasi adalah hasil simpan dari server,
+      // bukan isian di layar, supaya terlihat kalau server menyesuaikannya.
+      const isi = (await jawaban.json()) as { data: JadwalBackup };
+      setTersimpan(isi.data);
+      // Ringkasan salinan terakhir dan kartu di atas formulir ikut disegarkan.
+      router.refresh();
+    } catch {
+      setGalat("Jadwal backup belum bisa disimpan. Periksa koneksinya.");
+    } finally {
+      setMenyimpan(false);
+    }
   }
 
   const salah = (field: string) =>
@@ -147,7 +184,7 @@ export function FormJadwalBackup({ jadwal }: { jadwal: JadwalBackup }) {
             nilai: tersimpan.tujuan,
           },
         ]}
-        catatan="Perubahannya belum dikirim ke server — penjadwal sungguhan masih dijalankan di server (lihat docs/deploy-coolify.md), jadi halaman ini masih memakai jadwal tiruan."
+        catatan="Jadwal ini tersimpan di server dan dipakai penjadwal di aplikasi, yang memeriksanya tiap menit — jadi backup otomatis mengikuti jadwal ini tanpa perlu menyalakan ulang server. Salinan ke penyimpanan terpisah dan aturan retensi berkas tetap diatur di sisi server (lihat docs/deploy-coolify.md)."
         onUbahLagi={() => setTersimpan(null)}
       />
     );
@@ -265,6 +302,15 @@ export function FormJadwalBackup({ jadwal }: { jadwal: JadwalBackup }) {
             </p>
           </div>
 
+          {galat !== "" && (
+            <p
+              role="alert"
+              className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm leading-6 text-destructive"
+            >
+              {galat}
+            </p>
+          )}
+
           {masalah.length > 0 && (
             <div
               role="alert"
@@ -282,9 +328,9 @@ export function FormJadwalBackup({ jadwal }: { jadwal: JadwalBackup }) {
             </div>
           )}
 
-          <Button type="submit" size="aksi">
+          <Button type="submit" size="aksi" disabled={menyimpan}>
             <Save aria-hidden="true" />
-            Simpan jadwal
+            {menyimpan ? "Menyimpan…" : "Simpan jadwal"}
           </Button>
         </form>
       </CardContent>

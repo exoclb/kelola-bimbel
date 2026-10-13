@@ -8,9 +8,11 @@ import { DaftarRiwayatBackup } from "@/components/daftar-riwayat-backup";
 import { FormJadwalBackup } from "@/components/form-jadwal-backup";
 import { RingkasanBackupTerakhir } from "@/components/ringkasan-backup-terakhir";
 import { PesanKosong } from "@/components/status-antarmuka";
-import { getJadwalBackup } from "@/lib/mock-backup";
 import { requirePermission } from "@/lib/session";
-import { ambilStatusBackup } from "@/services/backup.service";
+import {
+  ambilJadwalBackup,
+  ambilStatusBackup,
+} from "@/services/backup.service";
 
 export const metadata: Metadata = { title: "Backup Database" };
 
@@ -18,10 +20,10 @@ export default async function BackupDatabasePage() {
   // Status backup menyangkut seluruh bimbel, jadi hanya owner/admin. Izin yang
   // sama dengan halaman pengaturan lain; akun lain melihat halaman tidak ada.
   await requirePermission({ pengaturan: ["read"] });
-  const status = await ambilStatusBackup();
-  // Jadwalnya masih data tiruan (src/lib/mock-backup.ts): bagian modul backup
-  // yang belum punya tempat penyimpanan di aplikasi.
-  const jadwal = getJadwalBackup();
+  const [status, jadwal] = await Promise.all([
+    ambilStatusBackup(),
+    ambilJadwalBackup(),
+  ]);
 
   const kartu = [
     {
@@ -57,9 +59,10 @@ export default async function BackupDatabasePage() {
         Backup Database
       </h1>
       <p className="mt-3 text-base leading-7 text-muted-foreground">
-        Salinan database dibuat terjadwal di server. Tabel di bawah menampilkan
-        catatan yang ditulis proses backup, supaya backup yang gagal atau
-        tertinggal cepat terlihat.
+        Salinan database dibuat terjadwal oleh aplikasi ini sendiri. Jadwalnya
+        diatur di bawah; tabel di halaman ini menampilkan catatan yang ditulis
+        tiap proses backup, supaya backup yang gagal atau tertinggal cepat
+        terlihat.
       </p>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -100,11 +103,12 @@ export default async function BackupDatabasePage() {
       )}
 
       <p className="mt-6 text-xs leading-5 text-muted-foreground">
-        Catatan: formulir jadwal dan tombol jalankan backup di atas masih
-        rancangan — jadwal, proses backup, tempat penyimpanan terpisah, aturan
-        retensi, dan uji pemulihan sungguhannya diatur di sisi server (lihat{" "}
-        <code>docs/deploy-coolify.md</code>). Riwayat di halaman ini membaca
-        catatan yang sudah ditulis proses backup.
+        Catatan: aplikasi menjalankan backup menurut jadwal di atas, dan tiap
+        prosesnya menulis satu baris di riwayat ini. Tempat penyimpanan
+        terpisah, retensi berkas, dan uji pemulihan tetap diatur di sisi server
+        (lihat <code>docs/deploy-coolify.md</code>); kalau backup dijadwalkan
+        cron di luar aplikasi, penjadwal di dalamnya dimatikan lewat variabel
+        <code>PENJADWAL_BACKUP</code>.
       </p>
     </div>
   );

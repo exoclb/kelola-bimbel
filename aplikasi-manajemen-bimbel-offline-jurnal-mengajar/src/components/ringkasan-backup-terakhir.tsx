@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { JEDA_JADWAL_JAM, type JadwalBackup } from "@/lib/mock-backup";
+import { JEDA_JADWAL_JAM, type JadwalBackup } from "@/lib/jadwal-backup";
 import {
   kesegaranBackup,
   lamaProses,

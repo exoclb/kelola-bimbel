@@ -180,18 +180,29 @@ test("riwayat backup menampilkan status, lokasi, dan alasan kegagalan", async ({
 });
 
 /**
- * Formulir jadwal: bagian modul backup yang jadwalnya masih data tiruan
- * (src/lib/mock-backup.ts) tetap tampil lengkap bersama riwayat sungguhan,
- * supaya bentuk halaman modulnya terlihat utuh sebelum pengaturan jadwal
- * tersambung ke server.
+ * Formulir jadwal terisi dari pengaturan yang berlaku di server: selama
+ * `backup_settings` masih kosong, yang muncul adalah jadwal bawaan, sedangkan
+ * riwayat backup sungguhan tetap tampil di halaman yang sama.
  */
-test("form jadwal backup terisi dari data tiruan", async ({
+test("form jadwal backup terisi dari jadwal yang berlaku", async ({
   page,
   request,
 }) => {
   const email = await daftar(request, "Owner Jadwal Backup");
   await setRole(email, "owner");
   await masuk(request, email);
+
+  // Pemasangan baru: belum ada pengaturan tersimpan, jadi yang terbaca adalah
+  // jadwal bawaannya.
+  const db = new Pool({
+    connectionString: process.env.STARTER_TEST_DATABASE_URL,
+    max: 1,
+  });
+  try {
+    await db.query("DELETE FROM backup_settings");
+  } finally {
+    await db.end();
+  }
 
   await page.goto("/sign-in");
   await page.getByLabel("Email", { exact: true }).fill(email);
@@ -205,7 +216,7 @@ test("form jadwal backup terisi dari data tiruan", async ({
   });
   await expect(kartu).toHaveCount(1);
 
-  // Jadwal contoh: harian 02.00 WIB, retensi 30 hari, salinan di server.
+  // Jadwal bawaan: harian 02.00 WIB, retensi 30 hari, salinan di server.
   await expect(
     kartu.getByRole("checkbox", { name: "Jalankan backup otomatis" }),
   ).toBeChecked();
@@ -223,17 +234,22 @@ test("form jadwal backup terisi dari data tiruan", async ({
 });
 
 /**
- * Formulir jadwal bisa diisi dan diringkas sambil diubah, tapi isian yang salah
- * ditahan lebih dulu; yang "tersimpan" pun masih keadaan di layar, bukan
- * perubahan di server.
+ * Formulir jadwal menyimpan pengaturannya ke server: isian yang salah ditahan
+ * lebih dulu tanpa menulis apa pun, sedangkan isian yang sah tersimpan di
+ * `backup_settings` dan masih terbaca setelah halaman dimuat ulang.
  */
-test("form jadwal backup mengubah ringkasan dan menolak isian yang salah", async ({
+test("form jadwal backup menyimpan pengaturannya ke server", async ({
   page,
   request,
 }) => {
   const email = await daftar(request, "Owner Ubah Jadwal Backup");
   await setRole(email, "owner");
   await masuk(request, email);
+
+  const db = new Pool({
+    connectionString: process.env.STARTER_TEST_DATABASE_URL,
+    max: 1,
+  });
 
   await page.goto("/sign-in");
   await page.getByLabel("Email", { exact: true }).fill(email);
@@ -266,26 +282,73 @@ test("form jadwal backup mengubah ringkasan dan menolak isian yang salah", async
   await expect(peringatan).toContainText("Tulis path lengkap di server");
   await expect(kartu.getByText("Jadwal backup tersimpan")).toHaveCount(0);
 
-  // Setelah diperbaiki, jadwalnya "tersimpan" sebagai tampilan sementara.
-  await ketikJam(kartu.getByLabel("Jam mulai"), "03:30");
-  await kartu.getByLabel("Retensi (hari)").fill("45");
-  await kartu.getByLabel("Tempat penyimpanan").fill("/var/backups/kelola-baru");
-  await kartu.getByRole("button", { name: "Simpan jadwal" }).click();
+  try {
+    // Isian yang ditahan belum menulis apa pun ke server.
+    const { rows: kosong } = await db.query("SELECT jam FROM backup_settings");
+    expect(kosong).toHaveLength(0);
 
-  const konfirmasi = page.locator('[data-slot="card"]').filter({
-    has: page.getByText("Jadwal backup tersimpan", { exact: true }),
-  });
-  await expect(konfirmasi.getByText("45 hari", { exact: true })).toBeVisible();
-  await expect(konfirmasi.getByText("/var/backups/kelola-baru")).toBeVisible();
-  await expect(
-    konfirmasi.getByText("Setiap hari pukul 03.30 WIB"),
-  ).toBeVisible();
-  await expect(konfirmasi.getByText(/belum dikirim ke server/)).toBeVisible();
+    // Setelah diperbaiki, jadwalnya benar-benar tersimpan.
+    await ketikJam(kartu.getByLabel("Jam mulai"), "03:30");
+    await kartu.getByLabel("Retensi (hari)").fill("45");
+    await kartu
+      .getByLabel("Tempat penyimpanan")
+      .fill("/var/backups/kelola-baru");
+    await kartu.getByRole("button", { name: "Simpan jadwal" }).click();
 
-  // "Ubah lagi" mengembalikan formulir bersama isian terakhirnya.
-  await konfirmasi.getByRole("button", { name: "Ubah lagi" }).click();
-  await expect(kartu.getByLabel("Jam mulai")).toHaveValue("03:30");
-  await expect(kartu.getByLabel("Retensi (hari)")).toHaveValue("45");
+    const konfirmasi = page.locator('[data-slot="card"]').filter({
+      has: page.getByText("Jadwal backup tersimpan", { exact: true }),
+    });
+    await expect(
+      konfirmasi.getByText("45 hari", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      konfirmasi.getByText("/var/backups/kelola-baru"),
+    ).toBeVisible();
+    await expect(
+      konfirmasi.getByText("Setiap hari pukul 03.30 WIB"),
+    ).toBeVisible();
+    await expect(
+      konfirmasi.getByText(/dipakai penjadwal di aplikasi/),
+    ).toBeVisible();
+
+    // Baris tunggalnya benar-benar berubah, bukan cuma tampilan di layar.
+    const { rows } = await db.query(
+      "SELECT aktif, jam, zona_waktu, retensi_hari, tujuan FROM backup_settings",
+    );
+    expect(rows).toEqual([
+      {
+        aktif: true,
+        jam: "03:30",
+        zona_waktu: "Asia/Jakarta",
+        retensi_hari: 45,
+        tujuan: "/var/backups/kelola-baru",
+      },
+    ]);
+
+    // "Ubah lagi" mengembalikan formulir bersama isian terakhirnya.
+    await konfirmasi.getByRole("button", { name: "Ubah lagi" }).click();
+    await expect(kartu.getByLabel("Jam mulai")).toHaveValue("03:30");
+    await expect(kartu.getByLabel("Retensi (hari)")).toHaveValue("45");
+
+    // Muat ulang: yang tampil adalah pengaturan dari server, bukan isian layar.
+    await page.reload();
+    const kartuMuatUlang = page.locator('[data-slot="card"]').filter({
+      has: page.getByText("Jadwal backup", { exact: true }),
+    });
+    await expect(kartuMuatUlang.getByLabel("Jam mulai")).toHaveValue("03:30");
+    await expect(kartuMuatUlang.getByLabel("Retensi (hari)")).toHaveValue("45");
+    await expect(kartuMuatUlang.getByLabel("Tempat penyimpanan")).toHaveValue(
+      "/var/backups/kelola-baru",
+    );
+    await expect(
+      kartuMuatUlang.getByText("Setiap hari pukul 03.30 WIB"),
+    ).toBeVisible();
+  } finally {
+    // Kembalikan ke jadwal bawaan supaya tes berikutnya di berkas ini melihat
+    // keadaan pemasangan baru.
+    await db.query("DELETE FROM backup_settings");
+    await db.end();
+  }
 });
 
 /**
@@ -458,5 +521,126 @@ test("endpoint pemicu backup manual menjalankan dump dan mencatat statusnya", as
   await masuk(request, emailGuru);
   expect(
     (await request.post("/api/pengaturan/backup", { headers })).status(),
+  ).toBe(403);
+});
+
+/**
+ * Endpoint jadwal backup: owner menyimpan pengaturannya dan membacanya kembali,
+ * isian yang tidak masuk akal ditolak 422, dan akun yang tidak boleh membuka
+ * halaman pengaturan tidak bisa membacanya maupun mengubahnya.
+ */
+test("endpoint jadwal backup menyimpan untuk owner dan menolak akun lain", async ({
+  request,
+}) => {
+  const email = await daftar(request, "Owner Jadwal Endpoint");
+  await setRole(email, "owner");
+  await masuk(request, email);
+
+  const db = new Pool({
+    connectionString: process.env.STARTER_TEST_DATABASE_URL,
+    max: 1,
+  });
+  try {
+    // Belum pernah disimpan: yang dijawab adalah jadwal bawaannya.
+    await db.query("DELETE FROM backup_settings");
+    const bawaan = await request.get("/api/pengaturan/backup/jadwal", {
+      headers,
+    });
+    expect(bawaan.status()).toBe(200);
+    expect((await bawaan.json()).data).toEqual({
+      aktif: true,
+      jam: "02:00",
+      zonaWaktu: "Asia/Jakarta",
+      retensiHari: 30,
+      tujuan: "/var/backups/kelola",
+    });
+
+    const disimpan = await request.put("/api/pengaturan/backup/jadwal", {
+      headers,
+      data: {
+        aktif: false,
+        jam: "04:45",
+        zonaWaktu: "Asia/Makassar",
+        retensiHari: 7,
+        tujuan: "/var/backups/bimbel",
+      },
+    });
+    expect(disimpan.status()).toBe(200);
+    expect((await disimpan.json()).data).toEqual({
+      aktif: false,
+      jam: "04:45",
+      zonaWaktu: "Asia/Makassar",
+      retensiHari: 7,
+      tujuan: "/var/backups/bimbel",
+    });
+
+    // Yang tersimpan benar-benar satu baris di tabelnya.
+    const { rows } = await db.query(
+      "SELECT aktif, jam, zona_waktu, retensi_hari, tujuan FROM backup_settings",
+    );
+    expect(rows).toEqual([
+      {
+        aktif: false,
+        jam: "04:45",
+        zona_waktu: "Asia/Makassar",
+        retensi_hari: 7,
+        tujuan: "/var/backups/bimbel",
+      },
+    ]);
+
+    // Jam, zona, retensi, dan tujuan yang tidak sah ditolak tanpa mengubah
+    // baris yang sudah ada.
+    for (const isian of [
+      { jam: "25:00" },
+      { jam: "04.45" },
+      { zonaWaktu: "Asia/Jakartaa" },
+      { retensiHari: 0 },
+      { retensiHari: 366 },
+      { tujuan: "backups/bimbel" },
+    ]) {
+      const tolak = await request.put("/api/pengaturan/backup/jadwal", {
+        headers,
+        data: {
+          aktif: true,
+          jam: "04:45",
+          zonaWaktu: "Asia/Makassar",
+          retensiHari: 7,
+          tujuan: "/var/backups/bimbel",
+          ...isian,
+        },
+      });
+      expect(tolak.status()).toBe(422);
+      expect((await tolak.json()).error.code).toBe("VALIDATION_ERROR");
+    }
+    const { rows: sesudahTolak } = await db.query(
+      "SELECT jam, retensi_hari FROM backup_settings",
+    );
+    expect(sesudahTolak).toEqual([{ jam: "04:45", retensi_hari: 7 }]);
+  } finally {
+    await db.query("DELETE FROM backup_settings");
+    await db.end();
+  }
+
+  // Guru tidak boleh membuka halaman pengaturan, jadi jadwal backup pun bukan
+  // untuknya — baca maupun ubah.
+  const emailGuru = await daftar(request, "Guru Jadwal Endpoint");
+  await setRole(emailGuru, "user");
+  await masuk(request, emailGuru);
+  expect(
+    (await request.get("/api/pengaturan/backup/jadwal", { headers })).status(),
+  ).toBe(403);
+  expect(
+    (
+      await request.put("/api/pengaturan/backup/jadwal", {
+        headers,
+        data: {
+          aktif: true,
+          jam: "02:00",
+          zonaWaktu: "Asia/Jakarta",
+          retensiHari: 30,
+          tujuan: "/var/backups/kelola",
+        },
+      })
+    ).status(),
   ).toBe(403);
 });
