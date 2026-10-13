@@ -28,6 +28,7 @@ const {
   ringkasanPemeriksaan,
   semuaPemeriksaanLulus,
   statusTahap,
+  susunPemeriksaanPemulihan,
   tingkatVerifikasi,
   ujiSedangBerjalan,
   ujiTerakhirBerhasil,
@@ -518,4 +519,89 @@ test("verifikasi data tiruan terakhir terverifikasi seluruhnya", () => {
     gagal: 0,
   });
   assert.deepEqual(pemeriksaanTambahan(terakhir), []);
+});
+
+/** Isi database percobaan dan produksi untuk satu pemeriksaan. */
+function isi(ubah = {}) {
+  return { murid: 42, jurnal: 318, tagihan: 96, ownerAktif: 2, ...ubah };
+}
+
+test("pemeriksaan isi database percobaan lulus saat salinannya terisi", () => {
+  const { pemeriksaan, catatan } = susunPemeriksaanPemulihan(isi(), isi(), {
+    lingkungan: "kelola_restore",
+  });
+
+  // Nama pemeriksaannya harus persis sama dengan daftar bakunya: halaman
+  // mencocokkan berdasarkan nama, jadi yang beda akan terbaca "belum diperiksa".
+  assert.deepEqual(
+    pemeriksaan.map((satu) => satu.nama),
+    PEMERIKSAAN_BAKU.map((baku) => baku.nama),
+  );
+  assert.deepEqual(
+    pemeriksaan.map((satu) => satu.lulus),
+    [true, true, true, true],
+  );
+  // Angkanya ikut dilaporkan supaya selisih kecil bisa dinilai sendiri.
+  assert.match(catatan, /kelola_restore/);
+  assert.match(catatan, /42 murid, 318 jurnal mengajar, 96 tagihan/);
+  assert.match(catatan, /Produksi sekarang: 42 murid/);
+  assert.ok(catatan.length <= 2000, "catatannya muat di kolom riwayat");
+});
+
+test("pemeriksaan isi database percobaan membedakan kosong, berlebih, dan owner hilang", () => {
+  // Salinan yang lebih sedikit itu wajar — jurnal dan tagihan bertambah terus.
+  const menyusut = susunPemeriksaanPemulihan(
+    isi({ murid: 40, jurnal: 300, tagihan: 90 }),
+    isi(),
+    { lingkungan: "kelola_restore" },
+  );
+  assert.deepEqual(
+    menyusut.pemeriksaan.map((satu) => satu.lulus),
+    [true, true, true, true],
+  );
+
+  // Tabel yang terbentuk tanpa isi berarti berkasnya tidak ikut pulih.
+  const kosong = susunPemeriksaanPemulihan(
+    isi({ murid: 0, jurnal: 0 }),
+    isi(),
+    { lingkungan: "kelola_restore" },
+  );
+  assert.deepEqual(
+    kosong.pemeriksaan.map((satu) => satu.lulus),
+    [false, false, true, true],
+  );
+  assert.match(kosong.catatan, /murid, jurnal mengajar kosong di salinan/);
+
+  // Salinan yang lebih banyak daripada produksi menandakan data terhapus.
+  const berlebih = susunPemeriksaanPemulihan(isi({ tagihan: 120 }), isi(), {
+    lingkungan: "kelola_restore",
+  });
+  assert.equal(berlebih.pemeriksaan[2].lulus, false);
+  assert.match(berlebih.catatan, /lebih banyak daripada produksi sekarang/);
+
+  // Tanpa owner yang bisa masuk, bimbelnya belum tentu bisa dibuka.
+  const tanpaOwner = susunPemeriksaanPemulihan(isi({ ownerAktif: 0 }), isi(), {
+    lingkungan: "kelola_restore",
+  });
+  assert.deepEqual(
+    tanpaOwner.pemeriksaan.map((satu) => satu.lulus),
+    [true, true, true, false],
+  );
+  assert.match(tanpaOwner.catatan, /akun owner yang aktif dan bersandi/);
+
+  // Database percobaan yang benar-benar kosong menggagalkan semuanya dan
+  // menyebut tiap temuan yang ada.
+  const semuanya = susunPemeriksaanPemulihan(
+    isi({ murid: 0, jurnal: 0, tagihan: 0, ownerAktif: 0 }),
+    isi(),
+    {
+      lingkungan: "kelola_restore",
+    },
+  );
+  assert.deepEqual(
+    semuanya.pemeriksaan.map((satu) => satu.lulus),
+    [false, false, false, false],
+  );
+  assert.match(semuanya.catatan, /tagihan kosong di salinan/);
+  assert.match(semuanya.catatan, /owner yang aktif dan bersandi/);
 });

@@ -92,7 +92,7 @@ export const PEMERIKSAAN_BAKU: PemeriksaanBaku[] = [
   {
     nama: "Jumlah murid sesuai",
     keterangan:
-      "Jumlah murid di database percobaan sama dengan produksi saat backup dibuat.",
+      "Muridnya ikut pulih — ada isinya dan tidak melebihi jumlah murid di produksi sekarang.",
   },
   {
     nama: "Jumlah jurnal mengajar sesuai",
@@ -107,9 +107,93 @@ export const PEMERIKSAAN_BAKU: PemeriksaanBaku[] = [
   {
     nama: "Akun owner bisa masuk",
     keterangan:
-      "Akun pemilik bimbel masih bisa dipakai masuk setelah pemulihan.",
+      "Masih ada akun owner yang aktif dan bersandi di data hasil pemulihan, jadi bimbel masih bisa dibuka.",
   },
 ];
+
+/** Jumlah baris penting sebuah database, dipakai untuk menilai hasil pemulihan. */
+export type IsiDatabase = {
+  murid: number;
+  jurnal: number;
+  tagihan: number;
+  ownerAktif: number;
+};
+
+/**
+ * Menyusun hasil pemeriksaan baku atas isi database percobaan.
+ *
+ * Pembandingnya adalah jumlah di produksi **sekarang**, bukan jumlah saat backup
+ * dibuat: jumlah saat itu tidak tersimpan di mana pun. Karena salinannya selalu
+ * dibuat lebih dulu, isinya boleh lebih sedikit — jurnal dan tagihan bertambah
+ * terus — tapi tidak boleh kosong: tabel yang terbentuk tanpa isi berarti
+ * berkasnya tidak benar-benar ikut pulih. Salinan yang justru lebih banyak
+ * daripada produksi dilaporkan gagal juga, karena itu tanda ada data yang
+ * terhapus setelah backup dibuat.
+ *
+ * Nama pemeriksaannya sengaja ditulis sama persis dengan `PEMERIKSAAN_BAKU`:
+ * halaman mencocokkannya berdasarkan nama, jadi pemeriksaan yang namanya beda
+ * akan terbaca sebagai "belum diperiksa".
+ */
+export function susunPemeriksaanPemulihan(
+  dipulihkan: IsiDatabase,
+  produksi: IsiDatabase,
+  { lingkungan }: { lingkungan: string },
+): { pemeriksaan: PemeriksaanPemulihan[]; catatan: string } {
+  const terisi = (jumlah: number, tersedia: number) =>
+    jumlah > 0 && jumlah <= tersedia;
+
+  const pemeriksaan: PemeriksaanPemulihan[] = [
+    {
+      nama: "Jumlah murid sesuai",
+      lulus: terisi(dipulihkan.murid, produksi.murid),
+    },
+    {
+      nama: "Jumlah jurnal mengajar sesuai",
+      lulus: terisi(dipulihkan.jurnal, produksi.jurnal),
+    },
+    {
+      nama: "Jumlah tagihan sesuai",
+      lulus: terisi(dipulihkan.tagihan, produksi.tagihan),
+    },
+    { nama: "Akun owner bisa masuk", lulus: dipulihkan.ownerAktif > 0 },
+  ];
+
+  // Angkanya ditulis di catatan supaya yang membaca bisa menilai sendiri selisih
+  // kecil yang wajar (jurnal hari ini) dari selisih yang mencurigakan.
+  const angka = (isi: IsiDatabase) =>
+    `${isi.murid} murid, ${isi.jurnal} jurnal mengajar, ${isi.tagihan} tagihan, ${isi.ownerAktif} akun owner aktif`;
+  const bagian: Array<[string, number, number]> = [
+    ["murid", dipulihkan.murid, produksi.murid],
+    ["jurnal mengajar", dipulihkan.jurnal, produksi.jurnal],
+    ["tagihan", dipulihkan.tagihan, produksi.tagihan],
+  ];
+
+  const temuan: string[] = [];
+  const kosong = bagian.filter(([, jumlah]) => jumlah === 0);
+  if (kosong.length)
+    temuan.push(
+      `Tabel ${kosong.map(([nama]) => nama).join(", ")} kosong di salinan, jadi isinya tidak ikut pulih.`,
+    );
+  const berlebih = bagian.filter(([, jumlah, tersedia]) => jumlah > tersedia);
+  if (berlebih.length)
+    temuan.push(
+      `${berlebih.map(([nama]) => nama).join(", ")} di salinan lebih banyak daripada produksi sekarang — kemungkinan ada data yang terhapus setelah backup dibuat.`,
+    );
+  if (dipulihkan.ownerAktif === 0)
+    temuan.push(
+      "Tidak ada akun owner yang aktif dan bersandi di data hasil pemulihan, jadi belum tentu bimbel bisa dibuka.",
+    );
+
+  const catatan = [
+    `Isi database percobaan ${lingkungan}: ${angka(dipulihkan)}.`,
+    `Produksi sekarang: ${angka(produksi)}.`,
+    temuan.length
+      ? temuan.join(" ")
+      : "Salinannya terisi dan tidak melebihi produksi, jadi isinya ikut pulih.",
+  ].join(" ");
+
+  return { pemeriksaan, catatan };
+}
 
 /** Hasil satu pemeriksaan pada sebuah catatan uji. */
 export type HasilPemeriksaan = "lulus" | "gagal" | "belum-diperiksa";
@@ -211,7 +295,7 @@ export const TAHAP_PEMULIHAN: TahapPemulihan[] = [
     kunci: "periksa-data",
     label: "Periksa keutuhan data",
     keterangan:
-      "Membandingkan jumlah murid, jurnal, dan tagihan dengan produksi saat backup dibuat.",
+      "Menghitung isi database percobaan lalu membandingkannya dengan produksi sekarang.",
   },
   {
     kunci: "catat-hasil",

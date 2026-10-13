@@ -18,6 +18,11 @@ const testBackupDir = join(tmpdir(), `${process.env.STARTER_TEST_RUN}-backup`);
 // perintah Node kecil seperti perintah dump di atas: berguna untuk membuktikan
 // endpointnya benar-benar menjalankan pemulihan, tanpa menuntut `pg_restore`
 // terpasang di mesin uji.
+//
+// Perintah tiruan itu tidak benar-benar memulihkan apa pun, jadi database
+// `kelola_restore` di sini memang tidak pernah ada. Itu disengaja: pemeriksaan
+// isi hasil pemulihan harus melaporkan database percobaan yang tidak terbaca
+// sebagai pemeriksaan yang gagal, bukan diam-diam dianggap lulus.
 const testRestoreUrl = (() => {
   const url = new URL(testUrl);
   url.pathname = "/kelola_restore";

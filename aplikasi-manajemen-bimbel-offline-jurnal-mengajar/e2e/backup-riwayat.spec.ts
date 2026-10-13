@@ -805,6 +805,16 @@ test("endpoint uji pemulihan memulihkan berkas terpilih dan menjaga pengamananny
     // Perintah pemulihannya tidak ikut dijawab: memuat connection string.
     expect(data.perintah).toBeUndefined();
 
+    // Pemulihannya keluar tanpa galat, tapi database percobaannya tidak pernah
+    // dibuat (perintah tiruannya tidak benar-benar memulihkan apa pun) — dan
+    // pemeriksaan isinya melaporkan itu sebagai pemeriksaan yang gagal, bukan
+    // lulus diam-diam. Di layar, uji seperti ini terbaca belum terverifikasi.
+    expect(data.pemeriksaan).toHaveLength(4);
+    expect(
+      data.pemeriksaan.map((satu: { lulus: boolean }) => satu.lulus),
+    ).toEqual([false, false, false, false]);
+    expect(data.catatan).toMatch(/tidak bisa diperiksa/);
+
     // Berkas yang tidak layak diuji dan id asing tidak pernah dijalankan.
     for (const id of [gagalBaris.rows[0].id, randomUUID()]) {
       const ditolak = await request.post(

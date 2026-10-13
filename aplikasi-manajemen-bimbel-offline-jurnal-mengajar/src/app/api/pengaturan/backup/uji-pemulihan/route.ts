@@ -2,15 +2,15 @@ import { ApiError, readJson, withApiPermission } from "@/lib/api";
 import {
   adaPemulihanBerjalan,
   ambilBerkasBackupUjiById,
-  pulihkanBerkasBackup,
+  jalankanUjiPemulihan,
 } from "@/services/backup.service";
 import { jalankanUjiPemulihanSchema } from "@/validators/pengaturan";
 
 export const runtime = "nodejs";
 
 // Menjalankan satu uji pemulihan: berkas backup yang dipilih dipulihkan ke
-// database percobaan, dan hasilnya langsung dijawab supaya halaman bisa
-// melaporkannya.
+// database percobaan, isinya diperiksa, lalu hasilnya langsung dijawab supaya
+// halaman bisa melaporkannya.
 //
 // Pengamanannya ada tiga lapis, dan ketiganya menahan sebelum perintah apa pun
 // dijalankan:
@@ -43,7 +43,7 @@ export function POST(request: Request) {
         "Berkas backup itu tidak ada, tidak berstatus sukses, atau belum punya lokasi berkas — jadi tidak ada salinan utuh yang bisa diuji.",
       );
 
-    const hasil = await pulihkanBerkasBackup({ lokasi: berkas.lokasi });
+    const hasil = await jalankanUjiPemulihan({ lokasi: berkas.lokasi });
     return Response.json({ data: { ...hasil, berkas } });
   });
 }

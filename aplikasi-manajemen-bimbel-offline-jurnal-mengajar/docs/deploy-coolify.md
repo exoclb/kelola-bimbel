@@ -363,6 +363,15 @@ ke database percobaan yang sama. Penahan itu ada di dalam satu proses aplikasi �
 kalau container-nya dijalankan lebih dari satu replika, jalankan uji pemulihan
 dari satu replika saja atau tunggu sampai uji sebelumnya selesai.
 
+Sesudah pemulihannya selesai, aplikasi memeriksa sendiri isi database percobaan:
+jumlah murid, jurnal mengajar, tagihan, dan akun owner yang masih bisa masuk
+dihitung di kedua sisi lalu dibandingkan dengan **produksi sekarang** — jumlah
+saat backup dibuat tidak tersimpan di mana pun. Salinan yang isinya lebih sedikit
+itu wajar (jurnal dan tagihan bertambah terus), tapi kosong atau justru lebih
+banyak daripada produksi dilaporkan gagal. Database percobaan yang tidak bisa
+dihubungi — mis. `RESTORE_DATABASE_URL` salah tulis — juga gagal semua, jadi uji
+yang tidak benar-benar memeriksa apa pun tidak pernah terbaca lulus.
+
 ## Fase 5 — Panduan & Uji Coba Go-live
 
 ### 1. Uji masuk per peran

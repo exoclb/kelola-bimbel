@@ -59,7 +59,7 @@ const RIWAYAT_TIRUAN: UjiPemulihan[] = [
       { nama: "Akun owner bisa masuk", lulus: true },
     ],
     catatan:
-      "Jumlah data di database percobaan dihitung ulang lalu dibandingkan dengan produksi saat backup dibuat, dan semuanya cocok.",
+      "Jumlah data di database percobaan dihitung ulang lalu dibandingkan dengan produksi sekarang, dan semuanya cocok.",
   },
   {
     id: "uji-20260614",

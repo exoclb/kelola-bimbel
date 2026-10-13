@@ -15,6 +15,7 @@
 // disiapkan scripts/test.mjs.
 import test from "node:test";
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import {
   existsSync,
   mkdtempSync,
@@ -38,8 +39,11 @@ const {
   jalankanBackupDanCatat,
   jalankanPerintahDump,
   jalankanPerintahPemulihan,
+  jalankanUjiPemulihan,
+  hitungIsiDatabase,
   namaBerkasBackup,
   namaDatabase,
+  periksaHasilPemulihan,
   pulihkanBerkasBackup,
   VARIABEL_BACKUP,
   VARIABEL_PEMULIHAN,
@@ -94,6 +98,7 @@ function konfigurasiPemulihanUji(tambahan = {}) {
   return {
     perintah: "pg_restore -d kelola_restore",
     databaseTujuan: "kelola_restore",
+    urlTujuan: "postgres://kelola@db:5432/kelola_restore",
     pakaiBerkas: false,
     variabelBermasalah: [],
     bahaya: null,
@@ -623,4 +628,166 @@ test("pemulihan sungguhan membaca berkas sumber dan melaporkan kegagalannya", as
     sumber,
   );
   assert.match(ditolak, /database tujuan tidak ada/);
+});
+
+test("isi database hasil pemulihan dihitung langsung dari basis datanya", async () => {
+  const penanda = randomUUID().slice(0, 8);
+  const email = `pulih-owner-${penanda}@example.com`;
+  const userId = `uji-pulih-${penanda}`;
+
+  // Database uji dipakai sebagai database percobaan: yang diperiksa di sini
+  // adalah cara hitungnya, bukan pemulihannya.
+  const sebelum = await hitungIsiDatabase(process.env.DATABASE_URL);
+  try {
+    await pool.query("INSERT INTO students (nama) VALUES ($1)", [
+      `Murid uji pulih ${penanda}`,
+    ]);
+    await pool.query(
+      'INSERT INTO "user" (id, name, email, role) VALUES ($1, $2, $3, $4)',
+      [userId, `Owner uji pulih ${penanda}`, email, "owner"],
+    );
+    // Akun owner baru dihitung kalau sambungan masuknya (sandi) ada.
+    await pool.query(
+      "INSERT INTO account (id, account_id, provider_id, user_id, password) VALUES ($1, $2, 'credential', $3, 'sandi-terenkripsi')",
+      [`akun-${penanda}`, userId, userId],
+    );
+
+    const sesudah = await hitungIsiDatabase(process.env.DATABASE_URL);
+    assert.equal(sesudah.murid, sebelum.murid + 1);
+    assert.equal(sesudah.ownerAktif, sebelum.ownerAktif + 1);
+    // Jurnal dan tagihan tidak disentuh di sini, jadi jumlahnya tidak berubah.
+    assert.equal(sesudah.jurnal, sebelum.jurnal);
+    assert.equal(sesudah.tagihan, sebelum.tagihan);
+
+    // Akun yang di-ban tidak dihitung walau punya sandi — dia tidak bisa masuk.
+    await pool.query('UPDATE "user" SET banned = true WHERE id = $1', [userId]);
+    assert.equal(
+      (await hitungIsiDatabase(process.env.DATABASE_URL)).ownerAktif,
+      sebelum.ownerAktif,
+    );
+  } finally {
+    await pool.query('DELETE FROM "user" WHERE id = $1', [userId]);
+    await pool.query("DELETE FROM students WHERE nama LIKE $1", [
+      `Murid uji pulih ${penanda}`,
+    ]);
+  }
+
+  // Tanpa connection string, hitungannya tidak boleh diam-diam jatuh ke
+  // database aplikasi.
+  await assert.rejects(() => hitungIsiDatabase("   "));
+});
+
+test("pemeriksaan isi gagal semua saat database percobaannya tidak bisa dibaca", async () => {
+  const hasil = await periksaHasilPemulihan({
+    databaseUrl: "postgres://db/kelola_restore",
+    lingkungan: "kelola_restore",
+    hitung: async () => {
+      throw new Error('database "kelola_restore" does not exist');
+    },
+  });
+
+  assert.deepEqual(
+    hasil.pemeriksaan.map((satu) => satu.lulus),
+    [false, false, false, false],
+    "pemeriksaan yang tidak bisa dijalankan tidak boleh terbaca lulus",
+  );
+  assert.match(hasil.catatan, /tidak bisa diperiksa/);
+  assert.match(hasil.catatan, /does not exist/);
+});
+
+test("pemeriksaan isi membandingkan database percobaan dengan produksi", async () => {
+  const dibaca = [];
+  const hitung = async (url) => {
+    dibaca.push(url);
+    return url.includes("restore")
+      ? { murid: 42, jurnal: 300, tagihan: 90, ownerAktif: 2 }
+      : { murid: 45, jurnal: 320, tagihan: 96, ownerAktif: 2 };
+  };
+
+  const hasil = await periksaHasilPemulihan({
+    databaseUrl: "postgres://db/kelola_restore",
+    lingkungan: "kelola_restore",
+    produksiUrl: "postgres://db/kelola",
+    hitung,
+  });
+
+  assert.deepEqual([...dibaca].sort(), [
+    "postgres://db/kelola",
+    "postgres://db/kelola_restore",
+  ]);
+  assert.deepEqual(
+    hasil.pemeriksaan.map((satu) => satu.lulus),
+    [true, true, true, true],
+  );
+  assert.match(hasil.catatan, /Produksi sekarang: 45 murid/);
+});
+
+test("uji pemulihan menjalankan pemeriksaan isi sesudah pemulihannya berhasil", async () => {
+  const dipanggil = [];
+  const pelaksana = async (perintah, berkas) => {
+    dipanggil.push({ perintah, berkas });
+    return null;
+  };
+  const dikunjungi = [];
+  const hitung = async (url) => {
+    dikunjungi.push(url);
+    return { murid: 7, jurnal: 9, tagihan: 3, ownerAktif: 1 };
+  };
+  const lokasi = berkasUji("uji-pulih-lengkap.dump");
+
+  const hasil = await jalankanUjiPemulihan({
+    lokasi,
+    pelaksana,
+    hitung,
+    produksiUrl: "postgres://db/kelola",
+    konfigurasi: konfigurasiPemulihanUji(),
+  });
+
+  assert.equal(hasil.berhasil, true);
+  assert.equal(hasil.pesan, null);
+  assert.equal(hasil.databaseTujuan, "kelola_restore");
+  assert.deepEqual(dipanggil, [
+    { perintah: "pg_restore -d kelola_restore", berkas: lokasi },
+  ]);
+  // Yang diperiksa adalah database percobaan dari konfigurasi, bukan database
+  // aplikasi; pembandingnya produksi.
+  assert.deepEqual(dikunjungi.sort(), [
+    "postgres://db/kelola",
+    konfigurasiPemulihanUji().urlTujuan,
+  ]);
+  assert.deepEqual(
+    hasil.pemeriksaan.map((satu) => satu.nama),
+    [
+      "Jumlah murid sesuai",
+      "Jumlah jurnal mengajar sesuai",
+      "Jumlah tagihan sesuai",
+      "Akun owner bisa masuk",
+    ],
+  );
+  assert.deepEqual(
+    hasil.pemeriksaan.map((satu) => satu.lulus),
+    [true, true, true, true],
+  );
+  assert.match(hasil.catatan, /kelola_restore/);
+
+  // Pemulihan yang gagal berhenti di situ: belum ada yang bisa diperiksa, dan
+  // alasannya yang dilaporkan — bukan pemeriksaan yang seolah gagal.
+  let hitungSetelahGagal = 0;
+  const gagal = await jalankanUjiPemulihan({
+    lokasi: berkasUji("uji-pulih-gagal.dump"),
+    pelaksana: async () => "pg_restore: error: could not read from input file",
+    hitung: async () => {
+      hitungSetelahGagal += 1;
+      return { murid: 0, jurnal: 0, tagihan: 0, ownerAktif: 0 };
+    },
+    konfigurasi: konfigurasiPemulihanUji(),
+  });
+  assert.equal(gagal.berhasil, false);
+  assert.deepEqual(gagal.pemeriksaan, []);
+  assert.match(gagal.catatan, /could not read from input file/);
+  assert.equal(
+    hitungSetelahGagal,
+    0,
+    "isi tidak diperiksa kalau pemulihannya gagal",
+  );
 });
