@@ -1,6 +1,15 @@
 # Pipa CI otomatis: setiap push dan pull request diperiksa di sini, supaya yang
 # rusak ketahuan sebelum rilis — bukan sesudah pengguna menemukannya.
 #
+# Berkasnya sengaja ada di akar repo, bukan di dalam folder aplikasi: GitHub
+# hanya membaca `.github/workflows` pada akar repo, jadi pipa yang disimpan di
+# subfolder tidak pernah dijalankan sama sekali. Karena aplikasinya tinggal di
+# `aplikasi-manajemen-bimbel-offline-jurnal-mengajar`, semua langkah `run:`
+# dijalankan dari sana lewat `defaults.run.working-directory`, sedangkan
+# rujukan berkas di luar `run:` (`.nvmrc`, `package-lock.json`, laporan uji)
+# memakai awalan folder aplikasi karena langkah `uses:` selalu dihitung dari
+# akar repo.
+#
 # Dipisah dua job supaya uji peramban tidak menahan pemeriksaan yang murah,
 # lalu ditutup satu job ringkasan yang merangkum hasil keduanya:
 #   - `check`: langkah statis dan uji unit/integrasi, tanpa peramban.
@@ -37,6 +46,12 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Seluruh perintah aplikasi dijalankan dari folder aplikasinya, bukan dari akar
+# repo yang tidak punya `package.json`.
+defaults:
+  run:
+    working-directory: aplikasi-manajemen-bimbel-offline-jurnal-mengajar
+
 jobs:
   check:
     name: Pemeriksaan kode & uji otomatis
@@ -48,11 +63,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version-file: .nvmrc
+          node-version-file: aplikasi-manajemen-bimbel-offline-jurnal-mengajar/.nvmrc
           # Cache npm dari package-lock.json: `npm ci` di langkah penyiapan
           # membuang node_modules tiap kali, jadi yang mempercepatnya adalah
           # paket yang tidak perlu diunduh ulang.
           cache: npm
+          cache-dependency-path: aplikasi-manajemen-bimbel-offline-jurnal-mengajar/package-lock.json
       - run: npm run setup
 
       # Lint, pemeriksaan tipe, lalu seluruh uji unit dan integrasi. Langkah
@@ -76,8 +92,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version-file: .nvmrc
+          node-version-file: aplikasi-manajemen-bimbel-offline-jurnal-mengajar/.nvmrc
           cache: npm
+          cache-dependency-path: aplikasi-manajemen-bimbel-offline-jurnal-mengajar/package-lock.json
       - run: npm run setup
 
       # Build produksi: impor atau tipe yang belum tersentuh uji ikut ketahuan.
@@ -93,7 +110,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          key: playwright-${{ runner.os }}-${{ hashFiles('aplikasi-manajemen-bimbel-offline-jurnal-mengajar/package-lock.json') }}
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
 
@@ -106,8 +123,8 @@ jobs:
         with:
           name: laporan-uji-peramban
           path: |
-            test-results/
-            playwright-report/
+            aplikasi-manajemen-bimbel-offline-jurnal-mengajar/test-results/
+            aplikasi-manajemen-bimbel-offline-jurnal-mengajar/playwright-report/
           retention-days: 7
 
   ringkasan:

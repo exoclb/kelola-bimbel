@@ -8,8 +8,8 @@
 // tests/dukungan/impor-ts.mjs.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { basename, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { pasangImporTs } from "./dukungan/impor-ts.mjs";
 
@@ -73,7 +73,25 @@ test("langkah baku pipa CI mengikuti urutan berkas ci.yml", () => {
 });
 
 const akarRepo = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const berkasRepo = (jalur) => readFileSync(resolve(akarRepo, jalur), "utf8");
+
+// GitHub hanya membaca `.github/workflows` pada akar repo. Di ruang kerja ini
+// aplikasinya ada di subfolder, jadi pipanya ada di akar repo dan langkahnya
+// menunjuk folder aplikasi; kalau folder aplikasi inilah akar repo-nya (salinan
+// mandiri), pipanya ada di dalam folder ini seperti proyek Next.js biasa.
+const jalurPipa = [
+  resolve(akarRepo, "..", ".github/workflows/ci.yml"),
+  resolve(akarRepo, ".github/workflows/ci.yml"),
+].find((jalur) => existsSync(jalur));
+if (!jalurPipa)
+  throw new Error(
+    "Berkas ci.yml tidak ketemu di akar repo maupun di folder aplikasi.",
+  );
+const berkasPipa = () => readFileSync(jalurPipa, "utf8");
+const namaFolderAplikasi = basename(akarRepo);
+/** Awalan rujukan berkas dari akar repo, kosong kalau pipanya ada di folder ini. */
+const awalanAplikasi = jalurPipa.startsWith(akarRepo)
+  ? ""
+  : `${namaFolderAplikasi}/`;
 
 /** Nomor baris pertama yang memuat teksnya, atau -1 kalau tidak ada. */
 function nomorBaris(isi, teks) {
@@ -106,7 +124,7 @@ function blokJob(isi, nama) {
 // `.github/workflows/ci.yml` supaya langkah yang dijanjikan halaman Status CI
 // tidak bisa menghilang diam-diam dari pipa yang benar-benar dijalankan.
 test("berkas ci.yml menjalankan langkah baku itu berurutan", () => {
-  const isi = berkasRepo(".github/workflows/ci.yml");
+  const isi = berkasPipa();
 
   let sebelumnya = -1;
   for (const langkah of PEMERIKSAAN_CI) {
@@ -121,7 +139,7 @@ test("berkas ci.yml menjalankan langkah baku itu berurutan", () => {
 });
 
 test("berkas ci.yml dipicu push dan pull request dengan pengamanannya", () => {
-  const isi = berkasRepo(".github/workflows/ci.yml");
+  const isi = berkasPipa();
   const pemicu = blokPemicu(isi);
 
   // Pemicunya sama dengan yang disebut halaman Status CI: setiap push dan PR.
@@ -135,14 +153,14 @@ test("berkas ci.yml dipicu push dan pull request dengan pengamanannya", () => {
   assert.match(isi, /^permissions:\n  contents: read$/m);
   // Versi Node mengikuti .nvmrc, sama seperti yang disarankan saran kegagalan
   // langkah penyiapan di src/lib/ci-otomatis.ts.
-  assert.ok(nomorBaris(isi, "node-version-file: .nvmrc") > 0);
+  assert.ok(nomorBaris(isi, `node-version-file: ${awalanAplikasi}.nvmrc`) > 0);
   // Hasil uji peramban diunggah setelah ujinya jalan, dan disimpan 7 hari
   // seperti yang dijanjikan halaman Status CI: `test-results` berisi tangkapan
   // layar dan jejak langkahnya, `playwright-report` laporan HTML-nya.
   const nomorUjiPeramban = nomorBaris(isi, "run: npm run test:e2e");
   for (const artefak of ["test-results/", "playwright-report/"]) {
     assert.ok(
-      nomorBaris(isi, artefak) > nomorUjiPeramban,
+      nomorBaris(isi, `${awalanAplikasi}${artefak}`) > nomorUjiPeramban,
       `ci.yml mengunggah ${artefak} setelah ujinya jalan`,
     );
   }
@@ -150,8 +168,32 @@ test("berkas ci.yml dipicu push dan pull request dengan pengamanannya", () => {
   assert.ok(nomorBaris(isi, "retention-days: 7") > nomorUjiPeramban);
 });
 
+test("berkas ci.yml menjalankan perintah aplikasi di folder aplikasinya", () => {
+  const isi = berkasPipa();
+  // Kalau folder aplikasi inilah akar repo-nya, langkahnya memang sudah jalan
+  // di tempat yang benar dan tidak ada awalan yang perlu dipasang.
+  if (!awalanAplikasi) return;
+
+  // Langkah `run:` dihitung dari akar repo, jadi tanpa ini `npm run setup`
+  // mencari package.json di folder yang salah dan pipanya gagal total.
+  assert.ok(
+    isi.includes(`working-directory: ${namaFolderAplikasi}`),
+    "langkah dijalankan dari folder aplikasi",
+  );
+  // Langkah `uses:` tidak ikut `defaults`, jadi rujukan berkasnya harus
+  // lengkap dari akar repo.
+  assert.ok(
+    isi.includes(`cache-dependency-path: ${awalanAplikasi}package-lock.json`),
+    "cache npm menunjuk lockfile aplikasi",
+  );
+  assert.ok(
+    isi.includes(`hashFiles('${awalanAplikasi}package-lock.json')`),
+    "cache peramban dikunci lockfile aplikasi",
+  );
+});
+
 test("berkas ci.yml menyimpan dependensi yang diunduh di antara jalan", () => {
-  const isi = berkasRepo(".github/workflows/ci.yml");
+  const isi = berkasPipa();
 
   // Paket npm datang dari cache bernama, bukan diunduh dari awal tiap jalan.
   for (const nama of ["check", "e2e"]) {
@@ -178,7 +220,9 @@ test("berkas ci.yml menyimpan dependensi yang diunduh di antara jalan", () => {
     setelahnya.some((satu) => satu.trim() === "path: ~/.cache/ms-playwright"),
   );
   assert.ok(
-    setelahnya.some((satu) => satu.includes("hashFiles('package-lock.json')")),
+    setelahnya.some((satu) =>
+      satu.includes(`hashFiles('${awalanAplikasi}package-lock.json')`),
+    ),
   );
   assert.ok(
     pemulihan <
@@ -187,7 +231,7 @@ test("berkas ci.yml menyimpan dependensi yang diunduh di antara jalan", () => {
 });
 
 test("berkas ci.yml memisahkan uji peramban ke jobnya sendiri", () => {
-  const isi = berkasRepo(".github/workflows/ci.yml");
+  const isi = berkasPipa();
   const pemeriksaan = blokJob(isi, "check");
   const peramban = blokJob(isi, "e2e");
 
@@ -200,7 +244,11 @@ test("berkas ci.yml memisahkan uji peramban ke jobnya sendiri", () => {
   // Tiap job berjalan di mesin baru, jadi keduanya menyiapkan sendiri.
   for (const blok of [pemeriksaan, peramban]) {
     assert.ok(blok.some((satu) => satu.includes("run: npm run setup")));
-    assert.ok(blok.some((satu) => satu.includes("node-version-file: .nvmrc")));
+    assert.ok(
+      blok.some((satu) =>
+        satu.includes(`node-version-file: ${awalanAplikasi}.nvmrc`),
+      ),
+    );
   }
   // Build ada tepat sebelum ujinya, di job yang memang memakai hasilnya.
   const teksPeramban = peramban.join("\n");
@@ -211,7 +259,7 @@ test("berkas ci.yml memisahkan uji peramban ke jobnya sendiri", () => {
 });
 
 test("berkas ci.yml merangkum hasil kedua job di satu tempat", () => {
-  const isi = berkasRepo(".github/workflows/ci.yml");
+  const isi = berkasPipa();
   const ringkasan = blokJob(isi, "ringkasan");
 
   assert.ok(ringkasan, "ci.yml punya job ringkasan");
