@@ -30,6 +30,13 @@ export const backupRuns = pgTable(
     lokasi: text("lokasi"),
     // Keterangan tambahan: pesan galat, atau catatan retensi/pemulihan.
     pesan: text("pesan"),
+    // Catatan uji pemulihan berkas backup ini: di lingkungan percobaan mana
+    // salinannya dibuka ulang, apa yang diperiksa, dan bagaimana hasilnya.
+    // Sengaja kolom sendiri, bukan menumpang `pesan`: `pesan` diisi proses
+    // backup saat barisnya ditutup, sedangkan ujinya baru berjalan setelah itu
+    // dan tidak boleh menimpa alasan kegagalan backup-nya. `null` berarti
+    // berkas ini belum pernah dipulihkan — bukan berarti ujinya gagal.
+    catatanUjiPemulihan: text("catatan_uji_pemulihan"),
   },
   (table) => [
     index("backup_runs_mulai_idx").on(table.mulai),
@@ -42,6 +49,17 @@ export const backupRuns = pgTable(
     check(
       "backup_runs_ukuran_tidak_negatif",
       sql`${table.ukuranByte} is null or ${table.ukuranByte} >= 0`,
+    ),
+    // Catatan uji yang kosong/hanya spasi tidak menyimpan apa pun, jadi lebih
+    // baik dibiarkan `null`; batas panjangnya menjaga catatan tetap terbaca
+    // ringkas di riwayat.
+    check(
+      "backup_runs_catatan_uji_terisi",
+      sql`${table.catatanUjiPemulihan} is null or length(btrim(${table.catatanUjiPemulihan})) > 0`,
+    ),
+    check(
+      "backup_runs_catatan_uji_ringkas",
+      sql`${table.catatanUjiPemulihan} is null or length(${table.catatanUjiPemulihan}) <= 2000`,
     ),
   ],
 );

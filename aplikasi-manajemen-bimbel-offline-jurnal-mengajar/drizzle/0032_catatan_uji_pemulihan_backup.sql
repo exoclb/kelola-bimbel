@@ -1,0 +1,3 @@
+ALTER TABLE "backup_runs" ADD COLUMN "catatan_uji_pemulihan" text;--> statement-breakpoint
+ALTER TABLE "backup_runs" ADD CONSTRAINT "backup_runs_catatan_uji_terisi" CHECK ("backup_runs"."catatan_uji_pemulihan" is null or length(btrim("backup_runs"."catatan_uji_pemulihan")) > 0);--> statement-breakpoint
+ALTER TABLE "backup_runs" ADD CONSTRAINT "backup_runs_catatan_uji_ringkas" CHECK ("backup_runs"."catatan_uji_pemulihan" is null or length("backup_runs"."catatan_uji_pemulihan") <= 2000);

@@ -791,9 +791,11 @@ test("profil bimbel dijaga tunggal, namanya terisi, dan logonya data URL", async
 
 /**
  * Invarian notifikasi dan catatan backup (`drizzle/0013_notifikasi.sql`,
- * `0014_backup_runs.sql`, dan `0026_notifikasi_backup_invarian.sql`): tipe/pesan
- * notifikasi dan jenis preferensi harus terisi, preferensi unik per akun per
- * jenis, dan status backup harus sejalan dengan waktu selesainya.
+ * `0014_backup_runs.sql`, `0026_notifikasi_backup_invarian.sql`, dan
+ * `0032_catatan_uji_pemulihan_backup.sql`): tipe/pesan notifikasi dan jenis
+ * preferensi harus terisi, preferensi unik per akun per jenis, status backup
+ * harus sejalan dengan waktu selesainya, dan catatan uji pemulihan — kalau
+ * diisi — tidak boleh kosong/hanya spasi maupun kepanjangan.
  */
 test("notifikasi dan backup dijaga isi, keunikan, dan statusnya", async () => {
   const { guru } = await siapkanJurnal();
@@ -862,6 +864,33 @@ test("notifikasi dan backup dijaga isi, keunikan, dan statusnya", async () => {
     ["sukses", 2048, berjalan.rows[0].id],
   );
   assert.equal(selesai.rowCount, 1);
+
+  // Catatan uji pemulihan: kosong/hanya spasi ditolak, kepanjangan ditolak,
+  // dan catatan yang wajar tersimpan di baris backup yang diuji.
+  const catatanKosong = await ditolak(
+    "UPDATE backup_runs SET catatan_uji_pemulihan = $1 WHERE id = $2",
+    ["   ", berjalan.rows[0].id],
+  );
+  assert.equal(catatanKosong.code, "23514");
+
+  const catatanKepanjangan = await ditolak(
+    "UPDATE backup_runs SET catatan_uji_pemulihan = $1 WHERE id = $2",
+    ["x".repeat(2001), berjalan.rows[0].id],
+  );
+  assert.equal(catatanKepanjangan.code, "23514");
+
+  const catatan = await dbJurnal.query(
+    "UPDATE backup_runs SET catatan_uji_pemulihan = $1 WHERE id = $2 RETURNING catatan_uji_pemulihan",
+    [
+      "Dipulihkan ke kelola_restore; jumlah murid, jurnal, dan tagihan cocok.",
+      berjalan.rows[0].id,
+    ],
+  );
+  assert.equal(catatan.rowCount, 1);
+  assert.equal(
+    catatan.rows[0].catatan_uji_pemulihan,
+    "Dipulihkan ke kelola_restore; jumlah murid, jurnal, dan tagihan cocok.",
+  );
 });
 
 /**
