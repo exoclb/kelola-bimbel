@@ -91,6 +91,17 @@ function blokPemicu(isi) {
   return baris.slice(mulai + 1, akhir < 0 ? undefined : akhir);
 }
 
+/** Baris-baris di dalam satu job (dari `  nama:` sampai job berikutnya). */
+function blokJob(isi, nama) {
+  const baris = isi.split("\n");
+  const mulai = baris.findIndex((satu) => satu === `  ${nama}:`);
+  if (mulai < 0) return null;
+  const akhir = baris.findIndex(
+    (satu, indeks) => indeks > mulai && /^ {2}\S/.test(satu),
+  );
+  return baris.slice(mulai + 1, akhir < 0 ? undefined : akhir);
+}
+
 // Berkas pipanya sungguhan, bukan cuma daftar di atas kertas: uji ini membaca
 // `.github/workflows/ci.yml` supaya langkah yang dijanjikan halaman Status CI
 // tidak bisa menghilang diam-diam dari pipa yang benar-benar dijalankan.
@@ -133,6 +144,30 @@ test("berkas ci.yml dipicu push dan pull request dengan pengamanannya", () => {
   );
   assert.ok(nomorBaris(isi, "if: failure()") > 0);
   assert.ok(nomorBaris(isi, "retention-days: 7") > 0);
+});
+
+test("berkas ci.yml memisahkan uji peramban ke jobnya sendiri", () => {
+  const isi = berkasRepo(".github/workflows/ci.yml");
+  const pemeriksaan = blokJob(isi, "check");
+  const peramban = blokJob(isi, "e2e");
+
+  assert.ok(pemeriksaan, "ci.yml punya job check");
+  assert.ok(peramban, "ci.yml punya job e2e");
+  // Job peramban menunggu pemeriksaan kode lulus, jadi yang gagal murah tidak
+  // menahan runner sampai selesai memasang peramban.
+  assert.ok(peramban.some((satu) => satu.trim() === "needs: check"));
+  assert.ok(!pemeriksaan.some((satu) => satu.includes("playwright")));
+  // Tiap job berjalan di mesin baru, jadi keduanya menyiapkan sendiri.
+  for (const blok of [pemeriksaan, peramban]) {
+    assert.ok(blok.some((satu) => satu.includes("run: npm run setup")));
+    assert.ok(blok.some((satu) => satu.includes("node-version-file: .nvmrc")));
+  }
+  // Build ada tepat sebelum ujinya, di job yang memang memakai hasilnya.
+  const teksPeramban = peramban.join("\n");
+  assert.ok(
+    teksPeramban.indexOf("run: npm run build") <
+      teksPeramban.indexOf("run: npm run test:e2e"),
+  );
 });
 
 test("definisiPemeriksaan mencari langkah dari kuncinya", () => {

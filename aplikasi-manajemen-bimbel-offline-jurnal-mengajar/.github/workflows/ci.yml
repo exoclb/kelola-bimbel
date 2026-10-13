@@ -1,7 +1,12 @@
 # Pipa CI otomatis: setiap push dan pull request diperiksa di sini, supaya yang
 # rusak ketahuan sebelum rilis — bukan sesudah pengguna menemukannya.
 #
-# Urutan langkahnya sengaja sama dengan `PEMERIKSAAN_CI` di
+# Dipisah dua job supaya uji peramban tidak menahan pemeriksaan yang murah:
+#   - `check`: langkah statis dan uji unit/integrasi, tanpa peramban.
+#   - `e2e`: build produksi lalu seluruh skenario peramban, dan hanya berjalan
+#     kalau `check` sudah lulus.
+#
+# Urutan dan perintah langkahnya sengaja sama dengan `PEMERIKSAAN_CI` di
 # `src/lib/ci-otomatis.ts`: halaman Pengaturan → Status CI membacakan daftar itu,
 # dan `tests/ci-otomatis.test.mjs` menjaga kedua berkas tetap sejalan. Menambah
 # langkah di sini berarti menambahkannya di sana juga.
@@ -46,12 +51,30 @@ jobs:
       # Tata tulisan seluruh berkas menurut Prettier.
       - run: npm run format:check
 
+  e2e:
+    name: Uji peramban (Playwright)
+    # Pemeriksaan yang gagal sudah cukup untuk menghentikan rilis, jadi job
+    # peramban tidak perlu dijalankan setelahnya.
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      # Job ini berjalan di mesin baru, jadi penyiapannya diulang. Hasil build
+      # juga tidak dibagi antar job: `.next` memuat jalur absolut mesin yang
+      # membuatnya tidak aman dipindahkan, lebih baik di-build di sini.
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm run setup
+
       # Build produksi: impor atau tipe yang belum tersentuh uji ikut ketahuan.
-      # Hasil build inilah yang dilayani pada langkah uji peramban.
+      # Hasil build inilah yang dilayani `next start` pada uji peramban.
       - run: npm run build
 
-      # Skenario peramban (Playwright) di atas basis data uji sekali pakai.
-      # Runner belum punya perambannya, jadi Chromium dipasang lebih dulu.
+      # Skenario peramban di atas basis data uji sekali pakai. Runner belum
+      # punya perambannya, jadi Chromium dipasang lebih dulu.
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
 
