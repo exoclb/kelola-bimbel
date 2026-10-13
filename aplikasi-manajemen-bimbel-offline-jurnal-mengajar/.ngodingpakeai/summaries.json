@@ -26,6 +26,9 @@
   ".cursor/rules/starter.mdc": {
     "summary": "Aturan Cursor (alwaysApply) yang mengarahkan pembaca ke AGENTS.md untuk konvensi stack, Context7, dan validasi, serta menyuruh membaca .agents/skills/*/SKILL.md yang relevan. Ringkas dan hanya berisi instruksi, tanpa logika program."
   },
+  ".cursor/skills/ngodingpakeai/SKILL.md": {
+    "summary": "Salinan skill NgodingPakeAI untuk agen di Cursor: cara connect dan sync repo ke workspace 948b079d-f75c-4748-8c33-864661c99f74, perintahnya (doctor, connect, sync --plan, sync, status, index, plan get, task next/start/complete/fail/reset), bentuk `.ngodingpakeai/pending.json` dan `summaries.json`, serta aturan kerja tugas (satu tugas per loop, checkpoint tiap fase/layer, jangan reset tugas tanpa permintaan pengguna). Memuat larangan mengirim kode mentah atau nilai rahasia dan urutan status plan reverse dari waiting sampai done."
+  },
   ".dockerignore": {
     "summary": "Daftar pengecualian konteks build Docker: menyembunyikan .env, node_modules, .next, artefak uji (e2e/tests), konfigurasi lokal (.git, .cursor, .agents), dokumentasi, serta berkas database/log agar image produksi tetap ramping."
   },
@@ -56,14 +59,52 @@
   ".vscode/mcp.json": {
     "summary": "Konfigurasi MCP untuk VS Code yang mendaftarkan server bertipe `http` bernama `context7` pada URL `https://mcp.context7.com/mcp`, sejenis dengan konfigurasi Cursor."
   },
-  "agent.md": {
-    "summary": "Berkas pintu masuk agen yang mengarahkan pembaca ke AGENTS.md sebagai instruksi kanonik, lalu menyebut skill starter-setup dan dev-database, serta menegaskan konvensi backend: API route, pemeriksaan sesi Better Auth, validator, service untuk semua query, dan berkas tabel Drizzle terpisah sesuai docs/backend.md."
-  },
   "AGENTS.md": {
     "summary": "Instruksi utama agen untuk starter PostgreSQL berbasis NgodingPakeAI: alur first prompt (setup, predev, doctor, dev server), peta kode (src/app, src/lib/auth.ts, src/lib/permissions.ts, src/db/schema, src/services, src/validators, src/components/ui), batasan arsitektur (autentikasi via requireSession/withApiSession, otorisasi withApiPermission), serta perintah verifikasi (`npm run check`, `build`, `test:e2e`). Berkas juga memuat blok skill NgodingPakeAI dan aturan Next.js versi ini."
   },
   "CLAUDE.md": {
     "summary": "Berkas instruksi singkat tingkat repo yang mengarahkan agen membaca AGENTS.md untuk konvensi proyek, alur kerja Context7, dan peta skill. Juga menunjuk skill proyek di folder `.agents/skills/` yang dibaca langsung sebelum setup atau pengembangan fitur."
+  },
+  "Dockerfile": {
+    "summary": "Image produksi Next.js multi-stage: tahap deps, builder (npm run build dengan placeholder DATABASE_URL/BETTER_AUTH_SECRET), runtime standalone, migrator yang menjalankan scripts/migrate.mjs, dan runner default dengan healthcheck /icon.svg pada PORT 3000."
+  },
+  "LICENSE": {
+    "summary": "Lisensi MIT untuk proyek aplikasi manajemen bimbel, hak cipta 2026 ngodingpakeai contributors. Berisi teks izin penggunaan, salinan, modifikasi, dan distribusi perangkat lunak beserta penafian garansi."
+  },
+  "README.md": {
+    "summary": "README utama aplikasi manajemen bimbel (turunan Base Postgres ngodingpakeai starter): menjelaskan tumpukan Next.js App Router, Drizzle ORM, PostgreSQL, Better Auth, Tailwind/shadcn, cara menjalankan `npm run setup` dan `npm run dev`, dukungan PostgreSQL lokal Docker maupun connection string eksternal, serta daftar perintah npm (db:migrate, db:seed, db:seed:cabang, db:seed:kelas, db:seed:contoh, doctor, test:e2e, check). Menyoroti contoh backend Notes API sebagai standar (route → withApiSession → validator → service → skema Drizzle), pembagian izin role di `src/lib/permissions.ts`, dan catatan bahwa sebagian layar (pengeluaran, presensi guru, sebagian tagihan) masih memakai data tiruan `src/lib/mock-*.ts` dengan store peramban `src/lib/*-store.ts`. Ditutup dengan panduan kustomisasi, hosting/container (Dockerfile + target migrator), dan troubleshooting database.",
+    "sections": [
+      {
+        "symbol": "Start here",
+        "startLine": 1,
+        "endLine": 27,
+        "summary": "Ringkasan starter, prasyarat Node.js 22.12+/Docker, langkah `npm run setup` dan `npm run dev`, serta penjelasan apa yang dilakukan setup (dependensi, secret, PostgreSQL 17 via compose.dev.yaml, migrasi, berbagi port)."
+      },
+      {
+        "symbol": "What is included",
+        "startLine": 48,
+        "endLine": 61,
+        "summary": "Tabel fitur yang disertakan: App Router, Drizzle/PostgreSQL, akun Better Auth, role & permission, UI Tailwind v4 + shadcn, workflow AI, kualitas (lint/types/test), dan derivative."
+      },
+      {
+        "symbol": "Commands",
+        "startLine": 70,
+        "endLine": 98,
+        "summary": "Daftar perintah npm: setup, dev, db:up/down/status/logs/migrate/seed/seed:cabang/seed:kelas/seed:contoh, role:set, doctor, generate, studio, check, test, test:e2e, format."
+      },
+      {
+        "symbol": "Hosting & Troubleshooting",
+        "startLine": 110,
+        "endLine": 127,
+        "summary": "Panduan hosting Node.js + PostgreSQL persisten, build Docker (target migrator), dan solusi masalah umum (Docker, port, password, tabel auth hilang, koneksi)."
+      }
+    ]
+  },
+  "THIRD_PARTY_NOTICES.md": {
+    "summary": "Catatan lisensi pihak ketiga. Menyatakan primitif UI di `src/components/ui` berasal dari shadcn/ui (MIT, copyright 2023 shadcn) sehingga teks lisensi MIT pada LICENSE berlaku untuk berkas tersebut, sementara dependensi lain tetap memakai lisensi masing-masing."
+  },
+  "agent.md": {
+    "summary": "Berkas pintu masuk agen yang mengarahkan pembaca ke AGENTS.md sebagai instruksi kanonik, lalu menyebut skill starter-setup dan dev-database, serta menegaskan konvensi backend: API route, pemeriksaan sesi Better Auth, validator, service untuk semua query, dan berkas tabel Drizzle terpisah sesuai docs/backend.md."
   },
   "components.json": {
     "summary": "Konfigurasi shadcn/ui untuk proyek: gaya new-york, React Server Components aktif, Tailwind tanpa berkas config (CSS di src/app/globals.css), baseColor neutral dengan CSS variables, ikon lucide, dan alias @/components, @/lib/utils, @/components/ui, @/lib, @/hooks."
@@ -74,9 +115,6 @@
   "compose.test.yaml": {
     "summary": "Definisi Docker Compose untuk PostgreSQL 17-alpine sekali pakai yang khusus dipakai pengujian: database starter_test, kredensial dari STARTER_TEST_PASSWORD, data di tmpfs, healthcheck pg_isready, dan port 5432 dipetakan acak di 127.0.0.1. Tidak pernah menunjuk database aplikasi."
   },
-  "Dockerfile": {
-    "summary": "Image produksi Next.js multi-stage: tahap deps, builder (npm run build dengan placeholder DATABASE_URL/BETTER_AUTH_SECRET), runtime standalone, migrator yang menjalankan scripts/migrate.mjs, dan runner default dengan healthcheck /icon.svg pada PORT 3000."
-  },
   "docs/ai-workflow.md": {
     "summary": "Panduan integrasi editor AI pada starter ini: instruksi proyek, empat skill lokal (starter-setup, dev-database, build-feature, create-variant), dan server MCP Context7. Menjelaskan cara mengaktifkan koneksi per editor (Codex, Claude Code, Cursor, VS Code/Copilot), batas akses anonim Context7, serta alur kerja membangun fitur dan pemeriksaan lewat npm run doctor."
   },
@@ -84,63 +122,34 @@
     "summary": "Dokumentasi arsitektur aplikasi: satu paket Next.js App Router dengan satu database PostgreSQL dan Drizzle. Membahas struktur src (app, components, db/schema, services, validators, lib), alur request API route → session/validation → service → Drizzle, helper getSession/requireSession, pengaturan DATABASE_URL, skema auth Better Auth, aturan UI Server Component/Tailwind v4, serta kompatibilitas TypeScript 5.9 dan ESLint 9."
   },
   "docs/backend.md": {
-    "summary": "Dokumen standar backend aplikasi: mendefinisikan alur route API → `withApiSession`/`withApiPermission` (cek sesi Better Auth + origin) → validator → service (`src/services/*.service.ts`) → tabel Drizzle (`src/db/schema/`), dengan aturan bahwa route tidak mengakses Drizzle langsung dan setiap query milik pengguna difilter lewat user id dari sesi. Memuat daftar lengkap endpoint app (jadwal, jurnal, murid, cabang, kelas + jadwal, gaji, presensi-guru, notifikasi, pengaturan/profil/guru/gaji/backup, wali, portal tagihan/perkembangan/jadwal/beranda, akun/masuk/sesi, lupa/atur-ulang sandi) beserta status, parameter, bentuk respons, dan kodenya, termasuk contoh baku Notes API. Menjelaskan skema database (termasuk tabel `cabang` dengan FK `classes_cabang_cabang_nama_fk`, indeks unik parsial seperti `student_enrollments_student_aktif_idx`, `teaching_journals_guru_jadwal_tanggal_idx`, `salary_settings_berlaku_sejak_idx`, `bimbel_profile_tunggal_idx`, `cabang_nama_unik_idx`), tabel akun Better Auth (`user.role` wajib dengan bawaan `user` = guru, `banned` untuk status aktif), matriks akses API per izin, aturan proteksi halaman (sesi `requireSession` vs izin `perkembangan`/`jurnal: read-any`/`gaji: read-any`/`pengaturan`), dan sistem role-based access dari Better Auth admin plugin.",
-    "sections": [
-      {
-        "symbol": "Alur & Responsibilities",
-        "startLine": 1,
-        "endLine": 23,
-        "summary": "Diagram alur request dan pembagian tanggung jawab routes, services, validators, schemas, serta helper HTTP `src/lib/api.ts`."
-      },
-      {
-        "symbol": "Notes endpoints",
-        "startLine": 24,
-        "endLine": 41,
-        "summary": "Referensi CRUD Notes API: method/path, validasi judul 1–160 dan konten 10.000, paginasi, bentuk respons, dan tabel kode error 400/401/403/404/415/422/500."
-      },
-      {
-        "symbol": "App endpoints",
-        "startLine": 42,
-        "endLine": 212,
-        "summary": "Tabel endpoint aplikasi bimbel (jadwal, jurnal, murid, cabang, kelas, gaji, notifikasi, pengaturan, wali, portal wali, autentikasi) beserta ringkasan hasil dan detail parameter `POST /api/jurnal`, `GET /api/jurnal`, presensi guru, endpoint admin pemantauan, dan notifikasi."
-      },
-      {
-        "symbol": "Data model",
-        "startLine": 217,
-        "endLine": 248,
-        "summary": "Penjelasan tabel domain (classes, schedules, student_enrollments, teaching_journals, journal_attendances, student_progress, salary_settings, salary_recaps, backup_runs, notifications) dan aturan yang dijaga database lewat indeks/batasan unik serta riwayat migrasi terkait."
-      },
-      {
-        "symbol": "Akses API, Proteksi halaman, Role-based access",
-        "startLine": 249,
-        "endLine": 351,
-        "summary": "Matriks siapa boleh memanggil endpoint apa, tabel syarat proteksi halaman app/admin/portal, dan penjelasan penerapan izin di `src/lib/permissions.ts`, `auth.ts`, `session.ts`, dan `api.ts`."
-      }
-    ]
+    "summary": "Dokumen standar backend: alur route API → `withApiSession`/`withApiPermission` (sesi Better Auth dan pemeriksaan origin) → validator Zod → service (`src/services/*.service.ts`) → tabel Drizzle (`src/db/schema/`), dengan aturan route tidak mengakses Drizzle langsung dan setiap kueri milik pengguna difilter lewat user id dari sesi. Memuat daftar lengkap endpoint app — jadwal, jurnal, murid, cabang, kelas, gaji, presensi guru, notifikasi, pengaturan/profil/guru/gaji/notifikasi/backup, wali, portal, akun/masuk/sesi, lupa dan atur ulang sandi — termasuk tambahan modul backup: `GET`/`PUT /api/pengaturan/backup/jadwal`, `GET /api/pengaturan/backup/berkas`, dan `GET`/`POST /api/pengaturan/backup/uji-pemulihan` yang memulihkan berkas ke `RESTORE_DATABASE_URL`. Menjelaskan penulisan catatan `backup_runs` (`berjalan` lalu `sukses`/`gagal`), kolom `catatan_uji_pemulihan`, jadwal yang dibaca penjadwal di aplikasi, dan invarian yang dikunci `tests/database.test.mjs` serta spec Playwright."
   },
   "docs/deploy-coolify.md": {
-    "summary": "Panduan langkah deploy produksi ke Coolify dari nol sampai live, per fase dan aman diulang, tanpa nilai rahasia di repo. Fase 1: membuat resource PostgreSQL 17 (lewat `npm run coolify:db -- buat|status` yang idempoten, atau dashboard), versi/sumber daya, mengambil connection string internal, dan uji koneksi pakai `npm run doctor`. Fase 2: daftar variabel wajib (`DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `MIGRATION_DATABASE_URL` opsional), penyimpanan rahasia + pemisahan environment, pembuatan Application dari Git branch `master` dengan Build Pack Dockerfile, lokasi Dockerfile di subfolder proyek, target `runner`, port 3000, dan uji rilis pertama (termasuk cek env tanpa membocorkan nilainya). Fase 3: migrasi lewat target `migrator` (resource terpisah yang disarankan atau pre-deployment command Coolify beserta perilaku lewati-deploy-pertama dan gagal-henti), catatan log migrasi + migrasi penempatan multi-kelas 0014, lalu pemasangan domain, HTTPS otomatis, dan penyelarasan `BETTER_AUTH_URL`. Fase 4: webhook Git untuk auto-deploy, notifikasi, cara rollback (Configuration → Rollback) beserta peringatan bahwa migrasi tidak ikut dibatalkan, skrip backup `pg_dump` terjadwal + salinan terpisah + retensi, dan uji pemulihan; halaman aplikasi hanya memantau lewat tabel `backup_runs`. Fase 5: uji masuk per peran, uji alur inti di produksi, checklist go-live, dan tabel masalah yang sering muncul beserta tindakannya, ditutup referensi dokumentasi Coolify."
+    "summary": "Panduan deploy produksi ke Coolify dari nol sampai live, per fase, aman diulang, tanpa nilai rahasia di repo. Fase 1 menyiapkan resource PostgreSQL 17 (lewat `npm run coolify:db` yang idempoten atau dashboard), memilih versi dan sumber daya, mengambil connection string internal, lalu mengujinya dengan `npm run doctor`; Fase 2 memuat daftar variabel lingkungan termasuk kanal email `SMTP_*` beserta aturan isiannya, penyimpanan rahasia, dan pembuatan Application Build Pack Dockerfile; Fase 3 migrasi otomatis lewat target `migrator`, domain, dan HTTPS; Fase 4 menjelaskan webhook auto-deploy, isi pipa CI `.github/workflows/ci.yml` (setup, check, format:check, build, test:e2e yang dirangkum job `ringkasan` sebagai `Ringkasan hasil CI`), cara mengulang pemeriksaannya sendiri, memasang syarat merge lewat `npm run ci:wajib`, urutan rilis dan rollback, backup manual maupun otomatis (jadwal di tabel `backup_settings`, penjadwal di aplikasi, cron atau object storage untuk salinan luar), cara membaca status dan riwayat backup, uji pemulihan ke database percobaan, pemulihan data sungguhan, dan siapa yang menjalankannya; Fase 5 memuat uji masuk per peran termasuk bukti email reset benar-benar terkirim serta checklist go-live. Ditutup bagian memeriksa nilai rahasia dan masalah yang sering muncul."
   },
   "docs/deployment.md": {
-    "summary": "Panduan deployment: variabel lingkungan (termasuk `MIGRATION_DATABASE_URL`), cara menjalankan migrasi (`npm run db:migrate`), dua target Dockerfile (`runner` standalone dan `migrator`), serta tautan ke dokumen aturan penempatan multi-kelas."
+    "summary": "Panduan singkat “Hosting Kelola Bimbel on a Node.js host” (bahasa Inggris) untuk menjalankan aplikasi di host Node.js: variabel lingkungan produksi termasuk yang opsional (`MIGRATION_DATABASE_URL`, `MODE_RILIS`, `PENJADWAL_BACKUP`, `BACKUP_*`, `RESTORE_*`, dan `SMTP_*` beserta aturan isiannya), perintah menjalankan migrasi (`npm run db:migrate`), dua target Dockerfile (`runner` standalone dan `migrator`), connection pooling, perbandingan data lokal versus data hosted, serta catatan pemulihan ke database percobaan. Versi Indonesia yang lebih lengkap ada di `docs/deploy-coolify.md`."
   },
   "docs/derivatives.md": {
     "summary": "Dokumentasi cara membuat turunan (derivative/variant) aplikasi dari basis PostgreSQL di akar repo memakai `npm run create:variant -- <id> <tujuan>`; menjelaskan berkas yang disalin, berkas rahasia yang tidak disalin, serta resep dashboard dan chatbot. Menegaskan tiap turunan independen tanpa framework plugin, mempertahankan `baseVersion`, dan mencatat perubahan di `docs/variant.md`."
   },
   "docs/local-development.md": {
-    "summary": "Panduan pengembangan lokal berbasis database: menjelaskan apa yang berjalan di mana (`compose.dev.yaml` menjalankan PostgreSQL 17 sementara Next.js berjalan di komputer dengan hot reload), prasyarat Node.js 22.12+ dan Docker Compose v2, serta langkah `npm run setup`/`npm run dev` yang menghasilkan `.env.local`, port bebas, project Compose unik, volume persisten, dan penerapan migrasi Drizzle. Memuat tabel perintah database (db:up, db:status, db:logs, db:down, db:migrate, db:seed, db:seed:wali, db:seed:cabang, db:seed:kelas, db:seed:contoh, doctor), catatan menjalankan tes unit dengan `--conditions=react-server` supaya modul `server-only` bisa diuji (contoh `tests/cabang-service.test.mjs`), aturan keamanan `.env.local`/volume, dukungan koneksi PostgreSQL eksternal via `DATABASE_URL`/`MIGRATION_DATABASE_URL`, serta cara memverifikasi setup bersih lewat `npm run test:setup`."
+    "summary": "Panduan pengembangan lokal berbasis database: menjelaskan apa yang berjalan di mana (`compose.dev.yaml` menjalankan PostgreSQL 17, aplikasi Next.js di komputer dengan hot reload), prasyarat Node.js 22.12+ dan Docker Compose v2, serta langkah `npm run setup` dan `npm run dev` yang menghasilkan `.env.local`, port bebas, project Compose unik, volume persisten, dan penerapan migrasi Drizzle. Memuat tabel perintah database (db:up/down/status/logs, db:migrate, db:seed*, doctor) dan catatan menjalankan tes unit maupun e2e dengan basis data sekali pakai. Bagian CI menjelaskan perintah yang dipakai pipa (`setup`, `check`, `format:check`, `build`, `test:e2e`), pemisahan uji peramban ke job sendiri, cache npm dan Playwright, artefak `laporan-uji-peramban` selama 7 hari, serta cara memasang syarat merge di cabang utama lewat `npm run ci:wajib` (nama check dibaca dari berkas pipa, opsi `--kering`/`--hapus`, butuh repo publik atau GitHub Pro)."
   },
   "docs/penempatan-murid.md": {
     "summary": "Spesifikasi sub-fitur Penempatan Murid dengan aturan multi-kelas: murid boleh aktif di beberapa kelas, unik per pasangan murid–kelas (409 `SUDAH_TERDAFTAR`), riwayat penempatan lama ditandai `selesai` bukan dihapus, dan murid boleh kembali ke kelas lama. Berisi tabel alur di aplikasi (`/app/kelas`, `/app/murid`, `/app/murid/<id>`, `/app/penempatan`), daftar endpoint penempatan, dampak ke laporan (kehadiran & ringkasan gabungan lintas kelas), cuplikan migrasi `0014_penempatan_multi_kelas.sql`, dan catatan bagian yang masih memakai data tiruan."
   },
   "docs/peta-data-tiruan.md": {
-    "summary": "Peta data tiruan dan store peramban per 2026-10-08/2026-10-09: mendata setiap `src/lib/mock-*.ts` dan `src/lib/*-store.ts` beserta pengimpornya, klasifikasinya (Hidup / Impor mati / Berkas mati), dan padanan tabel basis datanya, dipakai untuk merencanakan penyambungan sisa fitur ke API. Memuat perintah verifikasi ulang (grep pengimpor, `npm run lint` untuk impor mati, `npm run typecheck`), tabel berkas store (mis. `jejak-baca-portal-store.ts` → tabel `jejak_baca_portal`) dan mock (mock-akun, mock-cabang, mock-gaji, mock-jurnal, mock-kelas, mock-menu, mock-murid, mock-penempatan, mock-pengaturan, mock-wali) dengan layanan/endpoint penggantinya, daftar ekspor tanpa pengimpor sebagai kandidat pembersihan lanjutan, serta catatan modul yang sudah dibersihkan (pengeluaran, kehadiran, tagihan, portal wali, dan modul cabang ke tabel `cabang`/`classes`/`student_enrollments`/`teaching_journals`)."
+    "summary": "Peta data tiruan dan store peramban per 2026-10-08 sampai 2026-10-13: mendata setiap `src/lib/mock-*.ts` dan `src/lib/*-store.ts` beserta pengimpornya, klasifikasinya (Hidup / Impor mati / Berkas mati), dan padanan tabel basis datanya, dipakai untuk merencanakan penyambungan sisa fitur ke API. Entri terbaru menambahkan `src/lib/mock-uji-pemulihan.ts` (halaman Uji Pemulihan Backup, catatan ujinya masih contoh) dan `src/lib/mock-ci-otomatis.ts` (halaman Status CI serta kartu di halaman Pengaturan Bimbel). Memuat perintah verifikasi ulang (grep pengimpor, `npm run lint` untuk impor mati, `npm run typecheck`), tabel berkas store (mis. `jejak-baca-portal-store.ts` → tabel `jejak_baca_portal`) dan tabel mock (mock-akun, mock-cabang, mock-gaji, mock-jurnal, mock-kelas, mock-menu, mock-murid, mock-notifikasi, mock-penempatan, dan lain-lain)."
   },
   "docs/prompts.md": {
     "summary": "Kumpulan contoh prompt pembuka untuk membangun aplikasi: setup lokal, fitur pertama, mengubah tampilan, mendiagnosis error, membuat varian (create-variant), verifikasi fitur, dan fitur backend baru. Prompt merujuk AGENTS.md serta skill build-feature dan menekankan isolasi data per akun."
   },
   "docs/variant.md": {
     "summary": "Dokumentasi varian base PostgreSQL yang diturunkan dari base SQLite 0.1.0. Menjelaskan penggantian driver Drizzle ke node-postgres, tabel auth pgTable, migrasi SQL baru, peran DATABASE_URL/MIGRATION_DATABASE_URL, setup Docker lokal, dan prefix cookie agar bisa berjalan berdampingan dengan starter SQLite."
+  },
+  "drizzle.config.ts": {
+    "summary": "Konfigurasi drizzle-kit: skema dari ./src/db/schema/index.ts, keluaran migrasi ke ./drizzle, dialek postgresql, kredensial dari MIGRATION_DATABASE_URL atau DATABASE_URL, dan loadEnvConfig Next dipanggil lebih dulu agar .env terbaca."
   },
   "drizzle/0000_auth.sql": {
     "summary": "Migrasi awal Drizzle untuk skema autentikasi Better Auth: membuat tabel account, session, user, dan verification beserta indeks (account_user_id_idx, session_user_id_idx, verification_identifier_idx), constraint unik email/token, dan foreign key cascade ke user."
@@ -243,6 +252,12 @@
   "drizzle/0030_indeks_cabang_kelas.sql": {
     "summary": "Migrasi Drizzle yang membuat indeks classes_cabang_idx memakai btree pada kolom cabang tabel classes. Indeks ini mempercepat query kelas yang difilter atau dikelompokkan per cabang dan melengkapi relasi foreign key classes.cabang ke tabel cabang, tanpa mengubah data."
   },
+  "drizzle/0031_tabel_pengaturan_backup.sql": {
+    "summary": "Migrasi Drizzle yang membuat tabel `backup_settings` untuk pengaturan jadwal backup aplikasi (aktif, jam, zona waktu, retensi, tujuan, updated_at) beserta CHECK bentuk jam 24 jam, retensi 1–365 hari, zona tidak kosong, dan tujuan berupa path absolut. Indeks unik `backup_settings_tunggal_idx` pada ekspresi `(true)` menjaga isinya hanya satu baris."
+  },
+  "drizzle/0032_catatan_uji_pemulihan_backup.sql": {
+    "summary": "Migrasi Drizzle kecil yang menambah kolom `catatan_uji_pemulihan` bertipe text pada tabel `backup_runs` untuk menampung rangkuman hasil uji pemulihan. Kolomnya boleh null (berarti berkas belum pernah diuji), tetapi kalau diisi tidak boleh kosong atau hanya spasi dan dibatasi 2000 karakter."
+  },
   "drizzle/meta/0000_snapshot.json": {
     "summary": "Berkas turunan drizzle-kit yang merekam snapshot migrasi 0000_auth: tabel basis data auth Better Auth `account`, `session`, `user`, dan `verification` beserta kolom, indeks, dan foreign key-nya. Tidak perlu dibaca manual karena dihasilkan otomatis."
   },
@@ -336,11 +351,14 @@
   "drizzle/meta/0030_snapshot.json": {
     "summary": "Snapshot skema Drizzle untuk migrasi 0030_indeks_cabang_kelas. Berisi 25 tabel public; perubahan versi ini adalah indeks classes_cabang_idx pada kolom classes.cabang untuk mempercepat pencarian kelas per cabang, melengkapi foreign key classes_cabang_cabang_nama_fk dan tabel cabang dari migrasi sebelumnya."
   },
-  "drizzle/meta/_journal.json": {
-    "summary": "Jurnal migrasi Drizzle (versi 7, dialek postgresql) yang mendaftar semua entri migrasi berurutan lewat idx, tag, timestamp when, dan bendera breakpoints. Entri terakhir pada berkas ini mencakup 0019_mute_pepper_potts hingga 0030_indeks_cabang_kelas (termasuk 0027_tabel_cabang, 0028_cabang_nama_unik, 0029_relasi_cabang_kelas), dan berkas ini menjadi acuan urutan migrasi yang dijalankan drizzle-kit."
+  "drizzle/meta/0031_snapshot.json": {
+    "summary": "Snapshot skema Drizzle (versi 7, dialect postgresql) untuk migrasi `0031_tabel_pengaturan_backup`: cuplikan seluruh tabel publik beserta kolomnya — dari tabel auth (`user`, `session`, `account`), murid, kelas, jadwal, jurnal mengajar, tagihan, sampai gaji — dengan tambahan tabel baru `backup_settings`. Dipakai drizzle-kit untuk menghitung diff migrasi berikutnya; `prevId`-nya menunjuk snapshot 0030."
   },
-  "drizzle.config.ts": {
-    "summary": "Konfigurasi drizzle-kit: skema dari ./src/db/schema/index.ts, keluaran migrasi ke ./drizzle, dialek postgresql, kredensial dari MIGRATION_DATABASE_URL atau DATABASE_URL, dan loadEnvConfig Next dipanggil lebih dulu agar .env terbaca."
+  "drizzle/meta/0032_snapshot.json": {
+    "summary": "Snapshot skema Drizzle (versi 7, dialect postgresql) untuk migrasi `0032_catatan_uji_pemulihan_backup`: salinan skema seluruh tabel publik setelah kolom `catatan_uji_pemulihan` ditambahkan ke `backup_runs`. `prevId` menunjuk snapshot 0031 dan `id` snapshot ini menjadi acuan migrasi berikutnya."
+  },
+  "drizzle/meta/_journal.json": {
+    "summary": "Jurnal migrasi Drizzle (versi 7, dialek postgresql) yang mendaftar seluruh entri migrasi berurutan lewat idx, tag, timestamp `when`, dan bendera breakpoints. Entri terakhirnya mencakup 0019_mute_pepper_potts sampai 0032_catatan_uji_pemulihan_backup, termasuk 0031_tabel_pengaturan_backup (tabel `backup_settings`) dan 0032_catatan_uji_pemulihan_backup; berkas ini menjadi acuan urutan migrasi yang dijalankan drizzle-kit dan `scripts/migrate.mjs`."
   },
   "e2e/akun-nonaktif.spec.ts": {
     "summary": "Uji end-to-end Playwright yang memverifikasi akun dinonaktifkan (banned) kehilangan sesinya dan diblokir saat masuk lagi. Skenarionya memakai helper setBanned lewat pg Pool ke STARTER_TEST_DATABASE_URL, mendaftar via POST /api/akun, memeriksa GET /api/sesi dan /api/murid jadi 401, redirect /app ke /sign-in, lalu POST /api/masuk menjawab 403 dengan kode AKUN_NONAKTIF sebelum akun diaktifkan kembali."
@@ -354,11 +372,17 @@
   "e2e/auth.spec.ts": {
     "summary": "Uji end-to-end Playwright untuk autentikasi: pengunjung anonim dialihkan ke /sign-in, alur daftar-sesi-logout-masuk ulang dengan sandi salah ditolak, penolakan permintaan lintas origin (403) dan data pendaftaran tidak valid pada /api/auth/sign-up/email, serta uji tata letak layar sempit 390px dan tombol salin prompt di beranda."
   },
+  "e2e/backup-jalankan.spec.ts": {
+    "summary": "Spec Playwright untuk menjalankan backup dari halaman Pengaturan → Backup Database: tombol “Jalankan backup sekarang” lebih dulu meminta konfirmasi, lalu pemicunya menjalankan `POST /api/pengaturan/backup` dan memastikan satu catatan baru muncul di riwayat beserta status serta pesannya. Akun ujinya didaftarkan lewat `/api/akun` dan perannya disetel langsung di tabel `user`."
+  },
   "e2e/backup-riwayat.spec.ts": {
-    "summary": "Tes Playwright end-to-end untuk fitur riwayat backup. Menguji halaman /app/pengaturan/backup yang menampilkan catatan tabel backup_runs apa adanya (sukses dengan lokasi dan ukuran terbaca, gagal dengan alasan, berjalan sebagai 'masih berjalan'), serta endpoint GET /api/pengaturan/backup yang mengembalikan ringkasan jumlah per status, backup terakhir sukses, dan daftar terbaru yang bisa dibatasi lewat query limit (limit=0 menghasilkan 422). Helper daftar/setRole/masuk memakai endpoint /api/akun dan /api/masuk serta login lewat /sign-in untuk akun berrole owner."
+    "summary": "Spec Playwright modul backup: halaman `/app/pengaturan/backup` menampilkan catatan tabel `backup_runs` apa adanya (sukses beserta lokasi dan ukuran, gagal beserta alasannya, berjalan sebagai “masih berjalan”) dan kartu ringkasan salinan terakhir beserta penilaian kesegarannya, sementara formulir jadwal terisi dari jadwal yang berlaku dan menyimpan pengaturannya ke server. Endpoint yang diuji: `GET`/`POST /api/pengaturan/backup` (termasuk batas `?limit=`), `GET`/`PUT /api/pengaturan/backup/jadwal` (owner boleh, akun lain ditolak), `GET /api/pengaturan/backup/berkas` (hanya catatan sukses berberkas), dan `POST /api/pengaturan/backup/uji-pemulihan` beserta pengamanannya."
   },
   "e2e/gaji.spec.ts": {
     "summary": "Spec Playwright alur gaji guru: melindungi endpoint GET /api/gaji, /api/admin/gaji, /api/admin/gaji/riwayat, dan /api/admin/gaji/slip, serta halaman /app/gaji dan /app/gaji/saya. Invarian yang dijaga: semua endpoint menjawab 401 tanpa sesi; guru hanya menerima rekap gajinya sendiri dan tidak bisa membuka jalur milik owner; owner boleh melihat gaji setiap guru dan penandaan pembayaran langsung berlaku; rekap bulanan/tahunan dihitung dari teaching_journals dan salary_settings untuk bulan berjalan; nilai dari basis data di-escape di slip (label periode seperti \"Oktober 2026\"); halaman rekap gaji semua guru hanya untuk owner."
+  },
+  "e2e/halaman-contoh.spec.ts": {
+    "summary": "Spec Playwright yang berjalan di atas server rilis (`npm run build` + `next start`): memastikan menu tiap peran tidak lagi menautkan halaman contoh `/app/contoh-status`, rute contoh tak terbedakan dari alamat asing (yang tampil tampilan penolakan bersama, bukan pengalihan ke halaman masuk), dan tampilan penolakan itu tidak membocorkan pesan teknis."
   },
   "e2e/jadwal-bentrok.spec.ts": {
     "summary": "Spec Playwright pendeteksi bentrok jadwal pada POST /api/kelas/:id/jadwal (dipakai layar /app/kelas). Invariannya: jam yang beririsan di kelas yang sama ditolak; guru yang sama tidak boleh mengajar dua kelas pada jam yang bertumpuk; dua kelas berbeda di cabang yang sama tetap boleh berjalan bersamaan karena satu cabang menampung banyak kelas. Spec menyiapkan cabang uji lebih dulu via tabel cabang karena kelas hanya boleh menunjuk cabang terdaftar."
@@ -388,7 +412,7 @@
     "summary": "Spec Playwright notifikasi in-app lewat /api/notifikasi (daftar, saringan belumDibaca, PATCH tandai baca satu per satu, dibaca:false untuk membalik, dan semua:true), plus pemicu dari /api/jurnal, /api/kelas, dan /api/admin/gaji. Invarian: daftar, hitungan meta.belumDibaca, dan penandaan baca terbatas pada akun sendiri sehingga id milik akun lain mengubah 0 baris; badan tak sah (ids kosong) ditolak 422 sebelum menyentuh basis data; jurnal baru hanya memberi tahu pemilik yang masih mengaktifkan preferensinya; gaji dibayar memberi tahu guru tepat sekali."
   },
   "e2e/pemantauan.spec.ts": {
-    "summary": "Spec Playwright modul pemantauan & pengaturan owner: endpoint /api/admin/jurnal, /api/admin/ringkasan-guru, /api/admin/opsi-saring, dan halaman /app/pemantauan, /app/gaji, /app/pengaturan (profil, guru, gaji, notifikasi, backup), dengan /api/pengaturan/profil, /api/pengaturan/guru/:id, /api/pengaturan/gaji/:id, dan /api/pengaturan/notifikasi, serta jurnal (/api/jurnal, /api/kehadiran, /api/perkembangan, /api/notifikasi). Invarian: endpoint pantauan 401 tanpa sesi dan guru ditolak; pencabutan peran berlaku langsung; proteksi rute dan pengalihan setelah masuk mengikuti peran; pengaturan hanya menampilkan bagian sesuai izin akun; profil bimbel boleh dibaca semua akun tapi hanya owner boleh mengubah; aturan gaji disimpan bertanggal dan tarifnya diresolusi per tanggal (halaman menandai tarif yang berlaku, bukan bertanggal masa depan); preferensi notifikasi tersimpan per akun."
+    "summary": "Spec Playwright modul pemantauan dan pengaturan owner: endpoint `/api/admin/jurnal`, `/api/admin/ringkasan-guru`, `/api/admin/opsi-saring` serta halaman `/app/pemantauan`, `/app/gaji`, dan `/app/pengaturan` (profil, guru, gaji, notifikasi, backup, variabel lingkungan, kartu Status CI), dengan `/api/pengaturan/profil`, `/api/pengaturan/guru/:id`, `/api/pengaturan/gaji/:id`, dan `/api/pengaturan/notifikasi`. Invariannya: endpoint pantauan menjawab 401 tanpa sesi dan menolak guru, pencabutan peran langsung berlaku, proteksi rute serta pengalihan setelah masuk mengikuti peran, dan pengaturan hanya bisa dilihat pemiliknya."
   },
   "e2e/penempatan.spec.ts": {
     "summary": "Spec Playwright aturan penempatan murid multi-kelas lewat POST/DELETE /api/kelas/:id/murid/:muridId dan /api/penempatan, didukung /api/murid dan /api/kelas. Invarian: satu murid boleh aktif di beberapa kelas tetapi tidak boleh dua kali di kelas yang sama (409 SUDAH_TERDAFTAR); keluar dari satu kelas tidak mengganggu kelas lain; murid nonaktif tidak bisa ditempatkan sampai diaktifkan (409 MURID_TIDAK_AKTIF); saringan ?status=aktif|nonaktif dan ?tanpaKelas=<kelasId> pada daftar murid bekerja; riwayat lewat ?status=semua menandai penempatan \"selesai\"; /api/penempatan menyaring per muridId dan status dengan meta.aktif/total."
@@ -482,6 +506,9 @@
   "e2e/sesi.spec.ts": {
     "summary": "Uji end-to-end Playwright untuk endpoints sesi: POST /api/masuk menolak origin salah dengan 403 FORBIDDEN_ORIGIN, menolak isian tidak valid dengan 422 VALIDATION_ERROR (field email dan sandi), dan GET/DELETE /api/sesi menjawab 401 UNAUTHORIZED tanpa cookie."
   },
+  "e2e/status-ci.spec.ts": {
+    "summary": "Spec Playwright halaman Pengaturan → Status CI: memeriksa kartu CI yang sedang berjalan beserta tahapnya, ringkasan hasil terakhir, rincian tahap yang gagal, daftar langkah, dan riwayat jalan; juga kartu pintasan Status CI di halaman Pengaturan Bimbel. Akun guru ditolak karena halaman itu butuh izin `pengaturan: read`."
+  },
   "e2e/tagihan-spp.spec.ts": {
     "summary": "Spec Playwright untuk penerbitan tagihan SPP anti-dobel lewat POST /api/tagihan: satu murid hanya boleh punya satu tagihan per periode, dan permintaan yang sebagian muridnya sudah ditagih tetap diproses untuk sisanya, sedangkan yang sudah ada dilaporkan sebagai `dilewati`. Data murid disiapkan lewat POST /api/murid dan peran diatur langsung di tabel `user`.",
     "sections": [
@@ -515,11 +542,11 @@
       }
     ]
   },
+  "e2e/uji-pemulihan.spec.ts": {
+    "summary": "Spec Playwright halaman Pengaturan → Backup → Uji Pemulihan: status proses pemulihan yang sedang berjalan beserta tahapnya, ringkasan uji terakhir dan verifikasi hasil pulih, daftar berkas backup yang siap diuji, empat langkah baku, dan seluruh riwayatnya; halaman Backup menampilkan riwayat uji itu beserta tautan ke halaman uji. Akun guru ditolak."
+  },
   "eslint.config.mjs": {
     "summary": "Konfigurasi ESLint 9 (flat config) aplikasi: menggabungkan preset `eslint-config-next/core-web-vitals` dan `/typescript`, lalu menambah aturan `no-restricted-imports` untuk berkas di `src/components/**/*.tsx` yang melarang impor `@/lib/mock-cabang`. Larangan itu menjaga komponen cabang tetap memakai prop dari halaman (sumber data lewat `src/services/cabang.service.ts`), bukan data contoh yang hanya untuk `npm run db:seed:cabang`. Mendaftarkan `globalIgnores` untuk `.next`, `node_modules`, `next-env.d.ts`, `playwright-report`, dan `test-results`."
-  },
-  "LICENSE": {
-    "summary": "Lisensi MIT untuk proyek aplikasi manajemen bimbel, hak cipta 2026 ngodingpakeai contributors. Berisi teks izin penggunaan, salinan, modifikasi, dan distribusi perangkat lunak beserta penafian garansi."
   },
   "next-env.d.ts": {
     "summary": "Berkas deklarasi tipe Next.js yang di-generate otomatis (referensi tipe `next`, `next/image-types/global`, dan rute bertipe), berisi catatan agar tidak diedit manual. Dipakai agar TypeScript mengenali tipe global Next.js."
@@ -531,42 +558,13 @@
     "summary": "Berkas lockfile npm turunan (generated) untuk proyek \"ngodingpakeai-starter\" versi 0.1.0 dengan lockfileVersion 3, berisi 627 entri paket beserta resolved URL dan integrity hash. Mencatat dependensi runtime utama (next 16.3.4, react 19.2.8, better-auth 1.7.3, drizzle-orm 0.45.2, pg 8.23.0, zod, radix-ui, motion, lucide-react) dan devDependencies (typescript, tailwindcss, drizzle-kit, @playwright/test, eslint, prettier). Tidak perlu dibaca penuh; hanya mencerminkan hasil instalasi, bukan logika aplikasi."
   },
   "package.json": {
-    "summary": "Manifest proyek Next.js (nama ngodingpakeai-starter, Node >=22.12, ESM) yang mendefinisikan skrip npm: `setup`, `predev`/`dev`/`build`/`start`, `lint`, `typecheck`, `check`, `format`, basis data (`db:generate`, `db:migrate`, `db:seed`, `db:seed:wali`, `db:seed:cabang`, `db:seed:kelas`, `db:seed:contoh`, `db:studio`, `db:up`/`db:down`/`db:status`/`db:logs`, `db:backup`), operasional (`doctor`, `role:set`, `test:setup`, `coolify:db`), serta `test`, `test:e2e`, dan `create:variant`. Dependensi utama: Next 16, React 19, better-auth, drizzle-orm + pg, zod, radix-ui, lucide-react, motion, server-only; devDependencies: Playwright, ESLint + eslint-config-next, Prettier, Tailwind CSS v4 (@tailwindcss/postcss), drizzle-kit, TypeScript."
+    "summary": "Manifest proyek Next.js (nama ngodingpakeai-starter, Node >=22.12, ESM) yang mendefinisikan skrip npm: `setup`, `predev`/`dev`/`build`/`start`, `lint`, `typecheck`, `check` (lint + typecheck + test), `format`, `format:check`, basis data (`db:generate`, `db:migrate`, `db:seed*`, `db:studio`, `db:up`/`db:down`/`db:status`/`db:logs`, `db:backup`), operasional (`doctor`, `role:set`, `test:setup`, `coolify:db`, `ci:wajib`), serta `test`, `test:e2e`, dan `create:variant`. Dependensi utamanya Next 16, React 19, better-auth, drizzle-orm dan pg, zod, radix-ui, lucide-react, motion, nodemailer, dan perkakas uji Node serta Playwright."
   },
   "playwright.config.ts": {
-    "summary": "Konfigurasi Playwright: hanya boleh dijalankan lewat npm run test:e2e karena mewajibkan STARTER_TEST_DATABASE_URL dan penanda STARTER_TEST_RUN, menjalankan satu worker non-paralel dengan reporter list, baseURL http://localhost:3101, dan webServer `npm run start --port 3101` bermode produksi memakai basis data uji sekali pakai."
+    "summary": "Konfigurasi Playwright: hanya boleh dijalankan lewat `npm run test:e2e` karena mewajibkan `STARTER_TEST_DATABASE_URL` dan penanda `STARTER_TEST_RUN`, memakai satu worker non-paralel dengan reporter `list` (ditambah laporan HTML saat berjalan di CI), `baseURL` http://localhost:3101, dan `webServer` yang menjalankan `npm run start --port 3101` bermode produksi di atas basis data uji sekali pakai."
   },
   "postcss.config.mjs": {
     "summary": "Konfigurasi PostCSS minimal yang mendaftarkan plugin @tailwindcss/postcss untuk memproses Tailwind CSS versi 4 pada proyek Next.js ini."
-  },
-  "README.md": {
-    "summary": "README utama aplikasi manajemen bimbel (turunan Base Postgres ngodingpakeai starter): menjelaskan tumpukan Next.js App Router, Drizzle ORM, PostgreSQL, Better Auth, Tailwind/shadcn, cara menjalankan `npm run setup` dan `npm run dev`, dukungan PostgreSQL lokal Docker maupun connection string eksternal, serta daftar perintah npm (db:migrate, db:seed, db:seed:cabang, db:seed:kelas, db:seed:contoh, doctor, test:e2e, check). Menyoroti contoh backend Notes API sebagai standar (route → withApiSession → validator → service → skema Drizzle), pembagian izin role di `src/lib/permissions.ts`, dan catatan bahwa sebagian layar (pengeluaran, presensi guru, sebagian tagihan) masih memakai data tiruan `src/lib/mock-*.ts` dengan store peramban `src/lib/*-store.ts`. Ditutup dengan panduan kustomisasi, hosting/container (Dockerfile + target migrator), dan troubleshooting database.",
-    "sections": [
-      {
-        "symbol": "Start here",
-        "startLine": 1,
-        "endLine": 27,
-        "summary": "Ringkasan starter, prasyarat Node.js 22.12+/Docker, langkah `npm run setup` dan `npm run dev`, serta penjelasan apa yang dilakukan setup (dependensi, secret, PostgreSQL 17 via compose.dev.yaml, migrasi, berbagi port)."
-      },
-      {
-        "symbol": "What is included",
-        "startLine": 48,
-        "endLine": 61,
-        "summary": "Tabel fitur yang disertakan: App Router, Drizzle/PostgreSQL, akun Better Auth, role & permission, UI Tailwind v4 + shadcn, workflow AI, kualitas (lint/types/test), dan derivative."
-      },
-      {
-        "symbol": "Commands",
-        "startLine": 70,
-        "endLine": 98,
-        "summary": "Daftar perintah npm: setup, dev, db:up/down/status/logs/migrate/seed/seed:cabang/seed:kelas/seed:contoh, role:set, doctor, generate, studio, check, test, test:e2e, format."
-      },
-      {
-        "symbol": "Hosting & Troubleshooting",
-        "startLine": 110,
-        "endLine": 127,
-        "summary": "Panduan hosting Node.js + PostgreSQL persisten, build Docker (target migrator), dan solusi masalah umum (Docker, port, password, tabel auth hilang, koneksi)."
-      }
-    ]
   },
   "scripts/backup.mjs": {
     "summary": "Skrip `npm run db:backup` (Node ESM) yang menjalankan satu kali backup basis data dan mencatatnya ke tabel `backup_runs`. Perintah dump diambil dari env `BACKUP_COMMAND` (placeholder `{file}` diganti path tujuan; default `pg_dump -Fc <DATABASE_URL>`), berkas disimpan ke env `BACKUP_DIR` atau folder `backups/` dengan nama berstempel waktu, dan hasilnya diperbarui sebagai status `berjalan` → `sukses`/`gagal` beserta kolom `selesai`, `ukuran_byte`, `lokasi`, dan `pesan`. Skrip ini hanya pemantau; penjalan dump sesungguhnya adalah cron/operator."
@@ -583,14 +581,14 @@
   "scripts/doctor.mjs": {
     "summary": "Skrip `npm run doctor` untuk memeriksa kesiapan lingkungan pengembangan. Pemeriksaan yang menggagalkan (keluar kode 1): Node.js, panjang `BETTER_AUTH_SECRET` minimal 32 karakter, bentuk `BETTER_AUTH_URL` sebagai origin, koneksi PostgreSQL serta tabel autentikasi, berkas instruksi proyek dan skills, dan berkas konfigurasi Context7. Ada juga catatan non-gagal untuk jumlah cabang bimbel karena kelas baru butuh cabang aktif, jadi perintah seed cabang diingatkan."
   },
+  "scripts/lib.mjs": {
+    "summary": "Pustaka helper bersama untuk skrip setup: mengekspor `root`, `assertNode()` (Node >= 22.12), `runNpm()`, `loadEnvironment()` (via @next/env), `availablePostgresPort()`, dan `prepareEnvironment()` yang mengisi BETTER_AUTH_SECRET/DATABASE_URL ke .env.local. Bergantung pada `postgres.mjs` untuk `localDatabaseUrl` dan `databaseUrl`."
+  },
   "scripts/lib/seed-cabang.mjs": {
     "summary": "Modul pustaka (Node ESM) yang mengekspor fungsi `seedCabang(pool, daftar)` untuk menulis data awal cabang dari `src/lib/mock-cabang.ts` ke tabel `cabang` dalam satu transaksi. Bersifat idempoten memakai `INSERT ... ON CONFLICT (lower(btrim(nama))) DO NOTHING` sehingga nama yang sudah ada dilewati dan tidak pernah ditimpa (memakai `DO NOTHING`, bukan `DO UPDATE`); nama kembar di daftar contoh ditolak lebih dulu. Mengembalikan `{ dibuat, dilewati, jumlah }` dan dipakai oleh skrip `npm run db:seed:cabang`."
   },
   "scripts/lib/seed-kelas.mjs": {
     "summary": "Modul pustaka (Node ESM) yang mengekspor fungsi `seedKelas(pool, daftar)` untuk menulis data awal kelas dari `src/lib/mock-kelas.ts` ke tabel `classes` (kolom `nama_kelas` dan `cabang`) dalam satu transaksi. Idempoten dengan melewati pasangan nama kelas + cabang yang sudah ada, membatalkan seluruh proses bila ada cabang yang ditunjuk belum terdaftar di tabel `cabang`, dan tidak mengisi jadwal karena jadwal wajib punya guru. Mengembalikan `{ dibuat, dilewati, jumlah }` dan dipakai oleh `npm run db:seed:kelas`."
-  },
-  "scripts/lib.mjs": {
-    "summary": "Pustaka helper bersama untuk skrip setup: mengekspor `root`, `assertNode()` (Node >= 22.12), `runNpm()`, `loadEnvironment()` (via @next/env), `availablePostgresPort()`, dan `prepareEnvironment()` yang mengisi BETTER_AUTH_SECRET/DATABASE_URL ke .env.local. Bergantung pada `postgres.mjs` untuk `localDatabaseUrl` dan `databaseUrl`."
   },
   "scripts/migrate.mjs": {
     "summary": "Skrip Node ESM untuk menjalankan migrasi Drizzle ke PostgreSQL melalui `drizzle-orm/node-postgres/migrator`; memuat environment lewat `scripts/lib.mjs`, memakai `MIGRATION_DATABASE_URL` atau `DATABASE_URL`, dan menutup pool di blok `finally`. Dijalankan sebagai bagian dari setup/diagnostik proyek."
@@ -627,6 +625,9 @@
   },
   "scripts/test.mjs": {
     "summary": "Runner pengujian yang dipanggil `npm test` (mode `unit`) atau `npm run test:e2e` (mode `e2e`); argumen mode wajib salah satu dari keduanya. Menyalakan PostgreSQL terisolasi lewat `docker compose -f compose.test.yaml` dengan nama project acak, membaca portnya, lalu menjalankan `scripts/migrate.mjs` dan mengisi variabel lingkungan `DATABASE_URL`, `MIGRATION_DATABASE_URL`, `STARTER_TEST_DATABASE_URL`, `STARTER_TEST_RUN`, `STARTER_TEST_PASSWORD`, `BETTER_AUTH_SECRET`, dan `BETTER_AUTH_URL`. Mode unit menjalankan `node --conditions=react-server --test` atas seluruh `tests/*.test.mjs`, mode e2e menjalankan CLI Playwright; di akhir selalu `docker compose down --volumes` dan keluar dengan kode 130 bila diinterupsi SIGINT/SIGTERM."
+  },
+  "scripts/wajibkan-ci.mjs": {
+    "summary": "Skrip `npm run ci:wajib` yang menyetel branch protection GitHub supaya status check pipa CI wajib lulus sebelum merge: nama check-nya dibaca dari job `ringkasan` di `.github/workflows/ci.yml` (`cariPipa`, `daftarJob`, `namaGerbang`), repo dibaca dari remote git (`repoDariRemote`), dan muatannya dikirim ke `gh api` (`muatanProteksi`, `perintahGh`) dengan opsi `--kering`, `--hapus`, `--repo`, dan `--cabang`. Butuh `gh` yang sudah `gh auth login` serta hak admin; repo privat pada paket gratis dijawab 403 dan pesannya diteruskan apa adanya, dan sesudah disetel kewajibannya dibaca ulang dari GitHub."
   },
   "src/app/(auth)/atur-ulang-password/page.tsx": {
     "summary": "Server component halaman atur ulang sandi pada route /atur-ulang-password dengan metadata title \"Atur Ulang Sandi\". Halaman membaca searchParams (Promise) untuk mengambil token dari tautan, membersihkannya dengan trim, lalu meneruskannya ke komponen klien FormAturUlangSandi. Berkas ini adalah titik masuk UI pemulihan sandi."
@@ -691,11 +692,11 @@
   "src/app/(protected)/app/jurnal/page.tsx": {
     "summary": "Halaman server Jurnal Ngajar (JurnalPage). Mengambil sesi dengan requireSession, menghitung tanggal dan nama hari di server lewat formatTanggalLengkap/namaHari, lalu merender JurnalForm dengan jadwal dari getJadwalHariIni(hari), nama guru, dan tanggal tampil."
   },
-  "src/app/(protected)/app/jurnal/riwayat/page.tsx": {
-    "summary": "Halaman server rute `/app/jurnal/riwayat`: memanggil `requireSession()`, memvalidasi `searchParams` (kelas, dari, sampai) terhadap `getKelasRiwayat()` dan pola tanggal `YYYY-MM-DD`, mendeteksi rentang tanggal terbalik, lalu merender `DaftarRiwayatJurnal` dengan data dari `getRiwayatJurnal()` (keduanya di `@/lib/mock-jurnal`) beserta pesan filter."
-  },
   "src/app/(protected)/app/jurnal/riwayat/[id]/page.tsx": {
     "summary": "Halaman server detail jurnal (DetailJurnalPage) pada /app/jurnal/riwayat/[id]. Mengambil parameter id, memvalidasi sesi dengan requireSession, mencari jurnal lewat getJurnalById dan memanggil notFound() jika tidak ada, lalu merender komponen DetailJurnal."
+  },
+  "src/app/(protected)/app/jurnal/riwayat/page.tsx": {
+    "summary": "Halaman server rute `/app/jurnal/riwayat`: memanggil `requireSession()`, memvalidasi `searchParams` (kelas, dari, sampai) terhadap `getKelasRiwayat()` dan pola tanggal `YYYY-MM-DD`, mendeteksi rentang tanggal terbalik, lalu merender `DaftarRiwayatJurnal` dengan data dari `getRiwayatJurnal()` (keduanya di `@/lib/mock-jurnal`) beserta pesan filter."
   },
   "src/app/(protected)/app/kelas/loading.tsx": {
     "summary": "Tampilan memuat untuk halaman kelas & jadwal memakai `StatusMemuat` dengan pembungkus `max-w-3xl`, mengikuti bentuk halaman aslinya."
@@ -709,14 +710,14 @@
   "src/app/(protected)/app/laba-rugi/page.tsx": {
     "summary": "Halaman laporan laba rugi (`/app/laba-rugi`) untuk owner: dijaga `requirePermission({ pengeluaran: [\"read-any\"] })`, lalu merender `LaporanLabaRugi` (periode dipilih di sisi klien)."
   },
+  "src/app/(protected)/app/murid/[muridId]/page.tsx": {
+    "summary": "Halaman `/app/murid/[muridId]` (cukup sesi): mencari murid dari data tiruan (404 kalau tidak ada) lalu merender komponen klien `DetailMurid` dengan daftar kelas dan penempatan awal, sehingga kelas tambahan bisa ditambahkan atau dikeluarkan langsung dari halaman ini."
+  },
   "src/app/(protected)/app/murid/loading.tsx": {
     "summary": "Tampilan memuat untuk halaman daftar murid memakai `StatusMemuat` di dalam pembungkus `max-w-3xl`."
   },
   "src/app/(protected)/app/murid/page.tsx": {
     "summary": "Halaman server rute `/app/murid`: cukup memanggil `requireSession()` karena guru dan owner sama-sama boleh melihat data murid, lalu merender komponen `DaftarMurid` dengan data awal dari `getDaftarMurid()` di `@/lib/mock-murid`."
-  },
-  "src/app/(protected)/app/murid/[muridId]/page.tsx": {
-    "summary": "Halaman `/app/murid/[muridId]` (cukup sesi): mencari murid dari data tiruan (404 kalau tidak ada) lalu merender komponen klien `DetailMurid` dengan daftar kelas dan penempatan awal, sehingga kelas tambahan bisa ditambahkan atau dikeluarkan langsung dari halaman ini."
   },
   "src/app/(protected)/app/notifikasi/page.tsx": {
     "summary": "Server component halaman `/app/notifikasi` (`NotifikasiPage`, metadata \"Notifikasi\") yang menampilkan pemberitahuan milik akun yang sedang masuk. Cukup memerlukan `await requireSession()` karena notifikasi selalu terikat pada `user.id`; konstanta `BATAS = 50` membatasi jumlah kabar terakhir dan `listNotifikasi(user.id, { limit, offset, belumDibaca: false })` mengembalikan `data` beserta `meta.belumDibaca`. Menampilkan ringkasan jumlah belum dibaca, komponen `DaftarNotifikasi`, dan tombol menuju `/app/pengaturan/notifikasi`."
@@ -737,7 +738,13 @@
     "summary": "Halaman `/app/penempatan` (cukup sesi): menampilkan daftar penempatan murid dari data tiruan dengan menggabungkan `getPenempatanAwal()`, `getDaftarMurid()`, dan `getDaftarKelas()`."
   },
   "src/app/(protected)/app/pengaturan/backup/page.tsx": {
-    "summary": "Halaman monitoring backup (owner & admin, izin `pengaturan: read`): tiga kartu ringkasan (backup terakhir berhasil beserta umurnya, total catatan, dan proses yang sedang berjalan), daftar catatan backup terbaru dengan badge status sukses/gagal/berjalan, ukuran, lokasi salinan, dan pesan galat; ada keadaan kosong `PesanKosong` bila belum ada catatan, serta catatan bahwa jadwal, retensi, dan uji pemulihan diatur di sisi server."
+    "summary": "Halaman server Backup Database (izin `pengaturan: read`): kartu ringkasan jumlah catatan dan proses yang sedang berjalan, formulir `FormJadwalBackup` yang menyimpan ke `PUT /api/pengaturan/backup/jadwal`, tombol `AksiJalankanBackup`, daftar catatan `backup_runs` dengan status, ukuran, lokasi, dan alasan kegagalannya, serta kartu pengingat riwayat uji pemulihan beserta tautan ke halaman Uji Pemulihan. Jadwalnya dibaca lewat `ambilJadwalBackup`, sedangkan catatan uji pemulihannya masih dari data contoh."
+  },
+  "src/app/(protected)/app/pengaturan/backup/uji-pemulihan/page.tsx": {
+    "summary": "Halaman server Uji Pemulihan Backup (izin `pengaturan: read`) yang menampilkan status proses pemulihan yang sedang berjalan, ringkasan uji terakhir beserta kesegarannya terhadap `JEDA_UJI_HARI`, daftar berkas backup yang siap diuji, empat langkah baku pemulihan, panel verifikasi hasil pulih, dan seluruh riwayat ujinya. Catatannya masih dari data contoh `src/lib/mock-uji-pemulihan.ts` dan layar menandainya “contoh bentuk”."
+  },
+  "src/app/(protected)/app/pengaturan/ci/page.tsx": {
+    "summary": "Halaman server Status CI (izin `pengaturan: read`) yang merangkum pipa `.github/workflows/ci.yml`: kartu CI yang sedang berjalan, rincian tahap yang gagal, ringkasan jalan terakhir, daftar langkah yang dijalankan, dan riwayat jalan. Catatan hasilnya masih contoh dari `src/lib/mock-ci-otomatis.ts` (ditandai “contoh bentuk”), sedangkan pipanya sendiri sungguh berjalan di GitHub Actions."
   },
   "src/app/(protected)/app/pengaturan/ekspor/page.tsx": {
     "summary": "Server component halaman `/app/pengaturan/ekspor` (`EksporDokumenPage`, metadata \"Ekspor Dokumen\") untuk pratinjau ekspor dokumen upah guru; hanya owner/admin lewat `requirePermission({ pengaturan: [\"read\"] })` karena memuat upah guru lain. `searchParams` `periode` divalidasi dengan pola `POLA_PERIODE` (YYYY-MM) dan jatuh ke `periodeBulan(new Date())` bila tidak sah, sedangkan `guru` hanya diterima jika ada di rekap bulan itu (`rekapGajiAnyBulanan`). Meneruskan periode, daftar rekap, guru terpilih, dan profil bimbel dari `ambilProfilBimbel()` ke komponen `PratinjauEkspor`, dengan tombol kembali ke `/app/pengaturan`."
@@ -778,6 +785,9 @@
   "src/app/(protected)/app/pengeluaran/page.tsx": {
     "summary": "Halaman pengeluaran operasional (`/app/pengeluaran`) untuk owner: dijaga `requirePermission({ pengeluaran: [\"read-any\"] })`, menghitung periode berjalan lewat `periodePengeluaran(new Date())`, lalu menyerahkan `periode` ke `DaftarPengeluaran` (saringan bulan/kategori diatur di sisi klien)."
   },
+  "src/app/(protected)/app/perkembangan/[muridId]/page.tsx": {
+    "summary": "Halaman dinamis `/app/perkembangan/[muridId]` bernama `LaporanPerkembanganPage` untuk laporan perkembangan satu murid. Memverifikasi sesi via `requireSession()`, mencari murid dari `getDaftarMurid()` (404 bila tak ada), memfilter `getCatatanPerkembangan()` dan `getKehadiranAwal()`, lalu merender `LaporanPerkembangan` plus tombol cetak `TombolCetakUnduh`."
+  },
   "src/app/(protected)/app/perkembangan/layout.tsx": {
     "summary": "Layout server `PerkembanganLayout` yang menjaga seluruh halaman Perkembangan Anak dengan satu pemeriksaan izin `requirePermission({ perkembangan: [\"read\"] })`, sehingga halaman di bawahnya tidak mengulang pemeriksaan dan tidak bisa lupa dijaga."
   },
@@ -790,17 +800,14 @@
   "src/app/(protected)/app/perkembangan/riwayat/page.tsx": {
     "summary": "Halaman server `RiwayatPerkembanganPage` (rute `/app/perkembangan/riwayat`) yang memilih murid dari parameter `murid` (divalidasi terhadap `getDaftarMurid`), lalu merender `RiwayatPerkembangan` dengan catatan dari `getCatatanPerkembangan` dan kehadiran dari `getKehadiranAwal` yang tersaring per murid."
   },
-  "src/app/(protected)/app/perkembangan/[muridId]/page.tsx": {
-    "summary": "Halaman dinamis `/app/perkembangan/[muridId]` bernama `LaporanPerkembanganPage` untuk laporan perkembangan satu murid. Memverifikasi sesi via `requireSession()`, mencari murid dari `getDaftarMurid()` (404 bila tak ada), memfilter `getCatatanPerkembangan()` dan `getKehadiranAwal()`, lalu merender `LaporanPerkembangan` plus tombol cetak `TombolCetakUnduh`."
+  "src/app/(protected)/app/presensi-guru/[jadwalId]/page.tsx": {
+    "summary": "Halaman satu sesi mengajar (`/app/presensi-guru/[jadwalId]`): `requireSession()`, sesi **hari ini** dicari dari `getJadwalHariIni(namaHari(sekarang))` (di luar itu `notFound()` sehingga sesi hari lain tidak bisa dibuka), lalu dicari jurnal sesi yang sama (kelas + jam mulai/selesai, tanggal hari ini) lewat `getRiwayatJurnal` untuk mengisi `jurnalId` sebagai tautan silang ke jurnal mengajar."
   },
   "src/app/(protected)/app/presensi-guru/page.tsx": {
     "summary": "Halaman Presensi Guru (`/app/presensi-guru`) untuk guru: memanggil `requireSession()`, mengambil sesi mengajar hari ini dari jadwal mingguan yang sama dengan halaman jurnal (`getJadwalHariIni(namaHari(sekarang))`), lalu merender `PresensiGuruHariIni` dengan data contoh presensi dari `getPresensiGuruAwal()`. Metadata judul \"Presensi Guru\"."
   },
   "src/app/(protected)/app/presensi-guru/riwayat/page.tsx": {
     "summary": "Halaman riwayat kehadiran guru (`/app/presensi-guru/riwayat`): `requireSession()`, lalu memisahkan cakupan memakai `peranDariRole` — guru hanya menerima baris dengan `guruNama` sama dengan nama akunnya (tidak bisa melihat catatan guru lain), sedangkan owner/admin menerima seluruh riwayat untuk pantauan. Hasilnya diserahkan ke `DaftarRiwayatKehadiran` bersama keterangan cakupan ('Kehadiran <nama>.' atau 'Kehadiran semua guru.')."
-  },
-  "src/app/(protected)/app/presensi-guru/[jadwalId]/page.tsx": {
-    "summary": "Halaman satu sesi mengajar (`/app/presensi-guru/[jadwalId]`): `requireSession()`, sesi **hari ini** dicari dari `getJadwalHariIni(namaHari(sekarang))` (di luar itu `notFound()` sehingga sesi hari lain tidak bisa dibuka), lalu dicari jurnal sesi yang sama (kelas + jam mulai/selesai, tanggal hari ini) lewat `getRiwayatJurnal` untuk mengisi `jurnalId` sebagai tautan silang ke jurnal mengajar."
   },
   "src/app/(protected)/app/tagihan/baru/loading.tsx": {
     "summary": "Tampilan memuat halaman buat tagihan bulanan: `StatusMemuat` 'Menyiapkan formulir tagihan…' dengan empat baris, mengikuti pola `loading.tsx` halaman owner lain."
@@ -838,17 +845,17 @@
   "src/app/api/admin/gaji/slip/route.ts": {
     "summary": "Route API `GET /api/admin/gaji/slip` (runtime nodejs) untuk mengunduh slip gaji guru per bulan sebagai HTML mandiri. Dijaga `withApiPermission({ gaji: ['read-any'] })`, memvalidasi query dengan `slipGajiSchema`, memanggil `rekapGajiAnyGuru` (404 bila guru tak ada), dan menyusun respons lewat `slipGajiHtml`/`namaBerkasSlip` dengan header Content-Disposition attachment."
   },
-  "src/app/api/admin/jurnal/route.ts": {
-    "summary": "Route API GET /api/admin/jurnal untuk pantauan owner. Membungkus handler dengan withApiPermission({ jurnal: [\"read-any\"] }), memvalidasi query memakai listJurnalHarianSchema, memberi tanggal bawaan hari ini via tanggalISO, lalu mengembalikan hasil listAnyJurnal dari pemantauan.service. runtime diset nodejs."
-  },
   "src/app/api/admin/jurnal/[id]/route.ts": {
     "summary": "Route handler Next.js GET /api/admin/jurnal/[id] untuk owner: memvalidasi id via jurnalIdSchema, membaca jurnal akun lain lewat getAnyJurnal, dan dilindungi izin jurnal:read-any memakai withApiPermission; mengembalikan 404 bila tak ditemukan."
   },
-  "src/app/api/admin/notes/route.ts": {
-    "summary": "Route handler GET /api/admin/notes berjalan di runtime nodejs. Dilindungi `withApiPermission` dengan izin notes:read-any (401 tanpa sesi, 403 tanpa izin), memvalidasi query lewat `listNotesSchema`, lalu mengembalikan hasil `listAnyNotes` berupa JSON."
+  "src/app/api/admin/jurnal/route.ts": {
+    "summary": "Route API GET /api/admin/jurnal untuk pantauan owner. Membungkus handler dengan withApiPermission({ jurnal: [\"read-any\"] }), memvalidasi query memakai listJurnalHarianSchema, memberi tanggal bawaan hari ini via tanggalISO, lalu mengembalikan hasil listAnyJurnal dari pemantauan.service. runtime diset nodejs."
   },
   "src/app/api/admin/notes/[id]/route.ts": {
     "summary": "Route handler DELETE /api/admin/notes/[id] (runtime nodejs) yang memakai withApiPermission dengan izin notes: [\"delete-any\"]. ID divalidasi noteIdSchema, lalu deleteAnyNote dipanggil; bila catatan tidak ada dibalas ApiError 404 NOT_FOUND, dan sukses mengembalikan status 204 tanpa isi. Berkas ini menyediakan penghapusan catatan milik akun lain oleh peran berwenang."
+  },
+  "src/app/api/admin/notes/route.ts": {
+    "summary": "Route handler GET /api/admin/notes berjalan di runtime nodejs. Dilindungi `withApiPermission` dengan izin notes:read-any (401 tanpa sesi, 403 tanpa izin), memvalidasi query lewat `listNotesSchema`, lalu mengembalikan hasil `listAnyNotes` berupa JSON."
   },
   "src/app/api/admin/opsi-saring/route.ts": {
     "summary": "Endpoint `GET /api/admin/opsi-saring` yang mengembalikan pilihan saringan pantauan owner (daftar kelas, guru, dan cabang) lewat `opsiSaringPemantauan()`, dijaga izin `jurnal: read-any` dengan `withApiPermission`."
@@ -868,11 +875,11 @@
   "src/app/api/auth/[...all]/route.ts": {
     "summary": "Route handler catch-all Better Auth: mengekspor `GET` dan `POST` hasil `toNextJsHandler(auth)` dengan `runtime = \"nodejs\"`, melayani seluruh endpoint autentikasi (sign-in/up, session, admin)."
   },
-  "src/app/api/cabang/route.ts": {
-    "summary": "Route API `/api/cabang` (`runtime = \"nodejs\"`) untuk koleksi cabang bimbel, memakai pembungkus `withApiPermission` dengan izin `pengaturan: read` untuk `GET` dan `pengaturan: write` untuk `POST`. `GET` mengembalikan `{ data: await listCabang() }` (diurutkan nama) dari layanan cabang; `POST` memvalidasi badan lewat `buatCabangSchema` dan `readJson`, memanggil `tambahCabang`, lalu menjawab 201 `{ data }` atau `ApiError` 409 `NAMA_SUDAH_DIPAKAI` bila nama sudah terpakai."
-  },
   "src/app/api/cabang/[id]/route.ts": {
     "summary": "Route API `/api/cabang/[id]` (`runtime = \"nodejs\"`) untuk satu cabang, memakai `withApiPermission` (`pengaturan: read` untuk `GET`, `pengaturan: write` untuk `PATCH`). `GET` memvalidasi id dengan `cabangIdSchema`, mengambil data lewat `getCabang`, dan menjawab `ApiError` 404 `NOT_FOUND` bila tidak ada. `PATCH` memvalidasi badan dengan `ubahCabangSchema` dan memanggil `ubahCabang(id, input)`, memetakan hasil `TIDAK_ADA` ke 404 dan kode lain (mis. nama bentrok) ke 409, selain itu mengembalikan `{ data: hasil.cabang }`."
+  },
+  "src/app/api/cabang/route.ts": {
+    "summary": "Route API `/api/cabang` (`runtime = \"nodejs\"`) untuk koleksi cabang bimbel, memakai pembungkus `withApiPermission` dengan izin `pengaturan: read` untuk `GET` dan `pengaturan: write` untuk `POST`. `GET` mengembalikan `{ data: await listCabang() }` (diurutkan nama) dari layanan cabang; `POST` memvalidasi badan lewat `buatCabangSchema` dan `readJson`, memanggil `tambahCabang`, lalu menjawab 201 `{ data }` atau `ApiError` 409 `NAMA_SUDAH_DIPAKAI` bila nama sudah terpakai."
   },
   "src/app/api/gaji/route.ts": {
     "summary": "Route handler GET `/api/gaji` (runtime nodejs) untuk rekap dan rincian jam mengajar guru yang sedang masuk. Memakai `withApiSession` sehingga identitas diambil dari sesi, memvalidasi query `periode` lewat `periodeGajiSchema`, dan memanggil `rekapGajiGuru` (default `periodeBulan(new Date())`)."
@@ -883,32 +890,32 @@
   "src/app/api/jejak-baca/route.ts": {
     "summary": "Route API jejak baca Portal Wali: `GET /api/jejak-baca?anak=<muridId>` mengembalikan status tiap bagian untuk anak itu, dan `POST /api/jejak-baca` dengan `{ anak, bagian }` menandai terbaca (idempoten). Identitas wali diambil dari sesi server; 401 tanpa sesi, 403 untuk peran tanpa izin portal, 404 bila anak tidak tertaut ke akun itu, 422 saat kueri/badan tidak sah. Runtime nodejs, pola withApiPermission + validasi Zod."
   },
-  "src/app/api/jurnal/route.ts": {
-    "summary": "Route API jurnal mengajar guru: `GET` mengembalikan riwayat jurnal (terbaru dulu, saringan kelas dan rentang tanggal diproses di database) via `listJurnalGuru`, dan `POST` menyimpan/mengirim jurnal secara idempoten (kirim ulang untuk jadwal+tanggal sama hanya memperbarui) via `simpanJurnal`, dengan error 404/422 untuk jadwal atau murid tidak valid dan header `Location` ke `/api/jurnal/{id}`."
-  },
   "src/app/api/jurnal/[id]/route.ts": {
     "summary": "Route API dinamis untuk satu jurnal guru: `GET` mengambil detail via `getJurnalGuru` (404 jika tidak ada) dan `PATCH` mengoreksi materi/catatan/kehadiran via `koreksiJurnal`, memetakan status `tidak_ada` ke 404 dan `murid_tidak_ada` ke 422 dengan detail per murid. Dilindungi `withApiSession` dan divalidasi `jurnalIdSchema`/`koreksiJurnalSchema`."
+  },
+  "src/app/api/jurnal/route.ts": {
+    "summary": "Route API jurnal mengajar guru: `GET` mengembalikan riwayat jurnal (terbaru dulu, saringan kelas dan rentang tanggal diproses di database) via `listJurnalGuru`, dan `POST` menyimpan/mengirim jurnal secara idempoten (kirim ulang untuk jadwal+tanggal sama hanya memperbarui) via `simpanJurnal`, dengan error 404/422 untuk jadwal atau murid tidak valid dan header `Location` ke `/api/jurnal/{id}`."
   },
   "src/app/api/kehadiran/route.ts": {
     "summary": "Endpoint `GET /api/kehadiran` yang memanggil `listKehadiran` dengan filter `muridId`, `kelasId`, atau rentang `dari`/`sampai` yang divalidasi `listKehadiranSchema`; dilindungi izin `perkembangan: read`. Kehadiran sendiri ditulis melalui `POST /api/jurnal`."
   },
-  "src/app/api/kelas/route.ts": {
-    "summary": "Route API `/api/kelas` (`runtime = \"nodejs\"`) untuk koleksi kelas beserta jadwalnya, memakai `withApiSession` (cukup sesi, guru maupun owner). `GET` memvalidasi query `?cari=`, `?limit=`, `?offset=` lewat `listKelasSchema` lalu mengembalikan `listKelas(filter)`. `POST` memvalidasi badan dengan `createKelasSchema`, mengecek keberadaan guru (`adaGuru` → 422 `GURU_TIDAK_ADA`) dan cabang aktif via `periksaCabangKelas` (422 dengan kode dari layanan), mendeteksi bentrok jadwal lewat `cariBentrokDiDaftar`/`cariBentrokJadwal` (409 `JADWAL_BENTROK`), lalu memanggil `createKelas` dan menjawab 201 dengan header `Location: /api/kelas/{id}`."
+  "src/app/api/kelas/[id]/jadwal/[jadwalId]/route.ts": {
+    "summary": "Route API DELETE /api/kelas/[id]/jadwal/[jadwalId] untuk menghapus satu jadwal kelas. Memvalidasi id kelas dan jadwal lewat kelasIdSchema/jadwalIdSchema, memanggil hapusJadwal di kelas.service, mengembalikan 204 bila berhasil atau melempar ApiError 404 NOT_FOUND bila tidak ditemukan; memakai withApiSession."
   },
   "src/app/api/kelas/[id]/jadwal/route.ts": {
     "summary": "Endpoint POST /api/kelas/[id]/jadwal untuk menambah satu jadwal ke kelas lewat `withApiSession`. Memvalidasi `kelasIdSchema` dan `tambahJadwalSchema`, memanggil service `tambahJadwal`, lalu memetakan status ke error 404 (kelas tidak ada), 422 (guru belum ada), dan 409 (jadwal sudah ada)."
   },
-  "src/app/api/kelas/[id]/jadwal/[jadwalId]/route.ts": {
-    "summary": "Route API DELETE /api/kelas/[id]/jadwal/[jadwalId] untuk menghapus satu jadwal kelas. Memvalidasi id kelas dan jadwal lewat kelasIdSchema/jadwalIdSchema, memanggil hapusJadwal di kelas.service, mengembalikan 204 bila berhasil atau melempar ApiError 404 NOT_FOUND bila tidak ditemukan; memakai withApiSession."
+  "src/app/api/kelas/[id]/murid/[muridId]/route.ts": {
+    "summary": "Route handler DELETE /api/kelas/[id]/murid/[muridId]: memanggil keluarkanMurid lewat withApiSession dengan validasi kelasIdSchema/muridIdSchema, menandai penempatan selesai (bukan menghapus) dan mengembalikan 204 atau 404 bila murid tidak di kelas itu."
   },
   "src/app/api/kelas/[id]/murid/route.ts": {
     "summary": "Route API keanggotaan kelas: `GET /api/kelas/[id]/murid` mendaftar murid aktif di kelas via `listMuridKelas`, dan `POST` menempatkan murid via `tempatkanMurid` (tanggal mulai default hari ini), menjawab 404 bila kelas/murid tidak ada dan 409 `SUDAH_TERDAFTAR` bila murid sudah punya kelas aktif lain. Dilindungi `withApiSession`."
   },
-  "src/app/api/kelas/[id]/murid/[muridId]/route.ts": {
-    "summary": "Route handler DELETE /api/kelas/[id]/murid/[muridId]: memanggil keluarkanMurid lewat withApiSession dengan validasi kelasIdSchema/muridIdSchema, menandai penempatan selesai (bukan menghapus) dan mengembalikan 204 atau 404 bila murid tidak di kelas itu."
-  },
   "src/app/api/kelas/[id]/route.ts": {
     "summary": "Route API `/api/kelas/[id]` (`runtime = \"nodejs\"`) untuk satu kelas, memakai `withApiSession`. `GET` memvalidasi id (`kelasIdSchema`) dan mengambil lewat `getKelasById`, menjawab 404 `NOT_FOUND` bila tidak ada. `PATCH` memvalidasi badan (`updateKelasSchema`) untuk mengubah nama/cabang/guru (jadwal dikelola endpoint terpisah); bila cabang diubah, `periksaCabangKelas` memastikan cabang terdaftar dan aktif dan nama kanoniknya yang disimpan. Hasil `updateKelas` dipetakan ke 404 `kelas_tidak_ada`, 422 `GURU_TIDAK_ADA`, atau 409 `JADWAL_BENTROK`; selain itu `{ data: hasil.kelas }`."
+  },
+  "src/app/api/kelas/route.ts": {
+    "summary": "Route API `/api/kelas` (`runtime = \"nodejs\"`) untuk koleksi kelas beserta jadwalnya, memakai `withApiSession` (cukup sesi, guru maupun owner). `GET` memvalidasi query `?cari=`, `?limit=`, `?offset=` lewat `listKelasSchema` lalu mengembalikan `listKelas(filter)`. `POST` memvalidasi badan dengan `createKelasSchema`, mengecek keberadaan guru (`adaGuru` → 422 `GURU_TIDAK_ADA`) dan cabang aktif via `periksaCabangKelas` (422 dengan kode dari layanan), mendeteksi bentrok jadwal lewat `cariBentrokDiDaftar`/`cariBentrokJadwal` (409 `JADWAL_BENTROK`), lalu memanggil `createKelas` dan menjawab 201 dengan header `Location: /api/kelas/{id}`."
   },
   "src/app/api/lupa-sandi/route.ts": {
     "summary": "Route API POST /api/lupa-sandi (runtime nodejs) yang memakai assertSameOrigin, validasi lupaSandiSchema, dan meneruskan permintaan ke Better Auth /api/auth/request-password-reset dengan redirectTo /atur-ulang-password; jawabannya selalu {data:{terkirim:true}} agar email tidak bisa ditebak, dan mengembalikan 503 FITUR_BELUM_AKTIF bila reset sandi dimatikan server."
@@ -919,11 +926,11 @@
   "src/app/api/murid/route.ts": {
     "summary": "Route API murid (runtime nodejs): GET mengembalikan daftar murid dengan filter ?cari= serta ?limit=&offset= (listMuridSchema, listMurid); POST menambah murid baru (createMuridSchema, createMurid) dan membalas 201 dengan header Location. Keduanya memakai withApiSession sehingga guru maupun owner dapat menambah data."
   },
-  "src/app/api/notes/route.ts": {
-    "summary": "Route API Notes (runtime nodejs) dengan `GET` untuk daftar catatan ber-paginasi via `listNotesSchema` dan `POST` untuk membuat catatan baru lewat `createNoteSchema`. Keduanya dibungkus `withApiSession` sehingga memakai `session.user.id`, dan POST mengembalikan status 201 dengan header `Location: /api/notes/{id}`."
-  },
   "src/app/api/notes/[id]/route.ts": {
     "summary": "Route API contoh /api/notes/[id] dengan GET, PATCH, dan DELETE. Setiap handler memvalidasi UUID id memakai noteIdSchema, memakai withApiSession, dan memanggil getNote/updateNote/deleteNote dari notes.service dengan session.user.id agar hanya baris milik pengguna yang disentuh; mengembalikan 404 NOT_FOUND bila tidak ada dan 204 tanpa body saat hapus."
+  },
+  "src/app/api/notes/route.ts": {
+    "summary": "Route API Notes (runtime nodejs) dengan `GET` untuk daftar catatan ber-paginasi via `listNotesSchema` dan `POST` untuk membuat catatan baru lewat `createNoteSchema`. Keduanya dibungkus `withApiSession` sehingga memakai `session.user.id`, dan POST mengembalikan status 201 dengan header `Location: /api/notes/{id}`."
   },
   "src/app/api/notifikasi/route.ts": {
     "summary": "Route `GET` dan `PATCH /api/notifikasi`: GET memakai `listNotifikasi` dengan filter `?belumDibaca=true`, PATCH memakai `tandaiNotifikasiDibaca` untuk menandai `{ ids: [...] }` atau `{ semua: true }`. Keduanya diautentikasi `withApiSession` dan divalidasi skema dari `src/validators/notifikasi`."
@@ -931,20 +938,29 @@
   "src/app/api/penempatan/route.ts": {
     "summary": "Route API `/api/penempatan` (`runtime = \"nodejs\"`) dengan satu handler `GET` memakai `withApiSession` untuk daftar penempatan murid lintas kelas beserta riwayatnya (penempatan berstatus `selesai` tetap ikut agar perjalanan murid tertelusuri). Query `muridId`, `kelasId`, dan `status` divalidasi `listPenempatanSchema` dari `Object.fromEntries(new URL(request.url).searchParams)`; penyaringan dikerjakan di database dengan penempatan aktif lebih dulu, lalu hasil `listPenempatan(filter)` dikembalikan sebagai JSON."
   },
+  "src/app/api/pengaturan/backup/berkas/route.ts": {
+    "summary": "Route `GET /api/pengaturan/backup/berkas` (runtime nodejs, izin `pengaturan: read`) yang menjawab `{ data: { berkas } }` hasil `ambilBerkasBackupUji`, yaitu catatan `backup_runs` berstatus sukses yang sudah punya lokasi, terbaru lebih dulu. Batas jumlahnya dibaca dari `listBackupSchema` (`?limit=` 1–100, bawaan 20)."
+  },
+  "src/app/api/pengaturan/backup/jadwal/route.ts": {
+    "summary": "Route jadwal backup: `GET` (izin `pengaturan: read`) menjawab jadwal yang berlaku lewat `ambilJadwalBackup` — jatuh ke `JADWAL_BACKUP_BAWAAN` selama tabel `backup_settings` masih kosong — dan `PUT` (izin `pengaturan: write`) memvalidasi badan dengan `jadwalBackupSchema` lalu menyimpannya lewat `simpanJadwalBackup`. Perubahannya langsung dibaca penjadwal di aplikasi pada pemeriksaan berikutnya tanpa menyalakan ulang server."
+  },
   "src/app/api/pengaturan/backup/route.ts": {
     "summary": "Route API `/api/pengaturan/backup` (`runtime = \"nodejs\"`) yang menyediakan `GET` untuk riwayat dan ringkasan backup, memakai `withApiPermission({ pengaturan: [\"read\"] })` karena hanya membaca catatan yang ditulis proses backup di server. Query `limit` divalidasi oleh `listBackupSchema`, lalu `ambilStatusBackup(limit)` dari `services/backup.service` mengembalikan beberapa catatan terbaru, backup terakhir yang berhasil, dan jumlah per status sebagai `{ data }`."
   },
-  "src/app/api/pengaturan/gaji/route.ts": {
-    "summary": "Route pengaturan aturan gaji: `GET /api/pengaturan/gaji?tanggal=YYYY-MM-DD` mengembalikan tarif yang berlaku (bawaan hari ini) beserta riwayat, `POST` menambah aturan baru via `tambahAturanGaji`. Akses dibatasi izin `pengaturan: read`/`write` dan mengembalikan error 409 `TANGGAL_SUDAH_ADA` bila tanggal bentrok."
+  "src/app/api/pengaturan/backup/uji-pemulihan/route.ts": {
+    "summary": "Route uji pemulihan backup (runtime nodejs). `POST` (izin `pengaturan: write`) menerima `{ backupId }`, memilih berkasnya lewat `ambilBerkasBackupUjiById` (404 kalau bukan catatan sukses yang punya lokasi), menjalankan `jalankanUjiPemulihan` ke `RESTORE_DATABASE_URL`, lalu mencatat hasilnya lewat `catatHasilUjiPemulihan`; jawabannya tetap 200 walau ujinya gagal karena yang dilaporkan adalah hasil ujinya. `GET` menjawab `{ berjalan }` sebab hanya satu uji boleh jalan sekaligus."
   },
   "src/app/api/pengaturan/gaji/[id]/route.ts": {
     "summary": "Endpoint perbaikan aturan gaji: `PATCH` menerima sebagian dari `{ tarifPerJam, skema, berlakuSejak }` (minimal satu kolom, id tidak ada → 404, tanggal bentrok → 409 `TANGGAL_SUDAH_ADA`) dan `DELETE` menghapus satu baris (404 kalau tidak ada). Keduanya dijaga izin `pengaturan: write` (owner & admin)."
   },
-  "src/app/api/pengaturan/guru/route.ts": {
-    "summary": "Route handler pengaturan guru (runtime nodejs). GET /api/pengaturan/guru dilindungi izin pengaturan: [\"read\"] dan mengembalikan listAkunBimbel(filter) hasil validasi listGuruSchema; POST berizin pengaturan: [\"write\"] menerima tambahGuruSchema dan memanggil tambahGuru, membalas 201, atau ApiError 409 EMAIL_SUDAH_DIPAKAI bila email sudah terpakai. Akun baru selalu berperan guru dan owner tidak bisa dinonaktifkan lewat endpoint ini."
+  "src/app/api/pengaturan/gaji/route.ts": {
+    "summary": "Route pengaturan aturan gaji: `GET /api/pengaturan/gaji?tanggal=YYYY-MM-DD` mengembalikan tarif yang berlaku (bawaan hari ini) beserta riwayat, `POST` menambah aturan baru via `tambahAturanGaji`. Akses dibatasi izin `pengaturan: read`/`write` dan mengembalikan error 409 `TANGGAL_SUDAH_ADA` bila tanggal bentrok."
   },
   "src/app/api/pengaturan/guru/[id]/route.ts": {
     "summary": "Route API PATCH /api/pengaturan/guru/[id] berizin pengaturan:write yang memvalidasi id via guruIdSchema serta body via ubahStatusGuruSchema, lalu memanggil ubahStatusGuru untuk mengaktifkan/menonaktifkan akun guru; mengembalikan 404 NOT_FOUND atau 422 AKUN_OWNER bila akun owner dicoba dinonaktifkan."
+  },
+  "src/app/api/pengaturan/guru/route.ts": {
+    "summary": "Route handler pengaturan guru (runtime nodejs). GET /api/pengaturan/guru dilindungi izin pengaturan: [\"read\"] dan mengembalikan listAkunBimbel(filter) hasil validasi listGuruSchema; POST berizin pengaturan: [\"write\"] menerima tambahGuruSchema dan memanggil tambahGuru, membalas 201, atau ApiError 409 EMAIL_SUDAH_DIPAKAI bila email sudah terpakai. Akun baru selalu berperan guru dan owner tidak bisa dinonaktifkan lewat endpoint ini."
   },
   "src/app/api/pengaturan/notifikasi/route.ts": {
     "summary": "Route handler preferensi notifikasi milik akun yang sedang masuk (runtime nodejs) berbasis withApiSession. GET mengembalikan ambilPreferensiNotifikasi(session.user.id); PATCH memvalidasi ubahPreferensiNotifikasiSchema atas pasangan jenis dan aktif, lalu mengembalikan daftar terbaru hasil ubahPreferensiNotifikasi. Karena tidak ada penyaring, tiap akun hanya melihat dan mengubah preferensinya sendiri."
@@ -952,14 +968,17 @@
   "src/app/api/pengaturan/profil/route.ts": {
     "summary": "Route profil bimbel (runtime nodejs): GET memakai withApiSession agar semua akun dapat membaca profil (ambilProfilBimbel); PUT memakai withApiPermission dengan izin pengaturan: write untuk menyimpan profil termasuk logo data URL (profilBimbelSchema, simpanProfilBimbel)."
   },
+  "src/app/api/pengeluaran/[id]/route.ts": {
+    "summary": "Route API pengeluaran per id: `PATCH /api/pengeluaran/<id>` mengubah pengeluaran (parsial) dan `DELETE /api/pengeluaran/<id>` menghapusnya — izin pengeluaran write-any, 404 untuk id asing, 422 untuk input tidak sah. Runtime nodejs, params di-await."
+  },
   "src/app/api/pengeluaran/kategori/route.ts": {
     "summary": "Route API kategori pengeluaran: `POST /api/pengeluaran/kategori` menambah kategori baru (izin pengeluaran write-any) dengan 201 saat berhasil dan 409 saat nama kategori sudah ada."
   },
   "src/app/api/pengeluaran/route.ts": {
     "summary": "Route API pengeluaran: `GET /api/pengeluaran` (izin pengeluaran read-any) mengembalikan daftar pengeluaran beserta kategorinya, dan `POST` (izin write-any) membuat pengeluaran baru dengan validasi Zod — 201 saat berhasil, 422 saat validasi gagal. Runtime nodejs, pola withApiPermission."
   },
-  "src/app/api/pengeluaran/[id]/route.ts": {
-    "summary": "Route API pengeluaran per id: `PATCH /api/pengeluaran/<id>` mengubah pengeluaran (parsial) dan `DELETE /api/pengeluaran/<id>` menghapusnya — izin pengeluaran write-any, 404 untuk id asing, 422 untuk input tidak sah. Runtime nodejs, params di-await."
+  "src/app/api/perkembangan/[id]/route.ts": {
+    "summary": "Route dinamis `/api/perkembangan/[id]` (runtime nodejs) untuk satu catatan perkembangan: GET dengan izin `perkembangan:read` via `withApiPermission` memanggil `getCatatanPerkembangan`; PATCH dan DELETE dengan izin `write` memakai id sesi guru pada `updateCatatanPerkembangan`/`hapusCatatanPerkembangan`, membalas 404 bila catatan bukan milik guru tersebut dan 204 untuk hapus."
   },
   "src/app/api/perkembangan/ringkasan/route.ts": {
     "summary": "Endpoint GET /api/perkembangan/ringkasan yang dijaga `withApiPermission({ perkembangan: [\"read\"] })`. Memvalidasi query dengan `listPerkembanganSchema` (filter muridId, dari/sampai, cari) lalu mengembalikan laporan agregat dari `listRingkasanPerkembangan` berisi jumlah catatan, rata-rata nilai, nilai & sikap terakhir, serta rekap kehadiran per anak."
@@ -969,9 +988,6 @@
   },
   "src/app/api/perkembangan/route.ts": {
     "summary": "Route `/api/perkembangan` (runtime nodejs): GET berizin `perkembangan:read` mengembalikan daftar catatan dari `listCatatanPerkembangan` dengan filter `listPerkembanganSchema` (muridId, dari, sampai, cari); POST berizin `write` membuat catatan lewat `createCatatanPerkembangan` dengan penulis dari sesi, membalas 404 saat murid tidak ada dan 201 plus header `Location` saat sukses."
-  },
-  "src/app/api/perkembangan/[id]/route.ts": {
-    "summary": "Route dinamis `/api/perkembangan/[id]` (runtime nodejs) untuk satu catatan perkembangan: GET dengan izin `perkembangan:read` via `withApiPermission` memanggil `getCatatanPerkembangan`; PATCH dan DELETE dengan izin `write` memakai id sesi guru pada `updateCatatanPerkembangan`/`hapusCatatanPerkembangan`, membalas 404 bila catatan bukan milik guru tersebut dan 204 untuk hapus."
   },
   "src/app/api/portal/beranda/route.ts": {
     "summary": "Route handler Next.js (runtime nodejs) untuk GET /api/portal/beranda?anak=<muridId>: menyajikan identitas satu anak pada layar Beranda wali. Meminta izin portal read lewat withApiPermission, memvalidasi kueri dengan anakPortalSchema, lalu memastikan anak tertaut ke akun (muridTertaut) dan membalas 404 bila tidak. Data diambil dari muatIsiPortalWali (anak dari tabel wali_murid), bagianPortalAnak (kelas/catatan/kehadiran/tagihan), serta statusSemuaAnak; balasannya berupa data { anak, bagian, statusBaca } dan meta { muridId, jumlahAnak }."
@@ -988,35 +1004,35 @@
   "src/app/api/portal/tagihan/route.ts": {
     "summary": "Route handler GET /api/portal/tagihan?anak=<muridId> (runtime nodejs, izin portal read) yang mengembalikan tagihan SPP satu anak untuk akun wali yang sedang masuk, difilter penautan wali_murid di SQL lewat listTagihanWali; anak lain dijawab 404. Tiap baris ditambahi statusTampil hasil statusPembayaran terhadap periodeBerjalan (periodeTagihan), dan meta memuat anak, jumlah, periodeBerjalan, serta rekap dari hitungRekapTagihan."
   },
+  "src/app/api/presensi-guru/[id]/route.ts": {
+    "summary": "Route API presensi guru per baris: `PATCH /api/presensi-guru/<id>` mengubah catatan presensi dan `DELETE` menghapusnya — hanya untuk baris milik guru yang sedang masuk (selain itu 404 sesuai desain agar tidak membocorkan data guru lain)."
+  },
   "src/app/api/presensi-guru/rekap/route.ts": {
     "summary": "Route API rekap presensi guru: menghitung jumlah per status dari seluruh baris yang cocok (daftar dibatasi 100 terbaru); owner boleh membaca semua guru lewat `?guruId=`, sedangkan guru lain ditolak 403."
   },
   "src/app/api/presensi-guru/route.ts": {
     "summary": "Route API presensi guru: `GET /api/presensi-guru` mengembalikan sesi hari ini milik guru yang sedang masuk beserta penanda sudah/belum dicatat (owner boleh memfilter `?guruId=`), dan `POST` mencatat presensi satu sesi — 201 saat baris baru, 200 saat menimpa, 404 bila sesi bukan milik guru itu, 422 saat input tidak sah atau jadwal bukan hari ini."
   },
-  "src/app/api/presensi-guru/[id]/route.ts": {
-    "summary": "Route API presensi guru per baris: `PATCH /api/presensi-guru/<id>` mengubah catatan presensi dan `DELETE` menghapusnya — hanya untuk baris milik guru yang sedang masuk (selain itu 404 sesuai desain agar tidak membocorkan data guru lain)."
-  },
   "src/app/api/sesi/route.ts": {
     "summary": "Route handler runtime nodejs untuk informasi sesi: GET /api/sesi mengembalikan id, nama, email, peran hasil `peranDariRole`, tujuan `homePathUntukPeran`, dan waktu kedaluwarsa; DELETE /api/sesi melakukan sign-out server lewat `auth.api.signOut` dan meneruskan cookie pembersih dengan status 204."
-  },
-  "src/app/api/tagihan/route.ts": {
-    "summary": "Route API tagihan: `GET /api/tagihan?periode=YYYY-MM` berizin `tagihan: read-any` mengembalikan `{data: Tagihan[], meta:{periode, jumlah, muridSudahDitagih}}`, dan `POST /api/tagihan` berizin write-any yang membuat tagihan lalu membalas 201 `{data:{dibuat, dilewati}}`. Runtime nodejs, pola `withApiPermission` + Zod seperti route lain."
   },
   "src/app/api/tagihan/[id]/route.ts": {
     "summary": "Route `PATCH /api/tagihan/<id>` berizin `tagihan: write-any`: mengubah status tagihan (lunas beserta tanggal bayar, atau kembali belum lunas), membalas `{data: Tagihan}` atau 404 NOT_FOUND bila id tidak ada. Runtime nodejs, `params` di-await (Next 16)."
   },
-  "src/app/api/wali/route.ts": {
-    "summary": "Route API wali: `GET /api/wali` (izin pengaturan read) mengembalikan daftar akun wali beserta murid tertaut dan status akses portal. Pola withApiPermission + runtime nodejs."
-  },
-  "src/app/api/wali/[id]/murid/route.ts": {
-    "summary": "Route API tautan wali↔murid: `POST /api/wali/<id>/murid` dengan `{muridId}` menautkan murid ke akun wali — idempoten (ON CONFLICT DO NOTHING) dan mengembalikan meta.dibuat true/false sesuai apakah baris baru benar-benar dibuat. 404 bila wali/murid tidak ada, 422 bila muridId bukan UUID."
+  "src/app/api/tagihan/route.ts": {
+    "summary": "Route API tagihan: `GET /api/tagihan?periode=YYYY-MM` berizin `tagihan: read-any` mengembalikan `{data: Tagihan[], meta:{periode, jumlah, muridSudahDitagih}}`, dan `POST /api/tagihan` berizin write-any yang membuat tagihan lalu membalas 201 `{data:{dibuat, dilewati}}`. Runtime nodejs, pola `withApiPermission` + Zod seperti route lain."
   },
   "src/app/api/wali/[id]/murid/[muridId]/route.ts": {
     "summary": "Route API pelepasan tautan: `DELETE /api/wali/<id>/murid/<muridId>` melepas tautan wali↔murid — idempoten, 0 baris terhapus tetap sukses, dan meta.terlepas menunjukkan apakah ada baris yang benar-benar dihapus."
   },
+  "src/app/api/wali/[id]/murid/route.ts": {
+    "summary": "Route API tautan wali↔murid: `POST /api/wali/<id>/murid` dengan `{muridId}` menautkan murid ke akun wali — idempoten (ON CONFLICT DO NOTHING) dan mengembalikan meta.dibuat true/false sesuai apakah baris baru benar-benar dibuat. 404 bila wali/murid tidak ada, 422 bila muridId bukan UUID."
+  },
   "src/app/api/wali/[id]/route.ts": {
     "summary": "Route API wali per id: `GET /api/wali/<id>` mengembalikan satu akun wali; `PATCH /api/wali/<id>` mengubah status akses portal (`{aksesPortal}`) dan mengembalikan akun terbaru dengan meta.berubah (false bila nilainya sudah berlaku). 404 bila id tidak ada, 422 untuk field lain."
+  },
+  "src/app/api/wali/route.ts": {
+    "summary": "Route API wali: `GET /api/wali` (izin pengaturan read) mengembalikan daftar akun wali beserta murid tertaut dan status akses portal. Pola withApiPermission + runtime nodejs."
   },
   "src/app/error.tsx": {
     "summary": "Error boundary klien Next.js (default export ErrorPage): menampilkan pesan kesalahan dan tombol Try again yang memanggil reset(). Menyertakan id main-content dan komponen Button dari shadcn/ui."
@@ -1065,6 +1081,9 @@
   },
   "src/components/aksi-catatan-perkembangan.tsx": {
     "summary": "Komponen klien AksiCatatanPerkembangan({ namaMurid, catatan }) yang menyediakan tombol ubah dan hapus untuk satu catatan perkembangan pada riwayat anak. Mode internalnya diam/ubah/hapus; simpan mengirim PATCH /api/perkembangan/:id dengan IsiCatatan, hapus mengirim DELETE ke endpoint yang sama, keduanya lalu router.refresh() agar halaman memuat data terbaru, dengan pesan status dan galat di tempat. Mode ubah merender FormCatatanAnak, penghapusan dikonfirmasi dulu di komponen sebelum dikirim."
+  },
+  "src/components/aksi-jalankan-backup.tsx": {
+    "summary": "Komponen klien tombol “Jalankan backup sekarang” di halaman Pengaturan → Backup Database: klik pertama hanya membuka konfirmasi supaya backup tidak jalan karena satu klik tak sengaja, permintaan `POST /api/pengaturan/backup` menunggu proses dump selesai, kedua tombol dinonaktifkan selama berjalan, dan hasilnya dilaporkan lewat `role=\"status\"` (termasuk alasan kegagalan) sebelum `router.refresh()` menyegarkan riwayat dan kartu ringkasan."
   },
   "src/components/aksi-lepas-tautan-wali.tsx": {
     "summary": "Komponen klien untuk melepas tautan wali↔murid di halaman pengaturan wali: menampilkan chip murid beserta tombol Lepas, kotak konfirmasi (pola daftar-pengeluaran), lalu DELETE /api/wali/:id/murid/:muridId dan router.refresh(). Keadaan konfirmasi/pesan sengaja hidup per KARTU (bukan per chip) karena chip-nya ter-unmount setelah refresh sehingga pesan role=status bisa ikut hilang; flag pending menonaktifkan tombol agar tidak klik ganda. Respons idempoten meta.terlepas=false dilaporkan sebagai \"sudah tidak tertaut\", bukan galat."
@@ -1120,6 +1139,9 @@
   "src/components/daftar-notifikasi.tsx": {
     "summary": "Panel komponen server yang menampilkan antrean notifikasi milik akun dari tabel `notifications`: jumlah yang belum dibaca, daftar pesan dengan waktu kirim, dan tombol `TombolTandaiBaca` untuk menandai satu atau semua notifikasi sudah dibaca. Datanya berasal dari `listNotifikasi` di `src/services/notifikasi.service.ts`."
   },
+  "src/components/daftar-pemeriksaan-ci.tsx": {
+    "summary": "Komponen presentasional daftar langkah pipa CI satu jalan: menggambar seluruh `PEMERIKSAAN_CI` lewat `barisPemeriksaanCi` urut seperti `ci.yml`, lengkap dengan ikon, perintah, keterangan, lama langkah (`lamaDetik`), dan lencana keadaan. Langkah yang belum sempat jalan tetap ditampilkan sebagai “dilewati” supaya hasilnya tidak terbaca lebih baik daripada kenyataannya."
+  },
   "src/components/daftar-penempatan.tsx": {
     "summary": "Daftar seluruh penempatan murid di kelas (data tiruan): ringkasan jumlah penempatan, yang aktif, dan berapa murid yang aktif di lebih dari satu kelas; pencarian yang mencocokkan nama murid, kelas, cabang, atau guru; saringan status (semua/aktif/selesai); serta kartu tiap penempatan berisi murid, kelas, guru, tanggal mulai, badge status, dan tautan ke halaman detail murid. Baris aktif ditampilkan lebih dulu, lalu diurutkan menurut nama murid."
   },
@@ -1128,6 +1150,12 @@
   },
   "src/components/daftar-perkembangan.tsx": {
     "summary": "Komponen klien `DaftarPerkembangan` yang menampilkan catatan perkembangan tiap anak (nilai, sikap, catatan) dari prop `daftarMurid`, `catatanAwal`, `kehadiranAwal`, dan `namaGuru`. Mendukung penambahan catatan baru serta pembaruan catatan terbaru langsung dari kartu murid, dengan tautan ke halaman riwayat `/app/perkembangan/riwayat`."
+  },
+  "src/components/daftar-riwayat-backup.tsx": {
+    "summary": "Komponen daftar riwayat backup dari tabel `backup_runs`: tiap baris menampilkan waktu mulai, ukuran berkas (`ukuranTeks`), lama proses, lokasi salinan, dan lencana status sukses/gagal/berjalan; alasan kegagalan ditonjolkan, dan judul kartunya menyebut berapa catatan yang tampil dari totalnya. Sengaja tanpa keadaan kosong — halaman pemanggil yang memutuskan apa yang ditampilkan."
+  },
+  "src/components/daftar-riwayat-ci.tsx": {
+    "summary": "Komponen riwayat jalan CI: satu baris per jalan (waktu, commit, cabang, lama, dan ringkasan `ringkasJalanCi`) yang bisa dibuka memakai `<details>` bawaan peramban untuk melihat langkah-langkahnya lewat `RincianJalanCi`, termasuk potongan log kegagalan dari fungsi `logKegagalan` yang dioper pemanggil."
   },
   "src/components/daftar-riwayat-jurnal.tsx": {
     "summary": "Komponen tampilan `DaftarRiwayatJurnal` untuk halaman riwayat jurnal: menampilkan jurnal terbaru di atas, menghitung total jam mengajar, menyediakan kartu filter kelas dan rentang tanggal yang dikirim lewat query URL (bukan disaring di klien), menampilkan pesan filter, lalu daftar kartu jurnal memakai `LabelStatusJurnal`, `formatJam`, dan `formatTanggalLengkap`."
@@ -1161,6 +1189,9 @@
   },
   "src/components/form-catatan-anak.tsx": {
     "summary": "Komponen client FormCatatanAnak untuk menambah atau mengubah catatan perkembangan satu murid. Menerima props namaMurid, catatanAwal, onSimpan, dan onBatal; menyusun state tanggal, nilai, sikap (dari PILIHAN_SIKAP), dan catatan, lalu mengirim objek bertipe IsiCatatan. Dipakai pada alur student_progress."
+  },
+  "src/components/form-jadwal-backup.tsx": {
+    "summary": "Komponen klien formulir jadwal backup: menyalakan/mematikan backup otomatis serta mengatur jam, zona waktu (WIB/WITA/WIT), retensi 1–365 hari, dan tempat penyimpanan, dengan ringkasan jadwal dan perkiraan jadwal berikutnya yang ikut berubah saat diisi. Simpanannya dikirim ke `PUT /api/pengaturan/backup/jadwal`; kesalahan isian dikumpulkan per field lebih dulu, dan kartu konfirmasi menampilkan hasil dari server lalu `router.refresh()`."
   },
   "src/components/form-jadwal-kelas.tsx": {
     "summary": "Komponen klien FormJadwalKelas: formulir tambah jadwal kelas (hari, jam mulai, jam selesai) dengan validasi jam selesai > mulai dan penolakan duplikat hari+jam, memakai HARI_DALAM_SEMINGGU dan tipe JadwalKelas dari lib/mock-kelas."
@@ -1238,6 +1269,9 @@
   "src/components/jurnal-form.tsx": {
     "summary": "Komponen klien `JurnalForm` untuk mengisi jurnal mengajar: memilih jadwal (`PemilihJadwal`), kehadiran (`DaftarKehadiran`), materi (`PemilihMateri`), topik, dan catatan. Menghitung `bagianKurang`/`siapKirim`, memakai `hitungJamMengajar` dan `formatJam`, mengirim lewat `kirimJurnalStub`, lalu menampilkan `KonfirmasiJurnal` dengan ringkasan saat berhasil."
   },
+  "src/components/kartu-notifikasi-laporan-bulanan.tsx": {
+    "summary": "Komponen klien kartu notifikasi laporan bulanan: menampilkan notifikasi tipe `laporan_bulanan` dari tabel `notifications` — bawaannya data tiruan `NOTIFIKASI_LAPORAN_BULANAN_TIRUAN` di `src/lib/mock-notifikasi-laporan.ts` — beserta periode, ringkasan, waktu kirim, jumlah yang belum dibaca, dan tombol menuju laporan bulanannya."
+  },
   "src/components/kartu-portal.tsx": {
     "summary": "Komponen presentasional `KartuPortal`: pembungkus konten Portal Wali dengan sudut membulat dari token `--radius-kartu-portal` dan padding seragam. Props utamanya `judul`, `ikon`, `penanda`, `keterangan`, `ringkas`, `className`, dan `children`; judul dirender sebagai heading level 2 dengan `aria-label` bila berupa teks. Tanpa \"use client\" sehingga aman dipakai komponen server maupun klien.",
     "sections": [
@@ -1268,6 +1302,9 @@
         "summary": "Merender header fleksibel berisi logo/monogram, nama dan kontak bimbel, sub-judul dokumen, kolom kanan opsional, dan pengingat pengaturan profil yang hanya tampil di layar."
       }
     ]
+  },
+  "src/components/kotak-notifikasi-honor-guru.tsx": {
+    "summary": "Komponen klien kotak notifikasi honor guru: menampilkan notifikasi tipe `rekap_honor` dari tabel `notifications` (bentuk `NotifikasiTersimpan` di `src/services/notifikasi.service.ts`) berisi nama guru, periode, total honor, dan waktu kirimnya, dengan `TombolTandaiBaca` serta keadaan kosong bila belum ada rekap yang memicu notifikasi."
   },
   "src/components/label-status-jurnal.tsx": {
     "summary": "Komponen penanda status jurnal: menerima `JurnalRiwayat[\"status\"]` dan menampilkan lencana \"Sudah ditinjau\" (status direview, warna primary) atau \"Terkirim\" (muted), memakai util `cn`."
@@ -1301,6 +1338,9 @@
   "src/components/lencana-nilai.tsx": {
     "summary": "Komponen `LencanaNilai` yang menampilkan nilai anak sebagai lencana berwarna: hijau primer untuk nilai ≥85, netral untuk 70–84, dan merah destruktif untuk <70, memakai `cn` dan ikon `GraduationCap`."
   },
+  "src/components/lencana-status-ci.tsx": {
+    "summary": "Pusat tampilan keadaan CI: `TAMPILAN_PEMERIKSAAN_CI` memetakan tiap `StatusPemeriksaanCi` maupun `StatusJalanCi` ke label, ikon, warna, dan gaya lencananya, lalu dipakai `IkonPemeriksaanCi` (ikon berputar untuk keadaan berjalan) dan `LencanaStatusCi`. Dikumpulkan di satu berkas supaya status di kartu proses, daftar pemeriksaan, dan riwayat tidak pernah tampil berbeda."
+  },
   "src/components/nav-bawah-portal.tsx": {
     "summary": "Komponen klien `NavBawahPortal`: bilah lima tab bawah Portal Wali yang tetap di dasar layar. Tabnya adalah Beranda (`/portal`), Jadwal (`/portal/jadwal`), Tagihan (`/portal/tagihan`), Progres (`/portal/perkembangan`), dan Akun (`/portal/akun`). Tab aktif ditentukan lewat `usePathname` dan `tabAktifDari` dari `@/lib/nav-portal` (pencocokan terpanjang) serta ditandai `aria-current`; ini murni navigasi, bukan penjaga izin.",
     "sections": [
@@ -1323,6 +1363,9 @@
   },
   "src/components/panel-rincian-jam.tsx": {
     "summary": "Komponen client PanelRincianJam yang menampilkan rincian jam ngajar sebagai dasar gaji secara collapsible (aria-expanded/aria-controls). Menerima rincian, totalJam, dan tarifPerJam, memformat tanggal dan jam lewat formatTanggalLengkap/formatJam, serta menghitung total dengan formatRupiah dan hitungGaji dari lib/gaji."
+  },
+  "src/components/panel-verifikasi-pemulihan.tsx": {
+    "summary": "Panel verifikasi hasil pulih: menyimpulkan tingkat verifikasi sebuah catatan uji lewat `tingkatVerifikasi` (terverifikasi, belum lengkap, bermasalah, atau belum diverifikasi) beserta hitungan pemeriksaannya, status tiap `PEMERIKSAAN_BAKU` (lulus/gagal/belum diperiksa), pemeriksaan tambahan, catatan ujinya, dan pengingat bahwa tingkah laku aplikasi setelah pemulihan diuji terpisah."
   },
   "src/components/pemantauan-harian.tsx": {
     "summary": "Komponen `PemantauanHarian` menyajikan pantauan owner untuk satu hari: statistik guru yang mengisi, jumlah jurnal, dan total jam mengajar, lalu jurnal dikelompokkan per guru. Props utamanya `data`, `kelasKosong`, `saring` (kelas/guru/cabang dan nilai terpilih), `ringkasanCabang`, `statusGuru`, `notifikasi`, `belumDibaca`, `kehadiran`, `tanggalTampil`, `namaOwner`, dan `hasMore`. Menyusun komponen turunan seperti `SaringPemantauan`, `PanelRingkasanCabang`, `PanelNotifikasi`, `DaftarNotifikasi`, `RingkasanStatusGuru`, `DaftarStatusGuru`, dan `PanelJurnal`, dengan tautan kembali ke `/app`.",
@@ -1370,7 +1413,7 @@
     ]
   },
   "src/components/pengaturan-bimbel.tsx": {
-    "summary": "Halaman pengaturan bimbel (server) yang menyusun kartu navigasi: bagian pemilik (Profil Bimbel, Aturan Gaji & Tarif, Kelola Guru, dan Penautan Akun Wali dengan ringkasan 'N dari M akun tertaut ke murid'), kartu Backup Database bila statusnya tersedia, serta kartu Preferensi Notifikasi untuk semua akun; kartu pemilik hanya muncul bagi akun berizin `pengaturan: read`. Bagian bawah menampilkan ringkasan profil, akun, dan status backup dengan tautan ke halamannya masing-masing."
+    "summary": "Halaman pengaturan bimbel (server) yang menyusun kartu navigasi: bagian pemilik (Profil Bimbel, Aturan Gaji & Tarif, Kelola Guru, Penautan Akun Wali dengan ringkasan “N dari M akun tertaut ke murid”), kartu Status Variabel Lingkungan, kartu Status CI Otomatis yang meringkas jalan CI terakhir lewat `ringkasJalanCi`, kartu Backup Database bila statusnya tersedia, dan kartu Preferensi Notifikasi untuk semua akun; kartu pemilik hanya muncul bagi akun berizin `pengaturan: read`. Bagian bawahnya menampilkan ringkasan profil, akun, dan status backup beserta tautannya."
   },
   "src/components/penjaga-izin.tsx": {
     "summary": "Komponen klien `PenjagaIzin` yang hanya menampilkan isinya kalau akun yang sedang masuk memiliki izin yang diminta; selama sesi masih dibaca, isi cadangan yang tampil supaya bagian berizin tidak berkedip. Hanya untuk tampilan — penjagaan sebenarnya ada di halaman (`requirePermission`) dan endpoint (`withApiPermission`)."
@@ -1432,6 +1475,18 @@
   "src/components/rekap-pemasukan.tsx": {
     "summary": "Komponen server rekap pemasukan bulanan: menerima `daftar` tagihan periode terpilih + `periode`/`periodeTampil`, menampilkan tiga kartu ringkas (pemasukan masuk, belum lunas, total ditagihkan), rincian per murid, keadaan kosong, dan pemilih periode berupa form GET bulan+tahun."
   },
+  "src/components/rincian-jalan-ci.tsx": {
+    "summary": "Rincian padat langkah-langkah satu jalan CI, dipakai riwayat supaya jalan lama pun bisa diperiksa: daftar bernomor dari `barisPemeriksaanCi` dengan ikon, catatan, lama, dan lencana keadaan, plus potongan log kegagalan opsional yang ditandai “contoh bentuk”. Langkah yang tidak sempat jalan tetap tampil sebagai “dilewati”."
+  },
+  "src/components/rincian-kartu.tsx": {
+    "summary": "Komponen presentasional kecil `RincianKartu`: satu rincian berisi label, nilai utama, dan keterangan penjelasnya. Dipakai kartu jadwal backup, ringkasan backup terakhir, ringkasan CI, dan rincian kegagalan CI supaya penataan rinciannya seragam."
+  },
+  "src/components/rincian-kegagalan-ci.tsx": {
+    "summary": "Kartu rincian langkah yang menghentikan pipa CI: langkah keberapa, perintahnya, lamanya, langkah yang ikut batal, pesan terakhirnya, saran perbaikan dari `saranPerbaikan`, dan potongan log contoh yang menjelaskan artefak uji peramban. Tidak digambar kalau jalannya lulus atau masih berjalan; justru bagian inilah yang dicari saat CI merah."
+  },
+  "src/components/ringkasan-backup-terakhir.tsx": {
+    "summary": "Kartu ringkasan salinan terakhir yang berhasil: waktu, lama proses, ukuran berkas, lokasi salinan, dan penilaian kesegaran lewat `kesegaranBackup` (memakai `JEDA_JADWAL_JAM` dan `retensiHari` jadwal yang berlaku) yang menjawab apakah salinan terakhir masih layak dipakai. Kalau belum ada backup yang berhasil, kartunya menampilkan `PesanKosong`."
+  },
   "src/components/ringkasan-cabang.tsx": {
     "summary": "Komponen `PanelRingkasanCabang`: kartu ringkasan satu cabang atau seluruh cabang pada halaman pantauan. Props-nya `daftar` bertipe `RingkasanCabang[]` dan `terpilih` (nama cabang terpilih, kosong berarti semua). Bila ada cabang terpilih dipakai angkanya, selain itu hasil `jumlahkanRingkasanCabang(daftar)`; menampilkan metrik Kelas, Jurnal terisi, Kelas belum ada jurnal, dan Murid aktif, serta `PesanKosong` saat cabang belum punya kelas.",
     "sections": [
@@ -1442,6 +1497,9 @@
         "summary": "Merender Card dengan judul \"Ringkasan <cabang|semua cabang>\" dan deskripsi sumber data basis data, lalu daftar definisi berisi empat metrik atau pesan kosong."
       }
     ]
+  },
+  "src/components/ringkasan-ci-terakhir.tsx": {
+    "summary": "Kartu ringkasan jalan CI terakhir yang sudah selesai: hasil lulus/gagal, waktu, lama, jumlah pemeriksaan yang lulus, commit, dan cabangnya, plus penonjolan langkah yang menghentikan pipa beserta catatannya. Yang gagal ditampilkan apa adanya, bukan disamarkan."
   },
   "src/components/ringkasan-tagihan-anak.tsx": {
     "summary": "Komponen presentasional `RingkasanTagihanAnak`: kartu ringkasan tagihan SPP satu anak. Props-nya `anak` (AnakWali), `daftar` (Tagihan, terbaru lebih dulu), dan `periodeBerjalan` (`YYYY-MM`) untuk menentukan status terlambat. Menghitung rekap lewat `hitungRekapTagihan` dan `statusPembayaran` dari `@/lib/tagihan`, lalu menampilkan nama/kelas anak, `PenandaStatus` tagihan terbaru, serta baris Total tagihan, Sudah dibayar, dan Belum dibayar dengan `formatRupiah`, plus jumlah tagihan/lunas/terlambat.",
@@ -1463,6 +1521,9 @@
   "src/components/riwayat-status-wali.tsx": {
     "summary": "Panel catatan status portal per akun wali di halaman pengaturan wali (server component): menampilkan status saat ini, alasan nonaktif dari `ban_reason` (hanya bila ada), dan waktu perubahan terakhir yang tercatat (`updated_at`, dibandingkan `created_at` — bila sama ditulis belum ada perubahan), plus subsection terpisah berisi waktu tiap tautan murid dibuat dari `wali_murid.created_at`. Panel menyatakan keterbatasan secara eksplisit: aplikasi hanya menyimpan keadaan akun saat ini, bukan riwayat lengkap tiap perubahan status, sehingga waktu yang ditampilkan adalah perubahan data akun terakhir yang tercatat dan belum tentu khusus saklar portal — tidak ada riwayat yang dikarang dan tidak ada tabel/migrasi baru."
   },
+  "src/components/riwayat-uji-pemulihan.tsx": {
+    "summary": "Baris dan daftar riwayat uji pemulihan: `BarisRiwayatUjiPemulihan` menampilkan waktu ujinya, berkas dan lingkungan yang dipakai, ringkasan pemeriksaannya, alasan kegagalan, lencana status, dan penanda “contoh”; `DaftarRiwayatUjiPemulihan` dipakai bersama oleh halaman Backup dan halaman Uji Pemulihan. Sengaja tanpa keadaan kosong — halaman pemanggilnya yang memutuskan."
+  },
   "src/components/saklar-akses-portal-wali.tsx": {
     "summary": "Komponen klien saklar akses portal per akun wali: tombol Matikan/Nyalakan portal memanggil PATCH /api/wali/:id {aksesPortal} lalu router.refresh(); lencana server-rendered jadi acuan setelah refresh. Respons meta.berubah=false ditampilkan sebagai keterangan (\"memang sudah aktif/nonaktif\"), bukan galat; efeknya memakai status banned akun sehingga tidak bisa masuk/membuka portal tanpa menghapus akun maupun tautannya."
   },
@@ -1481,8 +1542,14 @@
   "src/components/status-antarmuka.tsx": {
     "summary": "Komponen baku keadaan antarmuka: `StatusMemuat` (kerangka memuat), `PesanKosong` (belum ada isi, boleh diberi aksi), `PesanGalat` (gagal memuat, boleh diberi aksi), dan `PanelStatus`. Dipakai seragam oleh halaman-halaman aplikasi agar bentuk state-nya sama."
   },
+  "src/components/status-ci-berjalan.tsx": {
+    "summary": "Kartu status satu jalan CI yang sedang berjalan: bilah kemajuan dari hitungan pemeriksaan yang sudah selesai, pemeriksaan ke-berapa yang sedang jalan, lama jalannya (`lamaProses`), dan daftar seluruh langkah beserta keadaannya. Kartu ini belum menyimpulkan lulus atau gagal karena hasil akhirnya belum ada."
+  },
   "src/components/status-guru-hari-ini.tsx": {
     "summary": "Modul komponen status guru hari ini untuk halaman pantauan owner. Ia mengekspor RingkasanStatusGuru yang menghitung jumlah guru sudah/belum mengisi beserta persentasenya, DaftarStatusGuru yang merinci tiap guru dengan penanda status jurnal, dan helper LabelStatus yang menampilkan lencana \"Sudah mengisi\"/\"Belum mengisi\" dengan ikon CheckCircle2/XCircle. Semua menerima daftar StatusGuruHariIni dari pemantauan.service."
+  },
+  "src/components/status-pemulihan-backup.tsx": {
+    "summary": "Kartu status proses pemulihan backup: bilah kemajuan dan tahap yang sedang berjalan dihitung dari umur prosesnya (`indeksTahapBerjalan`, `persenPemulihan`, `perkiraanSelesai` dengan `DETIK_PER_TAHAP`), daftar `TAHAP_PEMULIHAN` yang belum sampai tetap digambar supaya panjang prosesnya terlihat, dan penegasan bahwa database produksi tidak disentuh selama uji."
   },
   "src/components/tagihan-spp-anak.tsx": {
     "summary": "Halaman klien daftar tagihan SPP anak untuk portal wali (hanya baca): `PemilihAnak` yang mengganti alamat halaman (`?anak=`), ringkasan ('N tagihan · M lunas · K belum lunas · total Rp…'), keadaan kosong, dan kartu per tagihan ('SPP <periode>', kelas, lencana, nominal, tanggal bayar atau 'Belum dibayar'), dibaca dari `tagihan-store` dan disaring untuk anak yang dipilih. Helper `periodeDariTagihan` diimpor dari modul domain `@/lib/tagihan`."
@@ -1533,7 +1600,10 @@
     "summary": "Skema Drizzle untuk tabel `account` (Better Auth): kolom id, accountId, providerId, userId yang mereferensi `user.id` dengan onDelete cascade, accessToken/refreshToken/idToken, masa berlaku token, scope, password, createdAt/updatedAt dengan `$onUpdate`, plus indeks `account_user_id_idx`."
   },
   "src/db/schema/backup-runs.ts": {
-    "summary": "Skema tabel `backup_runs` di Drizzle: satu baris per proses backup database berisi waktu mulai/selesai, status (`berjalan`/`sukses`/`gagal` sebagai teks supaya tidak butuh migrasi enum), ukuran berkas, lokasi salinan, dan pesan (mis. galat). Ada indeks pada kolom `mulai` untuk mengambil catatan terbaru. Barisnya ditulis skrip backup di server, bukan aplikasi."
+    "summary": "Skema tabel `backup_runs` di Drizzle: satu baris per proses backup database berisi waktu mulai dan selesai, status (`berjalan`/`sukses`/`gagal` sebagai teks supaya status baru tidak menuntut migrasi enum), ukuran berkas, lokasi salinan, pesan (mis. galat), dan kolom `catatan_uji_pemulihan` yang menyimpan rangkuman hasil uji pemulihan berkas itu. Ada indeks pada kolom `mulai` untuk mengambil catatan terbaru."
+  },
+  "src/db/schema/backup-settings.ts": {
+    "summary": "Skema Drizzle tabel `backup_settings` — pengaturan jadwal backup untuk seluruh bimbel dalam satu baris: `aktif`, `jam`, `zonaWaktu`, `retensiHari`, `tujuan`, dan `updatedAt`, dijaga indeks unik pada ekspresi tetap sehingga pengaturan kedua tidak mungkin masuk (sama seperti `bimbel_profile`). Nilai bawaannya sejalan dengan `JADWAL_BACKUP_BAWAAN` di `src/lib/jadwal-backup.ts`, dan kesamaannya dikunci `tests/jadwal-backup.test.mjs`."
   },
   "src/db/schema/bimbel-profile.ts": {
     "summary": "Definisi tabel Drizzle bimbelProfile untuk profil bimbel (nama, alamat, telepon, email, logo sebagai data URL, createdAt, updatedAt). Karena aplikasi hanya dipakai satu bimbel, tabel dibatasi satu baris lewat uniqueIndex(\"bimbel_profile_tunggal_idx\") pada ekspresi sql`(true)`; logo disimpan di basis data agar ikut backup dan tetap tampil di laporan pada jaringan lokal. Berkas ini adalah sumber skema bagi migrasi 0012_profil_bimbel.sql."
@@ -1607,6 +1677,9 @@
   "src/db/schema/wali-murid.ts": {
     "summary": "Skema tabel `wali_murid`: tautan akun wali (`waliId` text → user.id, cascade) ke murid (`muridId` uuid → students.id, cascade), dengan `id` uuid defaultRandom dan `createdAt`. Indeks unik `wali_murid_wali_murid_idx` pada (waliId, muridId) mencegah tautan ganda; dipakai untuk memvalidasi apakah seorang wali berhak melihat data seorang anak."
   },
+  "src/instrumentation.ts": {
+    "summary": "Titik masuk server Next.js (`register`) yang menyalakan penjadwal backup otomatis saat proses server mulai, dengan dua penjagaan: `NEXT_RUNTIME` harus `nodejs` dan tahap `next build` dilewati lewat `NEXT_PHASE` supaya build tidak menjalankan dump database. Mematikan penjadwalnya cukup lewat `PENJADWAL_BACKUP=nonaktif`, dan keputusannya ada di layanannya supaya bisa diuji tanpa menyalakan server."
+  },
   "src/lib/api.ts": {
     "summary": "Utilitas API sisi server (`server-only`): kelas `ApiError`, `assertSameOrigin` (menolak mutasi tanpa Origin yang cocok dengan `BETTER_AUTH_URL`), pembungkus `withApiError` yang menyeragamkan bentuk error ApiError/ZodError (422) / 500 dan header `Cache-Control: no-store`, serta `withApiSession`, `withApiPermission`, `callAuthHandler`, dan `readJson`."
   },
@@ -1619,11 +1692,17 @@
   "src/lib/bukti-tagihan-html.ts": {
     "summary": "Penolong yang menyusun bukti tagihan SPP satu anak sebagai dokumen HTML mandiri (gaya tertanam, tanpa berkas luar) untuk endpoint unduh bukti tagihan portal wali. Mengekspor `buktiTagihanHtml({ daftar, periodeBerjalan, profil, dibuatPada })` dengan `daftar` bertipe `Tagihan[]` (baris pertama jadi identitas anak) dan `namaBerkasBuktiTagihan(namaAnak, periode)`; identitas bimbel memakai `ProfilDokumen`. Nilai dari basis data diamankan lewat `amanHtml()` (escape `&`, `<`, `>`, `\"`, `'`) sebelum ditulis, dan periode/jatuh tempo diformat memakai penolong dari `@/lib/tagihan` serta `@/lib/gaji`."
   },
+  "src/lib/ci-otomatis.ts": {
+    "summary": "Bentuk dan perhitungan ringkasan CI otomatis untuk halaman Status CI: langkah baku `PEMERIKSAAN_CI` yang urutannya sejalan `.github/workflows/ci.yml`, tipe `JalanCi`/`HasilPemeriksaanCi`/`BarisPemeriksaanCi`, serta fungsi `definisiPemeriksaan`, `barisPemeriksaanCi`, `hitungPemeriksaanCi`, `jalanTerbaru`/`jalanTerakhirSelesai`, `ciSedangBerjalan`, `pemeriksaanGagalCi`, `rincianKegagalanCi`, `saranPerbaikan`, `lamaDetik`, dan `ringkasJalanCi`. Netral tanpa impor `@/` supaya bisa diuji langsung `node --test`."
+  },
   "src/lib/db-error.ts": {
     "summary": "Utilitas penanganan error PostgreSQL. `kodeError` menelusuri properti `code` sampai ke `cause` karena Drizzle membungkus error asli, dan `pelanggaranUnik` mengembalikan true bila kodenya 23505 (pelanggaran indeks unik)."
   },
   "src/lib/dokumen-html.ts": {
     "summary": "Penolong dokumen HTML: kop profil bimbel dan lembar laporan ber-tabel, sengaja tanpa impor modul berawalan \"@/\" agar bisa diuji langsung `node --test`. Mengekspor konstanta `NAMA_BIMBEL_CADANGAN`, tipe `ProfilDokumen` dan `IsiSel`, fungsi `namaProfilDokumen`, `kontakProfilDokumen`, `profilBelumLengkap`, `namaBerkasLembar(judul, periode, ekstensi)`, dan `lembarLaporanHtml({ judul, periode, profil, kolom, baris })` yang merender kop lalu tabel kolom yang sama dengan pratinjau layar; dipakai tombol unduh Excel."
+  },
+  "src/lib/email-tautan-reset.ts": {
+    "summary": "Isi email tautan atur ulang sandi: `subjekEmailTautanReset`, `teksEmailTautanReset`, dan `htmlEmailTautanReset` (gaya sebaris, tanpa gambar) beserta `MASA_BERLAKU_MENIT_BAWAAN` = 60 menit. Seluruh nilai dari luar di-escape `escapeHtml` — lima karakter berbahaya, sekali per nilai — dan berkas ini dipisah dari pengirimannya supaya isinya bisa diuji tanpa server SMTP."
   },
   "src/lib/env.ts": {
     "summary": "Validasi environment server-only dengan Zod: mewajibkan `DATABASE_URL` berupa koneksi PostgreSQL valid, `BETTER_AUTH_SECRET` minimal 32 karakter, dan `BETTER_AUTH_URL` berupa origin http/https (default http://localhost:3000). Mengekspor objek `env` hasil parse."
@@ -1631,11 +1710,17 @@
   "src/lib/gaji.ts": {
     "summary": "Utilitas perhitungan dan format gaji: formatRupiah (Rp1.200.000), hitungGaji (total jam × tarif per jam, dibulatkan), periodeBulan (YYYY-MM), dan formatPeriode ('2026-10' → 'Oktober 2026')."
   },
+  "src/lib/halaman-contoh.ts": {
+    "summary": "Daftar dan saklar halaman contoh bawaan starter: `HALAMAN_CONTOH` berisi rute `/app/contoh-status`, dan `halamanContohAktif` membaca keputusan mode rilis dari `src/lib/mode-rilis.ts` (variabel `MODE_RILIS`, cadangan `NODE_ENV`). Dikumpulkan di satu berkas supaya menu (`src/lib/mock-menu.ts`) dan penjaga rutenya (`src/proxy.ts`) memakai sumber yang sama."
+  },
   "src/lib/id-murid.mjs": {
     "summary": "Jembatan id antara data tiruan dan basis data: menerjemahkan id murid teks dari data contoh (`mrd-2`) menjadi UUID tetap yang deterministik (`00000000-0000-4000-8000-000000000002`) lewat fungsi `idMuridDb()` yang murni JavaScript sehingga aman dipakai modul portal yang ikut dibundel ke peramban. Dipakai bersama oleh seeder wali dan `mock-portal-wali` supaya portal mengirim id yang sama dengan yang tersimpan di `wali_murid.murid_id`; id data contoh tetap disimpan pada `sumberTiruan` untuk mencari catatan/tagihan/jurnal tiruan."
   },
   "src/lib/izin-klien.ts": {
     "summary": "Hook klien `useIzinPeran` yang membaca peran akun dari sesi Better Auth lalu memeriksa izinnya memakai definisi peran di `src/lib/permissions.ts`. Hanya untuk keperluan tampilan (menyembunyikan menu/tombol); penjagaan sebenarnya dilakukan di server."
+  },
+  "src/lib/jadwal-backup.ts": {
+    "summary": "Bentuk pengaturan jadwal backup dan perhitungan waktunya: tipe `JadwalBackup`, `JADWAL_BACKUP_BAWAAN` (aktif, 02:00, Asia/Jakarta, retensi 30 hari, `/var/backups/kelola`), `JEDA_JADWAL_JAM` = 24 jam, `labelZona`, `ringkasanJadwal`, `jadwalBerikutnya`, dan `jadwalTerakhir` yang semuanya dihitung menurut zona waktu jadwalnya, bukan zona server. Dipakai layanan, validator, penjadwal, dan formulir jadwal."
   },
   "src/lib/jejak-baca-portal-store.ts": {
     "summary": "Status baca (jejak baca) Portal Wali untuk fase data tiruan: menyimpan tanggal dibaca per anak+bagian (`muridId|bagian`) di localStorage kunci `jejak-baca-portal-v2` plus salinan memori, dengan API sempit yang mudah diganti sumber database — `tandaiTerbaca`, `tandaiTerbacaBanyak`, `belumDibaca`, `tercatatDibaca`, `siapkanJejakBaca`, `langgananJejakBaca`, `snapshotJejakBaca`, serta hook `useBelumDibaca`/`useTercatatDibaca`. Bagian dianggap baru bila tanggal konten terbaru lebih baru dari tanggal baca terakhir."
@@ -1648,6 +1733,9 @@
   },
   "src/lib/mock-cabang.ts": {
     "summary": "Data contoh cabang bimbel yang kini hanya menjadi sumber seeder `npm run db:seed:cabang` (bukan lagi penyimpanan tingkat proses). Mengekspor tipe `DataCabang` dan fungsi `getDaftarCabang()` yang mengurutkan tiga cabang contoh berdasarkan nama tanpa membedakan huruf besar-kecil (kunci `lower(btrim(nama))`, sama dengan `listCabang()`); `id` tidak ditulis karena dibuat basis data. Komponen UI dilarang mengimpornya (aturan ESLint), dan `tests/data-cabang.test.mjs` menjaga nama-namanya tetap cocok dengan data kelas/jurnal."
+  },
+  "src/lib/mock-ci-otomatis.ts": {
+    "summary": "Data contoh catatan CI untuk halaman Status CI: `getRiwayatCi`, `getJalanCiBerjalan`, dan `logKegagalanTiruan`, berisi jalan yang sedang berjalan, yang lulus, yang gagal di tengah pipa (langkah sesudahnya “dilewati”), dan yang gagal di uji peramban beserta potongan log contoh. Waktunya dihitung dari lama langkahnya dan isinya ditandai “contoh” supaya tidak terbaca sebagai hasil sungguhan GitHub Actions."
   },
   "src/lib/mock-gaji.ts": {
     "summary": "Data contoh untuk halaman rekap gaji selagi tabel `salary_settings`/`salary_recaps` belum tersambung, berisi tipe `BarisRekapGaji`, `RincianJam`, `RekapGaji`, dan fungsi `getRekapGajiBulanan(periode)` serta `getRiwayatGaji()` (enam bulan terakhir). Perhitungan memakai `hitungGaji` dari `@/lib/gaji`."
@@ -1664,14 +1752,26 @@
   "src/lib/mock-murid.ts": {
     "summary": "Data contoh daftar murid (tabel `students` sudah ada, API-nya belum): tipe `Murid` mengikuti kolom tabel (nama, tanggal_lahir, nama_orang_tua, kontak_orang_tua, status_aktif) dan `getDaftarMurid()` mengembalikan daftar terurut nama. Hana Salsabila (mrd-8) memakai wali yang sama dengan Bima Saputra (mrd-2) — Ibu Ratna — supaya contoh satu akun wali dengan dua anak konsisten."
   },
+  "src/lib/mock-notifikasi-honor.ts": {
+    "summary": "Data tiruan kotak notifikasi honor guru: tipe `NotifikasiHonorTiruan` (guru, periode, total honor, `sudahDibaca`, `createdAt`) dan `NOTIFIKASI_HONOR_TIRUAN` berisi empat notifikasi — dua belum dibaca, dua sudah. Dipakai sebagai pengganti sumber tabel `notifications` sampai endpoint notifikasi honor siap."
+  },
+  "src/lib/mock-notifikasi-laporan.ts": {
+    "summary": "Data tiruan kartu notifikasi laporan bulanan: tipe `NotifikasiLaporanBulananTiruan` (periode, ringkasan, `sudahDibaca`, `createdAt`) dan `NOTIFIKASI_LAPORAN_BULANAN_TIRUAN` berisi tiga notifikasi — satu belum dibaca, dua sudah. Pengganti sementara tabel `notifications` sampai endpoint laporan bulanan tersedia."
+  },
   "src/lib/mock-penempatan.ts": {
     "summary": "Data contoh penempatan murid ke kelas beserta helper `getPenempatanAwal()` dan `kelasMurid(muridId)`. Bentuknya mengikuti kolom tabel `student_enrollments` (murid, kelas, tanggal mulai, status aktif/selesai), sudah memuat contoh aturan multi-kelas (satu murid aktif di beberapa kelas, penempatan lama disimpan sebagai riwayat berstatus selesai), dan `kelasMurid` menyusun kelas aktif lebih dulu lalu riwayat terbaru beserta data kelasnya."
   },
   "src/lib/mock-pengaturan.ts": {
     "summary": "Data tiruan Pengaturan Bimbel sebagai pengganti tabel `salary_settings`/`notification_preferences`: tipe `ProfilBimbel`, `AturanGaji`, `PreferensiNotifikasi`, dan fungsi `getProfilBimbel()`, `getRiwayatTarif()`, `getAturanGaji()`, `getDaftarGuru()`, `getPreferensiNotifikasi()`. Riwayat tarif meniru aturan baris terbaru yang berlaku sejak tanggal tertentu."
   },
+  "src/lib/mock-uji-pemulihan.ts": {
+    "summary": "Data contoh catatan uji pemulihan untuk halaman Uji Pemulihan Backup dan halaman Backup: `getRiwayatUjiPemulihan` (memuat uji yang sedang berjalan, uji yang gagal, dan uji berhasil yang umurnya sudah lewat selang uji ulang), `getUjiPemulihanBerjalan`, dan `getBerkasBackupUji`. Waktunya tetap, umur proses berjalan dihitung dari saat halaman dibuka, dan isinya ditandai “contoh” karena uji sungguhannya masih dijalankan manual."
+  },
   "src/lib/mock-wali.ts": {
     "summary": "Data contoh akun wali dan penautannya ke murid: tipe `AkunWali` (waliId, nama, email, kontak, `aksesPortal` — akun nonaktif tetap terdaftar tapi tidak bisa masuk, dan daftar murid tertaut) serta `WaliMurid` (muridId, nama, kelasNama). Enam akun contoh: Ibu Ratna (dua anak: Bima & Hana), Bapak Hendra, Ibu Melati, Bapak Yusuf, Ibu Dewi, dan Bapak Nugroho (belum tertaut sekaligus portal nonaktif); `WALI_PORTAL` menunjuk akun contoh portal. Getter: `getDaftarWali()`, `getWali(waliId)`, dan `ringkasPenautan()` (jumlah akun, portal aktif/nonaktif, sudah/belum tertaut, dan murid tertaut)."
+  },
+  "src/lib/mode-rilis.ts": {
+    "summary": "Pembaca mode rilis aplikasi: `VARIABEL_MODE_RILIS` = `MODE_RILIS`, fungsi `bacaModeRilis` (kosong berarti mengikuti `NODE_ENV`, nilai true/false menang di kedua arah, isian keliru dilaporkan lewat `variabelBermasalah` lalu jatuh kembali ke `NODE_ENV`) dan pintasan `modeRilisAktif`. Tidak pernah melempar galat, dan merupakan satu-satunya tempat aturan mode rilis dibaca — dipakai saklar halaman contoh serta halaman status lingkungan."
   },
   "src/lib/nav-portal.ts": {
     "summary": "Penolong pencocokan tab bawah Portal Wali dengan alamat halaman yang sedang dibuka. Mengekspor `tabAktifDari(hrefs, pathname)` yang memilih tab dengan kecocokan terpanjang: alamat harus sama persis atau berawalan `href/`, lalu hasilnya diurutkan dari yang terpanjang — tanpa aturan ini tab Beranda (`/portal`) akan selalu menyala untuk seluruh halaman portal."
@@ -1706,8 +1806,14 @@
   "src/lib/slip-gaji-html.ts": {
     "summary": "Pembuat slip gaji berupa dokumen HTML mandiri siap cetak A4 (gaya inline, tanpa berkas luar): fungsi `namaBerkasSlip(namaGuru, periode)` menghasilkan nama berkas aman, sedangkan `slipGajiHtml({ baris, periodeTampil, namaBimbel })` merender identitas guru, status pembayaran, tabel rincian tanggal/kelas/jam, dan total gaji memakai `formatRupiah`, `formatJam`, dan `formatTanggalLengkap`."
   },
+  "src/lib/smtp.ts": {
+    "summary": "Pembaca konfigurasi SMTP: `VARIABEL_SMTP`, `PORT_SMTP_BAWAAN` = 587, `PORT_SMTP_TLS_LANGSUNG` = 465, `bacaKonfigurasiSmtp` (host wajib, port opsional, `SMTP_SECURE` diturunkan dari port, user dan sandi harus berpasangan, pengirim jatuh ke `SMTP_USER`), pintasan `smtpSiap`, serta `pakaiCadanganLogTautan` yang menentukan boleh-tidaknya tautan reset dicatat ke log (dev/uji, atau saat SMTP belum diatur). Sandi tidak pernah masuk ke keterangan yang dipakai log dan layar."
+  },
   "src/lib/tagihan.ts": {
     "summary": "Hitungan, tipe, dan format tagihan murid (sisi pemasukan, melengkapi `src/lib/gaji.ts` dan `src/lib/pengeluaran.ts`): tipe `StatusTagihan` ('belum_lunas' | 'lunas') dan `Tagihan` (id, muridId, muridNama, kelasNama untuk tampilan, periodeBulan, periodeTahun, nominal, status, tanggalBayar, sudahDiingatkan, dibuatPada — bentuk kolom tabel `student_invoices`). Helper: `periodeTagihan(tanggal)` (YYYY-MM bulan berjalan), `periodeDariTagihan(baris)`, `geserPeriode()`, `selisihBulan()`, `menunggak(periode, periodeBerjalan, status)`, `formatPeriodeTagihan()`, `labelStatusTagihan()`, dan `hitungRekapTagihan()`. Tipe dan helper di sini dipakai halaman maupun penyimpanan, sehingga komponen UI tidak perlu mengimpor berkas data contoh."
+  },
+  "src/lib/tampilan-backup.ts": {
+    "summary": "Pembantu tampilan modul backup: `waktuLengkap` (format Indonesia), `lamaProses`, `ukuranTeks`, `umurBackup`, dan `kesegaranBackup` dengan `TENGGANG_JAM` = 2 jam yang menilai salinan terakhir terhadap `jedaJam` serta `retensiHari`. Dipisah dari komponen supaya formatnya bisa diuji tanpa peramban dan kartu ringkasan serta daftar riwayat menulis angkanya dengan cara yang sama."
   },
   "src/lib/tanggal-perangkat.ts": {
     "summary": "Hook klien (`\"use client\"`) untuk jam/tanggal perangkat wali di halaman portal: `useTanggalPerangkat(tanggalServer)` mengembalikan `YYYY-MM-DD` dan `useMenitPerangkat(menitServer)` mengembalikan menit sejak tengah malam. Keduanya memakai `useSyncExternalStore` tanpa langganan: lukisan pertama memakai nilai dari server agar hasil render server dan klien sama, lalu React menghitung ulang dengan jam peramban sehingga zona waktu server (mis. UTC) tidak menggeser \"hari ini\" atau jam sesi pengguna di Indonesia; nilai dihitung lewat `tanggalISO` dan `menitSekarang` dari `@/lib/tanggal`."
@@ -1718,17 +1824,26 @@
   "src/lib/tema-portal.ts": {
     "summary": "Pengelola preferensi tampilan Portal Wali yang disimpan di `localStorage` peramban (kunci `portal-tema`), hanya dipakai komponen klien. Mengekspor tipe `TemaPortal` (`sistem`/`terang`/`gelap`), konstanta `KUNCI_TEMA_PORTAL` dan `LABEL_TEMA`, fungsi `temaTersimpan()` (default `sistem`), `pakaiGelap()`, `terapkanTema()` (memasang/melepas kelas `dark` di `html`), `simpanTema()` yang menyimpan lalu memberi tahu pendengar, `berlanggananTema()` untuk `useSyncExternalStore` di layar Akun (termasuk event `storage`), dan `temaServer()` untuk lukisan server."
   },
+  "src/lib/uji-pemulihan.ts": {
+    "summary": "Bentuk catatan uji pemulihan backup beserta penilaiannya: tipe `UjiPemulihan`, `BerkasBackupUji`, dan `IsiDatabase`; `JEDA_UJI_HARI` = 90 hari; daftar `PEMERIKSAAN_BAKU` dan `susunPemeriksaanPemulihan`; `hasilPemeriksaan`, `hitungPemeriksaan`, `tingkatVerifikasi`, `kesegaranUjiPemulihan`, `ujiTerakhirBerhasil`/`ujiTerakhirSelesai`; serta tahap proses `TAHAP_PEMULIHAN` dengan `DETIK_PER_TAHAP` = 45 detik, `indeksTahapBerjalan`, `persenPemulihan`, `perkiraanSelesai`, dan `statusTahap`. Netral tanpa impor `@/` supaya bisa diuji `node --test`."
+  },
   "src/lib/utils.ts": {
     "summary": "Utilitas bersama kecil: mengekspor ulang `cn` (penggabung kelas) dari paket 'cn' sesuai konvensi shadcn/ui."
   },
   "src/lib/variabel-lingkungan.ts": {
-    "summary": "Metadata 17 variabel lingkungan rilis (nama, kategori wajib/opsional/otomatis, keterangan kegunaan) beserta pembacaan kondisinya di server: `bacaKondisiVariabelLingkungan` hanya menghasilkan nama + boolean terpasang (nilai rahasia tidak pernah diteruskan ke klien) dan `ringkasKondisiVariabelLingkungan` untuk ringkasan angka. Memakai `import \"server-only\"`."
+    "summary": "Metadata 30 variabel lingkungan beserta pembacaan kondisinya di server: `bacaKondisiVariabelLingkungan` hanya menghasilkan nama dan boolean terpasang (nilai rahasia tidak pernah diteruskan ke klien) dan `ringkasKondisiVariabelLingkungan` untuk ringkasan angkanya. Kategorinya mencakup auth dan basis data, kanal email `SMTP_*`, Compose lokal, `MODE_RILIS`, penjadwal serta perintah backup/pemulihan (`PENJADWAL_BACKUP`, `BACKUP_*`, `RESTORE_*`), mode uji (`STARTER_TEST_RUN`), dan kredensial Coolify; dipakai halaman Pengaturan → Status Variabel Lingkungan."
+  },
+  "src/proxy.ts": {
+    "summary": "Pembatasan rute halaman contoh di sisi server sebelum layout, sesi, atau basis data tersentuh: selama mode rilis menyala, permintaan ke `/app/contoh-status` (lewat `proxy` dan `config.matcher`) ditulis ulang ke alamat yang tidak pernah punya rute sehingga yang tampil adalah halaman penolakan bersama `src/app/not-found.tsx` berstatus 404, sementara alamat di peramban tidak berubah. Saat mode rilis mati permintaannya diteruskan seperti biasa."
   },
   "src/services/backup.service.ts": {
-    "summary": "Layanan server yang menyediakan status backup untuk halaman monitoring: beberapa catatan terbaru (terurut waktu mulai terbaru), backup terakhir yang berhasil, serta jumlah total/sukses/gagal/berjalan dihitung di SQL dengan `count(*) filter`. Hanya membaca tabel `backup_runs`."
+    "summary": "Layanan server untuk modul backup. Membaca `backup_runs` (`ambilStatusBackup`, `ambilCatatanTerakhir`) dan memilih berkas yang siap diuji (`ambilBerkasBackupUji`, `ambilBerkasBackupUjiById`); menjalankan backup sungguhan (`bacaKonfigurasiBackup`, `namaBerkasBackup`, `jalankanPerintahDump`, `jalankanBackupDanCatat`) dengan baris `berjalan` ditulis lebih dulu; memulihkan salinan ke database percobaan (`bacaKonfigurasiPemulihan`, `pulihkanBerkasBackup`, `adaPemulihanBerjalan`) yang menolak database aplikasi; memeriksa isi hasilnya (`hitungIsiDatabase`, `periksaHasilPemulihan`, `jalankanUjiPemulihan`); serta merangkum dan mencatat hasil uji (`susunCatatanUjiPemulihan`, `catatHasilUjiPemulihan`, `waktuUjiTeks`). Menyimpan dan membaca jadwal di tabel `backup_settings` lewat `ambilJadwalBackup` dan `simpanJadwalBackup`."
   },
   "src/services/cabang.service.ts": {
     "summary": "Layanan server-only untuk cabang bimbel yang membaca tabel `cabang`, menjadi satu sumber data bagi halaman cabang, pilihan cabang di formulir kelas, ringkasan pantauan, dan `/api/cabang`. Mengekspor tipe `Cabang` (tanpa kolom penanda waktu agar kontrak API tetap sama) serta fungsi `getCabangByNama`, `periksaCabangKelas` (hasil `CABANG_TIDAK_ADA`/`CABANG_NONAKTIF`), `namaCabangDipakai(nama, kecualiId)`, `listCabang`, `ringkasCabang`, `getCabang(id)`, `tambahCabang`, `setStatusAktif`, dan `ubahCabang`; input bertipe `BuatCabangInput`/`UbahCabangInput` dari `@/validators/cabang` dan pembanding nama mengabaikan spasi tepi serta besar/kecil huruf."
+  },
+  "src/services/email.service.ts": {
+    "summary": "Layanan pengiriman email tautan atur ulang sandi: `kirimEmailTautanReset` mengambil nama bimbel dari profil lalu mengirimnya lewat `kirimLewatSmtp` (transpor nodemailer yang dipakai ulang selama konfigurasinya sama) dan tidak pernah melempar galat — hasilnya `terkirim: true` atau `terkirim: false` beserta `alasan`. Tautannya sengaja tidak pernah ditulis ke log dari berkas ini; pencatatan cadangan milik pemanggilnya."
   },
   "src/services/gaji.service.ts": {
     "summary": "Layanan domain gaji (server-only) yang menghitung rekap dari jurnal mengajar dikali tarif `salary_settings`. Mengekspor `aturanGajiBerlaku`, `rekapGajiAnyBulanan`, `rekapGajiGuru`, `tandaiPembayaranGaji` (tipe `HasilTandaiPembayaran`), `rekapGajiAnyGuru` untuk endpoint berizin `gaji: read-any`, dan `riwayatGajiAny`, dengan tipe `RincianGaji`, `BarisGajiGuru`, `RekapGaji`, dan `PembayaranGaji`."
@@ -1804,6 +1919,9 @@
   "src/services/pengeluaran.service.ts": {
     "summary": "Layanan pengeluaran operasional di atas tabel `expenses` + `expense_categories` (migrasi 0016): `listPengeluaran({periode?})` join kategori (urut tanggal lalu createdAt turun, catatan null menjadi string kosong), `listKategoriPengeluaran`, `getKategoriPengeluaran`, `tambahKategoriPengeluaran` (409 saat nama duplikat), `buatPengeluaran`, `ubahPengeluaran`, `hapusPengeluaran`, dan `rekapPengeluaranBulanan` (group by bulan) untuk halaman arus kas & laba rugi. Menggantikan penyimpanan peramban `pengeluaran-store` yang kini dihapus."
   },
+  "src/services/penjadwal-backup.service.ts": {
+    "summary": "Penjadwal backup di dalam aplikasi: `mulaiPenjadwalBackup`/`hentikanPenjadwalBackup` dinyalakan `src/instrumentation.ts`, lalu tiap `JEDA_TIK_MS` (60 detik) `periksaJadwalDanJalankan` membandingkan catatan terakhir di `backup_runs` dengan `jadwalTerakhir` dari `backup_settings`; satu slot hanya dicoba sekali, pemasangan baru menunggu jam jadwalnya, baris `berjalan` yang menggantung dianggap mati setelah `BATAS_BERJALAN_MS`, dan `penjadwalDiizinkan` mematikan penjadwal lewat `PENJADWAL_BACKUP`."
+  },
   "src/services/perkembangan.service.ts": {
     "summary": "Service server-only catatan perkembangan anak: listCatatanPerkembangan (filter muridId, rentang dari/sampai, cari), getCatatanPerkembangan, createCatatanPerkembangan (guruId dari sesi), updateCatatanPerkembangan (hanya penulisnya), hapusCatatanPerkembangan, serta laporan agregat listRingkasanPerkembangan dan getRiwayatPerkembangan untuk halaman riwayat orang tua. Hasil penulisan dilengkapi nama anak dan guru penulisnya."
   },
@@ -1856,7 +1974,7 @@
     "summary": "Skema Zod untuk notifikasi: `listNotifikasiSchema` (limit/offset dengan batas dan `belumDibaca` yang diterjemahkan eksplisit dari string) dan `tandaiBacaSchema` berupa union `{ ids: uuid[] }` atau `{ semua: true }`, lengkap dengan tipe `ListNotifikasiInput` dan `TandaiBacaInput`."
   },
   "src/validators/pengaturan.ts": {
-    "summary": "Validator Zod untuk modul pengaturan: `profilBimbelSchema` (termasuk logo data URL PNG/JPG/WebP maks ~1 MB), `SKEMA_GAJI` (`per jam`, `tetap`), `aturanGajiSchema`, `listAturanGajiSchema`, `STATUS_AKUN`, `listGuruSchema`, `tambahGuruSchema`, `ubahStatusGuruSchema`, `guruIdSchema`, dan `ubahPreferensiNotifikasiSchema`. Menjadi kontrak masukan API pengaturan owner."
+    "summary": "Validator Zod untuk modul pengaturan: `profilBimbelSchema` (termasuk logo data URL PNG/JPG/WebP maksimal ~1 MB), `listBackupSchema` (`?limit=` 1–100), `jadwalBackupSchema` (jam 24 jam, zona waktu IANA, retensi 1–365 hari, tujuan path absolut), `jalankanUjiPemulihanSchema` (`{ backupId }` berupa uuid), `SKEMA_GAJI`, `aturanGajiSchema`, `updateAturanGajiSchema`, `listAturanGajiSchema`, `STATUS_AKUN`, `listGuruSchema`, `tambahGuruSchema`, `ubahStatusGuruSchema`, `guruIdSchema`, dan `ubahPreferensiNotifikasiSchema`. Menjadi kontrak masukan API pengaturan pemilik."
   },
   "src/validators/pengeluaran.ts": {
     "summary": "Skema Zod untuk API pengeluaran operasional: validasi buat/ubah pengeluaran (kategoriId uuid, nominal positif, tanggal YYYY-MM-DD, catatan opsional) dan validasi nama kategori; dipakai route /api/pengeluaran dan /api/pengeluaran/kategori."
@@ -1887,6 +2005,12 @@
   },
   "starter.config.json": {
     "summary": "Metadata starter dalam format JSON: id 'postgres', nama 'Base Postgres', deskripsi fondasi ramah AI dengan Drizzle dan PostgreSQL, `baseVersion` 0.1.0, serta penanda `database` postgresql."
+  },
+  "tests/atur-ulang-sandi.test.mjs": {
+    "summary": "Uji inti alur atur ulang sandi: token dari email ditukar jadi sandi baru yang bisa dipakai masuk, token hanya sekali pakai (percobaan kedua ditolak sebagai token tidak berlaku), dan sandi yang terlalu pendek ditolak tanpa menghabiskan tokennya. Memakai `src/lib/auth.ts` serta basis data uji dari `scripts/test.mjs`; bentuk jawaban rutenya diuji lewat `e2e/atur-ulang-sandi.spec.ts`."
+  },
+  "tests/backup-service.test.mjs": {
+    "summary": "Uji lapisan layanan backup (`src/services/backup.service.ts`): pembacaan pengaturan dari variabel yang sama dengan skrip, nama berkas dari waktu setempat, urutan pencatatan (baris `berjalan` ditulis lebih dulu lalu ditutup `sukses`/`gagal` beserta alasan yang dipotong), pemulihan ke database percobaan yang menolak database aplikasi dan hanya melayani satu uji sekaligus, pemilihan berkas lewat id catatan backup, pemeriksaan isi (murid, jurnal, tagihan, owner) terhadap produksi, serta perangkuman dan pencatatan hasil uji ke kolom `catatan_uji_pemulihan`."
   },
   "tests/beda-hari.test.mjs": {
     "summary": "Tes unit fungsi bedaHari dari src/lib/tanggal.ts, dipakai halaman Tagihan Portal Wali untuk menghitung \"terlambat N hari\". Memverifikasi selisih hari dua tanggal (termasuk nilai nol dan negatif), serta penyeberangan batas bulan, tahun, dan tahun kabisat (Februari 2028)."
@@ -1932,91 +2056,50 @@
       }
     ]
   },
+  "tests/ci-otomatis.test.mjs": {
+    "summary": "Uji bentuk ringkasan CI (`src/lib/ci-otomatis.ts`) sekaligus penjaga berkas pipa: `PEMERIKSAAN_CI` harus cocok dengan urutan langkah dan perintah di `.github/workflows/ci.yml` (termasuk pemicu push dan pull request, `defaults.run` dari folder aplikasi, cache npm serta Playwright, job peramban terpisah, dan job `ringkasan`), lalu fungsi penyusunan baris, hitungan keadaan, pemilihan jalan terakhir, saran kegagalan, dan ringkasannya; data contoh `src/lib/mock-ci-otomatis.ts` ikut diperiksa supaya bentuk halamannya tidak melenceng."
+  },
   "tests/data-cabang.test.mjs": {
     "summary": "Tes data contoh cabang dari src/lib/mock-cabang.ts (dipakai npm run db:seed:cabang) yang dibandingkan dengan data kelas (mock-kelas.ts) dan riwayat jurnal (mock-jurnal.ts). Memverifikasi semua nama cabang pada data kelas dan jurnal terdaftar di daftar cabang, setiap entri punya nama/alamat/kontak terisi, dan tidak ada nama cabang kembar (perbandingan nama dirapikan: trim + lowercase)."
   },
   "tests/database.test.mjs": {
-    "summary": "Tes integrasi skema dan migrasi basis data PostgreSQL (berkas tes terbesar di repo, ~1350 baris). Memverifikasi migrasi aman dijalankan ulang (baris lama tetap ada) dan seluruh constraint tabel: keunikan jurnal per guru+jadwal+tanggal, kehadiran murid unik per jurnal dan cascade delete, murid dengan kehadiran tidak bisa dihapus, batas jam mengajar/status/nilai evaluasi (0-100), presensi sesi unik per guru+jadwal+tanggal, relasi jadwal-kelas-guru-murid cabang termasuk perilaku delete/lepas pengampu, tarif honor satu per tanggal tanpa negatif, catatan honor terhitung, tagihan SPP, biaya operasional, profil bimbel tunggal, notifikasi dan backup, keunikan nama cabang tak peka huruf besar-kecil, serta penjalanan ulang seeder cabang/kelas/contoh yang idempoten dan tidak menimpa data lama.",
-    "sections": [
-      {
-        "symbol": "test migrations preserve rows on rerun",
-        "startLine": 8,
-        "endLine": 192,
-        "summary": "Menjalankan scripts/migrate.mjs dan memastikan baris tetap ada saat migrasi diulang serta constraint auth ditegakkan."
-      },
-      {
-        "symbol": "test jurnal tidak boleh dobel untuk guru + jadwal + tanggal yang sama",
-        "startLine": 217,
-        "endLine": 235,
-        "summary": "Constraint unik jurnal harian."
-      },
-      {
-        "symbol": "test kehadiran murid tidak boleh dobel di satu jurnal",
-        "startLine": 236,
-        "endLine": 250,
-        "summary": "Constraint unik kehadiran per jurnal."
-      },
-      {
-        "symbol": "test menghapus jurnal ikut menghapus kehadirannya",
-        "startLine": 251,
-        "endLine": 266,
-        "summary": "Cascade delete kehadiran saat jurnal dihapus."
-      },
-      {
-        "symbol": "test jadwal tidak boleh dobel untuk kelas + hari + jam mulai yang sama",
-        "startLine": 394,
-        "endLine": 412,
-        "summary": "Constraint unik jadwal kelas."
-      },
-      {
-        "symbol": "test penempatan aktif hanya satu per murid + kelas",
-        "startLine": 413,
-        "endLine": 436,
-        "summary": "Constraint penempatan murid."
-      },
-      {
-        "symbol": "test tarif honor satu per tanggal dan tidak boleh negatif",
-        "startLine": 570,
-        "endLine": 600,
-        "summary": "Constraint tarif honor."
-      },
-      {
-        "symbol": "test profil bimbel dijaga tunggal, namanya terisi, dan logonya data URL",
-        "startLine": 751,
-        "endLine": 797,
-        "summary": "Constraint profil bimbel."
-      },
-      {
-        "symbol": "test cabang dijaga isinya dan namanya unik tak peka huruf besar-kecil",
-        "startLine": 874,
-        "endLine": 928,
-        "summary": "Constraint tabel cabang."
-      },
-      {
-        "symbol": "test seeder cabang mengisi sekali dan aman dijalankan ulang",
-        "startLine": 929,
-        "endLine": 975,
-        "summary": "Idempotensi seeder cabang."
-      },
-      {
-        "symbol": "test migrasi relasi memetakan cabang kelas lama ke cabang resmi",
-        "startLine": 1064,
-        "endLine": 1157,
-        "summary": "Migrasi data cabang kelas lama."
-      },
-      {
-        "symbol": "test seeder contoh mengisi cabang lalu kelas dan idempoten",
-        "startLine": 1300,
-        "endLine": 1350,
-        "summary": "Urutan dan idempotensi seeder contoh gabungan."
-      }
-    ]
+    "summary": "Tes integrasi skema dan migrasi PostgreSQL (berkas tes terbesar di repo): memastikan migrasinya aman dijalankan ulang dan seluruh constraint tabel berlaku — keunikan jurnal per guru/jadwal/tanggal, kehadiran murid, murid dengan kehadiran tidak bisa dihapus, batas nilai dan status, relasi jadwal-kelas-guru-murid termasuk perilaku delete dan lepas pengampu, tarif honor, catatan honor terhitung, tagihan SPP, biaya operasional, profil bimbel, notifikasi dan preferensinya, serta tabel `backup_settings` (jam, retensi, tujuan absolut, dan sifat satu barisnya) dan kolom `catatan_uji_pemulihan` pada `backup_runs` yang tidak boleh kosong/hanya spasi serta dibatasi 2000 karakter."
+  },
+  "tests/dukungan/impor-ts.mjs": {
+    "summary": "Penerjemah impor bersama untuk tes unit: `pasangImporTs` memakai `module.registerHooks` untuk menyelesaikan alias `@/…` milik tsconfig ke folder `src/`, meneruskan impor relatif, dan mengizinkan impor JSON tanpa atribut. Dua hal itu dilakukan Next sendiri tapi tidak oleh Node, jadi tanpa berkas ini modul aplikasi tidak bisa diimpor langsung dari `node --test`."
+  },
+  "tests/dukungan/smtp-palsu.mjs": {
+    "summary": "Server SMTP seadanya untuk pengujian: `buatServerSmtp` menerima email tanpa TLS dan menyimpannya di memori, `dekodePesan`/`headerPesan` membacanya, dan `denganEnvSmtp` menyetel lalu mengembalikan variabel `SMTP_*` beserta kunci lain (mis. `NODE_ENV`) apa pun yang terjadi supaya uji tidak saling menulari. Dipakai agar pengiriman email diuji lewat protokol SMTP sungguhan tanpa menyentuh jaringan luar."
+  },
+  "tests/email-service.test.mjs": {
+    "summary": "Uji `src/services/email.service.ts`: SMTP yang belum diatur dilaporkan gagal beserta alasannya tanpa melempar galat, SMTP yang diatur mengisi email lengkap, kegagalan pengiriman tidak melempar, dan `kirimLewatSmtp` benar-benar mengirim ke server SMTP palsu di dalam tes. Menegaskan janji layanan ini — permintaan lupa sandi harus tetap dijawab walau emailnya tidak terkirim."
+  },
+  "tests/email-tautan-reset.test.mjs": {
+    "summary": "Uji isi email tautan atur ulang sandi tanpa jaringan maupun basis data: subjek menyebut nama bimbel, versi teks memuat tautan, alamat tujuan, dan masa berlakunya, sapaan tetap sopan tanpa nama akun, masa berlaku bisa disesuaikan dan ikut ke teks maupun HTML, dan seluruh nilai dari luar di-escape — `escapeHtml` mengganti lima karakter berbahaya sekali saja."
+  },
+  "tests/halaman-contoh.test.mjs": {
+    "summary": "Uji penyembunyian halaman contoh: saklarnya hanya menutup di mode rilis, daftar halaman contoh sejalan dengan tautan menunya, setiap halaman contoh benar-benar ada dan dijaga saklar yang sama, rute contoh dibatasi di sisi server sebelum sesi diperiksa, menu rilis tidak menyisakan tautan contoh, dan portal wali tidak pernah menautkannya."
+  },
+  "tests/halaman-penolakan.test.mjs": {
+    "summary": "Uji halaman penolakan bersama (`src/app/not-found.tsx`) yang dipakai untuk alamat tidak ada sekaligus rute yang sengaja ditahan: berkasnya harus ada, isinya (komentar dibuang dulu supaya catatan teknis tidak ikut dinilai) tidak boleh membocorkan kode galat, nama rute, atau jejak server, serta harus memakai bahasa aplikasi dan menyediakan jalan kembali."
+  },
+  "tests/jadwal-backup.test.mjs": {
+    "summary": "Uji pengaturan jadwal backup (tabel `backup_settings` beserta `ambilJadwalBackup`/`simpanJadwalBackup`): jadwal bawaan selama tabelnya kosong dan kesamaannya dengan bawaan kolom basis data, penyimpanan yang memperbarui baris tunggal bukan menumpuk baris, penolakan basis data atas jam/retensi/tujuan yang tidak sah dan atas pengaturan kedua, validator `jadwalBackupSchema`, serta perhitungan `ringkasanJadwal`, `jadwalBerikutnya`, dan `jadwalTerakhir` menurut zona waktu jadwalnya."
   },
   "tests/lembar-laporan.test.mjs": {
     "summary": "Tes unit lembar laporan Excel/HTML dari src/lib/dokumen-html.ts. Memverifikasi lembarLaporanHtml memuat kop profil dan tabel dengan judul kolom, angka ditulis apa adanya, teks data diloloskan (escape HTML), namaBerkasLembar disusun dari judul dan periode, serta fungsi namaProfilDokumen dan kontakProfilDokumen memakai NAMA_BIMBEL_CADANGAN saat profil kosong dan melewati kontak yang tidak ada."
   },
+  "tests/lupa-sandi-email.test.mjs": {
+    "summary": "Uji sambungan permintaan lupa sandi Better Auth sampai pengirimannya: tautan benar-benar dikirim lewat SMTP, saat SMTP belum diatur tautannya tetap dicatat ke log supaya alur lokal jalan, di produksi dengan SMTP yang gagal tautannya tidak ikut ke log, dan email tak dikenal tidak memicu pengiriman maupun membocorkan apa pun."
+  },
+  "tests/mode-rilis.test.mjs": {
+    "summary": "Uji pembacaan mode rilis: tanpa `MODE_RILIS` keputusannya mengikuti `NODE_ENV`, `MODE_RILIS` menang di kedua arah, penulisan yang lazim (huruf besar dan spasi) diterima, isian keliru dilaporkan lalu jatuh kembali ke `NODE_ENV`, saklar halaman contoh mengikutinya, dan variabelnya terdokumentasi di `.env.example` serta panduan deploy."
+  },
   "tests/nav-portal.test.mjs": {
     "summary": "Tes unit fungsi tabAktifDari dari src/lib/nav-portal.ts untuk tab Portal Wali (urutan mengikuti src/components/nav-bawah-portal.tsx). Memverifikasi tab aktif mengikuti layar portal yang dibuka, halaman anak menyalakan tab induknya, halaman portal tanpa tab sendiri menyalakan tab akar (/portal), dan alamat di luar portal tidak menyalakan tab mana pun."
+  },
+  "tests/penjadwal-backup.test.mjs": {
+    "summary": "Uji penjadwal backup di aplikasi tanpa basis data, `pg_dump`, maupun jam sungguhan: `penjadwalDiizinkan` yang hidup secara bawaan, `periksaJadwalDanJalankan` (jadwal dimatikan, pemasangan baru menunggu jam jadwalnya, slot yang sudah lewat dijalankan, slot yang sudah dikerjakan tidak diulang, backup yang sedang jalan tidak ditumpuk, baris menggantung diabaikan), serta `mulaiPenjadwalBackup`/`hentikanPenjadwalBackup` (tik berjalan, saklar nonaktif, dan tik yang gagal dicatat tanpa mematikan penjadwal)."
   },
   "tests/ringkasan-cabang.test.mjs": {
     "summary": "Tes integrasi fungsi ringkasan cabang (src/lib/ringkasan-cabang.ts) terhadap basis data PostgreSQL; memakai registerHooks untuk alias `@/` dan mengimpor modul secara langsung. Menguji ringkasanPerCabang (menghitung kelas, murid, dan jurnal per cabang termasuk cabang tanpa kelas bernilai nol serta murid unik yang masih aktif), jumlahKelasPerCabang, dan jumlahkanRingkasanCabang (penjumlahan seluruh cabang); juga memastikan hasil seeder cabang dan kelas konsisten dengan data contoh, lalu membersihkan baris uji berkas ini.",
@@ -2056,11 +2139,20 @@
   "tests/setup.test.mjs": {
     "summary": "Tes node:test untuk alur setup lingkungan: pembuatan pertama .env.local yang menghasilkan BETTER_AUTH_SECRET dan POSTGRES_PASSWORD acak serta DATABASE_URL dan COMPOSE_PROJECT_NAME, sifatnya idempoten, mempertahankan kredensial database eksternal, tidak menuliskan kredensial dari environment proses ke disk, dan menguji `managesLocalDatabase`/`databaseUrl` dari scripts/postgres.mjs."
   },
+  "tests/smtp.test.mjs": {
+    "summary": "Uji pembacaan konfigurasi SMTP: SMTP yang belum diatur bukan galat (jatuh ke log server), isian lengkap dianggap siap, port bawaan 587 dan mode TLS mengikuti port dengan `SMTP_SECURE` yang menimpanya, pengirim jatuh ke `SMTP_USER`, server tanpa autentikasi tetap sah, isian setengah atau salah dilaporkan tanpa melempar galat, aturan `pakaiCadanganLogTautan`, serta pembersihan spasi tanpa membocorkan sandi ke keterangan."
+  },
+  "tests/tampilan-backup.test.mjs": {
+    "summary": "Uji pembantu tampilan modul backup (`src/lib/tampilan-backup.ts`): `ukuranTeks` (satuan terbaca dan tanda pisah kalau ukurannya belum ada), `lamaProses` (detik dan menit, null selama belum selesai, tidak pernah negatif), `waktuLengkap` berbahasa Indonesia, `umurBackup`, dan `kesegaranBackup` yang menilai salinan terhadap jadwal harian."
+  },
+  "tests/uji-pemulihan.test.mjs": {
+    "summary": "Uji bentuk catatan uji pemulihan (`src/lib/uji-pemulihan.ts`) beserta data contohnya: ringkasan dan hitungan pemeriksaan, `tingkatVerifikasi` atas empat keadaan catatan, pemilihan uji terakhir berhasil/selesai, kesegaran bukti terhadap `JEDA_UJI_HARI`, tahap pemulihan beserta indeks, persen, dan perkiraan selesainya, `statusTahap`, `ujiSedangBerjalan`, serta pemeriksaan isi database percobaan (kosong, berlebih, atau owner hilang)."
+  },
   "tests/variant.test.mjs": {
     "summary": "Uji (node:test) untuk `createVariant` dari `scripts/create-variant.mjs`: memastikan turunan menyalin berkas basis dan mempertahankan provenance (`baseVersion`) sambil mengecualikan rahasia, database, dan setelan lokal, serta menolak tujuan yang sudah ada, bersarang di dalam sumber, atau melewati symlink."
   },
-  "THIRD_PARTY_NOTICES.md": {
-    "summary": "Catatan lisensi pihak ketiga. Menyatakan primitif UI di `src/components/ui` berasal dari shadcn/ui (MIT, copyright 2023 shadcn) sehingga teks lisensi MIT pada LICENSE berlaku untuk berkas tersebut, sementara dependensi lain tetap memakai lisensi masing-masing."
+  "tests/wajibkan-ci.test.mjs": {
+    "summary": "Uji `scripts/wajibkan-ci.mjs` tanpa menghubungi GitHub: nama check dibaca dari job `ringkasan` di berkas pipa sungguhan (pipa berakhiran CRLF dikenali dan pipa tanpa job ringkasan ditolak), pemilik serta nama repo dibaca dari remote git, muatan proteksinya hanya menambahkan kewajiban itu tanpa mengubah aturan lain, pilihannya (`--kering`, `--hapus`) dikenali dan argumen setelah `--` npm diabaikan, dan mode `--kering` mencetak perintah `gh api` tanpa memanggil `gh`."
   },
   "tsconfig.json": {
     "summary": "Konfigurasi TypeScript proyek: strict mode, target ES2017, moduleResolution bundler, jsx react-jsx, dan alias path \"@/*\" ke ./src/*. Mengaktifkan plugin \"next\" serta menyertakan next-env.d.ts, seluruh .ts/.tsx, dan tipe hasil generate Next.js, sambil mengecualikan node_modules."
