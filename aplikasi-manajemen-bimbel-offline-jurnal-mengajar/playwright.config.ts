@@ -1,6 +1,10 @@
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { defineConfig, devices } from "@playwright/test";
+import {
+  defineConfig,
+  devices,
+  type ReporterDescription,
+} from "@playwright/test";
 
 const testUrl = process.env.STARTER_TEST_DATABASE_URL;
 if (!testUrl || !process.env.STARTER_TEST_RUN?.startsWith("starter-pg-test-")) {
@@ -28,14 +32,31 @@ const testRestoreUrl = (() => {
   url.pathname = "/kelola_restore";
   return url.toString();
 })();
+// Laporan uji di CI dobel: `list` untuk log yang enak dibaca di halaman jalan,
+// dan laporan HTML di `playwright-report` supaya yang gagal bisa ditelusuri dari
+// artefaknya tanpa menjalankan ulang pipanya. `open: "never"` penting di runner
+// yang tidak punya layar; kalau mau membukanya, unduh artefaknya dulu.
+// Di komputer sendiri cukup `list` supaya keluarannya tidak berisik.
+const perekaCI: ReporterDescription[] = [
+  ["list"],
+  ["html", { open: "never", outputFolder: "playwright-report" }],
+];
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
   workers: 1,
-  reporter: "list",
-  use: { baseURL: "http://localhost:3101", trace: "retain-on-failure" },
+  reporter: process.env.CI ? perekaCI : "list",
+  // Bukti kegagalan yang ikut diunggah sebagai artefak: potret layar saat uji
+  // gagal, dan jejak langkahnya untuk ditelusuri di trace viewer — persis yang
+  // dijanjikan saran kegagalan uji end-to-end di src/lib/ci-otomatis.ts.
+  use: {
+    baseURL: "http://localhost:3101",
+    trace: "retain-on-failure",
+    screenshot: "only-on-failure",
+  },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
     command: "npm run start -- --port 3101",

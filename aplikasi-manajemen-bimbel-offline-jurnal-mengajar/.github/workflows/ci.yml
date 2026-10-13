@@ -82,13 +82,17 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
 
-      # Kalau ada yang gagal, hasil uji peramban disimpan 7 hari supaya bisa
-      # diperiksa tanpa menjalankan ulang pipanya.
+      # Kalau ada yang gagal, bukti dan laporannya disimpan 7 hari supaya bisa
+      # diperiksa tanpa menjalankan ulang pipanya. `test-results` memuat
+      # tangkapan layar dan jejak langkah (trace), `playwright-report` memuat
+      # laporan HTML yang bisa dibuka langsung dari berkas artefaknya.
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: browser-test-results
-          path: test-results/
+          name: laporan-uji-peramban
+          path: |
+            test-results/
+            playwright-report/
           retention-days: 7
 
   ringkasan:

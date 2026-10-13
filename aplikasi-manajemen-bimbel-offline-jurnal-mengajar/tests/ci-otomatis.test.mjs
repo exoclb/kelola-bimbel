@@ -137,13 +137,17 @@ test("berkas ci.yml dipicu push dan pull request dengan pengamanannya", () => {
   // langkah penyiapan di src/lib/ci-otomatis.ts.
   assert.ok(nomorBaris(isi, "node-version-file: .nvmrc") > 0);
   // Hasil uji peramban diunggah setelah ujinya jalan, dan disimpan 7 hari
-  // seperti yang dijanjikan halaman Status CI.
-  assert.ok(
-    nomorBaris(isi, "path: test-results/") >
-      nomorBaris(isi, "run: npm run test:e2e"),
-  );
-  assert.ok(nomorBaris(isi, "if: failure()") > 0);
-  assert.ok(nomorBaris(isi, "retention-days: 7") > 0);
+  // seperti yang dijanjikan halaman Status CI: `test-results` berisi tangkapan
+  // layar dan jejak langkahnya, `playwright-report` laporan HTML-nya.
+  const nomorUjiPeramban = nomorBaris(isi, "run: npm run test:e2e");
+  for (const artefak of ["test-results/", "playwright-report/"]) {
+    assert.ok(
+      nomorBaris(isi, artefak) > nomorUjiPeramban,
+      `ci.yml mengunggah ${artefak} setelah ujinya jalan`,
+    );
+  }
+  assert.ok(nomorBaris(isi, "if: failure()") > nomorUjiPeramban);
+  assert.ok(nomorBaris(isi, "retention-days: 7") > nomorUjiPeramban);
 });
 
 test("berkas ci.yml memisahkan uji peramban ke jobnya sendiri", () => {
