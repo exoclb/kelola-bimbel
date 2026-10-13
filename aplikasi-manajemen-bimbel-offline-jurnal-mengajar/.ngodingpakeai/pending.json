@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "d43fbf812d1d59e075f4e8b8db6ec98785d3fbc1",
+  "generatedForCommit": "5232c6d0cf9daafb5cf9e1a346f14ccdb182fff3",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -208,9 +208,9 @@
     },
     {
       "path": "docs/peta-data-tiruan.md",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "markdown",
-      "size": 24525
+      "size": 24689
     },
     {
       "path": "docs/prompts.md",
@@ -630,13 +630,13 @@
       "path": "e2e/backup-jalankan.spec.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 3827
+      "size": 3950
     },
     {
       "path": "e2e/backup-riwayat.spec.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
-      "size": 15804
+      "size": 16210
     },
     {
       "path": "e2e/gaji.spec.ts",
@@ -646,9 +646,9 @@
     },
     {
       "path": "e2e/halaman-contoh.spec.ts",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "typescript",
-      "size": 5527
+      "size": 6518
     },
     {
       "path": "e2e/jadwal-bentrok.spec.ts",
@@ -1002,7 +1002,7 @@
       "path": "src/app/(protected)/app/contoh-status/page.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 6315
+      "size": 6486
     },
     {
       "path": "src/app/(protected)/app/gaji/loading.tsx",
@@ -1144,9 +1144,9 @@
     },
     {
       "path": "src/app/(protected)/app/pengaturan/backup/page.tsx",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
-      "size": 4366
+      "size": 4477
     },
     {
       "path": "src/app/(protected)/app/pengaturan/ekspor/page.tsx",
@@ -1728,7 +1728,7 @@
       "path": "src/app/not-found.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 1403
+      "size": 1437
     },
     {
       "path": "src/app/page.tsx",
@@ -1800,7 +1800,7 @@
       "path": "src/components/aksi-jalankan-backup.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 3425
+      "size": 3528
     },
     {
       "path": "src/components/aksi-lepas-tautan-wali.tsx",
@@ -1932,7 +1932,7 @@
       "path": "src/components/daftar-riwayat-backup.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 3564
+      "size": 3664
     },
     {
       "path": "src/components/daftar-riwayat-jurnal.tsx",
@@ -1996,9 +1996,9 @@
     },
     {
       "path": "src/components/form-jadwal-backup.tsx",
-      "reason": "new",
+      "reason": "needs_summary",
       "language": "typescript",
-      "size": 10558
+      "size": 10851
     },
     {
       "path": "src/components/form-jadwal-kelas.tsx",
@@ -2262,13 +2262,13 @@
       "path": "src/components/rincian-kartu.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 631
+      "size": 655
     },
     {
       "path": "src/components/ringkasan-backup-terakhir.tsx",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 3229
+      "size": 3326
     },
     {
       "path": "src/components/riwayat-gaji.tsx",
@@ -2634,7 +2634,7 @@
       "path": "src/lib/halaman-contoh.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 1322
+      "size": 1522
     },
     {
       "path": "src/lib/id-murid.mjs",
@@ -2670,7 +2670,7 @@
       "path": "src/lib/mock-backup.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 4230
+      "size": 4352
     },
     {
       "path": "src/lib/mock-cabang.ts",
@@ -2700,7 +2700,7 @@
       "path": "src/lib/mock-menu.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 3769
+      "size": 4579
     },
     {
       "path": "src/lib/mock-murid.ts",
@@ -2737,6 +2737,12 @@
       "reason": "needs_summary",
       "language": "typescript",
       "size": 4093
+    },
+    {
+      "path": "src/lib/mode-rilis.ts",
+      "reason": "needs_summary",
+      "language": "typescript",
+      "size": 4297
     },
     {
       "path": "src/lib/nav-portal.ts",
@@ -2820,7 +2826,7 @@
       "path": "src/lib/tampilan-backup.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 3391
+      "size": 3482
     },
     {
       "path": "src/lib/tanggal-perangkat.ts",
@@ -2850,7 +2856,13 @@
       "path": "src/lib/variabel-lingkungan.ts",
       "reason": "needs_summary",
       "language": "typescript",
-      "size": 6931
+      "size": 7220
+    },
+    {
+      "path": "src/proxy.ts",
+      "reason": "new",
+      "language": "typescript",
+      "size": 1933
     },
     {
       "path": "src/services/backup.service.ts",
@@ -3142,15 +3154,15 @@
     },
     {
       "path": "tests/halaman-contoh.test.mjs",
-      "reason": "needs_summary",
+      "reason": "changed",
       "language": "javascript",
-      "size": 4466
+      "size": 7993
     },
     {
       "path": "tests/halaman-penolakan.test.mjs",
       "reason": "needs_summary",
       "language": "javascript",
-      "size": 2424
+      "size": 2497
     },
     {
       "path": "tests/lembar-laporan.test.mjs",
@@ -3168,7 +3180,13 @@
       "path": "tests/mock-backup.test.mjs",
       "reason": "needs_summary",
       "language": "javascript",
-      "size": 2965
+      "size": 3056
+    },
+    {
+      "path": "tests/mode-rilis.test.mjs",
+      "reason": "needs_summary",
+      "language": "javascript",
+      "size": 4741
     },
     {
       "path": "tests/nav-portal.test.mjs",
@@ -3192,7 +3210,7 @@
       "path": "tests/tampilan-backup.test.mjs",
       "reason": "needs_summary",
       "language": "javascript",
-      "size": 4295
+      "size": 4428
     },
     {
       "path": "tests/variant.test.mjs",
