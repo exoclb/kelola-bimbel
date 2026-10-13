@@ -1,6 +1,6 @@
 {
   "repo": "aplikasi-manajemen-bimbel-offline-jurnal-mengajar",
-  "generatedForCommit": "bf20a1a6e890224b229bb62e5848e72876dc31f5",
+  "generatedForCommit": "4df0b229f7ebd2ed63fc4ab79c555284a7e8e046",
   "files": [
     {
       "path": ".agents/skills/build-feature/SKILL.md",
@@ -175,12 +175,6 @@
       "reason": "needs_summary",
       "language": "markdown",
       "size": 34049
-    },
-    {
-      "path": "docs/backend.md",
-      "reason": "changed",
-      "language": "markdown",
-      "size": 98615
     },
     {
       "path": "docs/deploy-coolify.md",
@@ -642,7 +636,7 @@
       "path": "e2e/backup-riwayat.spec.ts",
       "reason": "changed",
       "language": "typescript",
-      "size": 17569
+      "size": 18077
     },
     {
       "path": "e2e/gaji.spec.ts",
@@ -802,7 +796,7 @@
     },
     {
       "path": "playwright.config.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1567
     },
@@ -1534,7 +1528,7 @@
     },
     {
       "path": "src/app/api/pengaturan/backup/route.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 1681
     },
@@ -2872,7 +2866,7 @@
     },
     {
       "path": "src/services/backup.service.ts",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "typescript",
       "size": 11851
     },
@@ -3124,7 +3118,7 @@
     },
     {
       "path": "tests/backup-service.test.mjs",
-      "reason": "changed",
+      "reason": "needs_summary",
       "language": "javascript",
       "size": 10235
     },
