@@ -98,7 +98,11 @@ export default async function StatusCiPage() {
       )}
 
       {riwayat.length > 0 && (
-        <DaftarRiwayatCi riwayat={riwayat} sekarang={sekarang} />
+        <DaftarRiwayatCi
+          riwayat={riwayat}
+          sekarang={sekarang}
+          logKegagalan={logKegagalanTiruan}
+        />
       )}
 
       <p className="mt-6 text-sm leading-6 text-muted-foreground">

@@ -167,15 +167,26 @@ test("halaman status CI menampilkan proses berjalan, hasil terakhir, dan riwayat
   await expect(langkah.getByText("npm run test:e2e")).toBeVisible();
   await expect(langkah.getByText(/artefak test-results/)).toBeVisible();
 
-  // Riwayatnya memuat jalan yang lulus, yang gagal, dan yang masih berjalan.
+  // Riwayatnya memuat jalan yang lulus, yang gagal, dan yang masih berjalan,
+  // dan tiap barisnya bisa dibuka untuk melihat langkah jalan itu sendiri.
   const riwayat = page.locator('[data-slot="card"]').filter({
     has: page.getByText("Riwayat jalan CI", { exact: true }),
   });
   await expect(riwayat).toHaveCount(1);
   await expect(riwayat.locator("[data-jalan]")).toHaveCount(5);
-  await expect(riwayat.locator('[data-keadaan="lulus"]')).toHaveCount(2);
-  await expect(riwayat.locator('[data-keadaan="gagal"]')).toHaveCount(2);
-  await expect(riwayat.locator('[data-keadaan="berjalan"]')).toHaveCount(1);
+  await expect(riwayat.locator('[data-jalan="ci-berjalan"]')).toHaveAttribute(
+    "data-keadaan",
+    "berjalan",
+  );
+  await expect(
+    riwayat.locator('[data-jalan="ci-20261013-0941"]'),
+  ).toHaveAttribute("data-keadaan", "gagal");
+  await expect(
+    riwayat.locator('[data-jalan="ci-20261012-2015"]'),
+  ).toHaveAttribute("data-keadaan", "lulus");
+  await expect(
+    riwayat.locator('[data-jalan="ci-20261010-1015"]'),
+  ).toHaveAttribute("data-keadaan", "gagal");
   await expect(riwayat.getByText("9f1c2ab")).toBeVisible();
   await expect(riwayat.getByText(/sudah berjalan \d+ menit/)).toBeVisible();
   await expect(
@@ -186,6 +197,36 @@ test("halaman status CI menampilkan proses berjalan, hasil terakhir, dan riwayat
       "Gagal di Pemeriksaan kode & uji otomatis: 1 dari 5 pemeriksaan lulus sebelum berhenti.",
     ),
   ).toBeVisible();
+
+  // Jalan lama yang gagal di uji peramban: langkahnya ada sejak awal, dan
+  // dibuka lewat rincian bawaannya — termasuk potongan lognya.
+  const jalanPeramban = riwayat.locator('[data-jalan="ci-20261010-1015"]');
+  await expect(jalanPeramban.locator("[data-rincian]")).toHaveCount(1);
+  await expect(
+    jalanPeramban.locator('[data-pemeriksaan="uji-end-to-end"]'),
+  ).toHaveAttribute("data-keadaan", "gagal");
+  await expect(
+    jalanPeramban.locator('[data-pemeriksaan="uji-end-to-end"]'),
+  ).toBeHidden();
+  await jalanPeramban.getByText("Lihat pemeriksaannya").click();
+  await expect(
+    jalanPeramban.locator('[data-pemeriksaan="uji-end-to-end"]'),
+  ).toBeVisible();
+  const logPeramban = jalanPeramban.locator(
+    '[data-log-gagal="uji-end-to-end"]',
+  );
+  await expect(logPeramban).toBeVisible();
+  await expect(logPeramban).toContainText(/playwright show-report/);
+  await expect(
+    jalanPeramban.getByText(/1 dari 12 skenario tidak lulus/).first(),
+  ).toBeVisible();
+  // Langkah yang tidak dijalankan tetap ada di DOM sebagai dilewati, walau
+  // rinciannya masih tertutup.
+  await expect(
+    riwayat.locator(
+      '[data-jalan="ci-20261013-0941"] [data-keadaan="dilewati"]',
+    ),
+  ).toHaveCount(3);
 
   // Arahan yang jelas saat CI merah.
   await expect(page.getByText(/jangan rilis dulu/)).toBeVisible();
