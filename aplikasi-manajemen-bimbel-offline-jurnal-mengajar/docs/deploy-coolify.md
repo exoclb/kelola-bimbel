@@ -119,6 +119,12 @@ sandi di resource Coolify — jangan menyalin nilainya ke berkas repo.
 Nilai `PORT` dan `HOSTNAME` tidak perlu diisi: image sudah memakai `3000` dan
 `0.0.0.0`.
 
+> **Belum lengkap (audit deploy):** tabel ini belum memuat kelompok `SMTP_*`
+> (`SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`,
+> `SMTP_FROM`, `SMTP_FROM_NAME`) dari `src/lib/smtp.ts`. Semuanya opsional,
+> tetapi tanpa diisi email tautan atur ulang sandi tidak pernah keluar dari
+> server. Rinciannya di `docs/audit-deploy-usang.md` (butir 1).
+
 **`MODE_RILIS` — halaman contoh starter.** Halaman acuan tampilan bawaan
 (`/app/contoh-status`) tidak untuk pengguna bimbel. Saklarnya bernama
 `MODE_RILIS`: kalau dikosongkan, nilainya mengikuti `NODE_ENV`, dan container
@@ -146,6 +152,13 @@ setiap variabel bisa dilihat owner di **Pengaturan → Lingkungan**.
 - Verifikasi kelengkapan **tanpa menampilkan isinya**: cukup pastikan keempat
   nama variabel wajib ada, lalu jalankan `npm run doctor` untuk membuktikan
   koneksinya benar-benar bisa dipakai.
+
+> **Usang (audit deploy):** “keempat nama variabel wajib” sekarang keliru —
+> yang berkategori wajib hanya **tiga**: `BETTER_AUTH_SECRET`,
+> `BETTER_AUTH_URL`, dan `DATABASE_URL`
+> (`src/lib/variabel-lingkungan.ts`, tampil juga di Pengaturan → Lingkungan).
+> `MIGRATION_DATABASE_URL` opsional. Angka yang sama salahnya muncul lagi di
+> checklist Fase 5. Rinciannya di `docs/audit-deploy-usang.md` (butir 2).
 
 ### 3. Membuat resource aplikasi
 
@@ -254,6 +267,15 @@ dan rencanakan pemulihan database secara terpisah bila ada perubahan berisiko.
    commit kecil, lalu lihat **Deployments**.
 3. Nyalakan **Notifications** (email/Discord/Telegram sesuai kebutuhan) untuk
    kabar sukses maupun gagal setiap deploy.
+
+> **Usang (audit deploy):** push ke `master` bukan lagi jalur rilis yang benar.
+> Pipa CI (`.github/workflows/ci.yml`) memeriksa setiap push dan pull request,
+> dan cabang `master` sudah menuntut status check `Ringkasan hasil CI` lulus
+> sebelum digabung (`npm run ci:wajib`), jadi perubahannya masuk lewat pull
+> request yang hijau; auto-deploy Coolify baru jalan setelah commit itu mendarat
+> di `master`. Cara membaca hasil pipanya dari dalam aplikasi ada di Pengaturan
+> → Status CI (`/app/pengaturan/ci`). Rinciannya di
+> `docs/audit-deploy-usang.md` (butir 3).
 
 ### 2. Kembali ke rilis sebelumnya
 
@@ -380,6 +402,13 @@ lalu hilang — dan berkas yang belum pernah diuji terlihat dari catatan yang
 masih kosong. Riwayat tiap percobaan tidak disimpan; yang tersisa adalah keadaan
 terakhir berkas itu diuji, termasuk kalau ujinya gagal.
 
+> **Belum lengkap (audit deploy):** cara menjalankan backup dan uji pemulihan
+> sudah lengkap, tetapi jangka waktunya belum ditulis (dokumen hanya menyebut
+> “minimal satu kali per periode”), begitu juga siapa yang menjalankannya dan
+> di mana buktinya disimpan — padahal riwayatnya sudah ada di tabel
+> `backup_runs` dan halaman Pengaturan → Backup. Rinciannya di
+> `docs/audit-deploy-usang.md` (butir 5).
+
 ## Fase 5 — Panduan & Uji Coba Go-live
 
 ### 1. Uji masuk per peran
@@ -392,6 +421,13 @@ Di server produksi, uji dengan akun nyata (bukan akun uji):
   Backup terlihat.
 - Uji juga **lupa sandi** dan **atur ulang sandi** dari domain asli.
 - Pastikan akun yang dinonaktifkan tidak bisa masuk.
+
+> **Belum lengkap (audit deploy):** uji lupa sandi di atas baru berjalan seperti
+> yang diharapkan kalau penyedia emailnya sudah diatur. Tanpa `SMTP_*`, tautan
+> atur ulang sandi **tetap** dibuat tetapi hanya dicatat ke log container
+> (`src/lib/smtp.ts`: `pakaiCadanganLogTautan`), jadi tidak ada email yang
+> masuk. Pastikan dulu kanal emailnya, lalu ujilah dari domain asli. Rinciannya
+> di `docs/audit-deploy-usang.md` (butir 4).
 
 ### 2. Uji alur inti di produksi
 
@@ -424,6 +460,12 @@ Jalankan berurutan dengan data uji, lalu rapikan datanya:
 - [ ] Backup terjadwal jalan, salinan tersimpan terpisah, retensi ditulis.
 - [ ] Uji pemulihan pernah berhasil.
 - [ ] Akun uji dibersihkan; hanya akun sungguhan yang tersisa.
+
+> **Perlu dibaca (audit deploy):** dua butir di atas tidak bisa dijalankan apa
+> adanya. “Keempat variabel” seharusnya tiga (lihat catatan di Fase 2 §2), dan
+> klaim “0 temuan” dari pemindaian `.env.local` tidak menyertakan perintah yang
+> bisa diulang — tidak ada skripnya di `package.json` maupun `tests/`.
+> Rinciannya di `docs/audit-deploy-usang.md` (butir 2 dan 6).
 
 ## Masalah yang sering muncul
 

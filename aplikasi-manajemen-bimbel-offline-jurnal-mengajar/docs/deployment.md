@@ -33,6 +33,13 @@ RESTORE_COMMAND=
 
 Keep provider-required TLS settings. Do not disable certificate verification. The example credentials are placeholders, not defaults.
 
+> **Audit note (outdated deploy steps):** this block is missing the `SMTP_*`
+> group read by `src/lib/smtp.ts` (`SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`,
+> `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_FROM_NAME`). All optional,
+> but without them the password reset link never leaves the server. Full list in
+> `src/lib/variabel-lingkungan.ts`; findings in `docs/audit-deploy-usang.md`
+> (item 1).
+
 Leave `MODE_RILIS` blank in production: the release container runs with `NODE_ENV=production`, which already marks the deployment as a release. Release mode drops the starter showcase links from the menu and answers `/app/contoh-status` like a route that never existed, instead of redirecting a visitor to sign-in (`src/proxy.ts`). Set the variable only to override `NODE_ENV` — `true` to close the showcase in a local or review build, `false` to keep it reachable in a release build; a `false` left behind in production reopens those routes. `docs/deploy-coolify.md` documents the same switch for operators, in Indonesian.
 
 `PENJADWAL_BACKUP` only decides whether the in-app scheduler runs; anything other than `nonaktif`/`off`/`false`/`0`/`tidak`/`no` leaves it on, so a typo never silences scheduled backups. Each scheduled run writes a row to `backup_runs` exactly like `npm run db:backup` and the manual **Run backup** button, and the app catches up a slot it missed while the container was down — so pick one scheduler, in-app or cron, not both. The due-time rules and the switch are tested in `tests/penjadwal-backup.test.mjs`.
@@ -86,6 +93,12 @@ The app uses a shared node-postgres pool with at most five connections per proce
 Use PostgreSQL backups or your provider's backup service and test restoration. Docker volumes are persistence, not backups. On hosted services, setup does not provision a database or purchase resources; supply an existing connection.
 
 Account emails are not verified by the base. Add an email provider for verification and password recovery when needed. Reassess shared auth rate limiting when scaling to multiple app instances.
+
+> **Audit note (outdated deploy steps):** half of that sentence is now wrong.
+> Password recovery already has its provider (`SMTP_*`, see above) and answers
+> `/lupa-password` by email; without SMTP it still writes the link to the server
+> log. Only address verification is still missing. Findings in
+> `docs/audit-deploy-usang.md` (item 7).
 
 References: [Drizzle PostgreSQL](https://orm.drizzle.team/docs/get-started-postgresql), [node-postgres pooling](https://node-postgres.com/features/pooling), [Better Auth Drizzle adapter](https://better-auth.com/docs/adapters/drizzle), [PostgreSQL Docker image](https://hub.docker.com/_/postgres).
 
