@@ -251,14 +251,12 @@ export function jalankanPerintahDump(
   });
 }
 
-/** Satu catatan hasil penjalanan backup seperti yang barusan ditulis. */
-export type HasilBackup = {
-  id: string;
-  status: "sukses" | "gagal";
-  berkas: string;
-  ukuranByte: number | null;
-  pesan: string | null;
-};
+/**
+ * Baris `backup_runs` yang barusan ditutup penjalanan backup. Bentuknya sama
+ * dengan yang dibaca halaman riwayat, jadi pemanggilnya — endpoint pemicu — bisa
+ * meneruskannya apa adanya.
+ */
+export type HasilBackup = BackupTersimpan;
 
 export type OpsiJalankanBackup = {
   /** Pengganti pelaksana perintah; uji memakainya supaya tidak butuh pg_dump. */
@@ -278,7 +276,9 @@ export type OpsiJalankanBackup = {
  * berkas dan lokasinya) atau `gagal` (dengan alasannya, dipotong `MAKS_PESAN`).
  * Fungsi ini tidak melempar galat: kegagalan apa pun — termasuk pengaturan yang
  * belum lengkap dan perintah yang tidak ada — berakhir sebagai catatan `gagal`
- * yang bisa dibaca owner, bukan galat yang hanya muncul di log.
+ * yang bisa dibaca owner, bukan galat yang hanya muncul di log. Yang
+ * dikembalikannya baris yang tersimpan di tabel, bukan salinan nilai yang
+ * dihitung sendiri.
  */
 export async function jalankanBackupDanCatat(
   opsi: OpsiJalankanBackup = {},
@@ -320,20 +320,17 @@ export async function jalankanBackupDanCatat(
   // Ukuran hanya bermakna saat sukses; sisanya mengikuti aturan skrip backup:
   // status selain `berjalan` wajib punya waktu selesai.
   const sukses = galat === null;
-  const hasil = {
-    status: sukses ? ("sukses" as const) : ("gagal" as const),
-    selesai: new Date(),
-    ukuranByte: sukses ? ukuranByte : null,
-    lokasi: berkas,
-    pesan: galat,
-  };
-  await db.update(backupRuns).set(hasil).where(eq(backupRuns.id, baris.id));
+  const [tersimpan] = await db
+    .update(backupRuns)
+    .set({
+      status: sukses ? "sukses" : "gagal",
+      selesai: new Date(),
+      ukuranByte: sukses ? ukuranByte : null,
+      lokasi: berkas,
+      pesan: galat,
+    })
+    .where(eq(backupRuns.id, baris.id))
+    .returning(fields);
 
-  return {
-    id: baris.id,
-    status: hasil.status,
-    berkas,
-    ukuranByte: hasil.ukuranByte,
-    pesan: hasil.pesan,
-  };
+  return tersimpan;
 }

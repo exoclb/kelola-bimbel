@@ -404,3 +404,47 @@ test("endpoint riwayat backup mengembalikan status dan batas jumlahnya", async (
     (await request.get("/api/pengaturan/backup", { headers })).status(),
   ).toBe(403);
 });
+
+/**
+ * Endpoint pemicu backup manual: menjalankan perintah dump di server lalu
+ * menutup barisnya sebagai `sukses`. Perintahnya diganti perintah Node kecil
+ * lewat `BACKUP_COMMAND` di `playwright.config.ts`, jadi dump sungguhan (dan
+ * `pg_dump` di PATH) tidak dibutuhkan untuk menguji jalurnya. Izin tulis
+ * pengaturan yang menjaga endpoint ini, bukan izin baca.
+ */
+test("endpoint pemicu backup manual menjalankan dump dan mencatat statusnya", async ({
+  request,
+}) => {
+  const email = await daftar(request, "Owner Pemicu Backup");
+  await setRole(email, "owner");
+  await masuk(request, email);
+
+  const jawaban = await request.post("/api/pengaturan/backup", { headers });
+  expect(jawaban.status()).toBe(201);
+  const { data } = await jawaban.json();
+  expect(data.status).toBe("sukses");
+  expect(data.pesan).toBe(null);
+  // Persis isi perintah uji di playwright.config.ts.
+  expect(data.ukuranByte).toBe("dump-uji-e2e".length);
+  expect(data.lokasi.endsWith(".dump")).toBe(true);
+  expect(data.selesai).not.toBe(null);
+
+  // Barisnya benar-benar tersimpan dan terbaca riwayat: satu baris yang sama,
+  // bukan dua catatan terpisah.
+  const riwayat = await request.get("/api/pengaturan/backup?limit=1", {
+    headers,
+  });
+  expect(riwayat.status()).toBe(200);
+  const terbaru = (await riwayat.json()).data.terbaru[0];
+  expect(terbaru.id).toBe(data.id);
+  expect(terbaru.status).toBe("sukses");
+  expect(terbaru.lokasi).toBe(data.lokasi);
+
+  // Akun yang hanya boleh membaca pengaturan tidak bisa memicu backup.
+  const emailGuru = await daftar(request, "Guru Pemicu Backup");
+  await setRole(emailGuru, "user");
+  await masuk(request, emailGuru);
+  expect(
+    (await request.post("/api/pengaturan/backup", { headers })).status(),
+  ).toBe(403);
+});

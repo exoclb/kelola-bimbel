@@ -159,12 +159,18 @@ test("baris berjalan ditulis sebelum perintahnya jalan, lalu ditutup sukses", as
   assert.equal(hasil.status, "sukses");
   assert.equal(hasil.ukuranByte, 12);
   assert.equal(hasil.pesan, null);
-  assert.ok(existsSync(hasil.berkas), "direktori backup dibuat sendiri");
+  assert.ok(existsSync(hasil.lokasi), "direktori backup dibuat sendiri");
+  assert.ok(hasil.mulai instanceof Date, "waktu mulainya ikut dikembalikan");
+  assert.ok(
+    hasil.selesai instanceof Date,
+    "status selain berjalan punya waktu selesai",
+  );
 
+  // Yang dikembalikan adalah baris yang benar-benar tersimpan di tabel.
   const catatan = await barisCatatan(hasil.id);
   assert.equal(catatan.status, "sukses");
   assert.equal(catatan.ukuran_byte, 12);
-  assert.equal(catatan.lokasi, hasil.berkas);
+  assert.equal(catatan.lokasi, hasil.lokasi);
   assert.equal(catatan.pesan, null);
   assert.ok(
     catatan.selesai instanceof Date,
