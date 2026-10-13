@@ -5,6 +5,12 @@
 // menu guru dan owner bisa ditinjau dari satu tempat. Menu hanyalah tampilan —
 // halaman dan API-nya tetap memeriksa izin sendiri, jadi menyembunyikan menu
 // bukan pengaman.
+//
+// Tautan halaman contoh pada navigasi mengikuti saklar mode rilis
+// (`MODE_RILIS` lewat `src/lib/halaman-contoh.ts`): begitu penerapan ditandai
+// rilis, tautannya tidak ikut terlukis sama sekali — bukan sekadar disembunyikan
+// dengan gaya. Karena itu penaringnya dikerjakan di sini, tempat menu dibentuk
+// di server; pemanggil menu tidak perlu tahu halaman mana yang termasuk contoh.
 import { halamanContohAktif } from "@/lib/halaman-contoh";
 import type { PeranPengguna } from "@/lib/peran";
 import type { Permissions } from "@/lib/permissions";
@@ -38,8 +44,9 @@ const MENU_DASAR: MenuApp[] = [
 
 // Tautan halaman contoh (showcase) dari starter: isinya acuan bentuk antarmuka
 // saat pengembangan, bukan bagian aplikasi bimbel. Tautannya hanya ikut ke menu
-// selama saklar di `src/lib/halaman-contoh.ts` masih menyala, dan rutenya
-// dijaga saklar yang sama.
+// selama saklar mode rilis masih menyala (`src/lib/halaman-contoh.ts`, dibaca
+// dari env `MODE_RILIS` di `src/lib/mode-rilis.ts`), dan rutenya dijaga saklar
+// yang sama.
 export const TAUTAN_CONTOH: readonly MenuApp[] = [
   { href: "/app/contoh-status", label: "Contoh Status", contoh: true },
 ];
@@ -89,14 +96,21 @@ export const MENU_PER_PERAN: Record<PeranPengguna, MenuApp[]> = {
 };
 
 export type OpsiMenuPeran = {
-  /** Paksa tampil/tidaknya tautan halaman contoh; bawaannya dari saklar. */
+  /**
+   * Paksa tampil/tidaknya tautan halaman contoh. Bawaannya dibaca dari saklar
+   * mode rilis (`src/lib/halaman-contoh.ts`), jadi pemanggil menu biasa —
+   * `src/app/(protected)/layout.tsx` — cukup memanggil tanpa opsi ini dan
+   * navigasinya otomatis bersih saat penerapan ditandai rilis. Opsi paksaan
+   * dipakai uji dan pratinjau.
+   */
   tautanContoh?: boolean;
 };
 
 /**
  * Salinan menu satu peran supaya pemanggil tidak mengubah daftar aslinya.
- * Tautan halaman contoh disaring di sini, jadi pemanggil menu cukup memanggil
- * fungsi ini dan tidak perlu tahu halaman mana saja yang termasuk contoh.
+ * Tautan halaman contoh disaring di sini — mengikuti saklar mode rilis kalau
+ * tidak dipaksa lewat opsi — jadi pemanggil menu cukup memanggil fungsi ini dan
+ * tidak perlu tahu halaman mana saja yang termasuk contoh.
  */
 export function menuUntukPeran(
   peran: PeranPengguna,

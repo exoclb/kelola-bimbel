@@ -96,6 +96,58 @@ test("menu tanpa paksaan mengikuti saklar yang sedang berlaku", () => {
   );
 });
 
+test("navigasi mengikuti flag mode rilis sungguhan", () => {
+  // Navigasi memanggil menuUntukPeran tanpa opsi paksaan di
+  // src/app/(protected)/layout.tsx, jadi yang menentukan adalah env saat
+  // dipanggil. Uji ini menirukan persis pemanggilan itu: cukup mengubah
+  // MODE_RILIS, tanpa argumen tambahan apa pun.
+  const semula = {
+    modeRilis: process.env.MODE_RILIS,
+    nodeEnv: process.env.NODE_ENV,
+  };
+  const kembalikan = (nama, nilai) => {
+    if (nilai === undefined) delete process.env[nama];
+    else process.env[nama] = nilai;
+  };
+
+  try {
+    for (const peran of ["guru", "owner"]) {
+      process.env.MODE_RILIS = "true";
+      assert.deepEqual(
+        hanyaContoh(menuUntukPeran(peran)),
+        [],
+        `Menu ${peran} masih menautkan halaman contoh saat rilis.`,
+      );
+
+      process.env.MODE_RILIS = "false";
+      assert.deepEqual(
+        hanyaContoh(menuUntukPeran(peran)),
+        [...alamatContoh],
+        `Menu ${peran} kehilangan tautan contoh saat mode rilis dimatikan.`,
+      );
+    }
+
+    // Tanpa MODE_RILIS, navigasi kembali mengikuti NODE_ENV — termasuk di
+    // penerapan rilis yang tidak mengisi variabel barunya.
+    delete process.env.MODE_RILIS;
+    process.env.NODE_ENV = "production";
+    assert.deepEqual(hanyaContoh(menuUntukPeran("owner")), []);
+    process.env.NODE_ENV = "development";
+    assert.deepEqual(hanyaContoh(menuUntukPeran("owner")), [...alamatContoh]);
+
+    // Perpindahan mode tidak menggeser menu pekerjaan harian: yang hilang
+    // hanya tautan contoh, sisanya sama persis.
+    process.env.NODE_ENV = "production";
+    const saatRilis = menuUntukPeran("owner").map(href);
+    process.env.NODE_ENV = "development";
+    const saatDev = menuUntukPeran("owner").map(href);
+    assert.deepEqual(saatDev.slice(0, -alamatContoh.length), saatRilis);
+  } finally {
+    kembalikan("MODE_RILIS", semula.modeRilis);
+    kembalikan("NODE_ENV", semula.nodeEnv);
+  }
+});
+
 test("portal wali tidak pernah menautkan halaman contoh", () => {
   for (const tautanContoh of [true, false]) {
     assert.deepEqual(
